@@ -1,0 +1,729 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>libGAP shared library Interface to GAP &mdash; Sage Reference Manual v6.6: C/C++ Library Interfaces</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: C/C++ Library Interfaces" href="../../../index.html" />
+    <link rel="next" title="Short tests for libGAP" href="test.html" />
+    <link rel="prev" title="Utility functions for libGAP" href="util.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test.html" title="Short tests for libGAP"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="util.html" title="Utility functions for libGAP"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="libgap-shared-library-interface-to-gap">
+<span id="sage-libs-gap-libgap"></span><h1>libGAP shared library Interface to GAP<a class="headerlink" href="#libgap-shared-library-interface-to-gap" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.libs.gap.libgap"></span><p>This module implements a fast C library interface to GAP. To use
+libGAP you simply call <tt class="docutils literal"><span class="pre">libgap</span></tt> (the parent of all
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement" title="sage.libs.gap.element.GapElement"><tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt></a> instances) and use it to
+convert Sage objects into GAP objects.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">10</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.libs.gap.element.GapElement_Integer&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">*</span><span class="n">a</span>
+<span class="go">100</span>
+<span class="gp">sage: </span><span class="n">timeit</span><span class="p">(</span><span class="s">&#39;a*a&#39;</span><span class="p">)</span>   <span class="c"># random output</span>
+<span class="go">625 loops, best of 3: 898 ns per loop</span>
+</pre></div>
+</div>
+<p>Compared to the expect interface this is &gt;1000 times faster:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;10&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">timeit</span><span class="p">(</span><span class="s">&#39;b*b&#39;</span><span class="p">)</span>   <span class="c"># random output; long time</span>
+<span class="go">125 loops, best of 3: 2.05 ms per loop</span>
+</pre></div>
+</div>
+<p>If you want to evaluate GAP commands, use the <a class="reference internal" href="#sage.libs.gap.libgap.Gap.eval" title="sage.libs.gap.libgap.Gap.eval"><tt class="xref py py-meth docutils literal"><span class="pre">Gap.eval()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;List([1..10], i-&gt;i^2)&#39;</span><span class="p">)</span>
+<span class="go">[ 1, 4, 9, 16, 25, 36, 49, 64, 81, 100 ]</span>
+</pre></div>
+</div>
+<p>not to be confused with the <tt class="docutils literal"><span class="pre">libgap</span></tt> call, which converts Sage
+objects to GAP objects, for example strings to strings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="p">(</span><span class="s">&#39;List([1..10], i-&gt;i^2)&#39;</span><span class="p">)</span>
+<span class="go">&quot;List([1..10], i-&gt;i^2)&quot;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.libs.gap.element.GapElement_String&#39;&gt;</span>
+</pre></div>
+</div>
+<p>You can usually use the <a class="reference internal" href="element.html#sage.libs.gap.element.GapElement.sage" title="sage.libs.gap.element.GapElement.sage"><tt class="xref py py-meth docutils literal"><span class="pre">sage()</span></tt></a>
+method to convert the resulting GAP element back to its Sage
+equivalent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="go">10</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.integer.Integer&#39;&gt;</span>
+
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;5/3 + 7*E(3)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="go">7*zeta3 + 5/3</span>
+
+<span class="gp">sage: </span><span class="n">generators</span> <span class="o">=</span> <span class="n">libgap</span><span class="o">.</span><span class="n">AlternatingGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">GeneratorsOfGroup</span><span class="p">()</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">generators</span>   <span class="c"># a Sage list of Sage permutations!</span>
+<span class="go">[(1,2,3), (2,3,4)]</span>
+<span class="gp">sage: </span><span class="n">PermutationGroup</span><span class="p">(</span><span class="n">generators</span><span class="p">)</span><span class="o">.</span><span class="n">cardinality</span><span class="p">()</span>   <span class="c"># computed in Sage</span>
+<span class="go">12</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">AlternatingGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">Size</span><span class="p">()</span>            <span class="c"># computed in GAP</span>
+<span class="go">12</span>
+</pre></div>
+</div>
+<p>So far, the following GAP data types can be directly converted to the
+corresponding Sage datatype:</p>
+<ol class="arabic simple">
+<li>GAP booleans <tt class="docutils literal"><span class="pre">true</span></tt> / <tt class="docutils literal"><span class="pre">false</span></tt> to Sage booleans <tt class="docutils literal"><span class="pre">True</span></tt> /
+<tt class="docutils literal"><span class="pre">False</span></tt>. The third GAP boolean value <tt class="docutils literal"><span class="pre">fail</span></tt> raises a
+<tt class="docutils literal"><span class="pre">ValueError</span></tt>.</li>
+<li>GAP integers to Sage integers.</li>
+<li>GAP rational numbers to Sage rational numbers.</li>
+<li>GAP cyclotomic numbers to Sage cyclotomic numbers.</li>
+<li>GAP permutations to Sage permutations.</li>
+<li>The GAP containers <tt class="docutils literal"><span class="pre">List</span></tt> and <tt class="docutils literal"><span class="pre">rec</span></tt> are converted to Sage
+containers <tt class="docutils literal"><span class="pre">list</span></tt> and <tt class="docutils literal"><span class="pre">dict</span></tt>.  Furthermore, the
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement.sage" title="sage.libs.gap.element.GapElement.sage"><tt class="xref py py-meth docutils literal"><span class="pre">sage()</span></tt></a> method is applied
+recursively to the entries.</li>
+</ol>
+<p>Special support is available for the GAP container classes. GAP lists
+can be used as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">lst</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">]);</span>  <span class="n">lst</span>
+<span class="go">[ 1, 5, 7 ]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.libs.gap.element.GapElement_List&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lst</span> <span class="p">]</span>
+<span class="go">[1, 25, 49]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">&lt;type &#39;sage.libs.gap.element.GapElement_Integer&#39;&gt;</span>
+</pre></div>
+</div>
+<p>Note that you can access the elements of GAP <tt class="docutils literal"><span class="pre">List</span></tt> objects as you
+would expect from Python (with indexing starting at 0), but the
+elements are still of type
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement" title="sage.libs.gap.element.GapElement"><tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt></a>. The other GAP container
+type are records, which are similar to Python dictionaries. You can
+construct them directly from Python dictionaries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="p">({</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">123</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">456</span><span class="p">})</span>
+<span class="go">rec( a := 123, b := 456 )</span>
+</pre></div>
+</div>
+<p>Or get them as results of computations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rec</span> <span class="o">=</span> <span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;rec(a:=123, b:=456, Sym3:=SymmetricGroup(3))&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rec</span><span class="p">[</span><span class="s">&#39;Sym3&#39;</span><span class="p">]</span>
+<span class="go">Sym( [ 1 .. 3 ] )</span>
+<span class="gp">sage: </span><span class="nb">dict</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span>
+<span class="go">{&#39;Sym3&#39;: Sym( [ 1 .. 3 ] ), &#39;a&#39;: 123, &#39;b&#39;: 456}</span>
+</pre></div>
+</div>
+<p>The output is a Sage dictionary whose keys are Sage strings and whose
+Values are instances of <a class="reference internal" href="element.html#sage.libs.gap.element.GapElement" title="sage.libs.gap.element.GapElement"><tt class="xref py py-meth docutils literal"><span class="pre">GapElement()</span></tt></a>. So,
+for example, <tt class="docutils literal"><span class="pre">rec['a']</span></tt> is not a Sage integer. To recursively
+convert the entries into Sage objects, you should use the
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement.sage" title="sage.libs.gap.element.GapElement.sage"><tt class="xref py py-meth docutils literal"><span class="pre">sage()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rec</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="go">{&#39;Sym3&#39;: NotImplementedError(&#39;cannot construct equivalent Sage object&#39;,),</span>
+<span class="go"> &#39;a&#39;: 123,</span>
+<span class="go"> &#39;b&#39;: 456}</span>
+</pre></div>
+</div>
+<p>Now <tt class="docutils literal"><span class="pre">rec['a']</span></tt> is a Sage integer. We have not implemented the
+conversion of the GAP symmetric group to the Sage symmetric group yet,
+so you end up with a <tt class="docutils literal"><span class="pre">NotImplementedError</span></tt> exception object. The
+exception is returned and not raised so that you can work with the
+partial result.</p>
+<p>While we don&#8217;t directly support matrices yet, you can convert them to
+Gap List of Lists. These lists are then easily converted into Sage
+using the recursive expansion of the
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement.sage" title="sage.libs.gap.element.GapElement.sage"><tt class="xref py py-meth docutils literal"><span class="pre">sage()</span></tt></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;BlockMatrix([[1,1,[[1, 2],[ 3, 4]]], [1,2,[[9,10],[11,12]]], [2,2,[[5, 6],[ 7, 8]]]],2,2)&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span>
+<span class="go">&lt;block matrix of dimensions (2*2)x(2*2)&gt;</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">List</span><span class="p">()</span>   <span class="c"># returns a GAP List of Lists</span>
+<span class="go">[ [ 1, 2, 9, 10 ], [ 3, 4, 11, 12 ], [ 0, 0, 5, 6 ], [ 0, 0, 7, 8 ] ]</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">List</span><span class="p">()</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>   <span class="c"># returns a Sage list of lists</span>
+<span class="go">[[1, 2, 9, 10], [3, 4, 11, 12], [0, 0, 5, 6], [0, 0, 7, 8]]</span>
+<span class="gp">sage: </span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span>
+<span class="go">[ 1  2  9 10]</span>
+<span class="go">[ 3  4 11 12]</span>
+<span class="go">[ 0  0  5  6]</span>
+<span class="go">[ 0  0  7  8]</span>
+</pre></div>
+</div>
+<div class="section" id="using-the-libgap-c-library-from-cython">
+<h2>Using the libGAP C library from Cython<a class="headerlink" href="#using-the-libgap-c-library-from-cython" title="Permalink to this headline">¶</a></h2>
+<p>The lower-case <tt class="docutils literal"><span class="pre">libgap_foobar</span></tt> functions are ones that we added to
+make the libGAP C shared library. The <tt class="docutils literal"><span class="pre">libGAP_foobar</span></tt> methods are
+the original GAP methods simply prefixed with the string
+<tt class="docutils literal"><span class="pre">libGAP_</span></tt>. The latter were originally not designed to be in a
+library, so some care needs to be taken to call them.</p>
+<p>In particular, you must call <tt class="docutils literal"><span class="pre">libgap_mark_stack_bottom()</span></tt> in every
+function that calls into the libGAP C functions. The reason is that
+the GAP memory manager will automatically keep objects alive that are
+referenced in local (stack-allocated) variables. While convenient,
+this requires to look through the stack to find anything that looks
+like an address to a memory bag. But this requires vigilance against
+the following pattern:</p>
+<div class="highlight-python"><div class="highlight"><pre>cdef f()
+  libgap_mark_stack_bottom()
+  libGAP_function()
+
+cdef g()
+  libgap_mark_stack_bottom();
+  f()                #  f() changed the stack bottom marker
+  libGAP_function()  #  boom
+</pre></div>
+</div>
+<p>The solution is to re-order <tt class="docutils literal"><span class="pre">g()</span></tt> to first call <tt class="docutils literal"><span class="pre">f()</span></tt>. In order to
+catch this error, it is recommended that you wrap calls into libGAP in
+<tt class="docutils literal"><span class="pre">libgap_enter</span></tt> / <tt class="docutils literal"><span class="pre">libgap_exit</span></tt> blocks and not call
+<tt class="docutils literal"><span class="pre">libgap_mark_stack_bottom</span></tt> manually. So instead, always write</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>cdef f()</dt>
+<dd>libgap_enter()
+libGAP_function()
+libgap_exit()</dd>
+<dt>cdef g()</dt>
+<dd>f()
+libgap_enter()
+libGAP_function()
+libgap_exit()</dd>
+</dl>
+</div></blockquote>
+<p>If you accidentally call <tt class="docutils literal"><span class="pre">libgap_enter()</span></tt> twice then an error
+message is printed to help you debug this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.gap.util</span> <span class="kn">import</span> <span class="n">error_enter_libgap_block_twice</span>
+<span class="gp">sage: </span><span class="n">error_enter_libgap_block_twice</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">Entered a critical block twice</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<blockquote>
+<div><ul class="simple">
+<li>William Stein, Robert Miller (2009-06-23): first version</li>
+<li>Volker Braun, Dmitrii Pasechnik, Ivan Andrus (2011-03-25, Sage Days 29):
+almost complete rewrite; first usable version.</li>
+<li>Volker Braun (2012-08-28, GAP/Singular workshop): update to
+gap-4.5.5, make it ready for public consumption.</li>
+</ul>
+</div></blockquote>
+<dl class="class">
+<dt id="sage.libs.gap.libgap.Gap">
+<em class="property">class </em><tt class="descclassname">sage.libs.gap.libgap.</tt><tt class="descname">Gap</tt><a class="headerlink" href="#sage.libs.gap.libgap.Gap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.parent.Parent</span></tt></a></p>
+<p>The libgap interpreter object.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This object must be instantiated exactly once by the
+libgap. Always use the provided <tt class="docutils literal"><span class="pre">libgap</span></tt> instance, and never
+instantiate <a class="reference internal" href="#sage.libs.gap.libgap.Gap" title="sage.libs.gap.libgap.Gap"><tt class="xref py py-class docutils literal"><span class="pre">Gap</span></tt></a> manually.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;SymmetricGroup(4)&#39;</span><span class="p">)</span>
+<span class="go">Sym( [ 1 .. 4 ] )</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">libgap</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;_test_category&#39;</span><span class="p">,</span> <span class="s">&#39;_test_elements&#39;</span><span class="p">,</span> <span class="s">&#39;_test_pickling&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.libs.gap.libgap.Gap.Element">
+<tt class="descname">Element</tt><a class="headerlink" href="#sage.libs.gap.libgap.Gap.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.collect">
+<tt class="descname">collect</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.collect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually run the garbage collector</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.count_GAP_objects">
+<tt class="descname">count_GAP_objects</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.count_GAP_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of GAP objects that are being tracked by
+libGAP</p>
+<p>OUTPUT:</p>
+<p>An integer</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">count_GAP_objects</span><span class="p">()</span>   <span class="c"># random output</span>
+<span class="go">5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.eval">
+<tt class="descname">eval</tt><big>(</big><em>gap_command</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a gap command and wrap the result.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">gap_command</span></tt> &#8211; a string containing a valid gap command
+without the trailing semicolon.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;&quot;string&quot;&#39;</span><span class="p">)</span>
+<span class="go">&quot;string&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.function_factory">
+<tt class="descname">function_factory</tt><big>(</big><em>function_name</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.function_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a GAP function wrapper</p>
+<p>This is almost the same as calling
+<tt class="docutils literal"><span class="pre">libgap.eval(function_name)</span></tt>, but faster and makes it
+obvious in your code that you are wrapping a function.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">function_name</span></tt> &#8211; string. The name of a GAP function.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A function wrapper
+<a class="reference internal" href="element.html#sage.libs.gap.element.GapElement_Function" title="sage.libs.gap.element.GapElement_Function"><tt class="xref py py-class docutils literal"><span class="pre">GapElement_Function</span></tt></a> for the
+GAP function. Calling it from Sage is equivalent to calling
+the wrapped function from GAP.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">function_factory</span><span class="p">(</span><span class="s">&#39;Print&#39;</span><span class="p">)</span>
+<span class="go">&lt;Gap function &quot;Print&quot;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.get_global">
+<tt class="descname">get_global</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.get_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a GAP global variable</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">variable</span></tt> &#8211; string. The variable name.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="element.html#sage.libs.gap.element.GapElement" title="sage.libs.gap.element.GapElement"><tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt></a> wrapping the GAP
+output. A <tt class="docutils literal"><span class="pre">ValueError</span></tt> is raised if there is no such
+variable in GAP.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">unset_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError: libGAP: Error, VAL_GVAR</span>: <span class="n-Identifier">No value bound to FooBar</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.global_context">
+<tt class="descname">global_context</tt><big>(</big><em>variable</em>, <em>value</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.global_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temporarily change a global variable</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">variable</span></tt> &#8211; string. The variable name.</li>
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; anything that defines a GAP object.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A context manager that sets/reverts the given global variable.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">libgap</span><span class="o">.</span><span class="n">global_context</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<span class="go">....:     print libgap.get_global(&#39;FooBar&#39;)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.mem">
+<tt class="descname">mem</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.mem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return information about libGAP memory usage</p>
+<p>The GAP workspace is partitioned into 5 pieces (see gasman.c
+in the GAP sources for more details):</p>
+<ul class="simple">
+<li>The <strong>masterpointer area</strong>  contains  all the masterpointers  of  the bags.</li>
+<li>The <strong>old bags area</strong> contains the bodies of all the  bags that survived at
+least one  garbage collection.  This area is  only  scanned for dead bags
+during a full garbage collection.</li>
+<li>The <strong>young bags area</strong> contains the bodies of all  the bags that have been
+allocated since the  last garbage collection.  This  area is scanned  for
+dead  bags during  each garbage  collection.</li>
+<li>The <strong>allocation area</strong> is the storage  that is available for allocation of
+new bags.  When a new bag is allocated the storage for  the body is taken
+from  the beginning of   this area,  and  this  area  is  correspondingly
+reduced.   If  the body does not   fit in the  allocation  area a garbage
+collection is  performed.</li>
+<li>The <strong>unavailable  area</strong> is  the free  storage that  is not  available for
+allocation.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>This function returns a tuple containing 5 integers. Each is
+the size (in bytes) of the five partitions of the
+workspace. This will potentially change after each GAP garbage
+collection.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c"># random output</span>
+<span class="go">(1048576, 6706782, 0, 960930, 0)</span>
+
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">FreeGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">&lt;free group on the generators [ f1, f2, f3 ]&gt;</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c"># random output</span>
+<span class="go">(1048576, 6706782, 47571, 913359, 0)</span>
+
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c"># random output</span>
+<span class="go">(1048576, 6734785, 0, 998463, 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.set_global">
+<tt class="descname">set_global</tt><big>(</big><em>variable</em>, <em>value</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.set_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a GAP global variable</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">variable</span></tt> &#8211; string. The variable name.</li>
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; anything that defines a GAP object.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">unset_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError: libGAP: Error, VAL_GVAR</span>: <span class="n-Identifier">No value bound to FooBar</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.show">
+<tt class="descname">show</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print statistics about the GAP owned object list</p>
+<p>Slight complication is that we want to do it without accessing
+libgap objects, so we don&#8217;t create new GapElements as a side
+effect.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">456</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">789</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c"># random output</span>
+<span class="go">11 LibGAP elements currently alive</span>
+<span class="go">rec( full := rec( cumulative := 122, deadbags := 9,</span>
+<span class="go">deadkb := 0, freekb := 7785, livebags := 304915,</span>
+<span class="go">livekb := 47367, time := 33, totalkb := 68608 ),</span>
+<span class="go">nfull := 3, npartial := 14 )</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.trait_names">
+<tt class="descname">trait_names</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all Gap function names.</p>
+<p>OUTPUT:</p>
+<p>A list of strings.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">libgap</span><span class="o">.</span><span class="n">trait_names</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1000</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.unset_global">
+<tt class="descname">unset_global</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.unset_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a GAP global variable</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">variable</span></tt> &#8211; string. The variable name.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">unset_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError: libGAP: Error, VAL_GVAR</span>: <span class="n-Identifier">No value bound to FooBar</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.zero">
+<tt class="descname">zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return (integer) zero in GAP.</p>
+<p>OUTPUT:</p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">zero</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">zero_element</span><span class="p">()</span>
+<span class="go">doctest:...: DeprecationWarning: zero_element is deprecated. Please use zero instead.</span>
+<span class="go">See http://trac.sagemath.org/17694 for details.</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.zero_element">
+<tt class="descname">zero_element</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.libs.gap.libgap.Gap.zero_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated: Use <a class="reference internal" href="#sage.libs.gap.libgap.Gap.zero" title="sage.libs.gap.libgap.Gap.zero"><tt class="xref py py-meth docutils literal"><span class="pre">zero()</span></tt></a> instead.
+See <a class="reference external" href="http://trac.sagemath.org/17694">trac ticket #17694</a> for details.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">libGAP shared library Interface to GAP</a><ul>
+<li><a class="reference internal" href="#using-the-libgap-c-library-from-cython">Using the libGAP C library from Cython</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="util.html"
+                                  title="previous chapter">Utility functions for libGAP</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="test.html"
+                                  title="next chapter">Short tests for libGAP</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/libs/gap/libgap.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test.html" title="Short tests for libGAP"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="util.html" title="Utility functions for libGAP"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

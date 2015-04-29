@@ -1,0 +1,771 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Dense univariate polynomials over \(\ZZ\), implemented using FLINT. &mdash; Sage Reference Manual v6.6: Polynomial Rings</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Polynomial Rings" href="../../../index.html" />
+    <link rel="up" title="Univariate Polynomials and Polynomial Rings" href="../../../polynomial_rings_univar.html" />
+    <link rel="next" title="Dense univariate polynomials over \(\ZZ\), implemented using NTL." href="polynomial_integer_dense_ntl.html" />
+    <link rel="prev" title="Univariate polynomials over number fields." href="polynomial_number_field.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polynomial_integer_dense_ntl.html" title="Dense univariate polynomials over \(\ZZ\), implemented using NTL."
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="polynomial_number_field.html" title="Univariate polynomials over number fields."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_univar.html" accesskey="U">Univariate Polynomials and Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dense-univariate-polynomials-over-implemented-using-flint">
+<span id="sage-rings-polynomial-polynomial-integer-dense-flint"></span><h1>Dense univariate polynomials over <span class="math">\(\ZZ\)</span>, implemented using FLINT.<a class="headerlink" href="#dense-univariate-polynomials-over-implemented-using-flint" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.polynomial.polynomial_integer_dense_flint"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>David Harvey: rewrote to talk to NTL directly, instead of via ntl.pyx
+(2007-09); a lot of this was based on Joel Mohler&#8217;s recent rewrite of the NTL
+wrapper</li>
+<li>David Harvey: split off from polynomial_element_generic.py (2007-09)</li>
+<li>Burcin Erocal: rewrote to use FLINT (2008-06-16)</li>
+</ul>
+<p>TESTS:</p>
+<p>We check that the buggy gcd is fixed (see trac:<span class="math">\(17816\)</span>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">q</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">X</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">12</span> <span class="o">-</span> <span class="mi">8</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">11</span> <span class="o">-</span> <span class="mi">24</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">10</span> <span class="o">-</span> <span class="mi">48</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">9</span> <span class="o">-</span> <span class="mi">84</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">8</span> <span class="o">-</span> <span class="mi">92</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">7</span> <span class="o">-</span> <span class="mi">92</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">6</span> <span class="o">-</span> <span class="mi">70</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">5</span> <span class="o">-</span> <span class="mi">50</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="mi">27</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">13</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">q</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">Y</span> <span class="o">=</span> <span class="n">q</span><span class="o">^</span><span class="mi">13</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">q</span><span class="o">^</span><span class="mi">10</span> <span class="o">-</span> <span class="n">q</span><span class="o">^</span><span class="mi">9</span>
+<span class="gp">sage: </span><span class="n">gcd</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.polynomial_integer_dense_flint.</tt><tt class="descname">Polynomial_integer_dense_flint</tt><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="polynomial_element.html#sage.rings.polynomial.polynomial_element.Polynomial" title="sage.rings.polynomial.polynomial_element.Polynomial"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.polynomial_element.Polynomial</span></tt></a></p>
+<p>A dense polynomial over the integers, implemented via FLINT.</p>
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.content">
+<tt class="descname">content</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the greatest common divisor of the coefficients of this
+polynomial. The sign is the sign of the leading coefficient.  The
+content of the zero polynomial is zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">14</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">123456789123456789123456789123456789123456789</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">123456789123456789123456789123456789123456789</span>
+</pre></div>
+</div>
+<p>Verify that <a class="reference external" href="http://trac.sagemath.org/13053">trac ticket #13053</a> has been resolved:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.degree">
+<tt class="descname">degree</tt><big>(</big><em>gen=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the degree of this polynomial.  The zero polynomial
+has degree -1.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.disc">
+<tt class="descname">disc</tt><big>(</big><em>proof=True</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.disc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the discriminant of self, which is by definition</p>
+<div class="math">
+\[(-1)^{m(m-1)/2} \mathop{\mathrm{resultant}}(a, a')/\mathop{\mathrm{lc}}(a),\]</div>
+<p>where <span class="math">\(m = \mathop{\mathrm{deg}}(a)\)</span>, and <span class="math">\(\mathop{\mathrm{lc}}(a)\)</span> is
+the leading coefficient of a. If <tt class="docutils literal"><span class="pre">proof</span></tt> is False (the default is
+True), then this function may use a randomized strategy that errors
+with probability no more than <span class="math">\(2^{-80}\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">discriminant</span><span class="p">()</span>
+<span class="go">-339</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">discriminant</span><span class="p">(</span><span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">-339</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Confirm that <a class="reference external" href="http://trac.sagemath.org/17603">trac ticket #17603</a> has been applied:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">disc</span><span class="p">()</span>
+<span class="go">-339</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.discriminant">
+<tt class="descname">discriminant</tt><big>(</big><em>proof=True</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.discriminant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the discriminant of self, which is by definition</p>
+<div class="math">
+\[(-1)^{m(m-1)/2} \mathop{\mathrm{resultant}}(a, a')/\mathop{\mathrm{lc}}(a),\]</div>
+<p>where <span class="math">\(m = \mathop{\mathrm{deg}}(a)\)</span>, and <span class="math">\(\mathop{\mathrm{lc}}(a)\)</span> is
+the leading coefficient of a. If <tt class="docutils literal"><span class="pre">proof</span></tt> is False (the default is
+True), then this function may use a randomized strategy that errors
+with probability no more than <span class="math">\(2^{-80}\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">discriminant</span><span class="p">()</span>
+<span class="go">-339</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">discriminant</span><span class="p">(</span><span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">-339</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Confirm that <a class="reference external" href="http://trac.sagemath.org/17603">trac ticket #17603</a> has been applied:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">disc</span><span class="p">()</span>
+<span class="go">-339</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor">
+<tt class="descname">factor</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function overrides the generic polynomial factorization to
+make a somewhat intelligent decision to use Pari or NTL based on
+some benchmarking.</p>
+<p>Note: This function factors the content of the polynomial,
+which can take very long if it&#8217;s a really big integer.  If you
+do not need the content factored, divide it out of your
+polynomial before calling this function.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;=</span><span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">4</span><span class="o">-</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+<span class="go">(x - 1) * (x + 1) * (x^2 + 1)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="n">x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+<span class="go">(-1) * (x - 1)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span><span class="o">.</span><span class="n">unit</span><span class="p">()</span>
+<span class="go">-1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">x</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+<span class="go">(-1) * 2 * 3 * 5 * x</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor_mod">
+<tt class="descname">factor_mod</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor_mod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the factorization of self modulo the prime <span class="math">\(p\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">p</span></tt> &#8211; prime</li>
+</ul>
+<p>OUTPUT:</p>
+<p>factorization of self reduced modulo p.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">9</span><span class="p">)</span> <span class="o">+</span> <span class="n">x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor_mod</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor_mod</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">factorization of 0 not defined</span>
+
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor_mod</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">(2) * x * (x + 5)^2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor_padic">
+<tt class="descname">factor_padic</tt><big>(</big><em>p</em>, <em>prec=10</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.factor_padic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <span class="math">\(p\)</span>-adic factorization of self to given precision.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">p</span></tt> &#8211; prime</li>
+<li><tt class="docutils literal"><span class="pre">prec</span></tt> &#8211; integer; the precision</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>factorization of <tt class="docutils literal"><span class="pre">self</span></tt> over the completion at <span class="math">\(p\)</span>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor_padic</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">((1 + O(5^4))*x + (2 + 5 + 2*5^2 + 5^3 + O(5^4))) * ((1 + O(5^4))*x + (3 + 3*5 + 2*5^2 + 3*5^3 + O(5^4)))</span>
+</pre></div>
+</div>
+<p>A more difficult example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">factor_padic</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="go">(4 + O(5^10)) * ((5 + O(5^11)))^2 * ((1 + O(5^10))*x + (5 + O(5^10)))^2 * ((5 + O(5^10))*x + (1 + O(5^10)))^2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.gcd">
+<tt class="descname">gcd</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.gcd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the GCD of self and right.  The leading
+coefficient need not be 1.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">47</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">38</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">47</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">6*x + 47</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.is_zero">
+<tt class="descname">is_zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.is_zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if self is equal to zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.lcm">
+<tt class="descname">lcm</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.lcm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the LCM of self and right.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">47</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">38</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">47</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">lcm</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">h</span>
+<span class="go">126*x^6 + 951*x^5 + 486*x^4 + 6034*x^3 + 585*x^2 + 3706*x + 1786</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">==</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">47</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">38</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new copy of the list of the underlying
+elements of self.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span><span class="o">.</span><span class="mi">0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">17</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="go">[-17, 3, 0, 1]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.pseudo_divrem">
+<tt class="descname">pseudo_divrem</tt><big>(</big><em>B</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.pseudo_divrem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write <tt class="docutils literal"><span class="pre">A</span> <span class="pre">=</span> <span class="pre">self</span></tt>.  This function computes polynomials <span class="math">\(Q\)</span> and <span class="math">\(R\)</span>
+and an integer <span class="math">\(d\)</span> such that</p>
+<div class="math">
+\[\mathop{\mathrm{lead}}(B)^d A = B Q + R\]</div>
+<p>where R has degree less than that of B.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">B</span></tt> &#8211; a polynomial over <span class="math">\(\ZZ\)</span></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Q</span></tt>, <tt class="docutils literal"><span class="pre">R</span></tt> &#8211; polynomials</li>
+<li><tt class="docutils literal"><span class="pre">d</span></tt> &#8211; nonnegative integer</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">));</span> <span class="n">B</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">R</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">pseudo_divrem</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">d</span>
+<span class="go">(9*x^7 + 8*x^6 + 16*x^5 + 14*x^4 + 21*x^3 + 18*x^2 + 24*x + 20, 75*x + 60, 1)</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">leading_coefficient</span><span class="p">()</span><span class="o">^</span><span class="n">d</span> <span class="o">*</span> <span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="o">*</span><span class="n">Q</span> <span class="o">+</span> <span class="n">R</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.quo_rem">
+<tt class="descname">quo_rem</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.quo_rem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to divide self by right, and return a quotient and remainder.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">));</span> <span class="n">g</span> <span class="o">=</span> <span class="n">R</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="p">,</span> <span class="n">r</span>
+<span class="go">(9*x^7 + 8*x^6 + 16*x^5 + 14*x^4 + 21*x^3 + 18*x^2 + 24*x + 20, 25*x + 20)</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">*</span><span class="n">g</span> <span class="o">+</span> <span class="n">r</span> <span class="o">==</span> <span class="n">f</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ZeroDivisionError</span>: <span class="n-Identifier">division by zero polynomial</span>
+
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(x^2 + 3, 0)</span>
+
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(0, x^2)</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">z</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">z</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">(0, 0)</span>
+<span class="gp">sage: </span><span class="n">z</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(0, 0)</span>
+<span class="gp">sage: </span><span class="n">z</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(0, 0)</span>
+</pre></div>
+</div>
+<p>Ticket #383, make sure things get coerced correctly:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="n">parent</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">x</span><span class="o">/</span><span class="mi">2</span><span class="p">;</span> <span class="n">parent</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">(2, 1)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">(1/2, -1/2)</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">g</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(0, x + 1)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(x + 2, 2*x + 1)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.real_root_intervals">
+<tt class="descname">real_root_intervals</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.real_root_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns isolating intervals for the real roots of this
+polynomial.</p>
+<p>EXAMPLE:
+We compute the roots of the characteristic polynomial of some
+Salem numbers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">6</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">real_root_intervals</span><span class="p">()</span>
+<span class="go">[((1/2, 3/4), 1), ((1, 3/2), 1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.resultant">
+<tt class="descname">resultant</tt><big>(</big><em>other</em>, <em>proof=True</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.resultant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the resultant of self and other, which must lie in the same
+polynomial ring.</p>
+<p>If <tt class="docutils literal"><span class="pre">proof</span> <span class="pre">=</span> <span class="pre">False</span></tt> (the default is <tt class="docutils literal"><span class="pre">proof=True</span></tt>), then this function may
+use a randomized strategy that errors with probability no more than
+<span class="math">\(2^{-80}\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>other &#8211; a polynomial</li>
+</ul>
+<p>OUTPUT:</p>
+<p>an element of the base ring of the polynomial ring</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span><span class="o">.</span><span class="mi">0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>  <span class="n">g</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">resultant</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">r</span>
+<span class="go">-8</span>
+<span class="gp">sage: </span><span class="n">r</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">ZZ</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.reverse">
+<tt class="descname">reverse</tt><big>(</big><em>degree=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.reverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a polynomial with the coefficients of this polynomial reversed.</p>
+<p>If an optional degree argument is given the coefficient list will be
+truncated or zero padded as necessary and the reverse polynomial will
+have the specified degree.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">R</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]);</span> <span class="n">p</span>
+<span class="go">4*x^3 + 3*x^2 + 2*x + 1</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="go">x^3 + 2*x^2 + 3*x + 4</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">x^6 + 2*x^5 + 3*x^4 + 4*x^3</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">x^2 + 2*x + 3</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mf">1.5</span><span class="n">r</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">degree argument must be a non-negative integer, got 1.5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.revert_series">
+<tt class="descname">revert_series</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.revert_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a polynomial <span class="math">\(f\)</span> such that <span class="math">\(f(self(x)) = self(f(x)) = x mod x^n\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">t</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">t</span><span class="o">^</span><span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">revert_series</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">2*t^5 + t^3 + t</span>
+
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">revert_series</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">argument n must be a non-negative integer, got -1</span>
+
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="o">-</span> <span class="n">t</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">t</span><span class="o">^</span><span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">revert_series</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">self must have constant coefficient 0 and a unit for coefficient t^1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.squarefree_decomposition">
+<tt class="descname">squarefree_decomposition</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.squarefree_decomposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the square-free decomposition of self.  This is
+a partial factorization of self into square-free, relatively
+prime polynomials.</p>
+<p>This is a wrapper for the NTL function SquareFreeDecomp.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">squarefree_decomposition</span><span class="p">()</span>
+<span class="go">(x - 4) * (x^2 - 3*x + 2)^2 * (x - 3)^3</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">37</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">squarefree_decomposition</span><span class="p">()</span>
+<span class="go">(37) * (x - 4) * (x^2 - 3*x + 2)^2 * (x - 3)^3</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Verify that <a class="reference external" href="http://trac.sagemath.org/13053">trac ticket #13053</a> has been resolved:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;FLINT&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">=-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">squarefree_decomposition</span><span class="p">()</span>
+<span class="go">(-1) * x^2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.xgcd">
+<tt class="descname">xgcd</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint.xgcd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a triple <tt class="docutils literal"><span class="pre">(g,s,t)</span></tt> such that <span class="math">\(g = s*self + t*right\)</span> and such
+that <span class="math">\(g\)</span> is the <span class="math">\(gcd\)</span> of <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">right</span></tt> up to a divisor of the
+resultant of <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">other</span></tt>.</p>
+<p>As integer polynomials do not form a principal ideal domain, it is not
+always possible given <span class="math">\(a\)</span> and <span class="math">\(b\)</span> to find a pair <span class="math">\(s,t\)</span> such that
+<span class="math">\(gcd(a,b) = sa + tb\)</span>. Take <span class="math">\(a=x+2\)</span> and <span class="math">\(b=x+4\)</span> as an example for which the
+gcd is <span class="math">\(1\)</span> but the best you can achieve in the Bezout identity is <span class="math">\(2\)</span>.</p>
+<p>If <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">right</span></tt> are coprime as polynomials over the
+rationals, then <tt class="docutils literal"><span class="pre">g</span></tt> is guaranteed to be the resultant of
+<tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">right</span></tt>, as a constant polynomial.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">(2, -1, 1)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">resultant</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">;</span> <span class="n">G</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span>
+<span class="go">(27*x^2 + 54, 1, -x^2 - 3*x - 9)</span>
+<span class="gp">sage: </span><span class="n">u</span><span class="o">*</span><span class="n">F</span> <span class="o">+</span> <span class="n">v</span><span class="o">*</span><span class="n">G</span>
+<span class="go">27*x^2 + 54</span>
+
+<span class="gp">sage: </span><span class="n">zero</span> <span class="o">=</span> <span class="n">P</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">zero</span><span class="p">)</span>
+<span class="go">(x, 1, 0)</span>
+<span class="gp">sage: </span><span class="n">zero</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(x, 0, 1)</span>
+
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">^</span><span class="mi">3</span><span class="p">;</span> <span class="n">G</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span>
+<span class="go">(2985984, -432*x + 8208, 432*x^2 + 864*x + 14256)</span>
+<span class="gp">sage: </span><span class="n">u</span><span class="o">*</span><span class="n">F</span> <span class="o">+</span> <span class="n">v</span><span class="o">*</span><span class="n">G</span>
+<span class="go">2985984</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/17675">trac ticket #17675</a> is fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">(2, 0, 1)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">zero</span><span class="p">()</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">(2, 0, 1)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">zero</span><span class="p">())</span>
+<span class="go">(2, 1, 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="polynomial_number_field.html"
+                                  title="previous chapter">Univariate polynomials over number fields.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="polynomial_integer_dense_ntl.html"
+                                  title="next chapter">Dense univariate polynomials over <span class="math">\(\ZZ\)</span>, implemented using NTL.</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/rings/polynomial/polynomial_integer_dense_flint.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polynomial_integer_dense_ntl.html" title="Dense univariate polynomials over \(\ZZ\), implemented using NTL."
+             >next</a> |</li>
+        <li class="right" >
+          <a href="polynomial_number_field.html" title="Univariate polynomials over number fields."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_univar.html" >Univariate Polynomials and Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

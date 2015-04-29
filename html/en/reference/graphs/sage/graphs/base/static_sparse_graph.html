@@ -1,0 +1,421 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Static Sparse Graphs &mdash; Sage Reference Manual v6.6: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Graph Theory" href="../../../index.html" />
+    <link rel="next" title="Static sparse graph backend" href="static_sparse_backend.html" />
+    <link rel="prev" title="Static dense graphs" href="static_dense_graph.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="static_sparse_backend.html" title="Static sparse graph backend"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="static_dense_graph.html" title="Static dense graphs"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="static-sparse-graphs">
+<span id="sage-graphs-base-static-sparse-graph"></span><h1>Static Sparse Graphs<a class="headerlink" href="#static-sparse-graphs" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.base.static_sparse_graph"></span><div class="section" id="what-is-the-point">
+<h2>What is the point ?<a class="headerlink" href="#what-is-the-point" title="Permalink to this headline">¶</a></h2>
+<p>This class implements a Cython (di)graph structure made for efficiency. The
+graphs are <em>static</em>, i.e. no add/remove vertex/edges methods are available, nor
+can they easily or efficiently be implemented within this data structure.</p>
+<p>The data structure, however, is made to save the maximum amount of computations
+for graph algorithms whose main operation is to <em>list the out-neighbours of a
+vertex</em> (which is precisely what BFS, DFS, distance computations and the
+flow-related stuff waste their life on).</p>
+<p>The code contained in this module is written C-style. While Sage needs a class
+for static graphs (not available today, i.e. 2012-01-13) it is not what we try
+to address here. The purpose is efficiency and simplicity.</p>
+<p>Author:</p>
+<ul class="simple">
+<li>Nathann Cohen (2011)</li>
+</ul>
+</div>
+<div class="section" id="data-structure">
+<h2>Data structure<a class="headerlink" href="#data-structure" title="Permalink to this headline">¶</a></h2>
+<img alt="../../../_images/structure.png" src="../../../_images/structure.png" />
+<p>The data structure is actually pretty simple and compact. <tt class="docutils literal"><span class="pre">short_digraph</span></tt> has
+five fields</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> (<tt class="docutils literal"><span class="pre">int</span></tt>) &#8211; the number of vertices in the graph.</li>
+<li><tt class="docutils literal"><span class="pre">m</span></tt> (<tt class="docutils literal"><span class="pre">int</span></tt>) &#8211; the number of edges in the graph.</li>
+<li><tt class="docutils literal"><span class="pre">edges</span></tt> (<tt class="docutils literal"><span class="pre">uint32_t</span> <span class="pre">*</span></tt>) &#8211; array whose length is the number of edges of
+the graph.</li>
+<li><tt class="docutils literal"><span class="pre">neighbors</span></tt> (<tt class="docutils literal"><span class="pre">uint32_t</span> <span class="pre">**</span></tt>) &#8211; this array has size <span class="math">\(n+1\)</span>, and
+describes how the data of <tt class="docutils literal"><span class="pre">edges</span></tt> should be read : the neighbors of
+vertex <span class="math">\(i\)</span> are the elements of <tt class="docutils literal"><span class="pre">edges</span></tt> addressed by
+<tt class="docutils literal"><span class="pre">neighbors[i]...neighbors[i+1]-1</span></tt>. The element <tt class="docutils literal"><span class="pre">neighbors[n]</span></tt>, which
+corresponds to no vertex (they are numbered from <span class="math">\(0\)</span> to <span class="math">\(n-1\)</span>) is present
+so that it remains easy to enumerate the neighbors of vertex <span class="math">\(n-1\)</span> : the
+last of them is the element addressed by <tt class="docutils literal"><span class="pre">neighbors[n]-1</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">edge_labels</span></tt> &#8211; this cython list associates a label to each edge of the
+graph. If a given edge is represented by <tt class="docutils literal"><span class="pre">edges[i]</span></tt>, this its associated
+label can be found at <tt class="docutils literal"><span class="pre">edge_labels[i]</span></tt>. This object is usually NULL,
+unless the call to <tt class="docutils literal"><span class="pre">init_short_digraph</span></tt> explicitly requires the labels
+to be stored in the data structure.</li>
+</ul>
+</div></blockquote>
+<p>In the example given above, vertex 0 has 2,3,5,7,8 and 9 as out-neighbors, but
+not 4, which is an out-neighbour of vertex 1. Vertex <span class="math">\(n-1\)</span> has 2, 5, 8 and 9 as
+out-neighbors. <span class="math">\(\text{neighbors[n]}\)</span> points toward the cell immediately <em>after</em>
+the end of <span class="math">\(\text{edges}\)</span>, hence <em>outside of the allocated memory</em>. It is used
+to indicate the end of the outneighbors of vertex <span class="math">\(n-1\)</span></p>
+<p><strong>Iterating over the edges</strong></p>
+<p>This is <em>the one thing</em> to have in mind when working with this data structure:</p>
+<div class="highlight-python"><div class="highlight"><pre>cdef list_edges(short_digraph g):
+    cdef int i, j
+    for i in range(g.n):
+        for j in range(g.neighbors[i+1]-g.neighbors[i]):
+            print &quot;There is an edge from&quot;,str(i),&quot;to&quot;,g.neighbors[i][j]
+</pre></div>
+</div>
+<p><strong>Advantages</strong></p>
+<p>Two great points :</p>
+<blockquote>
+<div><ul class="simple">
+<li>The neighbors of a vertex are C types, and are contiguous in memory.</li>
+<li>Storing such graphs is incredibly cheaper than storing Python structures.</li>
+</ul>
+</div></blockquote>
+<p>Well, I think it would be hard to have anything more efficient than that to
+enumerate out-neighbors in sparse graphs ! :-)</p>
+</div>
+<div class="section" id="technical-details">
+<h2>Technical details<a class="headerlink" href="#technical-details" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>When creating a <tt class="docutils literal"><span class="pre">fast_digraph</span></tt> from a <tt class="docutils literal"><span class="pre">Graph</span></tt> or <tt class="docutils literal"><span class="pre">DiGraph</span></tt> named
+<tt class="docutils literal"><span class="pre">G</span></tt>, the <span class="math">\(i^{\text{th}}\)</span> vertex corresponds to <tt class="docutils literal"><span class="pre">G.vertices()[i]</span></tt></li>
+<li>Some methods return <tt class="docutils literal"><span class="pre">bitset_t</span></tt> objets when lists could be
+expected. There is a very useful <tt class="docutils literal"><span class="pre">bitset_list</span></tt> function for this kind of
+problems :-)</li>
+<li>When the edges are labelled, most of the space taken by this graph is
+taken by edge labels. If no edge is labelled then this space is not
+allocated, but if <em>any</em> edge has a label then a (possibly empty) label is
+stored for each edge, which can double the memory needs.</li>
+<li>The data structure stores the number of edges, even though it appears that
+this number can be reconstructed with
+<tt class="docutils literal"><span class="pre">g.neighbors[n]-g.neighbors[0]</span></tt>. The trick is that not all elements of
+the <tt class="docutils literal"><span class="pre">g.edges</span></tt> array are necessarily used : when an undirected graph
+contains loops, only one entry of the array of size <span class="math">\(2m\)</span> is used to store
+it, instead of the expected two. Storing the number of edges is the only
+way to avoid an uselessly costly computation to obtain the number of edges
+of an undirected, looped, AND labelled graph (think of several loops on
+the same vertex with different labels).</li>
+<li>The codes of this module are well documented, and many answers can be
+found directly in the code.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="cython-functions">
+<h2>Cython functions<a class="headerlink" href="#cython-functions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="contentstable docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">init_short_digraph(short_digraph</span> <span class="pre">g,</span> <span class="pre">G)</span></tt></td>
+<td>Initializes <tt class="docutils literal"><span class="pre">short_digraph</span> <span class="pre">g</span></tt> from a Sage (Di)Graph.</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">int</span> <span class="pre">n_edges(short_digraph</span> <span class="pre">g)</span></tt></td>
+<td>Returns the number of edges in <tt class="docutils literal"><span class="pre">g</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">int</span> <span class="pre">out_degree(short_digraph</span> <span class="pre">g,</span> <span class="pre">int</span> <span class="pre">i)</span></tt></td>
+<td>Returns the out-degree of vertex <span class="math">\(i\)</span> in <tt class="docutils literal"><span class="pre">g</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">has_edge(short_digraph</span> <span class="pre">g,</span> <span class="pre">int</span> <span class="pre">u,</span> <span class="pre">int</span> <span class="pre">v)</span></tt></td>
+<td>Tests the existence of an edge.</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">edge_label(short_digraph</span> <span class="pre">g,</span> <span class="pre">int</span> <span class="pre">*</span> <span class="pre">edge)</span></tt></td>
+<td>Returns the label associated with a given edge</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">init_empty_copy(short_digraph</span> <span class="pre">dst,</span> <span class="pre">short_digraph</span> <span class="pre">src)</span></tt></td>
+<td>Allocates <tt class="docutils literal"><span class="pre">dst</span></tt> so that it can contain as many vertices and edges as <tt class="docutils literal"><span class="pre">src</span></tt>.</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">init_reverse(short_digraph</span> <span class="pre">dst,</span> <span class="pre">short_digraph</span> <span class="pre">src)</span></tt></td>
+<td>Initializes <tt class="docutils literal"><span class="pre">dst</span></tt> to a copy of <tt class="docutils literal"><span class="pre">src</span></tt> with all edges in the opposite direction.</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">free_short_digraph(short_digraph</span> <span class="pre">g)</span></tt></td>
+<td>Free the ressources used by <tt class="docutils literal"><span class="pre">g</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Connectivity</strong></p>
+<p><tt class="docutils literal"><span class="pre">can_be_reached_from(short_digraph</span> <span class="pre">g,</span> <span class="pre">int</span> <span class="pre">src,</span> <span class="pre">bitset_t</span> <span class="pre">reached)</span></tt></p>
+<blockquote>
+<div>Assuming <tt class="docutils literal"><span class="pre">bitset_t</span> <span class="pre">reached</span></tt> has size at least <tt class="docutils literal"><span class="pre">g.n</span></tt>, this method updates
+<tt class="docutils literal"><span class="pre">reached</span></tt> so that it represents the set of vertices that can be reached
+from <tt class="docutils literal"><span class="pre">src</span></tt> in <tt class="docutils literal"><span class="pre">g</span></tt>.</div></blockquote>
+<p><tt class="docutils literal"><span class="pre">strongly_connected_component_containing_vertex(short_digraph</span> <span class="pre">g,</span> <span class="pre">short_digraph</span> <span class="pre">g_reversed,</span> <span class="pre">int</span> <span class="pre">v,</span> <span class="pre">bitset_t</span> <span class="pre">scc)</span></tt></p>
+<blockquote>
+<div>Assuming <tt class="docutils literal"><span class="pre">bitset_t</span> <span class="pre">reached</span></tt> has size at least <tt class="docutils literal"><span class="pre">g.n</span></tt>, this method updates
+<tt class="docutils literal"><span class="pre">scc</span></tt> so that it represents the vertices of the strongly connected
+component containing <tt class="docutils literal"><span class="pre">v</span></tt> in <tt class="docutils literal"><span class="pre">g</span></tt>. The variable <tt class="docutils literal"><span class="pre">g_reversed</span></tt> is assumed
+to represent the reverse of <tt class="docutils literal"><span class="pre">g</span></tt>.</div></blockquote>
+</div>
+<div class="section" id="what-is-this-module-used-for">
+<h2>What is this module used for ?<a class="headerlink" href="#what-is-this-module-used-for" title="Permalink to this headline">¶</a></h2>
+<p>At the moment, it is only used in the <a class="reference internal" href="../distances_all_pairs.html#module-sage.graphs.distances_all_pairs" title="sage.graphs.distances_all_pairs"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.distances_all_pairs</span></tt></a> module.</p>
+</div>
+<div class="section" id="python-functions">
+<h2>Python functions<a class="headerlink" href="#python-functions" title="Permalink to this headline">¶</a></h2>
+<p>These functions are available so that Python modules from Sage can call the
+Cython routines this module implements (as they can not directly call methods
+with C arguments).</p>
+<dl class="function">
+<dt id="sage.graphs.base.static_sparse_graph.strongly_connected_components">
+<tt class="descclassname">sage.graphs.base.static_sparse_graph.</tt><tt class="descname">strongly_connected_components</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_graph.strongly_connected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the strongly connected components of the given DiGraph.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">G</span></tt> &#8211; a DiGraph.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method has been written as an attempt to solve the slowness
+reported in <a class="reference external" href="http://trac.sagemath.org/12235">trac ticket #12235</a>. It is not the one used by
+<a class="reference internal" href="../digraph.html#sage.graphs.digraph.DiGraph.strongly_connected_components" title="sage.graphs.digraph.DiGraph.strongly_connected_components"><tt class="xref py py-meth docutils literal"><span class="pre">sage.graphs.digraph.DiGraph.strongly_connected_components()</span></tt></a> as
+saving some time on the computation of the strongly connected components
+is not worth copying the whole graph, but it is a nice way to test this
+module&#8217;s functions. It is also tested in the doctest or
+<a class="reference internal" href="../digraph.html#sage.graphs.digraph.DiGraph.strongly_connected_components" title="sage.graphs.digraph.DiGraph.strongly_connected_components"><tt class="xref py py-meth docutils literal"><span class="pre">sage.graphs.digraph.DiGraph.strongly_connected_components()</span></tt></a>.</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_graph</span> <span class="kn">import</span> <span class="n">strongly_connected_components</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">digraphs</span><span class="o">.</span><span class="n">ButterflyGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">strongly_connected_components</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">[[(&#39;00&#39;, 0)], [(&#39;00&#39;, 1)], [(&#39;00&#39;, 2)], [(&#39;01&#39;, 0)], [(&#39;01&#39;, 1)], [(&#39;01&#39;, 2)],</span>
+<span class="go">[(&#39;10&#39;, 0)], [(&#39;10&#39;, 1)], [(&#39;10&#39;, 2)], [(&#39;11&#39;, 0)], [(&#39;11&#39;, 1)], [(&#39;11&#39;, 2)]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Static Sparse Graphs</a><ul>
+<li><a class="reference internal" href="#what-is-the-point">What is the point ?</a></li>
+<li><a class="reference internal" href="#data-structure">Data structure</a></li>
+<li><a class="reference internal" href="#technical-details">Technical details</a></li>
+<li><a class="reference internal" href="#cython-functions">Cython functions</a></li>
+<li><a class="reference internal" href="#what-is-this-module-used-for">What is this module used for ?</a></li>
+<li><a class="reference internal" href="#python-functions">Python functions</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="static_dense_graph.html"
+                                  title="previous chapter">Static dense graphs</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="static_sparse_backend.html"
+                                  title="next chapter">Static sparse graph backend</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/graphs/base/static_sparse_graph.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="static_sparse_backend.html" title="Static sparse graph backend"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="static_dense_graph.html" title="Static dense graphs"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

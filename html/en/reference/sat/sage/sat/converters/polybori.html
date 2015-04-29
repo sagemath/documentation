@@ -1,0 +1,658 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>An ANF to CNF Converter using a Dense/Sparse Strategy &mdash; Sage Reference Manual v6.6: Sat</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Sat" href="../../../index.html" />
+    <link rel="next" title="SAT Functions for Boolean Polynomials" href="../boolean_polynomials.html" />
+    <link rel="prev" title="SAT-Solvers via DIMACS Files" href="../solvers/dimacs.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../boolean_polynomials.html" title="SAT Functions for Boolean Polynomials"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../solvers/dimacs.html" title="SAT-Solvers via DIMACS Files"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Sat</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="an-anf-to-cnf-converter-using-a-dense-sparse-strategy">
+<span id="sage-sat-converters-polybori"></span><h1>An ANF to CNF Converter using a Dense/Sparse Strategy<a class="headerlink" href="#an-anf-to-cnf-converter-using-a-dense-sparse-strategy" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.sat.converters.polybori"></span><p>This converter is based on two converters. The first one, by Martin Albrecht, was based on <a class="reference internal" href="#cb07" id="id1">[CB07]</a>,
+this is the basis of the &#8220;dense&#8221; part of the converter. It was later improved by Mate Soos. The
+second one, by Michael Brickenstein, uses a reduced truth table based approach and forms the
+&#8220;sparse&#8221; part of the converter.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Martin Albrecht - (2008-09) initial version of &#8216;anf2cnf.py&#8217;</li>
+<li>Michael Brickenstein - (2009) &#8216;cnf.py&#8217; for PolyBoRi</li>
+<li>Mate Soos - (2010) improved version of &#8216;anf2cnf.py&#8217;</li>
+<li>Martin Albrecht - (2012) unified and added to Sage</li>
+</ul>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="cb07" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[CB07]</a></td><td>Nicolas Courtois, Gregory V. Bard: Algebraic Cryptanalysis of the Data Encryption
+Standard, In 11-th IMA Conference, Cirencester, UK, 18-20 December 2007, Springer LNCS 4887. See
+also <a class="reference external" href="http://eprint.iacr.org/2006/402/">http://eprint.iacr.org/2006/402/</a>.</td></tr>
+</tbody>
+</table>
+<div class="section" id="classes-and-methods">
+<h2>Classes and Methods<a class="headerlink" href="#classes-and-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sage.sat.converters.polybori.CNFEncoder">
+<em class="property">class </em><tt class="descclassname">sage.sat.converters.polybori.</tt><tt class="descname">CNFEncoder</tt><big>(</big><em>solver</em>, <em>ring</em>, <em>max_vars_sparse=6</em>, <em>use_xor_clauses=None</em>, <em>cutting_number=6</em>, <em>random_seed=16</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">sage.sat.converters.anf2cnf.ANF2CNFConverter</span></tt></p>
+<p>ANF to CNF Converter using a Dense/Sparse Strategy. This converter distinguishes two classes of
+polynomials.</p>
+<p>1. Sparse polynomials are those with at most <tt class="docutils literal"><span class="pre">max_vars_sparse</span></tt> variables. Those are converted
+using reduced truth-tables based on PolyBoRi&#8217;s internal representation.</p>
+<p>2. Polynomials with more variables are converted by introducing new variables for monomials and
+by converting these linearised polynomials.</p>
+<p>Linearised polynomials are converted either by splitting XOR chains &#8211; into chunks of length
+<tt class="docutils literal"><span class="pre">cutting_number</span></tt> &#8211; or by constructing XOR clauses if the underlying solver supports it. This
+behaviour is disabled by passing <tt class="docutils literal"><span class="pre">use_xor_clauses=False</span></tt>.</p>
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>solver</em>, <em>ring</em>, <em>max_vars_sparse=6</em>, <em>use_xor_clauses=None</em>, <em>cutting_number=6</em>, <em>random_seed=16</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct ANF to CNF converter over <tt class="docutils literal"><span class="pre">ring</span></tt> passing clauses to <tt class="docutils literal"><span class="pre">solver</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">solver</span></tt> - a SAT-solver instance</li>
+<li><tt class="docutils literal"><span class="pre">ring</span></tt> - a <tt class="xref py py-class docutils literal"><span class="pre">sage.rins.polynomial.pbori.BooleanPolynomialRing</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">max_vars_sparse</span></tt> - maximum number of variables for direct conversion</li>
+<li><tt class="docutils literal"><span class="pre">use_xor_clauses</span></tt> - use XOR clauses; if <tt class="docutils literal"><span class="pre">None</span></tt> use if
+<tt class="docutils literal"><span class="pre">solver</span></tt> supports it. (default: <tt class="docutils literal"><span class="pre">None</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">cutting_number</span></tt> - maximum length of XOR chains after
+splitting if XOR clauses are not supported (default: 6)</li>
+<li><tt class="docutils literal"><span class="pre">random_seed</span></tt> - the direct conversion method uses
+randomness, this sets the seed (default: 16)</li>
+</ul>
+<p>EXAMPLE:</p>
+<p>We compare the sparse and the dense strategies, sparse first:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_sparse</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 0</span>
+<span class="go">-2 0</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c]</span>
+</pre></div>
+</div>
+<p>Now, we convert using the dense strategy:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_dense</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 4 5</span>
+<span class="go">1 -4 0</span>
+<span class="go">2 -4 0</span>
+<span class="go">4 -1 -2 0</span>
+<span class="go">-4 -1 0</span>
+<span class="go">4 1 0</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This constructer generates SAT variables for each Boolean polynomial variable.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>F</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode the boolean polynomials in <tt class="docutils literal"><span class="pre">F</span></tt> .</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">F</span></tt> - an iterable of <a class="reference external" href="../../../../polynomial_rings/sage/rings/polynomial/pbori.html#sage.rings.polynomial.pbori.BooleanPolynomial" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.pbori.BooleanPolynomial</span></tt></a></li>
+</ul>
+<p>OUTPUT: An inverse map int -&gt; variable</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">max_vars_sparse</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="p">([</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span><span class="p">])</span>
+<span class="go">[None, a, b, c, a*b]</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 4 9</span>
+<span class="go">1 0</span>
+<span class="go">-2 0</span>
+<span class="go">1 -4 0</span>
+<span class="go">2 -4 0</span>
+<span class="go">4 -1 -2 0</span>
+<span class="go">-4 -1 -3 0</span>
+<span class="go">4 1 -3 0</span>
+<span class="go">4 -1 3 0</span>
+<span class="go">-4 1 3 0</span>
+
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.clauses">
+<tt class="descname">clauses</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.clauses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <tt class="docutils literal"><span class="pre">f</span></tt> using the sparse strategy if <tt class="docutils literal"><span class="pre">f.nvariables()</span></tt> is
+at most <tt class="docutils literal"><span class="pre">max_vars_sparse</span></tt> and the dense strategy otherwise.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> - a <a class="reference external" href="../../../../polynomial_rings/sage/rings/polynomial/pbori.html#sage.rings.polynomial.pbori.BooleanPolynomial" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.pbori.BooleanPolynomial</span></tt></a></li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">max_vars_sparse</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 0</span>
+<span class="go">-2 0</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c]</span>
+
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">max_vars_sparse</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 4 7</span>
+<span class="go">1 -4 0</span>
+<span class="go">2 -4 0</span>
+<span class="go">4 -1 -2 0</span>
+<span class="go">-4 -1 -3 0</span>
+<span class="go">4 1 -3 0</span>
+<span class="go">4 -1 3 0</span>
+<span class="go">-4 1 3 0</span>
+
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.clauses_dense">
+<tt class="descname">clauses_dense</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.clauses_dense" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <tt class="docutils literal"><span class="pre">f</span></tt> using the dense strategy.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> - a <a class="reference external" href="../../../../polynomial_rings/sage/rings/polynomial/pbori.html#sage.rings.polynomial.pbori.BooleanPolynomial" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.pbori.BooleanPolynomial</span></tt></a></li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_dense</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 4 5</span>
+<span class="go">1 -4 0</span>
+<span class="go">2 -4 0</span>
+<span class="go">4 -1 -2 0</span>
+<span class="go">-4 -1 0</span>
+<span class="go">4 1 0</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.clauses_sparse">
+<tt class="descname">clauses_sparse</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.clauses_sparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <tt class="docutils literal"><span class="pre">f</span></tt> using the sparse strategy.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> - a <a class="reference external" href="../../../../polynomial_rings/sage/rings/polynomial/pbori.html#sage.rings.polynomial.pbori.BooleanPolynomial" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.pbori.BooleanPolynomial</span></tt></a></li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_sparse</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 0</span>
+<span class="go">-2 0</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.monomial">
+<tt class="descname">monomial</tt><big>(</big><em>m</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.monomial" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Return SAT variable for <tt class="docutils literal"><span class="pre">m</span></tt></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">m</span></tt> - a monomial.</li>
+</ul>
+<p>OUTPUT: An index for a SAT variable corresponding to <tt class="docutils literal"><span class="pre">m</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_dense</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b]</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>If monomial is called on a new monomial, a new variable is created:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">monomial</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, a*b, a*b*c]</span>
+</pre></div>
+</div>
+<p>If monomial is called on a monomial that was queried before,
+the index of the old variable is returned and no new variable
+is created:</p>
+<div class="highlight-python"><div class="highlight"><pre>    sage: e.monomial(a*b)
+    4
+    sage: e.phi
+    [None, a, b, c, a*b, a*b*c]
+
+.. note::
+
+    For correctness, this function is cached.
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.sat.converters.polybori.CNFEncoder.permutations">
+<tt class="descname">permutations</tt><big>(</big><em>length</em>, <em>equal_zero</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.permutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return permutations of length <tt class="docutils literal"><span class="pre">length</span></tt> which are equal to
+zero if <tt class="docutils literal"><span class="pre">equal_zero</span></tt> and equal to one otherwise.</p>
+<p>A variable is false if the integer in its position is smaller
+than zero and true otherwise.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">length</span></tt> - the number of variables</li>
+<li><tt class="docutils literal"><span class="pre">equal_zero</span></tt> - should the sum be equal to zero?</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[[-1, -1, -1], [1, 1, -1], [1, -1, 1], [-1, 1, 1]]</span>
+
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[[1, -1, -1], [-1, 1, -1], [-1, -1, 1], [1, 1, 1]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.sat.converters.polybori.CNFEncoder.phi">
+<tt class="descname">phi</tt><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.phi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map SAT variables to polynomial variables.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">phi</span>
+<span class="go">[None, a, b, c, None]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.split_xor">
+<tt class="descname">split_xor</tt><big>(</big><em>monomial_list</em>, <em>equal_zero</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.split_xor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split XOR chains into subchains.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">monomial_list</span></tt> - a list of monomials</li>
+<li><tt class="docutils literal"><span class="pre">equal_zero</span></tt> - is the constant coefficient zero?</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">e</span><span class="p">,</span><span class="n">f</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">,</span> <span class="n">cutting_number</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">split_xor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[[[1, 7], False], [[7, 2, 8], True], [[8, 3, 9], True], [[9, 4, 10], True], [[10, 5, 11], True], [[11, 6], True]]</span>
+
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">,</span> <span class="n">cutting_number</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">split_xor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[[[1, 2, 7], False], [[7, 3, 4, 8], True], [[8, 5, 6], True]]</span>
+
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">,</span> <span class="n">cutting_number</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">split_xor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[[[1, 2, 3, 7], False], [[7, 4, 5, 6], True]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.to_polynomial">
+<tt class="descname">to_polynomial</tt><big>(</big><em>c</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.to_polynomial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert clause to <a class="reference external" href="../../../../polynomial_rings/sage/rings/polynomial/pbori.html#sage.rings.polynomial.pbori.BooleanPolynomial" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.pbori.BooleanPolynomial</span></tt></a></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">c</span></tt> - a clause</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">max_vars_sparse</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">e</span><span class="p">([</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">to_polynomial</span><span class="p">(</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">a*b*c + a*b + b*c + b</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.var">
+<tt class="descname">var</tt><big>(</big><em>m=None</em>, <em>decision=None</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <em>new</em> variable.</p>
+<p>This is a thin wrapper around the SAT-solvers function where
+we keep track of which SAT variable corresponds to which
+monomial.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">m</span></tt> - something the new variables maps to, usually a monomial</li>
+<li><tt class="docutils literal"><span class="pre">decision</span></tt> - is this variable a deicison variable?</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ce</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ce</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.sat.converters.polybori.CNFEncoder.zero_blocks">
+<tt class="descname">zero_blocks</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.sat.converters.polybori.CNFEncoder.zero_blocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Divides the zero set of <tt class="docutils literal"><span class="pre">f</span></tt> into blocks.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">DIMACS</span><span class="p">(),</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">zero_blocks</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">*</span><span class="n">c</span><span class="p">))</span>
+<span class="go">[{c: 0}, {b: 0}, {a: 0}]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function is randomised.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">An ANF to CNF Converter using a Dense/Sparse Strategy</a><ul>
+<li><a class="reference internal" href="#classes-and-methods">Classes and Methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../solvers/dimacs.html"
+                                  title="previous chapter">SAT-Solvers via DIMACS Files</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../boolean_polynomials.html"
+                                  title="next chapter">SAT Functions for Boolean Polynomials</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/sat/converters/polybori.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../boolean_polynomials.html" title="SAT Functions for Boolean Polynomials"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../solvers/dimacs.html" title="SAT-Solvers via DIMACS Files"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Sat</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

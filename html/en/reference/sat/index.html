@@ -1,0 +1,412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Sat &mdash; Sage Reference Manual v6.6: Sat</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Sat" href="#" />
+    <link rel="next" title="SAT-Solvers via DIMACS Files" href="sage/sat/solvers/dimacs.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sage/sat/solvers/dimacs.html" title="SAT-Solvers via DIMACS Files"
+             accesskey="N">next</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../index.html"> Sage Reference Manual </a> &raquo;
+    
+  
+  
+        <li><a href="#">Sat</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sat">
+<h1>Sat<a class="headerlink" href="#sat" title="Permalink to this headline">¶</a></h1>
+<p>Sage supports solving clauses in Conjunctive Normal Form (see <a class="reference external" href="http://en.wikipedia.org/wiki/Conjunctive_normal_form">Wikipedia article Conjunctive_normal_form</a>),
+i.e., SAT solving, via an interface inspired by the usual DIMACS format used in SAT solving
+<a class="reference internal" href="#sg09" id="id1">[SG09]</a>. For example, to express that:</p>
+<div class="highlight-python"><div class="highlight"><pre>x1 OR x2 OR (NOT x3)
+</pre></div>
+</div>
+<p>should be true, we write:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Variable indices <strong>must</strong> start at one.</p>
+</div>
+<div class="section" id="solvers">
+<h2>Solvers<a class="headerlink" href="#solvers" title="Permalink to this headline">¶</a></h2>
+<p>Any SAT solver supporting the DIMACS input format is easily interfaced using the
+<a class="reference internal" href="sage/sat/solvers/dimacs.html#sage.sat.solvers.dimacs.DIMACS" title="sage.sat.solvers.dimacs.DIMACS"><tt class="xref py py-class docutils literal"><span class="pre">sage.sat.solvers.dimacs.DIMACS</span></tt></a> blueprint. Sage ships with pre-written interfaces for <em>RSat</em>
+<a class="reference internal" href="#rs" id="id2">[RS]</a> and <em>Glucose</em> <a class="reference internal" href="#gl" id="id3">[GL]</a>. Furthermore, Sage provides a C++ interface to the <em>CryptoMiniSat</em> <a class="reference internal" href="#cms" id="id4">[CMS]</a> SAT
+solver which can be used interchangably with DIMACS-based solvers, but also provides advanced
+features. For this, the optional CryptoMiniSat package must be installed, this can be accomplished
+by typing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">install_package</span><span class="p">(</span><span class="s">&#39;cryptominisat&#39;</span><span class="p">)</span> <span class="c"># not tested</span>
+</pre></div>
+</div>
+<p>and by running <tt class="docutils literal"><span class="pre">sage</span> <span class="pre">-b</span></tt> from the shell afterwards to build Sage&#8217;s CryptoMiniSat extension module.</p>
+<p>Since by default Sage does not include any SAT solver, we demonstrate key features by instantiating
+a fake DIMACS-based solver. We start with a trivial example:</p>
+<div class="highlight-python"><div class="highlight"><pre>(x1 OR x2 OR x3) AND (x1 OR x2 OR (NOT x3))
+</pre></div>
+</div>
+<p>In Sage&#8217;s notation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">command</span><span class="o">=</span><span class="s">&quot;sat-solver&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span>  <span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="sage/sat/solvers/dimacs.html#sage.sat.solvers.dimacs.DIMACS.add_clause" title="sage.sat.solvers.dimacs.DIMACS.add_clause"><tt class="xref py py-meth docutils literal"><span class="pre">sage.sat.solvers.dimacs.DIMACS.add_clause()</span></tt></a> creates new variables when necessary. In
+particular, it creates <em>all</em> variables up to the given index. Hence, adding a literal involving
+the variable 1000 creates up to 1000 internal variables.</p>
+</div>
+<p>DIMACS-base solvers can also be used to write DIMACS files:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span>  <span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+<span class="go">....:    print line,</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 2 3 0</span>
+<span class="go">1 2 -3 0</span>
+</pre></div>
+</div>
+<p>Alternatively, there is <a class="reference internal" href="sage/sat/solvers/dimacs.html#sage.sat.solvers.dimacs.DIMACS.clauses" title="sage.sat.solvers.dimacs.DIMACS.clauses"><tt class="xref py py-meth docutils literal"><span class="pre">sage.sat.solvers.dimacs.DIMACS.clauses()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span>  <span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">add_clause</span><span class="p">(</span> <span class="p">(</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">clauses</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+<span class="go">....:    print line,</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 2 3 0</span>
+<span class="go">1 2 -3 0</span>
+</pre></div>
+</div>
+<p>These files can then be passed external SAT solvers.</p>
+<p>We demonstrate solving using CryptoMiniSat:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers</span> <span class="kn">import</span> <span class="n">CryptoMiniSat</span> <span class="c"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">cms</span> <span class="o">=</span> <span class="n">CryptoMiniSat</span><span class="p">()</span>                      <span class="c"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">cms</span><span class="o">.</span><span class="n">add_clause</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">))</span>                   <span class="c"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">cms</span><span class="p">()</span>                                      <span class="c"># optional - cryptominisat</span>
+<span class="go">(None, True, True, False)</span>
+</pre></div>
+</div>
+<div class="section" id="details-on-specific-solvers">
+<h3>Details on Specific Solvers<a class="headerlink" href="#details-on-specific-solvers" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sage/sat/solvers/dimacs.html">SAT-Solvers via DIMACS Files</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="converters">
+<h2>Converters<a class="headerlink" href="#converters" title="Permalink to this headline">¶</a></h2>
+<p>Sage supports conversion from Boolean polynomials (also known as Algebraic Normal Form) to
+Conjunctive Normal Form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">BooleanPolynomialRing</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.converters.polybori</span> <span class="kn">import</span> <span class="n">CNFEncoder</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.dimacs</span> <span class="kn">import</span> <span class="n">DIMACS</span>
+<span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">DIMACS</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">CNFEncoder</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">clauses_sparse</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">p cnf 3 2</span>
+<span class="go">1 0</span>
+<span class="go">-2 0</span>
+</pre></div>
+</div>
+<div class="section" id="details-on-specific-converterts">
+<h3>Details on Specific Converterts<a class="headerlink" href="#details-on-specific-converterts" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sage/sat/converters/polybori.html">An ANF to CNF Converter using a Dense/Sparse Strategy</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="highlevel-interfaces">
+<h2>Highlevel Interfaces<a class="headerlink" href="#highlevel-interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Sage provides various highlevel functions which make working with Boolean polynomials easier. We
+construct a very small-scale AES system of equations and pass it to a SAT solver:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sr</span> <span class="o">=</span> <span class="n">mq</span><span class="o">.</span><span class="n">SR</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="n">gf2</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">polybori</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">,</span><span class="n">s</span> <span class="o">=</span> <span class="n">sr</span><span class="o">.</span><span class="n">polynomial_system</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.boolean_polynomials</span> <span class="kn">import</span> <span class="n">solve</span> <span class="k">as</span> <span class="n">solve_sat</span> <span class="c"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">solve_sat</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>                                            <span class="c"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>                                                <span class="c"># optional - cryptominisat</span>
+<span class="go">Polynomial Sequence with 36 Polynomials in 0 Variables</span>
+</pre></div>
+</div>
+<div class="section" id="details-on-specific-highlevel-interfaces">
+<h3>Details on Specific Highlevel Interfaces<a class="headerlink" href="#details-on-specific-highlevel-interfaces" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sage/sat/boolean_polynomials.html">SAT Functions for Boolean Polynomials</a></li>
+</ul>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="rs" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[RS]</a></td><td><a class="reference external" href="http://reasoning.cs.ucla.edu/rsat/">http://reasoning.cs.ucla.edu/rsat/</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="gl" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[GL]</a></td><td><a class="reference external" href="http://www.lri.fr/~simon/?page=glucose">http://www.lri.fr/~simon/?page=glucose</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="cms" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[CMS]</a></td><td><a class="reference external" href="http://www.msoos.org/cryptominisat2/">http://www.msoos.org/cryptominisat2/</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="sg09" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[SG09]</a></td><td><a class="reference external" href="http://www.satcompetition.org/2009/format-benchmarks2009.html">http://www.satcompetition.org/2009/format-benchmarks2009.html</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and Tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference external" href="../genindex.html">Index</a></li>
+<li><a class="reference external" href="../py-modindex.html">Module Index</a></li>
+<li><a class="reference external" href="../search.html">Search Page</a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="#">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Sat</a><ul>
+<li><a class="reference internal" href="#solvers">Solvers</a><ul>
+<li><a class="reference internal" href="#details-on-specific-solvers">Details on Specific Solvers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#converters">Converters</a><ul>
+<li><a class="reference internal" href="#details-on-specific-converterts">Details on Specific Converterts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#highlevel-interfaces">Highlevel Interfaces</a><ul>
+<li><a class="reference internal" href="#details-on-specific-highlevel-interfaces">Details on Specific Highlevel Interfaces</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and Tables</a></li>
+</ul>
+
+            <h4>Next topic</h4>
+            <p class="topless"><a href="sage/sat/solvers/dimacs.html"
+                                  title="next chapter">SAT-Solvers via DIMACS Files</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/index.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sage/sat/solvers/dimacs.html" title="SAT-Solvers via DIMACS Files"
+             >next</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../index.html"> Sage Reference Manual </a> &raquo;
+    
+  
+  
+        <li><a href="#">Sat</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

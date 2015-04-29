@@ -1,0 +1,1127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The C3 algorithm, under control of a total order. &mdash; Sage Reference Manual v6.6: Miscellaneous</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Miscellaneous" href="../../index.html" />
+    <link rel="next" title="Decorators" href="decorators.html" />
+    <link rel="prev" title="The C3 algorithm" href="c3.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="decorators.html" title="Decorators"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="c3.html" title="The C3 algorithm"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-c3-algorithm-under-control-of-a-total-order">
+<span id="sage-misc-c3-controlled"></span><h1>The <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm, under control of a total order.<a class="headerlink" href="#the-c3-algorithm-under-control-of-a-total-order" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.c3_controlled"></span><div class="section" id="abstract">
+<h2>Abstract<a class="headerlink" href="#abstract" title="Permalink to this headline">¶</a></h2>
+<p>Python handles multiple inheritance by computing, for each class,
+a linear extension of the poset of all its super classes (the Method
+Resolution Order, MRO). The MRO is calculated recursively from local
+information (the <em>ordered</em> list of the direct super classes), with
+the so-called <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm. This algorithm can fail if the local
+information is not consistent; worst, there exist hierarchies of
+classes with provably no consistent local information.</p>
+<p>For large hierarchy of classes, like those derived from categories in
+Sage, maintaining consistent local information by hand does not scale
+and leads to unpredictable <tt class="docutils literal"><span class="pre">C3</span></tt> failures (the dreaded &#8220;could not
+find a consistent method resolution order&#8221;); a maintenance nightmare.</p>
+<p>This module implements a final solution to this problem. Namely, it
+allows for building automatically the local information from the bare
+class hierarchy in such a way that guarantees that the <tt class="docutils literal"><span class="pre">C3</span></tt>
+algorithm will never fail.</p>
+<p>Err, but you said that this was provably impossible? Well, not if one
+relaxes a bit the hypotheses; but that&#8217;s not something one would want
+to do by hand :-)</p>
+</div>
+<div class="section" id="the-problem">
+<h2>The problem<a class="headerlink" href="#the-problem" title="Permalink to this headline">¶</a></h2>
+<p>Consider the following hierarchy of classes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A2</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def foo(self): return 2</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A3</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A4</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def foo(self): return 4</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A5</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">A1</span><span class="p">):</span>
+<span class="go">....:     def foo(self): return 5</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A6</span><span class="p">(</span><span class="n">A4</span><span class="p">,</span> <span class="n">A3</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A7</span><span class="p">(</span><span class="n">A6</span><span class="p">,</span> <span class="n">A5</span><span class="p">):</span> <span class="k">pass</span>
+</pre></div>
+</div>
+<p>If <tt class="docutils literal"><span class="pre">a</span></tt> is an instance of <tt class="docutils literal"><span class="pre">A7</span></tt>, then Python needs to choose which
+implementation to use upon calling <tt class="docutils literal"><span class="pre">a.foo()</span></tt>: that of <tt class="docutils literal"><span class="pre">A4</span></tt> or
+<tt class="docutils literal"><span class="pre">A5</span></tt>, but obviously not that of <tt class="docutils literal"><span class="pre">A2</span></tt>. In Python, like in many
+other dynamic object oriented languages, this is achieved by
+calculating once for all a specific linear extension of the hierarchy
+of the super classes of each class, called its Method Resolution Order
+(MRO):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">[</span><span class="n">cls</span><span class="o">.</span><span class="n">__name__</span> <span class="k">for</span> <span class="n">cls</span> <span class="ow">in</span> <span class="n">A7</span><span class="o">.</span><span class="n">mro</span><span class="p">()]</span>
+<span class="go">[&#39;A7&#39;, &#39;A6&#39;, &#39;A4&#39;, &#39;A3&#39;, &#39;A5&#39;, &#39;A2&#39;, &#39;A1&#39;, &#39;object&#39;]</span>
+</pre></div>
+</div>
+<p>Thus, in our example, the implementation in <tt class="docutils literal"><span class="pre">A4</span></tt> is chosen:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A7</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">foo</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>Specifically, the MRO is calculated using the so-called <tt class="docutils literal"><span class="pre">C3</span></tt>
+algorithm which guarantees that the MRO respects not only inheritance,
+but also the order in which the bases (direct super classes) are given
+for each class.</p>
+<p>However, for large hierarchies of classes with lots of multiple
+inheritance, like those derived from categories in Sage, this
+algorithm easily fails if the order of the bases is not chosen
+consistently (here for <tt class="docutils literal"><span class="pre">A2</span></tt> w.r.t. <tt class="docutils literal"><span class="pre">A1</span></tt>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">B6</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span><span class="n">A2</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">B7</span><span class="p">(</span><span class="n">B6</span><span class="p">,</span><span class="n">A5</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">Error when calling the metaclass bases</span>
+<span class="go">    Cannot create a consistent method resolution</span>
+<span class="go">order (MRO) for bases ...</span>
+</pre></div>
+</div>
+<p>There actually exist hierarchies of classes for which <tt class="docutils literal"><span class="pre">C3</span></tt> fails
+whatever order of the bases is chosen; the smallest such example,
+admittedly artificial, has ten classes (see below). Still, this
+highlights that this problem has to be tackled in a systematic way.</p>
+<p>Fortunately, one can trick <tt class="docutils literal"><span class="pre">C3</span></tt>, without changing the inheritance
+semantic, by adding some super classes of <tt class="docutils literal"><span class="pre">A</span></tt> to the bases of
+<tt class="docutils literal"><span class="pre">A</span></tt>. In the following example, we completely force a given MRO by
+specifying <em>all</em> the super classes of <tt class="docutils literal"><span class="pre">A</span></tt> as bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A7</span><span class="p">(</span><span class="n">A6</span><span class="p">,</span> <span class="n">A5</span><span class="p">,</span> <span class="n">A4</span><span class="p">,</span> <span class="n">A3</span><span class="p">,</span> <span class="n">A2</span><span class="p">,</span> <span class="n">A1</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">cls</span><span class="o">.</span><span class="n">__name__</span> <span class="k">for</span> <span class="n">cls</span> <span class="ow">in</span> <span class="n">A7</span><span class="o">.</span><span class="n">mro</span><span class="p">()]</span>
+<span class="go">[&#39;A7&#39;, &#39;A6&#39;, &#39;A5&#39;, &#39;A4&#39;, &#39;A3&#39;, &#39;A2&#39;, &#39;A1&#39;, &#39;object&#39;]</span>
+</pre></div>
+</div>
+<p>Luckily this can be optimized; here it is sufficient to add a single
+base to enforce the same MRO:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A7</span><span class="p">(</span><span class="n">A6</span><span class="p">,</span> <span class="n">A5</span><span class="p">,</span> <span class="n">A4</span><span class="p">):</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">cls</span><span class="o">.</span><span class="n">__name__</span> <span class="k">for</span> <span class="n">cls</span> <span class="ow">in</span> <span class="n">A7</span><span class="o">.</span><span class="n">mro</span><span class="p">()]</span>
+<span class="go">[&#39;A7&#39;, &#39;A6&#39;, &#39;A5&#39;, &#39;A4&#39;, &#39;A3&#39;, &#39;A2&#39;, &#39;A1&#39;, &#39;object&#39;]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="a-strategy-to-solve-the-problem">
+<h2>A strategy to solve the problem<a class="headerlink" href="#a-strategy-to-solve-the-problem" title="Permalink to this headline">¶</a></h2>
+<p>We should recall at this point a design decision that we took for the
+hierarchy of classes derived from categories: <em>the semantic shall only
+depend on the inheritance order</em>, not on the specific MRO, and in
+particular not on the order of the bases (see the section
+<tt class="docutils literal"><span class="pre">On</span> <span class="pre">the</span> <span class="pre">order</span> <span class="pre">of</span> <span class="pre">super</span> <span class="pre">categories</span></tt> in the
+<a class="reference external" href="../../../categories/sage/categories/primer.html#module-sage.categories.primer" title="(in Sage Reference Manual: Category Theory v6.6)"><tt class="xref py py-mod docutils literal"><span class="pre">category</span> <span class="pre">primer</span></tt></a>).
+If a choice needs to be made (for example for efficiency reasons),
+then this should be done explicitly, on a method-by-method basis. In
+practice this design goal is not yet met.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When managing large hierarchies of classes in other contexts this
+may be too strong a design decision.</p>
+</div>
+<p>The strategy we use for hierarchies of classes derived from categories
+is then:</p>
+<ol class="arabic simple">
+<li>To choose a global total order on the whole hierarchy of classes.</li>
+<li>To control <tt class="docutils literal"><span class="pre">C3</span></tt> to get it to return MROs that follow this total order.</li>
+</ol>
+<p>A basic approach for point 1., that will work for any hierarchy of
+classes, is to enumerate the classes while they are constructed
+(making sure that the bases of each class are enumerated before that
+class), and to order the classes according to that enumeration. A more
+conceptual ordering may be desirable, in particular to get
+deterministic and reproducible results. In the context of Sage, this
+is mostly relevant for those doctests displaying all the categories or
+classes that an object inherits from.</p>
+</div>
+<div class="section" id="getting-fine-control-on-c3">
+<h2>Getting fine control on C3<a class="headerlink" href="#getting-fine-control-on-c3" title="Permalink to this headline">¶</a></h2>
+<p>This module is about point 2.</p>
+<p>The natural approach would be to change the algorithm used by Python
+to compute the MRO. However, changing Python&#8217;s default algorithm just
+for our needs is obviously not an option, and there is currently no
+hook to customize specific classes to use a different algorithm.
+Pushing the addition of such a hook into stock Python would take too
+much time and effort.</p>
+<p>Another approach would be to use the &#8220;adding bases&#8221; trick
+straightforwardly, putting the list of <em>all</em> the super classes of a
+class as its bases. However, this would have several drawbacks:</p>
+<ul>
+<li><p class="first">It is not so elegant, in particular because it duplicates
+information: we already know through <tt class="docutils literal"><span class="pre">A5</span></tt> that <tt class="docutils literal"><span class="pre">A7</span></tt> is a
+subclass of <tt class="docutils literal"><span class="pre">A1</span></tt>. This duplication could be acceptable in our
+context because the hierarchy of classes is generated automatically
+from a conceptual hierarchy (the categories) which serves as single
+point of truth for calculating the bases of each class.</p>
+</li>
+<li><p class="first">It increases the complexity of the calculation of the MRO with
+<tt class="docutils literal"><span class="pre">C3</span></tt>. For example, for a linear hierachy of classes, the
+complexity goes from <span class="math">\(O(n^2)\)</span> to <span class="math">\(O(n^3)\)</span> which is not acceptable.</p>
+</li>
+<li><p class="first">It increases the complexity of inspecting the classes. For example,
+the current implementation of the <tt class="docutils literal"><span class="pre">dir</span></tt> command in Python has no
+cache, and its complexity is linear in the number of maximal paths
+in the class hierarchy graph as defined by the bases. For a linear
+hierarchy, this is of complexity <span class="math">\(O(p_n)\)</span> where <span class="math">\(p_n\)</span> is the number
+of integer partitions of <span class="math">\(n\)</span>, which is exponential. And indeed,
+running <tt class="docutils literal"><span class="pre">dir</span></tt> for a typical class like
+<tt class="docutils literal"><span class="pre">GradedHopfAlgebrasWithBasis(QQ).parent_class</span></tt> with <tt class="docutils literal"><span class="pre">37</span></tt> super
+classes took <span class="math">\(18\)</span> seconds with this approach.</p>
+<p>Granted: this mostly affects the <tt class="docutils literal"><span class="pre">dir</span></tt> command and could be blamed
+on its current implementation. With appropriate caching, it could be
+reimplemented to have a complexity roughly linear in the number of
+classes in the hierarchy. But this won&#8217;t happen any time soon in a
+stock Python.</p>
+</li>
+</ul>
+<p>This module refines this approach to make it acceptable, if not
+seamless. Given a hierarchy and a total order on this hierarchy, it
+calculates for each element of the hierarchy the smallest list of
+additional bases that forces <tt class="docutils literal"><span class="pre">C3</span></tt> to return the desired MRO. This is
+achieved by implementing an instrumented variant of the <tt class="docutils literal"><span class="pre">C3</span></tt>
+algorithm (which we call <em>instrumented ``C3``</em>) that detects when
+<tt class="docutils literal"><span class="pre">C3</span></tt> is about to take a wrong decision and adds one base to force
+the right decision. Then, running the standard <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm with
+the updated list of bases (which we call <em>controlled ``C3``</em>) yields
+the desired MRO.</p>
+<p>EXAMPLES:</p>
+<p>As an experimentation and testing tool, we use a class
+<a class="reference internal" href="#sage.misc.c3_controlled.HierarchyElement" title="sage.misc.c3_controlled.HierarchyElement"><tt class="xref py py-class docutils literal"><span class="pre">HierarchyElement</span></tt></a> whose instances can be constructed from a
+hierarchy described by a poset, a digraph, or more generally a
+successor relation. By default, the desired MRO is sorted
+decreasingly. Another total order can be specified using a sorting
+key.</p>
+<p>We consider the smallest poset describing a class hierarchy admitting
+no MRO whatsoever:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">({</span><span class="mi">10</span><span class="p">:</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">7</span><span class="p">],</span> <span class="mi">9</span><span class="p">:[</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="mi">8</span><span class="p">:[</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">7</span><span class="p">:[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="mi">6</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">5</span><span class="p">:[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="p">},</span> <span class="n">linear_extension</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And build a <span class="math">\(HierarchyElement\)</span> from it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here are its bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">_bases</span>
+<span class="go">[9, 8, 7]</span>
+</pre></div>
+</div>
+<p>Using the standard <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm fails:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Can not merge the items 3, 3, 2.</span>
+</pre></div>
+</div>
+<p>We also get a failure when we relabel <span class="math">\(P\)</span> according to another linear
+extension. For easy relabelling, we first need to set an appropriate
+default linear extension for <span class="math">\(P\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">linear_extension</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">IntegerRange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">)))</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">with_linear_extension</span><span class="p">(</span><span class="n">linear_extension</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+<span class="go">[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]</span>
+</pre></div>
+</div>
+<p>Now, we play with the fifth linear extension of <span class="math">\(P\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">linear_extensions</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span> <span class="o">=</span> <span class="n">L</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">to_poset</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.</span><span class="n">cover_relations</span><span class="p">()</span>
+<span class="go">[[10, 9], [10, 8], [10, 7], [9, 6], [9, 3], [8, 5], [8, 2], [7, 4], [7, 1], [6, 2], [6, 1], [5, 3], [5, 1], [4, 3], [4, 2]]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Can not merge the items 2, 3, 3.</span>
+</pre></div>
+</div>
+<p>On the other hand, both the instrumented <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm, and the
+controlled <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm give the desired MRO:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_controlled</span>
+<span class="go">[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]</span>
+</pre></div>
+</div>
+<p>The above checks, and more, can be run with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_test_mro</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In practice, the control was achieved by adding the following bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_bases</span>
+<span class="go">[9, 8, 7]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_bases_controlled</span>
+<span class="go">[9, 8, 7, 6, 5]</span>
+</pre></div>
+</div>
+<p>Altogether, four bases were added for control:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">HierarchyElement</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">_bases</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">Q</span><span class="p">)</span>
+<span class="go">15</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">HierarchyElement</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">_bases_controlled</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">Q</span><span class="p">)</span>
+<span class="go">19</span>
+</pre></div>
+</div>
+<p>This information can also be recovered with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_len</span><span class="p">()</span>
+<span class="go">15</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_controlled_len</span><span class="p">()</span>
+<span class="go">19</span>
+</pre></div>
+</div>
+<p>We now check that the <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm fails for all linear extensions
+<span class="math">\(l\)</span> of this poset, whereas both the instrumented and controlled <tt class="docutils literal"><span class="pre">C3</span></tt>
+algorithms succeed; along the way, we collect some statistics:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">stats</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+<span class="go">....:     x = HierarchyElement(10, l.to_poset())</span>
+<span class="go">....:     try: # Check that x.mro_standard always fails with a ValueError</span>
+<span class="go">....:         x.mro_standard</span>
+<span class="go">....:     except ValueError:</span>
+<span class="go">....:         pass</span>
+<span class="go">....:     else:</span>
+<span class="go">....:         assert False</span>
+<span class="go">....:     assert x.mro            == list(P)</span>
+<span class="go">....:     assert x.mro_controlled == list(P)</span>
+<span class="go">....:     assert x.all_bases_len() == 15</span>
+<span class="go">....:     stats.append(x.all_bases_controlled_len()-x.all_bases_len())</span>
+</pre></div>
+</div>
+<p>Depending on the linear extension <span class="math">\(l\)</span> it was necessary to add between
+one and five bases for control; for example, <span class="math">\(216\)</span> linear extensions
+required the addition of four bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Word</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span><span class="o">.</span><span class="n">evaluation_sparse</span><span class="p">()</span>
+<span class="go">[(1, 36), (2, 108), (3, 180), (4, 216), (5, 180)]</span>
+</pre></div>
+</div>
+<p>We now consider a hierarchy of categories:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">attrgetter</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="n">Groups</span><span class="p">(),</span> <span class="n">attrcall</span><span class="p">(</span><span class="s">&quot;super_categories&quot;</span><span class="p">),</span> <span class="n">attrgetter</span><span class="p">(</span><span class="s">&quot;_cmp_key&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[Category of groups, Category of monoids, Category of semigroups,</span>
+<span class="go"> Category of inverse unital magmas, Category of unital magmas, Category of magmas,</span>
+<span class="go"> Category of sets, Category of sets with partial maps, Category of objects]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">[Category of groups, Category of monoids, Category of semigroups,</span>
+<span class="go"> Category of inverse unital magmas, Category of unital magmas, Category of magmas,</span>
+<span class="go"> Category of sets, Category of sets with partial maps, Category of objects]</span>
+</pre></div>
+</div>
+<p>For a typical category, few bases, if any, need to be added to force
+<tt class="docutils literal"><span class="pre">C3</span></tt> to give the desired order:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">FiniteFields</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">attrcall</span><span class="p">(</span><span class="s">&quot;super_categories&quot;</span><span class="p">),</span> <span class="n">attrgetter</span><span class="p">(</span><span class="s">&quot;_cmp_key&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_len</span><span class="p">()</span>
+<span class="go">66</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_controlled_len</span><span class="p">()</span>
+<span class="go">69</span>
+
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">GradedHopfAlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">attrcall</span><span class="p">(</span><span class="s">&quot;super_categories&quot;</span><span class="p">),</span> <span class="n">attrgetter</span><span class="p">(</span><span class="s">&quot;_cmp_key&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_test_mro</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span> <span class="o">==</span> <span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_len</span><span class="p">()</span>
+<span class="go">82</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">all_bases_controlled_len</span><span class="p">()</span>
+<span class="go">89</span>
+</pre></div>
+</div>
+<p>The following can be used to search through the Sage named categories
+for any that requires the addition of some bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.categories.category</span> <span class="kn">import</span> <span class="n">category_sample</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">([</span><span class="n">C</span> <span class="k">for</span> <span class="n">C</span> <span class="ow">in</span> <span class="n">category_sample</span><span class="p">()</span>
+<span class="go">....:         if len(C._super_categories_for_classes) != len(C.super_categories())],</span>
+<span class="go">....:        key=str)</span>
+<span class="go">[Category of affine weyl groups,</span>
+<span class="go"> Category of fields,</span>
+<span class="go"> Category of finite dimensional algebras with basis over Rational Field,</span>
+<span class="go"> Category of finite dimensional hopf algebras with basis over Rational Field,</span>
+<span class="go"> Category of graded hopf algebras with basis over Rational Field,</span>
+<span class="go"> Category of hopf algebras with basis over Rational Field]</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Nicolas M. Thiery (2012-09): initial version.</li>
+</ul>
+<dl class="function">
+<dt id="sage.misc.c3_controlled.C3_merge">
+<tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">C3_merge</tt><big>(</big><em>lists</em><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.C3_merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the input lists merged using the <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">C3_merge</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">[4, 3, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">[3, 2, 4, 1]</span>
+</pre></div>
+</div>
+<p>This function is only used for testing and experimenting purposes,
+but exercised quite some by the other doctests in this file.</p>
+<p>It is an extract of <a class="reference internal" href="c3.html#sage.misc.c3.C3_algorithm" title="sage.misc.c3.C3_algorithm"><tt class="xref py py-func docutils literal"><span class="pre">sage.misc.c3.C3_algorithm()</span></tt></a>; the latter
+could be possibly rewritten to use this one to avoid duplication.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.c3_controlled.C3_sorted_merge">
+<tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">C3_sorted_merge</tt><big>(</big><em>lists</em>, <em>key='identity'</em><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.C3_sorted_merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sorted input lists merged using the <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm, with a twist.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">lists</span></tt> &#8211; a non empty list (or iterable) of lists (or
+iterables), each sorted strictly decreasingly according
+to <tt class="docutils literal"><span class="pre">key</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; a function</li>
+</ul>
+<p>OUTPUT: a pair <tt class="docutils literal"><span class="pre">(result,</span> <span class="pre">suggestion)</span></tt></p>
+<p><tt class="docutils literal"><span class="pre">result</span></tt> is the sorted list obtained by merging the lists in
+<tt class="docutils literal"><span class="pre">lists</span></tt> while removing duplicates, and <tt class="docutils literal"><span class="pre">suggestion</span></tt> is a list
+such that applying <tt class="docutils literal"><span class="pre">C3</span></tt> on <tt class="docutils literal"><span class="pre">lists</span></tt> with its last list replaced
+by <tt class="docutils literal"><span class="pre">suggestion</span></tt> would return <tt class="docutils literal"><span class="pre">result</span></tt>.</p>
+<p>EXAMPLES:</p>
+<p>With the following input, <a class="reference internal" href="#sage.misc.c3_controlled.C3_merge" title="sage.misc.c3_controlled.C3_merge"><tt class="xref py py-func docutils literal"><span class="pre">C3_merge()</span></tt></a> returns right away a
+sorted list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">C3_merge</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">[2, 1]</span>
+</pre></div>
+</div>
+<p>In that case, <a class="reference internal" href="#sage.misc.c3_controlled.C3_sorted_merge" title="sage.misc.c3_controlled.C3_sorted_merge"><tt class="xref py py-func docutils literal"><span class="pre">C3_sorted_merge()</span></tt></a> returns the same result,
+with the last line unchanged:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">C3_sorted_merge</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([2, 1], [1])</span>
+</pre></div>
+</div>
+<p>On the other hand, with the following input, <a class="reference internal" href="#sage.misc.c3_controlled.C3_merge" title="sage.misc.c3_controlled.C3_merge"><tt class="xref py py-func docutils literal"><span class="pre">C3_merge()</span></tt></a>
+returns a non sorted list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">[1, 2]</span>
+</pre></div>
+</div>
+<p>Then, <a class="reference internal" href="#sage.misc.c3_controlled.C3_sorted_merge" title="sage.misc.c3_controlled.C3_sorted_merge"><tt class="xref py py-func docutils literal"><span class="pre">C3_sorted_merge()</span></tt></a> returns a sorted list, and suggests
+to replace the last line by <tt class="docutils literal"><span class="pre">[2,1]</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_sorted_merge</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">([2, 1], [2, 1])</span>
+</pre></div>
+</div>
+<p>And indeed <tt class="docutils literal"><span class="pre">C3_merge</span></tt> now returns the desired result:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">[2, 1]</span>
+</pre></div>
+</div>
+<p>From now on, we use this little wrapper that checks that
+<tt class="docutils literal"><span class="pre">C3_merge</span></tt>, with the suggestion of <tt class="docutils literal"><span class="pre">C3_sorted_merge</span></tt>, returns
+a sorted list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">C3_sorted_merge_check</span><span class="p">(</span><span class="n">lists</span><span class="p">):</span>
+<span class="go">....:     result, suggestion = C3_sorted_merge(lists)</span>
+<span class="go">....:     assert result == C3_merge(lists[:-1] + [suggestion])</span>
+<span class="go">....:     return result, suggestion</span>
+</pre></div>
+</div>
+<p>Base cases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">The input should be a non empty list of lists (or iterables)</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[]])</span>
+<span class="go">([], [])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([1], [1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([3, 2, 1], [3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([1], [1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([3, 2, 1], [3, 2, 1])</span>
+</pre></div>
+</div>
+<p>Exercise different states for the last line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">],[]])</span>
+<span class="go">([2, 1], [2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([2, 1], [2, 1])</span>
+</pre></div>
+</div>
+<p>Explore (all?) the different execution branches:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [4, 3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [4, 3, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [4, 3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[]])</span>
+<span class="go">([3, 2, 1], [2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[]])</span>
+<span class="go">([4, 3, 2, 1], [2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">],[</span><span class="mi">3</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">4</span><span class="p">],[]])</span>
+<span class="go">([4, 2, 1], [4, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">],[</span><span class="mi">4</span><span class="p">]])</span>
+<span class="go">([4, 3, 2, 1], [4, 3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">]])</span>
+<span class="go">([3, 2, 1], [3])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">]])</span>
+<span class="go">([3, 2, 1], [3, 2])</span>
+</pre></div>
+</div>
+<p>Exercises adding one item when the last list has a single element;
+the second example comes from an actual poset:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([5, 4, 3, 2, 1], [5, 4, 3, 2, 1])</span>
+<span class="gp">sage: </span><span class="n">C3_sorted_merge_check</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="go">([6, 5, 4, 3, 2, 1], [6, 5, 4, 3, 2, 1])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.c3_controlled.CmpKey">
+<em class="property">class </em><tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">CmpKey</tt><a class="headerlink" href="#sage.misc.c3_controlled.CmpKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class implements the lazy attribute <tt class="docutils literal"><span class="pre">Category._cmp_key</span></tt>.</p>
+<p>The comparison key <tt class="docutils literal"><span class="pre">A._cmp_key</span></tt> of a category is used to define
+an (almost) total order on non-join categories by setting, for two
+categories <span class="math">\(A\)</span> and <span class="math">\(B\)</span>, <span class="math">\(A&lt;B\)</span> if <tt class="docutils literal"><span class="pre">A._cmp_key</span> <span class="pre">&gt;</span> <span class="pre">B._cmp_key</span></tt>. This
+order in turn is used to give a normal form to join&#8217;s, and help
+toward having a consistent method resolution order for
+parent/element classes.</p>
+<p>The comparison key should satisfy the following properties:</p>
+<ul class="simple">
+<li>If <span class="math">\(A\)</span> is a subcategory of <span class="math">\(B\)</span>, then <span class="math">\(A &lt; B\)</span> (so that
+<tt class="docutils literal"><span class="pre">A._cmp_key</span> <span class="pre">&gt;</span> <span class="pre">B._cmp_key</span></tt>). In particular,
+<a class="reference external" href="../../../categories/sage/categories/objects.html#sage.categories.objects.Objects" title="(in Sage Reference Manual: Category Theory v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Objects()</span></tt></a> is the largest category.</li>
+<li>If <span class="math">\(A != B\)</span> and taking the join of <span class="math">\(A\)</span> and <span class="math">\(B\)</span> makes sense
+(e.g. taking the join of <tt class="docutils literal"><span class="pre">Algebras(GF(5))</span></tt> and
+<tt class="docutils literal"><span class="pre">Algebras(QQ)</span></tt> does not make sense), then <span class="math">\(A&lt;B\)</span> or <span class="math">\(B&lt;A\)</span>.</li>
+</ul>
+<p>The rationale for the inversion above between <span class="math">\(A&lt;B\)</span> and
+<tt class="docutils literal"><span class="pre">A._cmp_key</span> <span class="pre">&gt;</span> <span class="pre">B._cmp_key</span></tt> is that we want the order to
+be compatible with inclusion of categories, yet it&#8217;s easier in
+practice to create keys that get bigger and bigger while we go
+down the category hierarchy.</p>
+<p>This implementation applies to join-irreducible categories
+(i.e. categories that are not join categories). It returns a
+pair of integers <tt class="docutils literal"><span class="pre">(flags,</span> <span class="pre">i)</span></tt>, where <tt class="docutils literal"><span class="pre">flags</span></tt> is to be
+interpreted as a bit vector. The first bit is set if <tt class="docutils literal"><span class="pre">self</span></tt>
+is a facade set. The second bit is set if <tt class="docutils literal"><span class="pre">self</span></tt> is finite.
+And so on. The choice of the flags is adhoc and was primarily
+crafted so that the order between categories would not change
+too much upon integration of <a class="reference external" href="http://trac.sagemath.org/13589">trac ticket #13589</a> and would be
+reasonably session independent. The number <tt class="docutils literal"><span class="pre">i</span></tt> is there
+to resolve ambiguities; it is session dependent, and is
+assigned increasingly when new categories are created.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is currently not implemented using a
+<a class="reference internal" href="lazy_attribute.html#sage.misc.lazy_attribute.lazy_attribute" title="sage.misc.lazy_attribute.lazy_attribute"><tt class="xref py py-class docutils literal"><span class="pre">lazy_attribute</span></tt></a> for speed reasons only (the code is in
+Cython and takes advantage of the fact that Category objects
+always have a <tt class="docutils literal"><span class="pre">__dict__</span></tt> dictionary)</p>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Handle nicely (covariant) functorial constructions and axioms</li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Objects</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(0, 0)</span>
+<span class="gp">sage: </span><span class="n">SetsWithPartialMaps</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(0, 1)</span>
+<span class="gp">sage: </span><span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(0, 2)</span>
+<span class="gp">sage: </span><span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">Facade</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(1, ...)</span>
+<span class="gp">sage: </span><span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">Finite</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(2, ...)</span>
+<span class="gp">sage: </span><span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">Infinite</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(4, ...)</span>
+<span class="gp">sage: </span><span class="n">EnumeratedSets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(8, ...)</span>
+<span class="gp">sage: </span><span class="n">FiniteEnumeratedSets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(10, ...)</span>
+<span class="gp">sage: </span><span class="n">SetsWithGrading</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(16, ...)</span>
+<span class="gp">sage: </span><span class="n">Posets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(32, ...)</span>
+<span class="gp">sage: </span><span class="n">LatticePosets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(96, ...)</span>
+<span class="gp">sage: </span><span class="n">Crystals</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(136, ...)</span>
+<span class="gp">sage: </span><span class="n">AdditiveMagmas</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(256, ...)</span>
+<span class="gp">sage: </span><span class="n">Magmas</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(4096, ...)</span>
+<span class="gp">sage: </span><span class="n">CommutativeAdditiveSemigroups</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(256, ...)</span>
+<span class="gp">sage: </span><span class="n">Rings</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(225536, ...)</span>
+<span class="gp">sage: </span><span class="n">Algebras</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(225536, ...)</span>
+<span class="gp">sage: </span><span class="n">AlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(227584, ...)</span>
+<span class="gp">sage: </span><span class="n">GradedAlgebras</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(226560, ...)</span>
+<span class="gp">sage: </span><span class="n">GradedAlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">(228608, ...)</span>
+</pre></div>
+</div>
+<p>For backward compatibility we currently want the following comparisons:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">EnumeratedSets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">&gt;</span> <span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">Facade</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">AdditiveMagmas</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">&gt;</span> <span class="n">EnumeratedSets</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">Category</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">EnumeratedSets</span><span class="p">(),</span> <span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">Facade</span><span class="p">()])</span><span class="o">.</span><span class="n">parent_class</span><span class="o">.</span><span class="n">_an_element_</span><span class="o">.</span><span class="n">__module__</span>
+<span class="go">&#39;sage.categories.enumerated_sets&#39;</span>
+
+<span class="gp">sage: </span><span class="n">CommutativeAdditiveSemigroups</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">&lt;</span> <span class="n">Magmas</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">VectorSpaces</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">&lt;</span> <span class="n">Rings</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">VectorSpaces</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">&lt;</span> <span class="n">Magmas</span><span class="p">()</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.c3_controlled.CmpKeyNamed">
+<em class="property">class </em><tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">CmpKeyNamed</tt><a class="headerlink" href="#sage.misc.c3_controlled.CmpKeyNamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class implements the lazy attribute <tt class="docutils literal"><span class="pre">CategoryWithParameters._cmp_key</span></tt>.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><a class="reference internal" href="#sage.misc.c3_controlled.CmpKey" title="sage.misc.c3_controlled.CmpKey"><tt class="xref py py-class docutils literal"><span class="pre">CmpKey</span></tt></a></li>
+<li><a class="reference internal" href="lazy_attribute.html#sage.misc.lazy_attribute.lazy_attribute" title="sage.misc.lazy_attribute.lazy_attribute"><tt class="xref py py-class docutils literal"><span class="pre">lazy_attribute</span></tt></a></li>
+<li><a class="reference external" href="../../../categories/sage/categories/category.html#sage.categories.category.CategoryWithParameters" title="(in Sage Reference Manual: Category Theory v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.categories.category.CategoryWithParameters</span></tt></a>.</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>The value of the attribute depends only on the parameters of
+this category.</li>
+<li>This is currently not implemented using a
+<a class="reference internal" href="lazy_attribute.html#sage.misc.lazy_attribute.lazy_attribute" title="sage.misc.lazy_attribute.lazy_attribute"><tt class="xref py py-class docutils literal"><span class="pre">lazy_attribute</span></tt></a> for speed reasons only.</li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Algebras</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">==</span> <span class="n">Algebras</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">_cmp_key</span>  <span class="c"># indirect doctest</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Algebras</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span><span class="o">.</span><span class="n">_cmp_key</span> <span class="o">!=</span> <span class="n">Algebras</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">_cmp_key</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.c3_controlled.HierarchyElement">
+<em class="property">class </em><tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">HierarchyElement</tt><big>(</big><em>value</em>, <em>bases</em>, <em>key</em>, <em>from_value</em><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>A class for elements in a hierarchy.</p>
+<p>This class is for testing and experimenting with various variants
+of the <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm to compute a linear extension of the
+elements above an element in a hierarchy. Given the topic at hand,
+we use the following naming conventions. For <span class="math">\(x\)</span> an element of the
+hierarchy, we call the elements just above <span class="math">\(x\)</span> its <em>bases</em>, and
+the linear extension of all elements above <span class="math">\(x\)</span> its <em>MRO</em>.</p>
+<p>By convention, the bases are given as lists of
+<tt class="docutils literal"><span class="pre">HierarchyElement</span></tt> s, and MROs are given a list of the
+corresponding values.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; an object</li>
+<li><tt class="docutils literal"><span class="pre">succ</span></tt> &#8211; a successor function, poset or digraph from which
+one can recover the successors of <tt class="docutils literal"><span class="pre">value</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; a function taking values as input (default: the
+identity) this function is used to compute comparison keys for
+sorting elements of the hierarchy.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Constructing a <tt class="docutils literal"><span class="pre">HierarchyElement</span></tt> immediately constructs the
+whole hierarchy above it.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>See the introduction of this module <a class="reference internal" href="#module-sage.misc.c3_controlled" title="sage.misc.c3_controlled"><tt class="xref py py-mod docutils literal"><span class="pre">sage.misc.c3_controlled</span></tt></a>
+for many examples. Here we consider a large example, originaly
+taken from the hierarchy of categories above
+<a class="reference external" href="../../../categories/sage/categories/hopf_algebras_with_basis.html#sage.categories.hopf_algebras_with_basis.HopfAlgebrasWithBasis" title="(in Sage Reference Manual: Category Theory v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">HopfAlgebrasWithBasis</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">({</span>
+<span class="go">....:     44 :  [43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     43 :  [42, 41, 40, 36, 35, 39, 38, 37, 33, 32, 31, 30, 29, 28, 27, 26, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     42 :  [36, 35, 37, 30, 29, 28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     41 :  [40, 36, 35, 33, 32, 31, 30, 29, 28, 27, 26, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     40 :  [36, 35, 32, 31, 30, 29, 28, 27, 26, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     39 :  [38, 37, 33, 32, 31, 30, 29, 28, 27, 26, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     38 :  [37, 33, 32, 31, 30, 29, 28, 27, 26, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     37 :  [30, 29, 28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     36 :  [35, 30, 29, 28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     35 :  [29, 28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     34 :  [33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     33 :  [32, 31, 30, 29, 28, 27, 26, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     32 :  [31, 30, 29, 28, 27, 26, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     31 :  [30, 29, 28, 27, 26, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     30 :  [29, 28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     29 :  [28, 27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     28 :  [27, 26, 15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     27 :  [15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     26 :  [15, 14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     25 :  [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     24 :  [4, 2, 1, 0],</span>
+<span class="go">....:     23 :  [22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     22 :  [21, 20, 18, 17, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     21 :  [20, 17, 4, 2, 1, 0],</span>
+<span class="go">....:     20 :  [4, 2, 1, 0],</span>
+<span class="go">....:     19 :  [18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     18 :  [17, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     17 :  [4, 2, 1, 0],</span>
+<span class="go">....:     16 :  [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     15 :  [14, 12, 11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     14 :  [11, 3, 2, 1, 0],</span>
+<span class="go">....:     13 :  [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     12 :  [11, 9, 8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     11 :  [3, 2, 1, 0],</span>
+<span class="go">....:     10 :  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     9 :  [8, 5, 3, 2, 1, 0],</span>
+<span class="go">....:     8 :  [3, 2, 1, 0],</span>
+<span class="go">....:     7 :  [6, 5, 4, 3, 2, 1, 0],</span>
+<span class="go">....:     6 :  [4, 3, 2, 1, 0],</span>
+<span class="go">....:     5 :  [3, 2, 1, 0],</span>
+<span class="go">....:     4 :  [2, 1, 0],</span>
+<span class="go">....:     3 :  [2, 1, 0],</span>
+<span class="go">....:     2 :  [1, 0],</span>
+<span class="go">....:     1 :  [0],</span>
+<span class="go">....:     0 :  [],</span>
+<span class="go">....:     })</span>
+
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">44</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span>
+<span class="go">&lt;class &#39;44.cls&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="go">[&lt;class &#39;44.cls&#39;&gt;, &lt;class &#39;43.cls&#39;&gt;, &lt;class &#39;42.cls&#39;&gt;, &lt;class &#39;41.cls&#39;&gt;, &lt;class &#39;40.cls&#39;&gt;, &lt;class &#39;39.cls&#39;&gt;, &lt;class &#39;38.cls&#39;&gt;, &lt;class &#39;37.cls&#39;&gt;, &lt;class &#39;36.cls&#39;&gt;, &lt;class &#39;35.cls&#39;&gt;, &lt;class &#39;34.cls&#39;&gt;, &lt;class &#39;33.cls&#39;&gt;, &lt;class &#39;32.cls&#39;&gt;, &lt;class &#39;31.cls&#39;&gt;, &lt;class &#39;30.cls&#39;&gt;, &lt;class &#39;29.cls&#39;&gt;, &lt;class &#39;28.cls&#39;&gt;, &lt;class &#39;27.cls&#39;&gt;, &lt;class &#39;26.cls&#39;&gt;, &lt;class &#39;25.cls&#39;&gt;, &lt;class &#39;24.cls&#39;&gt;, &lt;class &#39;23.cls&#39;&gt;, &lt;class &#39;22.cls&#39;&gt;, &lt;class &#39;21.cls&#39;&gt;, &lt;class &#39;20.cls&#39;&gt;, &lt;class &#39;19.cls&#39;&gt;, &lt;class &#39;18.cls&#39;&gt;, &lt;class &#39;17.cls&#39;&gt;, &lt;class &#39;16.cls&#39;&gt;, &lt;class &#39;15.cls&#39;&gt;, &lt;class &#39;14.cls&#39;&gt;, &lt;class &#39;13.cls&#39;&gt;, &lt;class &#39;12.cls&#39;&gt;, &lt;class &#39;11.cls&#39;&gt;, &lt;class &#39;10.cls&#39;&gt;, &lt;class &#39;9.cls&#39;&gt;, &lt;class &#39;8.cls&#39;&gt;, &lt;class &#39;7.cls&#39;&gt;, &lt;class &#39;6.cls&#39;&gt;, &lt;class &#39;5.cls&#39;&gt;, &lt;class &#39;4.cls&#39;&gt;, &lt;class &#39;3.cls&#39;&gt;, &lt;class &#39;2.cls&#39;&gt;, &lt;class &#39;1.cls&#39;&gt;, &lt;class &#39;0.cls&#39;&gt;, &lt;type &#39;object&#39;&gt;]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.all_bases">
+<tt class="descname">all_bases</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.all_bases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the set of all the <tt class="docutils literal"><span class="pre">HierarchyElement``s</span> <span class="pre">above</span> <span class="pre">``self</span></tt>, <tt class="docutils literal"><span class="pre">self</span></tt> included.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">((</span><span class="n">divisors</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">divides</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">all_bases</span><span class="p">()</span>
+<span class="go">{1}</span>
+<span class="gp">sage: </span><span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">all_bases</span><span class="p">()</span>  <span class="c"># random output</span>
+<span class="go">{10, 5, 2, 1}</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">all_bases</span><span class="p">()])</span>
+<span class="go">[1, 2, 5, 10]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.all_bases_controlled_len">
+<tt class="descname">all_bases_controlled_len</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.all_bases_controlled_len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cumulated size of the controlled bases of the elements above <tt class="docutils literal"><span class="pre">self</span></tt> in the hierarchy.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">((</span><span class="n">divisors</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">divides</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">all_bases_controlled_len</span><span class="p">()</span>
+<span class="go">13</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.all_bases_len">
+<tt class="descname">all_bases_len</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.all_bases_len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cumulated size of the bases of the elements above <tt class="docutils literal"><span class="pre">self</span></tt> in the hierarchy.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">((</span><span class="n">divisors</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">divides</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">all_bases_len</span><span class="p">()</span>
+<span class="go">12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.bases">
+<tt class="descname">bases</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.bases" title="Permalink to this definition">¶</a></dt>
+<dd><p>The bases of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>The bases are given as a list of <tt class="docutils literal"><span class="pre">HierarchyElement``s,</span> <span class="pre">sorted</span>
+<span class="pre">decreasingly</span> <span class="pre">accoding</span> <span class="pre">to</span> <span class="pre">the</span> <span class="pre">``key</span></tt> function.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">((</span><span class="n">divisors</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">divides</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">bases</span>
+<span class="go">[5, 2]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">bases</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">&lt;class &#39;sage.misc.c3_controlled.HierarchyElement&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[10, 5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_bases_controlled</span>
+<span class="go">[5, 2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.cls">
+<tt class="descname">cls</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Python class with inheritance graph parallel to the hierarchy above <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">((</span><span class="n">divisors</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">divides</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span>
+<span class="go">&lt;class &#39;1.cls&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="go">[&lt;class &#39;1.cls&#39;&gt;, &lt;type &#39;object&#39;&gt;]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span>
+<span class="go">&lt;class &#39;30.cls&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">cls</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="go">[&lt;class &#39;30.cls&#39;&gt;, &lt;class &#39;15.cls&#39;&gt;, &lt;class &#39;10.cls&#39;&gt;, &lt;class &#39;6.cls&#39;&gt;, &lt;class &#39;5.cls&#39;&gt;, &lt;class &#39;3.cls&#39;&gt;, &lt;class &#39;2.cls&#39;&gt;, &lt;class &#39;1.cls&#39;&gt;, &lt;type &#39;object&#39;&gt;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.mro">
+<tt class="descname">mro</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.mro" title="Permalink to this definition">¶</a></dt>
+<dd><p>The MRO for this object, calculated with <a class="reference internal" href="#sage.misc.c3_controlled.C3_sorted_merge" title="sage.misc.c3_controlled.C3_sorted_merge"><tt class="xref py py-meth docutils literal"><span class="pre">C3_sorted_merge()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span><span class="p">,</span> <span class="n">C3_sorted_merge</span><span class="p">,</span> <span class="n">identity</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">({</span><span class="mi">7</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="mi">5</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">6</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]},</span> <span class="n">facade</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[6, 4, 3]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro</span>
+<span class="go">[7, 6, 5, 4, 3, 2, 1]</span>
+
+<span class="gp">sage: </span><span class="n">C3_sorted_merge</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">]],</span> <span class="n">identity</span><span class="p">)</span>
+<span class="go">([6, 5, 4, 3, 2, 1], [6, 5, 4])</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Integer</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">mro</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.mro_controlled">
+<tt class="descname">mro_controlled</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.mro_controlled" title="Permalink to this definition">¶</a></dt>
+<dd><p>The MRO for this object, calculated with <a class="reference internal" href="#sage.misc.c3_controlled.C3_merge" title="sage.misc.c3_controlled.C3_merge"><tt class="xref py py-meth docutils literal"><span class="pre">C3_merge()</span></tt></a>, under control of <span class="math">\(C3_sorted_merge\)</span></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span><span class="p">,</span> <span class="n">C3_merge</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">({</span><span class="mi">7</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="mi">5</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">6</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]},</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_controlled</span>
+<span class="go">[5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_controlled</span>
+<span class="go">[6, 4, 3]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_controlled</span>
+<span class="go">[7, 6, 5, 4, 3, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_bases</span>
+<span class="go">[6, 5]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_bases_controlled</span>
+<span class="go">[6, 5, 4]</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>
+<span class="go">[6, 4, 3, 5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="go">[6, 5, 4, 3, 2, 1]</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Integer</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">mro_controlled</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.c3_controlled.HierarchyElement.mro_standard">
+<tt class="descname">mro_standard</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.HierarchyElement.mro_standard" title="Permalink to this definition">¶</a></dt>
+<dd><p>The MRO for this object, calculated with <a class="reference internal" href="#sage.misc.c3_controlled.C3_merge" title="sage.misc.c3_controlled.C3_merge"><tt class="xref py py-meth docutils literal"><span class="pre">C3_merge()</span></tt></a></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">HierarchyElement</span><span class="p">,</span> <span class="n">C3_merge</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Poset</span><span class="p">({</span><span class="mi">7</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="mi">5</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">6</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]},</span> <span class="n">facade</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">[5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">[6, 4, 3]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">HierarchyElement</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span>
+<span class="go">[7, 6, 4, 3, 5, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">C3_merge</span><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>
+<span class="go">[6, 4, 3, 5, 2, 1]</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Integer</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">mro_standard</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.c3_controlled.identity">
+<tt class="descclassname">sage.misc.c3_controlled.</tt><tt class="descname">identity</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.misc.c3_controlled.identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.c3_controlled</span> <span class="kn">import</span> <span class="n">identity</span>
+<span class="gp">sage: </span><span class="n">identity</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">10</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">The <tt class="docutils literal"><span class="pre">C3</span></tt> algorithm, under control of a total order.</a><ul>
+<li><a class="reference internal" href="#abstract">Abstract</a></li>
+<li><a class="reference internal" href="#the-problem">The problem</a></li>
+<li><a class="reference internal" href="#a-strategy-to-solve-the-problem">A strategy to solve the problem</a></li>
+<li><a class="reference internal" href="#getting-fine-control-on-c3">Getting fine control on C3</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="c3.html"
+                                  title="previous chapter">The C3 algorithm</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="decorators.html"
+                                  title="next chapter">Decorators</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/c3_controlled.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="decorators.html" title="Decorators"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="c3.html" title="The C3 algorithm"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

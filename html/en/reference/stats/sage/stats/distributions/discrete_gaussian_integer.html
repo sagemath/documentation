@@ -1,0 +1,515 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Discrete Gaussian Samplers over the Integers &mdash; Sage Reference Manual v6.6: Statistics</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Statistics" href="../../../index.html" />
+    <link rel="next" title="Discrete Gaussian Samplers for \(\ZZ[x]\)" href="discrete_gaussian_polynomial.html" />
+    <link rel="prev" title="Hidden Markov Models – Utility functions" href="../hmm/util.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="discrete_gaussian_polynomial.html" title="Discrete Gaussian Samplers for \(\ZZ[x]\)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../hmm/util.html" title="Hidden Markov Models – Utility functions"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Statistics</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="discrete-gaussian-samplers-over-the-integers">
+<span id="sage-stats-distributions-discrete-gaussian-integer"></span><h1>Discrete Gaussian Samplers over the Integers<a class="headerlink" href="#discrete-gaussian-samplers-over-the-integers" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.stats.distributions.discrete_gaussian_integer"></span><p>This class realizes oracles which returns integers proportionally to
+<span class="math">\(\exp(-(x-c)^2/(2σ^2))\)</span>. All oracles are implemented using rejection sampling.
+See <a class="reference internal" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__init__" title="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__init__"><tt class="xref py py-func docutils literal"><span class="pre">DiscreteGaussianDistributionIntegerSampler.__init__()</span></tt></a> for which algorithms are
+available.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Martin Albrecht (2014-06-28): initial version</li>
+</ul>
+<p>EXAMPLE:</p>
+<p>We construct a sampler for the distribution <span class="math">\(D_{3,c}\)</span> with width <span class="math">\(σ=3\)</span> and center <span class="math">\(c=0\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We ask for 100000 samples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span><span class="o">=</span><span class="mi">100000</span><span class="p">;</span> <span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>These are sampled with a probability proportional to <span class="math">\(\exp(-x^2/18)\)</span>. More
+precisely we have to normalise by dividing by the overall probability over all
+integers. We use the fact that hitting anything more than 6 standard deviations
+away is very unlikely and compute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">norm_factor</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="o">*</span><span class="n">sigma</span><span class="p">,</span><span class="n">sigma</span><span class="o">*</span><span class="mi">6</span><span class="o">+</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">norm_factor</span>
+<span class="go">7.519...</span>
+</pre></div>
+</div>
+<p>With this normalisation factor, we can now test if our samples follow the
+expected distribution:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">norm_factor</span><span class="p">))</span>
+<span class="go">(13355, 13298)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="mi">4</span><span class="p">;</span> <span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">norm_factor</span><span class="p">))</span>
+<span class="go">(5479, 5467)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">=-</span><span class="mi">10</span><span class="p">;</span> <span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">norm_factor</span><span class="p">))</span>
+<span class="go">(53, 51)</span>
+</pre></div>
+</div>
+<p>We construct an instance with a larger width:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">sigma</span> <span class="o">=</span> <span class="mi">127</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;uniform+online&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>ask for 100000 samples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span><span class="o">=</span><span class="mi">100000</span><span class="p">;</span> <span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span> <span class="c"># long time</span>
+</pre></div>
+</div>
+<p>and check if the proportions fit:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>   <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">n</span><span class="p">()</span> <span class="c"># long time</span>
+<span class="go">(1.0, 1.00...)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">y</span><span class="o">=-</span><span class="mi">100</span><span class="p">;</span> <span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">^</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">n</span><span class="p">()</span> <span class="c"># long time</span>
+<span class="go">(1.32..., 1.36...)</span>
+</pre></div>
+</div>
+<p>We construct a sampler with <span class="math">\(c\%1 != 0\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">sigma</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">n</span><span class="o">=</span><span class="mi">100000</span><span class="p">;</span> <span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span> <span class="c"># long time</span>
+<span class="go">0.486650000000000</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="ddll13" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[DDLL13]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id3">3</a>)</em> Léo Ducas, Alain Durmus, Tancrède Lepoint and Vadim
+Lyubashevsky. <em>Lattice Signatures and Bimodal Gaussians</em>; in Advances in
+Cryptology – CRYPTO 2013; Lecture Notes in Computer Science Volume 8042,
+2013, pp 40-56 <a class="reference external" href="http://www.di.ens.fr/~lyubash/papers/bimodal.pdf">http://www.di.ens.fr/~lyubash/papers/bimodal.pdf</a></td></tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler">
+<em class="property">class </em><tt class="descclassname">sage.stats.distributions.discrete_gaussian_integer.</tt><tt class="descname">DiscreteGaussianDistributionIntegerSampler</tt><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>A Discrete Gaussian Sampler using rejection sampling.</p>
+<dl class="method">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>sigma</em>, <em>c=0</em>, <em>tau=6</em>, <em>algorithm=None</em>, <em>precision='mp'</em><big>)</big><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new sampler for a discrete Gaussian distribution.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">sigma</span></tt> - samples <span class="math">\(x\)</span> are accepted with probability proportional to
+<span class="math">\(\exp(-(x-c)²/(2σ²))\)</span></p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">c</span></tt> - the mean of the distribution. The value of <tt class="docutils literal"><span class="pre">c</span></tt> does not have
+to be an integer. However, some algorithms only support integer-valued
+<tt class="docutils literal"><span class="pre">c</span></tt> (default: <tt class="docutils literal"><span class="pre">0</span></tt>)</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">tau</span></tt> - samples outside the range <span class="math">\((⌊c⌉-⌈στ⌉,...,⌊c⌉+⌈στ⌉)\)</span> are
+considered to have probability zero. This bound applies to algorithms which
+sample from the uniform distribution (default: <tt class="docutils literal"><span class="pre">6</span></tt>)</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">algorithm</span></tt> - see list below (default: <tt class="docutils literal"><span class="pre">&quot;uniform+table&quot;</span></tt> for</dt>
+<dd><p class="first last"><span class="math">\(σt\)</span> bounded by <tt class="docutils literal"><span class="pre">DiscreteGaussianDistributionIntegerSampler.table_cutoff</span></tt> and
+<tt class="docutils literal"><span class="pre">&quot;uniform+online&quot;</span></tt> for bigger <span class="math">\(στ\)</span>)</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">precision</span></tt> - either <tt class="docutils literal"><span class="pre">&quot;mp&quot;</span></tt> for multi-precision where the actual
+precision used is taken from sigma or <tt class="docutils literal"><span class="pre">&quot;dp&quot;</span></tt> for double precision. In
+the latter case results are not reproducible. (default: <tt class="docutils literal"><span class="pre">&quot;mp&quot;</span></tt>)</p>
+</li>
+</ul>
+<p>ALGORITHMS:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&quot;uniform+table&quot;</span></tt> - classical rejection sampling, sampling from the
+uniform distribution and accepted with probability proportional to
+<span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> where <span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> is precomputed and
+stored in a table. Any real-valued <span class="math">\(c\)</span> is supported.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;uniform+logtable&quot;</span></tt> - samples are drawn from a uniform distribution and
+accepted with probability proportional to <span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> where
+<span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> is computed using logarithmically many calls to
+Bernoulli distributions. See <a class="reference internal" href="#ddll13" id="id1">[DDLL13]</a> for details.  Only
+integer-valued <span class="math">\(c\)</span> are supported.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;uniform+online&quot;</span></tt> - samples are drawn from a uniform distribution and
+accepted with probability proportional to <span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> where
+<span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> is computed in each invocation. Typically this
+is very slow.  See <a class="reference internal" href="#ddll13" id="id2">[DDLL13]</a> for details.  Any real-valued <span class="math">\(c\)</span> is
+accepted.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;sigma2+logtable&quot;</span></tt> - samples are drawn from an easily samplable
+distribution with <span class="math">\(σ = k·σ_2\)</span> with <span class="math">\(σ_2 = \sqrt{1/(2\log 2)}\)</span> and accepted
+with probability proportional to <span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> where
+<span class="math">\(\exp(-(x-c)²/(2σ²))\)</span> is computed using  logarithmically many calls to Bernoulli
+distributions (but no calls to <span class="math">\(\exp\)</span>). See <a class="reference internal" href="#ddll13" id="id3">[DDLL13]</a> for details. Note that this
+sampler adjusts <span class="math">\(σ\)</span> to match <span class="math">\(k·σ_2\)</span> for some integer <span class="math">\(k\)</span>.
+Only integer-valued <span class="math">\(c\)</span> are supported.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+online&quot;</span><span class="p">)</span>
+<span class="go">Discrete Gaussian sampler over the Integers with sigma = 3.000000 and c = 0</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+table&quot;</span><span class="p">)</span>
+<span class="go">Discrete Gaussian sampler over the Integers with sigma = 3.000000 and c = 0</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+logtable&quot;</span><span class="p">)</span>
+<span class="go">Discrete Gaussian sampler over the Integers with sigma = 3.000000 and c = 0</span>
+</pre></div>
+</div>
+<p>Note that <tt class="docutils literal"><span class="pre">&quot;sigma2+logtable&quot;</span></tt> adjusts <span class="math">\(σ\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;sigma2+logtable&quot;</span><span class="p">)</span>
+<span class="go">Discrete Gaussian sampler over the Integers with sigma = 3.397287 and c = 0</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>We are testing invalid inputs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">sigma must be &gt; 0.0 but got -3.000000</span>
+
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">tau</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">tau must be &gt;= 1 but got -1</span>
+
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;superfastalgorithmyouneverheardof&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Algorithm &#39;superfastalgorithmyouneverheardof&#39; not supported by class &#39;DiscreteGaussianDistributionIntegerSampler&#39;</span>
+
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;sigma2+logtable&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">algorithm &#39;uniform+logtable&#39; requires c%1 == 0</span>
+</pre></div>
+</div>
+<p>We are testing correctness for multi-precision:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">16</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+<span class="go">(True, True, True)</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">18</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span>
+<span class="go">(True, True, 2.45...)</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">18</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">-</span><span class="mf">2.5</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+<span class="go">(-2, 7, True)</span>
+</pre></div>
+</div>
+<p>We are testing correctness for double precision:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s">&quot;dp&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">16</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.05</span>
+<span class="go">(True, True, True)</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s">&quot;dp&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">18</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span>
+<span class="go">(True, True, 2.4...)</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s">&quot;dp&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">18</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">&lt;=-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">&gt;=</span><span class="mi">6</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">-</span><span class="mf">2.5</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.1</span>
+<span class="go">(True, True, True)</span>
+<span class="gp">sage: </span><span class="nb">tuple</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span> <span class="c"># output random</span>
+<span class="go">(7, 242, 4519, 34120, 92714, 91700, 33925, 4666, 246, 5)</span>
+</pre></div>
+</div>
+<p>We plot a histogram:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">17.0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="p">[</span><span class="n">D</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">16</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">list_plot</span><span class="p">([(</span><span class="n">v</span><span class="p">,</span><span class="n">S</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">S</span><span class="p">)])</span> <span class="c"># long time</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>These generators cache random bits for performance reasons. Hence, resetting
+the seed of the PRNG might not have the expected outcome. You can flush this cache with
+<tt class="docutils literal"><span class="pre">_flush_cache()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="o">.</span><span class="n">_flush_cache</span><span class="p">();</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">3</span>
+
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">randstate</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">D</span><span class="p">()</span>
+<span class="go">-3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__call__">
+<tt class="descname">__call__</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new sample.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+online&quot;</span><span class="p">)()</span>
+<span class="go">-3</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+table&quot;</span><span class="p">)()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.stats.distributions.discrete_gaussian_integer</span> <span class="kn">import</span> <span class="n">DiscreteGaussianDistributionIntegerSampler</span>
+<span class="gp">sage: </span><span class="n">DiscreteGaussianDistributionIntegerSampler</span><span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;uniform+logtable&quot;</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s">&quot;dp&quot;</span><span class="p">)()</span> <span class="c"># random output</span>
+<span class="go">13</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.algorithm">
+<tt class="descname">algorithm</tt><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.algorithm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.c">
+<tt class="descname">c</tt><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.c" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.sigma">
+<tt class="descname">sigma</tt><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.sigma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.tau">
+<tt class="descname">tau</tt><a class="headerlink" href="#sage.stats.distributions.discrete_gaussian_integer.DiscreteGaussianDistributionIntegerSampler.tau" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../hmm/util.html"
+                                  title="previous chapter">Hidden Markov Models &#8211; Utility functions</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="discrete_gaussian_polynomial.html"
+                                  title="next chapter">Discrete Gaussian Samplers for <span class="math">\(\ZZ[x]\)</span></a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/stats/distributions/discrete_gaussian_integer.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="discrete_gaussian_polynomial.html" title="Discrete Gaussian Samplers for \(\ZZ[x]\)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../hmm/util.html" title="Hidden Markov Models – Utility functions"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Statistics</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

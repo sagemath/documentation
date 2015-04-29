@@ -1,0 +1,478 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Fixing Pickle for Nested Classes &mdash; Sage Reference Manual v6.6: Miscellaneous</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Miscellaneous" href="../../index.html" />
+    <link rel="next" title="Test for nested class Parent" href="nested_class_test.html" />
+    <link rel="prev" title="Implement fast version of decomposition of (small) integers into sum of squares" href="../rings/sum_of_squares.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="nested_class_test.html" title="Test for nested class Parent"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../rings/sum_of_squares.html" title="Implement fast version of decomposition of (small) integers into sum of squares"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="fixing-pickle-for-nested-classes">
+<span id="sage-misc-nested-class"></span><h1>Fixing Pickle for Nested Classes<a class="headerlink" href="#fixing-pickle-for-nested-classes" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.nested_class"></span><p>As of Python 2.6, names for nested classes are set by Python in  a
+way which is incompatible with the pickling of such classes (pickling by name):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>           <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;B&#39;</span>
+</pre></div>
+</div>
+<p>instead of the a priori more natural <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt>.</p>
+<p>Furthermore, upon pickling (here in save_global) <em>and</em> unpickling (in
+load_global) a class with name <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt> in a module <tt class="docutils literal"><span class="pre">mod</span></tt>, the standard
+cPickle module searches for <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt> in <tt class="docutils literal"><span class="pre">mod.__dict__</span></tt> instead of looking
+up <tt class="docutils literal"><span class="pre">&quot;A&quot;</span></tt> and then <tt class="docutils literal"><span class="pre">&quot;B&quot;</span></tt> in the result.</p>
+<p>See: <a class="reference external" href="http://groups.google.com/group/sage-devel/browse_thread/thread/6c7055f4a580b7ae/">http://groups.google.com/group/sage-devel/browse_thread/thread/6c7055f4a580b7ae/</a></p>
+<p>This module provides two utilities to workaround this issue:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="#sage.misc.nested_class.nested_pickle" title="sage.misc.nested_class.nested_pickle"><tt class="xref py py-func docutils literal"><span class="pre">nested_pickle()</span></tt></a> &#8220;fixes&#8221; recursively the name of the
+subclasses of a class and inserts their fullname <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt> in
+<tt class="docutils literal"><span class="pre">mod.__dict__</span></tt></li>
+<li><a class="reference internal" href="#sage.misc.nested_class.NestedClassMetaclass" title="sage.misc.nested_class.NestedClassMetaclass"><tt class="xref py py-class docutils literal"><span class="pre">NestedClassMetaclass</span></tt></a> is a metaclass ensuring that
+<a class="reference internal" href="#sage.misc.nested_class.nested_pickle" title="sage.misc.nested_class.nested_pickle"><tt class="xref py py-func docutils literal"><span class="pre">nested_pickle()</span></tt></a> is called on a class upon creation.</li>
+</ul>
+</div></blockquote>
+<p>See also <a class="reference internal" href="nested_class_test.html#module-sage.misc.nested_class_test" title="sage.misc.nested_class_test"><tt class="xref py py-mod docutils literal"><span class="pre">sage.misc.nested_class_test</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="n">A1</span><span class="p">,</span> <span class="n">nested_pickle</span>
+
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">A2</span><span class="o">.</span><span class="n">A3</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A3&#39;</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">A2</span><span class="o">.</span><span class="n">A3</span>
+<span class="go">&lt;class sage.misc.nested_class.A3 at ...&gt;</span>
+
+<span class="gp">sage: </span><span class="n">nested_pickle</span><span class="p">(</span><span class="n">A1</span><span class="p">)</span>
+<span class="go">&lt;class sage.misc.nested_class.A1 at ...&gt;</span>
+
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">A2</span>
+<span class="go">&lt;class sage.misc.nested_class.A1.A2 at ...&gt;</span>
+
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">A2</span><span class="o">.</span><span class="n">A3</span>
+<span class="go">&lt;class sage.misc.nested_class.A1.A2.A3 at ...&gt;</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">A2</span><span class="o">.</span><span class="n">A3</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A1.A2.A3&#39;</span>
+
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">nested_class</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;A1.A2&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">A1</span><span class="o">.</span><span class="n">A2</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">nested_class</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="s">&#39;A1.A2.A3&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">A1</span><span class="o">.</span><span class="n">A2</span><span class="o">.</span><span class="n">A3</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>All of this is not perfect. In the following scenario:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A1</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">A2</span><span class="p">:</span>
+<span class="gp">... </span>          <span class="k">pass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">B1</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="n">A2</span> <span class="o">=</span> <span class="n">A1</span><span class="o">.</span><span class="n">A2</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>The name for <tt class="docutils literal"><span class="pre">&quot;A1.A2&quot;</span></tt> could potentially be set to <tt class="docutils literal"><span class="pre">&quot;B1.A2&quot;</span></tt>. But that will work anyway.</p>
+<dl class="function">
+<dt id="sage.misc.nested_class.modify_for_nested_pickle">
+<tt class="descclassname">sage.misc.nested_class.</tt><tt class="descname">modify_for_nested_pickle</tt><big>(</big><em>cls</em>, <em>name_prefix</em>, <em>module</em>, <em>first_run=True</em><big>)</big><a class="headerlink" href="#sage.misc.nested_class.modify_for_nested_pickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modify the subclasses of the given class to be picklable, by
+giving them a mangled name and putting the mangled name in the
+module namespace.</p>
+<p>INPUTS:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">cls</span></tt> - The class to modify.</li>
+<li><tt class="docutils literal"><span class="pre">name_prefix</span></tt> - The prefix to prepend to the class name.</li>
+<li><tt class="docutils literal"><span class="pre">module</span></tt> - The module object to modify with the mangled name.</li>
+<li><tt class="docutils literal"><span class="pre">first_run</span></tt> - optional bool (default True): Whether or not
+this function is run for the first time on <tt class="docutils literal"><span class="pre">cls</span></tt>.</li>
+</ul>
+<p>NOTE:</p>
+<p>This function would usually not be directly called. It is internally used
+in <a class="reference internal" href="#sage.misc.nested_class.NestedClassMetaclass" title="sage.misc.nested_class.NestedClassMetaclass"><tt class="xref py py-class docutils literal"><span class="pre">NestedClassMetaclass</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">pass</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="n">module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;B&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;A.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&#39;Not found&#39;</span>
+<span class="gp">sage: </span><span class="n">modify_for_nested_pickle</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A.B&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;A.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;__main__.A.B&#39;&gt;</span>
+</pre></div>
+</div>
+<p>Here we demonstrate the effect of the <tt class="docutils literal"><span class="pre">first_run</span></tt> argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">modify_for_nested_pickle</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s">&#39;X&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span> <span class="c"># nothing changed</span>
+<span class="go">&#39;A.B&#39;</span>
+<span class="gp">sage: </span><span class="n">modify_for_nested_pickle</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s">&#39;X&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">],</span> <span class="n">first_run</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;X.A.B&#39;</span>
+</pre></div>
+</div>
+<p>Note that the class is now found in the module under both its old and
+its new name:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;A.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;__main__.X.A.B&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;X.A.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;__main__.X.A.B&#39;&gt;</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>The following is a real life example, that was enabled by the internal
+use of the``first_run`` in <a class="reference external" href="http://trac.sagemath.org/9107">trac ticket #9107</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span>
+<span class="go">....:  &quot;from sage.structure.unique_representation import UniqueRepresentation&quot;,</span>
+<span class="go">....:  &quot;class A1(UniqueRepresentation):&quot;,</span>
+<span class="go">....:  &quot;    class B1(UniqueRepresentation):&quot;,</span>
+<span class="go">....:  &quot;        class C1: pass&quot;,</span>
+<span class="go">....:  &quot;    class B2:&quot;,</span>
+<span class="go">....:  &quot;        class C2: pass&quot;]</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Before <a class="reference external" href="http://trac.sagemath.org/9107">trac ticket #9107</a>, the name of <tt class="docutils literal"><span class="pre">A1.B1.C1</span></tt> would have been wrong:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">B1</span><span class="o">.</span><span class="n">C1</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A1.B1.C1&#39;</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">B2</span><span class="o">.</span><span class="n">C2</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A1.B2.C2&#39;</span>
+<span class="gp">sage: </span><span class="n">A_module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">A1</span><span class="o">.</span><span class="n">__module__</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">A_module</span><span class="p">,</span> <span class="s">&#39;A1.B1.C1&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A1.B1.C1&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">A_module</span><span class="p">,</span> <span class="s">&#39;A1.B2.C2&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A1.B2.C2&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.nested_class.nested_pickle">
+<tt class="descclassname">sage.misc.nested_class.</tt><tt class="descname">nested_pickle</tt><big>(</big><em>cls</em><big>)</big><a class="headerlink" href="#sage.misc.nested_class.nested_pickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>This decorator takes a class that potentially contains nested classes.
+For each such nested class, its name is modified to a new illegal
+identifier, and that name is set in the module.  For example, if
+you have:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="n">nested_pickle</span>
+<span class="gp">sage: </span><span class="n">module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>          <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">nested_pickle</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="go">&lt;class &#39;__main__.A&#39;&gt;</span>
+</pre></div>
+</div>
+<p>then the name of class <tt class="docutils literal"><span class="pre">&quot;B&quot;</span></tt> will be modified to <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt>, and the <tt class="docutils literal"><span class="pre">&quot;A.B&quot;</span></tt>
+attribute of the module will be set to class <tt class="docutils literal"><span class="pre">&quot;B&quot;</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A.B&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;A.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&lt;class __main__.A.B at ...&gt;</span>
+</pre></div>
+</div>
+<p>In Python 2.6, decorators work with classes; then <tt class="docutils literal"><span class="pre">&#64;nested_pickle</span></tt>
+should work as a decorator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@nested_pickle</span>    <span class="c"># todo: not implemented</span>
+<span class="gp">... </span>  <span class="k">class</span> <span class="nc">A2</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>          <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">A2</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>    <span class="c"># todo: not implemented</span>
+<span class="go">&#39;A2.B&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s">&#39;A2.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>    <span class="c"># todo: not implemented</span>
+<span class="go">&lt;class __main__.A2.B at ...&gt;</span>
+</pre></div>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">MainClass</span><span class="o">.</span><span class="n">NestedClass</span><span class="p">()))</span> <span class="c"># indirect doctest</span>
+<span class="go">&lt;sage.misc.nested_class.MainClass.NestedClass object at 0x...&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.nested_class.NestedClassMetaclass">
+<em class="property">class </em><tt class="descclassname">sage.misc.nested_class.</tt><tt class="descname">NestedClassMetaclass</tt><a class="headerlink" href="#sage.misc.nested_class.NestedClassMetaclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#type" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">type</span></tt></a></p>
+<p>A metaclass for nested pickling.</p>
+<p>Check that one can use a metaclass to ensure nested_pickle
+is called on any derived subclass:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="n">NestedClassMetaclass</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">ASuperClass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">NestedClassMetaclass</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A3</span><span class="p">(</span><span class="n">ASuperClass</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">pass</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="n">A3</span><span class="o">.</span><span class="n">B</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;A3.B&#39;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s">&#39;__main__&#39;</span><span class="p">],</span> <span class="s">&#39;A3.B&#39;</span><span class="p">,</span> <span class="s">&#39;Not found&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;__main__.A3.B&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.nested_class.MainClass">
+<em class="property">class </em><tt class="descclassname">sage.misc.nested_class.</tt><tt class="descname">MainClass</tt><a class="headerlink" href="#sage.misc.nested_class.MainClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>A simple class to test nested_pickle.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">MainClass</span><span class="p">()))</span>
+<span class="go">&lt;sage.misc.nested_class.MainClass object at 0x...&gt;</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.misc.nested_class.MainClass.NestedClass">
+<em class="property">class </em><tt class="descname">NestedClass</tt><a class="headerlink" href="#sage.misc.nested_class.MainClass.NestedClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">MainClass</span><span class="o">.</span><span class="n">NestedClass</span><span class="p">()))</span>
+<span class="go">&lt;sage.misc.nested_class.MainClass.NestedClass object at 0x...&gt;</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.misc.nested_class.MainClass.NestedClass.NestedSubClass">
+<em class="property">class </em><tt class="descname">NestedSubClass</tt><a class="headerlink" href="#sage.misc.nested_class.MainClass.NestedClass.NestedSubClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.nested_class</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">MainClass</span><span class="o">.</span><span class="n">NestedClass</span><span class="o">.</span><span class="n">NestedSubClass</span><span class="p">()))</span>
+<span class="go">&lt;sage.misc.nested_class.MainClass.NestedClass.NestedSubClass object at 0x...&gt;</span>
+<span class="gp">sage: </span><span class="nb">getattr</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">nested_class</span><span class="p">,</span> <span class="s">&#39;MainClass.NestedClass.NestedSubClass&#39;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.misc.nested_class.MainClass.NestedClass.NestedSubClass&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">MainClass</span><span class="o">.</span><span class="n">NestedClass</span><span class="o">.</span><span class="n">NestedSubClass</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;MainClass.NestedClass.NestedSubClass&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../rings/sum_of_squares.html"
+                                  title="previous chapter">Implement fast version of decomposition of (small) integers into sum of squares</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="nested_class_test.html"
+                                  title="next chapter">Test for nested class Parent</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/nested_class.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="nested_class_test.html" title="Test for nested class Parent"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../rings/sum_of_squares.html" title="Implement fast version of decomposition of (small) integers into sum of squares"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Module that creates and modifies parse trees of well formed boolean formulas. &mdash; Sage Reference Manual v6.6: Symbolic Logic</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Symbolic Logic" href="../../index.html" />
+    <link rel="next" title="Symbolic Logic Expressions" href="logic.html" />
+    <link rel="prev" title="Evaluation of Boolean Formulas" href="booleval.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="logic.html" title="Symbolic Logic Expressions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="booleval.html" title="Evaluation of Boolean Formulas"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Symbolic Logic</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-that-creates-and-modifies-parse-trees-of-well-formed-boolean-formulas">
+<span id="sage-logic-logicparser"></span><h1>Module that creates and modifies parse trees of well formed boolean formulas.<a class="headerlink" href="#module-that-creates-and-modifies-parse-trees-of-well-formed-boolean-formulas" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.logic.logicparser"></span><p>A parse tree of a boolean formula is a nested list, where each branch is either
+a single variable, or a formula composed of either two variables and a binary
+operator or one variable and a unary operator. The function parse produces
+a parse tree that is simplified for the purposes of more efficient truth value
+evaluation. The function <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a>
+produces the full parse tree of a boolean formula which is used in functions
+related to proof and inference.  That is,
+<a class="reference internal" href="#sage.logic.logicparser.parse" title="sage.logic.logicparser.parse"><tt class="xref py py-func docutils literal"><span class="pre">parse()</span></tt></a> is meant to be used with functions
+in the logic module that perform semantic operations on a boolean formula,
+and <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a> is to be used with
+functions that perform syntactic operations on a boolean formula.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Chris Gorecki (2007): initial version</li>
+<li>Paul Scurek (2013-08-01): added polish_parse, cleaned up python code,
+updated docstring formatting</li>
+<li>Paul Scurek (2013-08-06): added
+<a class="reference internal" href="#sage.logic.logicparser.recover_formula" title="sage.logic.logicparser.recover_formula"><tt class="xref py py-func docutils literal"><span class="pre">recover_formula()</span></tt></a>,
+<a class="reference internal" href="#sage.logic.logicparser.recover_formula_internal" title="sage.logic.logicparser.recover_formula_internal"><tt class="xref py py-func docutils literal"><span class="pre">recover_formula_internal()</span></tt></a>,
+<a class="reference internal" href="#sage.logic.logicparser.prefix_to_infix" title="sage.logic.logicparser.prefix_to_infix"><tt class="xref py py-func docutils literal"><span class="pre">prefix_to_infix()</span></tt></a>,
+<a class="reference internal" href="#sage.logic.logicparser.to_infix_internal" title="sage.logic.logicparser.to_infix_internal"><tt class="xref py py-func docutils literal"><span class="pre">to_infix_internal()</span></tt></a></li>
+<li>Paul Scurek (2013-08-08): added get_trees, error handling in polish_parse,
+recover_formula_internal, and tree_parse</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>Find the parse tree and variables of a string representation of a boolean
+formula:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;a|b&amp;c&#39;</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span>
+<span class="go">([&#39;|&#39;, &#39;a&#39;, [&#39;&amp;&#39;, &#39;b&#39;, &#39;c&#39;]], [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;])</span>
+</pre></div>
+</div>
+<p>Find the full syntax parse tree of a string representation of a boolean
+formula:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;(a&amp;b)-&gt;~~c&#39;</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">polish_parse</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, [&#39;&amp;&#39;, &#39;a&#39;, &#39;b&#39;], [&#39;~&#39;, [&#39;~&#39;, &#39;c&#39;]]]</span>
+</pre></div>
+</div>
+<p>Find the tokens and distinct variables of a boolean formula:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;~(a|~b)&lt;-&gt;(c-&gt;c)&#39;</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">([&#39;(&#39;, &#39;~&#39;, &#39;(&#39;, &#39;a&#39;, &#39;|&#39;, &#39;~&#39;, &#39;b&#39;, &#39;)&#39;, &#39;&lt;-&gt;&#39;, &#39;(&#39;, &#39;c&#39;, &#39;-&gt;&#39;, &#39;c&#39;, &#39;)&#39;, &#39;)&#39;], [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;])</span>
+</pre></div>
+</div>
+<p>Find the parse tree of a boolean formula from a list of the formula&#8217;s tokens:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, [&#39;~&#39;, &#39;c&#39;, None]]</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">[&#39;|&#39;, &#39;a&#39;, &#39;b&#39;]</span>
+</pre></div>
+</div>
+<p>Find the full syntax parse tree of a boolean formula from a list of tokens:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">polish</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, [&#39;~&#39;, &#39;c&#39;]]</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">polish</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[&#39;|&#39;, [&#39;~&#39;, [&#39;~&#39;, &#39;a&#39;]], &#39;b&#39;]</span>
+</pre></div>
+</div>
+<dl class="function">
+<dt id="sage.logic.logicparser.apply_func">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">apply_func</tt><big>(</big><em>tree</em>, <em>func</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.apply_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply <tt class="docutils literal"><span class="pre">func</span></tt> to each node of <tt class="docutils literal"><span class="pre">tree</span></tt>, and return a new parse tree.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">tree</span></tt> &#8211; a parse tree of a boolean formula</li>
+<li><tt class="docutils literal"><span class="pre">func</span></tt> &#8211; a function to be applied to each node of tree; this may
+be a function that comes from elsewhere in the logic module</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The new parse tree in the form of a nested list.</p>
+<p>EXAMPLES:</p>
+<p>This example uses <a class="reference internal" href="#sage.logic.logicparser.apply_func" title="sage.logic.logicparser.apply_func"><tt class="xref py py-func docutils literal"><span class="pre">apply_func()</span></tt></a> where
+<tt class="docutils literal"><span class="pre">func</span></tt> switches two entries of tree:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">apply_func</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="go">[&#39;|&#39;, [&#39;&amp;&#39;, &#39;c&#39;, &#39;a&#39;], [&#39;&amp;&#39;, &#39;b&#39;, &#39;a&#39;]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.get_trees">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">get_trees</tt><big>(</big><em>*statements</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.get_trees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full syntax parse trees of the statements.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">*statements</span></tt> &#8211; strings or <tt class="xref py py-class docutils literal"><span class="pre">BooleanFormula</span></tt> instances</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The parse trees in a list.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates finding the parse trees of multiple formulas.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.propcalc</span> <span class="kn">as</span> <span class="nn">propcalc</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;((a|b)&amp;~~c)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="s">&quot;a&lt;-&gt;(~(c))&quot;</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="s">&quot;~b&quot;</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">get_trees</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+<span class="go">[[&#39;&amp;&#39;, [&#39;|&#39;, &#39;a&#39;, &#39;b&#39;], [&#39;~&#39;, [&#39;~&#39;, &#39;c&#39;]]],</span>
+<span class="go">[&#39;&lt;-&gt;&#39;, &#39;a&#39;, [&#39;~&#39;, &#39;c&#39;]],</span>
+<span class="go">[&#39;~&#39;, &#39;b&#39;]]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">i</span> <span class="o">=</span> <span class="s">&quot;(~q-&gt;p)&quot;</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">get_trees</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+<span class="go">[[&#39;-&gt;&#39;, [&#39;~&#39;, &#39;q&#39;], &#39;p&#39;], [&#39;a&#39;]]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="s">&quot;p&quot;</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">get_trees</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">[[&#39;p&#39;]]</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.parse">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a parse tree from a boolean formula <tt class="docutils literal"><span class="pre">s</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">s</span></tt> &#8211; a string containing a boolean formula</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A list containing the prase tree and a list containing the
+variables in a boolean formula in this order:</p>
+<ol class="arabic simple">
+<li>the list containing the pase tree</li>
+<li>the list containing the variables</li>
+</ol>
+<p>EXAMPLES:</p>
+<p>This example illustrates how to produce the parse tree of a boolean
+formula <tt class="docutils literal"><span class="pre">s</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;a|b&amp;c&#39;</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span>
+<span class="go">([&#39;|&#39;, &#39;a&#39;, [&#39;&amp;&#39;, &#39;b&#39;, &#39;c&#39;]], [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.parse_ltor">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">parse_ltor</tt><big>(</big><em>toks</em>, <em>n=0</em>, <em>polish=False</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.parse_ltor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a parse tree from <tt class="docutils literal"><span class="pre">toks</span></tt>, where each token in <tt class="docutils literal"><span class="pre">toks</span></tt> is atomic.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">toks</span></tt> &#8211; a list of tokens. Each token is atomic.</li>
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; (default: 0) an integer representing which order of
+operations are occurring</li>
+<li><tt class="docutils literal"><span class="pre">polish</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">False</span></tt>) a boolean; when <tt class="docutils literal"><span class="pre">True</span></tt>, double
+negations are not cancelled and negated statements are turned into
+list of length two.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The parse tree as a nested list that depends on <tt class="docutils literal"><span class="pre">polish</span></tt> as follows:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">False</span></tt>, then return a simplified parse tree.</li>
+<li>If <tt class="docutils literal"><span class="pre">True</span></tt>, then return the full syntax parse tree.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>This example illustrates the use of
+<a class="reference internal" href="#sage.logic.logicparser.parse_ltor" title="sage.logic.logicparser.parse_ltor"><tt class="xref py py-func docutils literal"><span class="pre">parse_ltor()</span></tt></a> when <tt class="docutils literal"><span class="pre">polish</span></tt> is <tt class="docutils literal"><span class="pre">False</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">parse_ltor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;|&#39;, &#39;a&#39;, [&#39;&amp;&#39;, &#39;b&#39;, &#39;c&#39;]]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">parse_ltor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, &#39;b&#39;]</span>
+</pre></div>
+</div>
+<p>We now repeat the previous example, but with <tt class="docutils literal"><span class="pre">polish</span></tt> being <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">parse_ltor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">polish</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, [&#39;~&#39;, [&#39;~&#39;, &#39;b&#39;]]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.polish_parse">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">polish_parse</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.polish_parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the full syntax parse tree from a boolean formula <tt class="docutils literal"><span class="pre">s</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">s</span></tt> &#8211; a string containing a boolean expression</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The full syntax parse tree as a nested list.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates how to find the full syntax parse tree
+of a boolean formula:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;a|~~b&#39;</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">polish_parse</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span>
+<span class="go">[&#39;|&#39;, &#39;a&#39;, [&#39;~&#39;, [&#39;~&#39;, &#39;b&#39;]]]</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-03)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.prefix_to_infix">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">prefix_to_infix</tt><big>(</big><em>prefix_tree</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.prefix_to_infix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a parse tree from prefix form to infix form.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">prefix_tree</span></tt> &#8211; a list; this is a full syntax parse
+tree in prefix form</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A list containing the tree in infix form.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates converting a prefix tree to an infix tree:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.propcalc</span> <span class="kn">as</span> <span class="nn">propcalc</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">prefix_to_infix</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[[&#39;~&#39;, &#39;a&#39;], &#39;|&#39;, [&#39;b&#39;, &#39;&amp;&#39;, &#39;c&#39;]]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;(a&amp;~b)&lt;-&gt;~~~(c|d)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">prefix_to_infix</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">full_tree</span><span class="p">())</span>
+<span class="go">[[&#39;a&#39;, &#39;&amp;&#39;, [&#39;~&#39;, &#39;b&#39;]], &#39;&lt;-&gt;&#39;, [&#39;~&#39;, [&#39;~&#39;, [&#39;~&#39;, [&#39;c&#39;, &#39;|&#39;, &#39;d&#39;]]]]]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The function <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a> may be
+passed as an argument, but <a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a>
+may not unless the parameter <tt class="docutils literal"><span class="pre">polish</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.recover_formula">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">recover_formula</tt><big>(</big><em>prefix_tree</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.recover_formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recover the formula from a parse tree in prefix form.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">prefix_tree</span></tt> &#8211; a list; this is a full syntax parse
+tree in prefix form</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The formula as a string.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates the recovery of a formula from a parse tree:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.propcalc</span> <span class="kn">as</span> <span class="nn">propcalc</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]]],</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">],</span> <span class="s">&#39;d&#39;</span><span class="p">]]]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">&#39;(a&amp;~~c)-&gt;~(~c|d)&#39;</span>
+
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;a&amp;(~~c|d)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">full_tree</span><span class="p">())</span>
+<span class="go">&#39;a&amp;(~~c|d)&#39;</span>
+
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&#39;~a&#39;</span>
+
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;d&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&#39;d&#39;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The function <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a> may be
+passed as an argument, but <a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a>
+may not unless the parameter <tt class="docutils literal"><span class="pre">polish</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.recover_formula_internal">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">recover_formula_internal</tt><big>(</big><em>prefix_tree</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.recover_formula_internal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recover the formula from a parse tree in prefix form.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">prefix_tree</span></tt> &#8211; a list; this is a simple tree
+with at most one operator in prefix form</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The formula as a string.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates recovering the formula from a parse tree:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.propcalc</span> <span class="kn">as</span> <span class="nn">propcalc</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula_internal</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">&#39;(a-&gt;b)&#39;</span>
+
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula_internal</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&#39;~c&#39;</span>
+
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;d&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula_internal</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&#39;d&#39;</span>
+</pre></div>
+</div>
+<p>We can pass <a class="reference internal" href="#sage.logic.logicparser.recover_formula_internal" title="sage.logic.logicparser.recover_formula_internal"><tt class="xref py py-func docutils literal"><span class="pre">recover_formula_internal()</span></tt></a>
+as an argument in <a class="reference internal" href="#sage.logic.logicparser.apply_func" title="sage.logic.logicparser.apply_func"><tt class="xref py py-func docutils literal"><span class="pre">apply_func()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;~(d|c)&lt;-&gt;(a&amp;~~~c)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">apply_func</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">full_tree</span><span class="p">(),</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">recover_formula_internal</span><span class="p">)</span>
+<span class="go">&#39;(~(d|c)&lt;-&gt;(a&amp;~~~c))&#39;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>This function is for internal use by <a class="reference internal" href="#module-sage.logic.logicparser" title="sage.logic.logicparser"><tt class="xref py py-mod docutils literal"><span class="pre">logicparser</span></tt></a>.
+The function recovers the formula of a simple parse tree in prefix
+form. A simple parse tree contains at most one operator.</p>
+<p class="last">The function <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a> may be
+passed as an argument, but <a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a>
+may not unless the parameter <tt class="docutils literal"><span class="pre">polish</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.to_infix_internal">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">to_infix_internal</tt><big>(</big><em>prefix_tree</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.to_infix_internal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a simple parse tree from prefix form to infix form.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">prefix_tree</span></tt> &#8211; a list; this is a simple parse tree
+in prefix form with at most one operator</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The tree in infix form as a list.</p>
+<p>EXAMPLES:</p>
+<p>This example illustrates converting a simple tree from prefix
+to infix form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.propcalc</span> <span class="kn">as</span> <span class="nn">propcalc</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">to_infix_internal</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;a&#39;, &#39;|&#39;, &#39;b&#39;]</span>
+</pre></div>
+</div>
+<p>We can pass <a class="reference internal" href="#sage.logic.logicparser.to_infix_internal" title="sage.logic.logicparser.to_infix_internal"><tt class="xref py py-func docutils literal"><span class="pre">to_infix_internal()</span></tt></a> as an
+argument in <a class="reference internal" href="#sage.logic.logicparser.apply_func" title="sage.logic.logicparser.apply_func"><tt class="xref py py-func docutils literal"><span class="pre">apply_func()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">propcalc</span><span class="o">.</span><span class="n">formula</span><span class="p">(</span><span class="s">&quot;(a&amp;~b)&lt;-&gt;~~~(c|d)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">apply_func</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">full_tree</span><span class="p">(),</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">to_infix_internal</span><span class="p">)</span>
+<span class="go">[[&#39;a&#39;, &#39;&amp;&#39;, [&#39;~&#39;, &#39;b&#39;]], &#39;&lt;-&gt;&#39;, [&#39;~&#39;, [&#39;~&#39;, [&#39;~&#39;, [&#39;c&#39;, &#39;|&#39;, &#39;d&#39;]]]]]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>This function is for internal use by <a class="reference internal" href="#module-sage.logic.logicparser" title="sage.logic.logicparser"><tt class="xref py py-mod docutils literal"><span class="pre">logicparser</span></tt></a>.
+It converts a simple parse tree from prefix form to infix form. A
+simple parse tree contains at most one operator.</p>
+<p class="last">The function <a class="reference internal" href="#sage.logic.logicparser.polish_parse" title="sage.logic.logicparser.polish_parse"><tt class="xref py py-func docutils literal"><span class="pre">polish_parse()</span></tt></a> may be passed as an argument,
+but <a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a> may not unless the
+parameter <tt class="docutils literal"><span class="pre">polish</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>.</p>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Paul Scurek (2013-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.tokenize">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">tokenize</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.tokenize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the tokens and the distinct variables appearing in a boolean
+formula <tt class="docutils literal"><span class="pre">s</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">s</span></tt> &#8211; a string representation of a boolean formula</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The tokens and variables as an ordered pair of lists in the following
+order:</p>
+<ol class="arabic simple">
+<li>A list containing the tokens of <tt class="docutils literal"><span class="pre">s</span></tt>, in the order they appear in <tt class="docutils literal"><span class="pre">s</span></tt></li>
+<li>A list containing the distinct variables in <tt class="docutils literal"><span class="pre">s</span></tt>, in the order
+they appear in <tt class="docutils literal"><span class="pre">s</span></tt></li>
+</ol>
+<p>EXAMPLES:</p>
+<p>This example illustrates how to tokenize a string representation of a
+boolean formula:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&#39;a|b&amp;c&#39;</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">logicparser</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span>
+<span class="go">([&#39;(&#39;, &#39;a&#39;, &#39;|&#39;, &#39;b&#39;, &#39;&amp;&#39;, &#39;c&#39;, &#39;)&#39;], [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.logic.logicparser.tree_parse">
+<tt class="descclassname">sage.logic.logicparser.</tt><tt class="descname">tree_parse</tt><big>(</big><em>toks</em>, <em>polish=False</em><big>)</big><a class="headerlink" href="#sage.logic.logicparser.tree_parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a parse tree from the tokens in <tt class="docutils literal"><span class="pre">toks</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">toks</span></tt> &#8211; a list of tokens from a boolean formula</li>
+<li><tt class="docutils literal"><span class="pre">polish</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">False</span></tt>) a boolean; when <tt class="docutils literal"><span class="pre">True</span></tt>,
+<a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a> will return
+the full syntax parse tree</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A parse tree in the form of a nested list that depends on <tt class="docutils literal"><span class="pre">polish</span></tt>
+as follows:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">False</span></tt>, then return a simplified parse tree.</li>
+<li>If <tt class="docutils literal"><span class="pre">True</span></tt>, then return the full syntax parse tree.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>This example illustrates the use of
+<a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a> when <tt class="docutils literal"><span class="pre">polish</span></tt> is <tt class="docutils literal"><span class="pre">False</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.logic.logicparser</span> <span class="kn">as</span> <span class="nn">logicparser</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;|&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;&amp;&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;|&#39;, &#39;a&#39;, [&#39;&amp;&#39;, &#39;b&#39;, &#39;c&#39;]]</span>
+</pre></div>
+</div>
+<p>We now demonstrate the use of <a class="reference internal" href="#sage.logic.logicparser.tree_parse" title="sage.logic.logicparser.tree_parse"><tt class="xref py py-func docutils literal"><span class="pre">tree_parse()</span></tt></a>
+when <tt class="docutils literal"><span class="pre">polish</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, &#39;b&#39;]</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;(&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;-&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;~&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;)&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">logicparser</span><span class="o">.</span><span class="n">tree_parse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">polish</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[&#39;-&gt;&#39;, &#39;a&#39;, [&#39;~&#39;, [&#39;~&#39;, &#39;b&#39;]]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="booleval.html"
+                                  title="previous chapter">Evaluation of Boolean Formulas</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="logic.html"
+                                  title="next chapter">Symbolic Logic Expressions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/logic/logicparser.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="logic.html" title="Symbolic Logic Expressions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="booleval.html" title="Evaluation of Boolean Formulas"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Symbolic Logic</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

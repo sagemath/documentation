@@ -1,0 +1,835 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Distances/shortest paths between all pairs of vertices &mdash; Sage Reference Manual v6.6: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Graph Theory" href="../../index.html" />
+    <link rel="next" title="LaTeX options for graphs" href="graph_latex.html" />
+    <link rel="prev" title="Weakly chordal graphs" href="weakly_chordal.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph_latex.html" title="LaTeX options for graphs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="weakly_chordal.html" title="Weakly chordal graphs"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="distances-shortest-paths-between-all-pairs-of-vertices">
+<span id="sage-graphs-distances-all-pairs"></span><h1>Distances/shortest paths between all pairs of vertices<a class="headerlink" href="#distances-shortest-paths-between-all-pairs-of-vertices" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.distances_all_pairs"></span><p>This module implements a few functions that deal with the computation of
+distances or shortest paths between all pairs of vertices.</p>
+<p><strong>Efficiency</strong> : Because these functions involve listing many times the
+(out)-neighborhoods of (di)-graphs, it is useful in terms of efficiency to build
+a temporary copy of the graph in a data structure that makes it easy to compute
+quickly. These functions also work on large volume of data, typically dense
+matrices of size <span class="math">\(n^2\)</span>, and are expected to return corresponding dictionaries of
+size <span class="math">\(n^2\)</span>, where the integers corresponding to the vertices have first been
+converted to the vertices&#8217; labels. Sadly, this last translating operation turns
+out to be the most time-consuming, and for this reason it is also nice to have a
+Cython module, and version of these functions that return C arrays, in order to
+avoid these operations when they are not necessary.</p>
+<p><strong>Memory cost</strong> : The methods implemented in the current module sometimes need large
+amounts of memory to return their result. Storing the distances between all
+pairs of vertices in a graph on <span class="math">\(1500\)</span> vertices as a dictionary of dictionaries
+takes around 200MB, while storing the same information as a C array requires
+4MB.</p>
+<div class="section" id="the-module-s-main-function">
+<h2>The module&#8217;s main function<a class="headerlink" href="#the-module-s-main-function" title="Permalink to this headline">¶</a></h2>
+<p>The C function <tt class="docutils literal"><span class="pre">all_pairs_shortest_path_BFS</span></tt> actually does all the
+computations, and all the others (except for <tt class="docutils literal"><span class="pre">Floyd_Warshall</span></tt>) are just
+wrapping it. This function begins with copying the graph in a data structure
+that makes it fast to query the out-neighbors of a vertex, then starts one
+Breadth First Search per vertex of the (di)graph.</p>
+<p><strong>What can this function compute ?</strong></p>
+<blockquote>
+<div><ul>
+<li><p class="first">The matrix of predecessors.</p>
+<p>This matrix <span class="math">\(P\)</span> has size <span class="math">\(n^2\)</span>, and is such that vertex <span class="math">\(P[u,v]\)</span> is a
+predecessor of <span class="math">\(v\)</span> on a shortest <span class="math">\(uv\)</span>-path. Hence, this matrix efficiently
+encodes the information of a shortest <span class="math">\(uv\)</span>-path for any <span class="math">\(u,v\in G\)</span> :
+indeed, to go from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> you should first find a shortest
+<span class="math">\(uP[u,v]\)</span>-path, then jump from <span class="math">\(P[u,v]\)</span> to <span class="math">\(v\)</span> as it is one of its
+outneighbors. Apply recursively and find out what the whole path is !.</p>
+</li>
+<li><p class="first">The matrix of distances.</p>
+<p>This matrix has size <span class="math">\(n^2\)</span> and associates to any <span class="math">\(uv\)</span> the distance from
+<span class="math">\(u\)</span> to <span class="math">\(v\)</span>.</p>
+</li>
+<li><p class="first">The vector of eccentricities.</p>
+<p>This vector of size <span class="math">\(n\)</span> encodes for each vertex <span class="math">\(v\)</span> the distance to vertex
+which is furthest from <span class="math">\(v\)</span> in the graph. In particular, the diameter of
+the graph is the maximum of these values.</p>
+</li>
+</ul>
+</div></blockquote>
+<p><strong>What does it take as input ?</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">gg</span></tt> a (Di)Graph.</li>
+<li><tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">short</span> <span class="pre">*</span> <span class="pre">predecessors</span></tt> &#8211; a pointer toward an array of size
+<span class="math">\(n^2\cdot\text{sizeof(unsigned short)}\)</span>. Set to <tt class="docutils literal"><span class="pre">NULL</span></tt> if you do not
+want to compute the predecessors.</li>
+<li><tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">short</span> <span class="pre">*</span> <span class="pre">distances</span></tt> &#8211; a pointer toward an array of size
+<span class="math">\(n^2\cdot\text{sizeof(unsigned short)}\)</span>. The computation of the distances
+is necessary for the algorithm, so this value can <strong>not</strong> be set to
+<tt class="docutils literal"><span class="pre">NULL</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">int</span> <span class="pre">*</span> <span class="pre">eccentricity</span></tt> &#8211; a pointer toward an array of size
+<span class="math">\(n\cdot\text{sizeof(int)}\)</span>. Set to <tt class="docutils literal"><span class="pre">NULL</span></tt> if you do not want to compute
+the eccentricity.</li>
+</ul>
+</div></blockquote>
+<p><strong>Technical details</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li>The vertices are encoded as <span class="math">\(1, ..., n\)</span> as they appear in the ordering of
+<tt class="docutils literal"><span class="pre">G.vertices()</span></tt>.</li>
+<li>Because this function works on matrices whose size is quadratic compared
+to the number of vertices when computing all distances or predecessors, it
+uses short variables to store the vertices&#8217; names instead of long ones to
+divide by 2 the size in memory. This means that only the
+diameter/eccentricities can be computed on a graph of more than 65536
+nodes. For information, the current version of the algorithm on a graph
+with <span class="math">\(65536=2^{16}\)</span> nodes creates in memory <span class="math">\(2\)</span> tables on <span class="math">\(2^{32}\)</span> short
+elements (2bytes each), for a total of <span class="math">\(2^{33}\)</span> bytes or <span class="math">\(8\)</span> gigabytes. In
+order to support larger sizes, we would have to replace shorts by 32-bits
+int or 64-bits int, which would then require respectively 16GB or 32GB.</li>
+<li>In the C version of these functions, infinite distances are represented
+with <tt class="docutils literal"><span class="pre">&lt;unsigned</span> <span class="pre">short&gt;</span> <span class="pre">-1</span> <span class="pre">=</span> <span class="pre">65535</span></tt> for <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">short</span></tt> variables, and
+by <tt class="docutils literal"><span class="pre">INT32_MAX</span></tt> otherwise. These case happens when the input is a
+disconnected graph, or a non-strongly-connected digraph.</li>
+<li>A memory error is raised when data structures allocation failed. This
+could happen with large graphs on computers with low memory space.</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The function <tt class="docutils literal"><span class="pre">all_pairs_shortest_path_BFS</span></tt> has <strong>no reason</strong> to be
+called by the user, even though he would be writing his code in Cython
+and look for efficiency. This module contains wrappers for this function
+that feed it with the good parameters. As the function is inlined, using
+those wrappers actually saves time as it should avoid testing the
+parameters again and again in the main function&#8217;s body.</p>
+</div>
+</div></blockquote>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Nathann Cohen (2011)</li>
+<li>David Coudert (2014) &#8211; 2sweep, multi-sweep and iFUB for diameter computation</li>
+</ul>
+<p>REFERENCE:</p>
+<table class="docutils citation" frame="void" id="krg96b" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[KRG96b]</td><td><em>(<a class="fn-backref" href="#id5">1</a>, <a class="fn-backref" href="#id7">2</a>)</em> S. Klavzar, A. Rajapakse, and I. Gutman. The Szeged and the
+Wiener index of graphs. <em>Applied Mathematics Letters</em>, 9(5):45&#8211;49, 1996.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="gyll93c" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[GYLL93c]</a></td><td>I. Gutman, Y.-N. Yeh, S.-L. Lee, and Y.-L. Luo. Some recent
+results in the theory of the Wiener number. <em>Indian Journal of
+Chemistry</em>, 32A:651&#8211;661, 1993.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="cgh-13" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[CGH+13]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id4">2</a>)</em> P. Crescenzi, R. Grossi, M. Habib, L. Lanzi, A. Marino. On computing
+the diameter of real-world undirected graphs. <em>Theor. Comput. Sci.</em> 514: 84-95
+(2013) <a class="reference external" href="http://dx.doi.org/10.1016/j.tcs.2012.09.018">http://dx.doi.org/10.1016/j.tcs.2012.09.018</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="cgi-10" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[CGI+10]</a></td><td>P. Crescenzi, R. Grossi, C. Imbrenda, L. Lanzi, and A. Marino.
+Finding the Diameter in Real-World Graphs: Experimentally Turning a Lower
+Bound into an Upper Bound. Proceedings of <em>18th Annual European Symposium on
+Algorithms</em>. Lecture Notes in Computer Science, vol. 6346, 302-313. Springer
+(2010).</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="mlh08" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[MLH08]</a></td><td>C. Magnien, M. Latapy, and M. Habib. Fast computation of empirically
+tight bounds for the diameter of massive graphs. <em>ACM Journal of Experimental
+Algorithms</em> 13 (2008) <a class="reference external" href="http://dx.doi.org/10.1145/1412228.1455266">http://dx.doi.org/10.1145/1412228.1455266</a></td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.diameter">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">diameter</tt><big>(</big><em>G</em>, <em>method='iFUB'</em>, <em>source=None</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.diameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the diameter of <span class="math">\(G\)</span>.</p>
+<p>This method returns Infinity if the (di)graph is not connected. It can also
+quickly return a lower bound on the diameter using the <tt class="docutils literal"><span class="pre">2sweep</span></tt> and
+<tt class="docutils literal"><span class="pre">multi-sweep</span></tt> schemes.</p>
+<p>INPUTS:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">method</span></tt> &#8211; (default: &#8216;iFUB&#8217;) specifies the algorithm to use among:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'standard'</span></tt> &#8211; Computes the diameter of the input (di)graph as the
+largest eccentricity of its vertices. This is the classical method
+with time complexity in <span class="math">\(O(nm)\)</span>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'2sweep'</span></tt> &#8211; Computes a lower bound on the diameter of an
+unweighted undirected graph using 2 BFS, as proposed in <a class="reference internal" href="#mlh08" id="id1">[MLH08]</a>.  It
+first selects a vertex <span class="math">\(v\)</span> that is at largest distance from an initial
+vertex source using BFS. Then it performs a second BFS from <span class="math">\(v\)</span>. The
+largest distance from <span class="math">\(v\)</span> is returned as a lower bound on the diameter
+of <span class="math">\(G\)</span>.  The time complexity of this method is linear in the size of
+<span class="math">\(G\)</span>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'multi-sweep'</span></tt> &#8211; Computes a lower bound on the diameter of an
+unweighted undirected graph using several iterations of the <tt class="docutils literal"><span class="pre">2sweep</span></tt>
+algorithms <a class="reference internal" href="#cgh-13" id="id2">[CGH+13]</a>. Roughly, it first uses <tt class="docutils literal"><span class="pre">2sweep</span></tt> to identify
+two vertices <span class="math">\(u\)</span> and <span class="math">\(v\)</span> that are far apart. Then it selects a vertex
+<span class="math">\(w\)</span> that is at same distance from <span class="math">\(u\)</span> and <span class="math">\(v\)</span>.  This vertex <span class="math">\(w\)</span> will
+serve as the new source for another iteration of the <tt class="docutils literal"><span class="pre">2sweep</span></tt>
+algorithm that may improve the current lower bound on the diameter.
+This process is repeated as long as the lower bound on the diameter
+is improved.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'iFUB'</span></tt> &#8211; The iFUB (iterative Fringe Upper Bound) algorithm,
+proposed in <a class="reference internal" href="#cgi-10" id="id3">[CGI+10]</a>, computes the exact value of the diameter of an
+unweighted undirected graph. It is based on the following observation:</p>
+<blockquote>
+<div><p>The diameter of the graph is equal to the maximum eccentricity of
+a vertex. Let <span class="math">\(v\)</span> be any vertex, and let <span class="math">\(V\)</span> be partitionned into
+<span class="math">\(A\cup B\)</span> where:</p>
+<div class="math">
+\[\begin{split}d(v,a)&lt;=i, \forall a \in A\\
+d(v,b)&gt;=i, \forall b \in B\end{split}\]</div>
+<p>As all vertices from <span class="math">\(A\)</span> are at distance <span class="math">\(\leq 2i\)</span> from each
+other, a vertex <span class="math">\(a\in A\)</span> with eccentricity <span class="math">\(ecc(a)&gt;2i\)</span> is at
+distance <span class="math">\(ecc(a)\)</span> from some vertex <span class="math">\(b\in B\)</span>.</p>
+<p>Consequently, if we have already computed the maximum eccentricity
+<span class="math">\(m\)</span> of all vertices in <span class="math">\(B\)</span> and if <span class="math">\(m&gt;2i\)</span>, then we do not need to
+compute the eccentricity of the vertices in <span class="math">\(A\)</span>.</p>
+</div></blockquote>
+<p>Starting from a vertex <span class="math">\(v\)</span> obtained through a multi-sweep computation
+(which refines the 4sweep algorithm used in <a class="reference internal" href="#cgh-13" id="id4">[CGH+13]</a>), we compute the
+diameter by computing the eccentricity of all vertices sorted
+decreasingly according to their distance to <span class="math">\(v\)</span>, and stop as allowed
+by the remark above. The worst case time complexity of the iFUB
+algorithm is <span class="math">\(O(nm)\)</span>, but it can be very fast in practice.</p>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">source</span></tt> &#8211; (default: None) vertex from which to start the first BFS. If
+<tt class="docutils literal"><span class="pre">source==None</span></tt>, an arbitrary vertex of the graph is chosen. Raise an
+error if the initial vertex is not in <span class="math">\(G\)</span>.  This parameter is not used
+when <tt class="docutils literal"><span class="pre">method=='standard'</span></tt>.</p>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">:</span> <span class="p">[],</span> <span class="mi">1</span> <span class="p">:</span> <span class="p">[],</span> <span class="mi">2</span> <span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">}</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">)</span>
+<span class="go">+Infinity</span>
+</pre></div>
+</div>
+<p>Although max( ) is usually defined as -Infinity, since the diameter will
+never be negative, we define it to be zero:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">EmptyGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>Comparison of exact methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">RandomBarabasiAlbert</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d1</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;standard&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d2</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d3</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">G</span><span class="o">.</span><span class="n">random_vertex</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="k">if</span> <span class="n">d1</span><span class="o">!=</span><span class="n">d2</span> <span class="ow">or</span> <span class="n">d1</span><span class="o">!=</span><span class="n">d3</span><span class="p">:</span> <span class="k">print</span> <span class="s">&quot;Something goes wrong!&quot;</span>
+</pre></div>
+</div>
+<p>Comparison of lower bound methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">lb2</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;2sweep&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">lbm</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;multi-sweep&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lb2</span><span class="o">&lt;=</span><span class="n">lbm</span> <span class="ow">and</span> <span class="n">lbm</span><span class="o">&lt;=</span><span class="n">d3</span><span class="p">):</span> <span class="k">print</span> <span class="s">&quot;Something goes wrong!&quot;</span>
+</pre></div>
+</div>
+<p>TEST:</p>
+<p>This was causing a segfault. Fixed in <a class="reference external" href="http://trac.sagemath.org/17873">trac ticket #17873</a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;iFUB&#39;</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.distances_all_pairs">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">distances_all_pairs</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.distances_all_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the matrix of distances in G.</p>
+<p>This function returns a double dictionary <tt class="docutils literal"><span class="pre">D</span></tt> of vertices, in which the
+distance between vertices <tt class="docutils literal"><span class="pre">u</span></tt> and <tt class="docutils literal"><span class="pre">v</span></tt> is <tt class="docutils literal"><span class="pre">D[u][v]</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">distances_all_pairs</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">distances_all_pairs</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">{0: {0: 0, 1: 1, 2: 2, 3: 2, 4: 1, 5: 1, 6: 2, 7: 2, 8: 2, 9: 2},</span>
+<span class="go">1: {0: 1, 1: 0, 2: 1, 3: 2, 4: 2, 5: 2, 6: 1, 7: 2, 8: 2, 9: 2},</span>
+<span class="go">2: {0: 2, 1: 1, 2: 0, 3: 1, 4: 2, 5: 2, 6: 2, 7: 1, 8: 2, 9: 2},</span>
+<span class="go">3: {0: 2, 1: 2, 2: 1, 3: 0, 4: 1, 5: 2, 6: 2, 7: 2, 8: 1, 9: 2},</span>
+<span class="go">4: {0: 1, 1: 2, 2: 2, 3: 1, 4: 0, 5: 2, 6: 2, 7: 2, 8: 2, 9: 1},</span>
+<span class="go">5: {0: 1, 1: 2, 2: 2, 3: 2, 4: 2, 5: 0, 6: 2, 7: 1, 8: 1, 9: 2},</span>
+<span class="go">6: {0: 2, 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 0, 7: 2, 8: 1, 9: 1},</span>
+<span class="go">7: {0: 2, 1: 2, 2: 1, 3: 2, 4: 2, 5: 1, 6: 2, 7: 0, 8: 2, 9: 1},</span>
+<span class="go">8: {0: 2, 1: 2, 2: 2, 3: 1, 4: 2, 5: 1, 6: 1, 7: 2, 8: 0, 9: 2},</span>
+<span class="go">9: {0: 2, 1: 2, 2: 2, 3: 2, 4: 1, 5: 2, 6: 1, 7: 1, 8: 2, 9: 0}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.distances_and_predecessors_all_pairs">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">distances_and_predecessors_all_pairs</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.distances_and_predecessors_all_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the matrix of distances in G and the matrix of predecessors.</p>
+<p>Distances : the matrix <span class="math">\(M\)</span> returned is of length <span class="math">\(n^2\)</span>, and the distance
+between vertices <span class="math">\(u\)</span> and <span class="math">\(v\)</span> is <span class="math">\(M[u,v]\)</span>. The integer corresponding to a
+vertex is its index in the list <tt class="docutils literal"><span class="pre">G.vertices()</span></tt>.</p>
+<p>Predecessors : the matrix <span class="math">\(P\)</span> returned has size <span class="math">\(n^2\)</span>, and is such that
+vertex <span class="math">\(P[u,v]\)</span> is a predecessor of <span class="math">\(v\)</span> on a shortest <span class="math">\(uv\)</span>-path. Hence, this
+matrix efficiently encodes the information of a shortest <span class="math">\(uv\)</span>-path for any
+<span class="math">\(u,v\in G\)</span> : indeed, to go from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> you should first find a shortest
+<span class="math">\(uP[u,v]\)</span>-path, then jump from <span class="math">\(P[u,v]\)</span> to <span class="math">\(v\)</span> as it is one of its
+outneighbors.</p>
+<p>The integer corresponding to a vertex is its index in the list
+<tt class="docutils literal"><span class="pre">G.vertices()</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">distances_and_predecessors_all_pairs</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">distances_and_predecessors_all_pairs</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">({0: {0: 0, 1: 1, 2: 2, 3: 2, 4: 1, 5: 1, 6: 2, 7: 2, 8: 2, 9: 2},</span>
+<span class="go">  1: {0: 1, 1: 0, 2: 1, 3: 2, 4: 2, 5: 2, 6: 1, 7: 2, 8: 2, 9: 2},</span>
+<span class="go">  2: {0: 2, 1: 1, 2: 0, 3: 1, 4: 2, 5: 2, 6: 2, 7: 1, 8: 2, 9: 2},</span>
+<span class="go">  3: {0: 2, 1: 2, 2: 1, 3: 0, 4: 1, 5: 2, 6: 2, 7: 2, 8: 1, 9: 2},</span>
+<span class="go">  4: {0: 1, 1: 2, 2: 2, 3: 1, 4: 0, 5: 2, 6: 2, 7: 2, 8: 2, 9: 1},</span>
+<span class="go">  5: {0: 1, 1: 2, 2: 2, 3: 2, 4: 2, 5: 0, 6: 2, 7: 1, 8: 1, 9: 2},</span>
+<span class="go">  6: {0: 2, 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 0, 7: 2, 8: 1, 9: 1},</span>
+<span class="go">  7: {0: 2, 1: 2, 2: 1, 3: 2, 4: 2, 5: 1, 6: 2, 7: 0, 8: 2, 9: 1},</span>
+<span class="go">  8: {0: 2, 1: 2, 2: 2, 3: 1, 4: 2, 5: 1, 6: 1, 7: 2, 8: 0, 9: 2},</span>
+<span class="go">  9: {0: 2, 1: 2, 2: 2, 3: 2, 4: 1, 5: 2, 6: 1, 7: 1, 8: 2, 9: 0}},</span>
+<span class="go"> {0: {0: None, 1: 0, 2: 1, 3: 4, 4: 0, 5: 0, 6: 1, 7: 5, 8: 5, 9: 4},</span>
+<span class="go">  1: {0: 1, 1: None, 2: 1, 3: 2, 4: 0, 5: 0, 6: 1, 7: 2, 8: 6, 9: 6},</span>
+<span class="go">  2: {0: 1, 1: 2, 2: None, 3: 2, 4: 3, 5: 7, 6: 1, 7: 2, 8: 3, 9: 7},</span>
+<span class="go">  3: {0: 4, 1: 2, 2: 3, 3: None, 4: 3, 5: 8, 6: 8, 7: 2, 8: 3, 9: 4},</span>
+<span class="go">  4: {0: 4, 1: 0, 2: 3, 3: 4, 4: None, 5: 0, 6: 9, 7: 9, 8: 3, 9: 4},</span>
+<span class="go">  5: {0: 5, 1: 0, 2: 7, 3: 8, 4: 0, 5: None, 6: 8, 7: 5, 8: 5, 9: 7},</span>
+<span class="go">  6: {0: 1, 1: 6, 2: 1, 3: 8, 4: 9, 5: 8, 6: None, 7: 9, 8: 6, 9: 6},</span>
+<span class="go">  7: {0: 5, 1: 2, 2: 7, 3: 2, 4: 9, 5: 7, 6: 9, 7: None, 8: 5, 9: 7},</span>
+<span class="go">  8: {0: 5, 1: 6, 2: 3, 3: 8, 4: 3, 5: 8, 6: 8, 7: 5, 8: None, 9: 6},</span>
+<span class="go">  9: {0: 4, 1: 6, 2: 7, 3: 4, 4: 9, 5: 7, 6: 9, 7: 9, 8: 6, 9: None}})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.distances_distribution">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">distances_distribution</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.distances_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the distances distribution of the (di)graph in a dictionary.</p>
+<p>This method <em>ignores all edge labels</em>, so that the distance considered is
+the topological distance.</p>
+<p>OUTPUT:</p>
+<blockquote>
+<div>A dictionary <tt class="docutils literal"><span class="pre">d</span></tt> such that the number of pairs of vertices at distance
+<tt class="docutils literal"><span class="pre">k</span></tt> (if any) is equal to <span class="math">\(d[k] \cdot |V(G)| \cdot (|V(G)|-1)\)</span>.</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We consider that two vertices that do not belong to the same connected
+component are at infinite distance, and we do not take the trivial pairs
+of vertices <span class="math">\((v, v)\)</span> at distance <span class="math">\(0\)</span> into account. Empty (di)graphs and
+(di)graphs of order 1 have no paths and so we return the empty
+dictionary <tt class="docutils literal"><span class="pre">{}</span></tt>.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>An empty Graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{}</span>
+</pre></div>
+</div>
+<p>A Graph of order 1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_vertex</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{}</span>
+</pre></div>
+</div>
+<p>A Graph of order 2 without edge:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_vertices</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{+Infinity: 1}</span>
+</pre></div>
+</div>
+<p>The Petersen Graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{1: 1/3, 2: 2/3}</span>
+</pre></div>
+</div>
+<p>A graph with multiple disconnected components:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s">&#39;good&#39;</span><span class="p">,</span><span class="s">&#39;wine&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{1: 8/33, 2: 5/11, +Infinity: 10/33}</span>
+</pre></div>
+</div>
+<p>The de Bruijn digraph dB(2,3):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">digraphs</span><span class="o">.</span><span class="n">DeBruijn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">distances_distribution</span><span class="p">()</span>
+<span class="go">{1: 1/4, 2: 11/28, 3: 5/14}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.eccentricity">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">eccentricity</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.eccentricity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vector of eccentricities in G.</p>
+<p>The array returned is of length n, and its ith component is the eccentricity
+of the ith vertex in <tt class="docutils literal"><span class="pre">G.vertices()</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">eccentricity</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">eccentricity</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">[2, 2, 2, 2, 2, 2, 2, 2, 2, 2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.floyd_warshall">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">floyd_warshall</tt><big>(</big><em>gg</em>, <em>paths=True</em>, <em>distances=False</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.floyd_warshall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the shortest path/distances between all pairs of vertices.</p>
+<p>For more information on the Floyd-Warshall algorithm, see the <a class="reference external" href="http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Wikipedia
+article on Floyd-Warshall</a>.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">gg</span></tt> &#8211; the graph on which to work.</li>
+<li><tt class="docutils literal"><span class="pre">paths</span></tt> (boolean) &#8211; whether to return the dictionary of shortest
+paths. Set to <tt class="docutils literal"><span class="pre">True</span></tt> by default.</li>
+<li><tt class="docutils literal"><span class="pre">distances</span></tt> (boolean) &#8211; whether to return the dictionary of
+distances. Set to <tt class="docutils literal"><span class="pre">False</span></tt> by default.</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div>Depending on the input, this function return the dictionary of paths,
+the dictionary of distances, or a pair of dictionaries
+<tt class="docutils literal"><span class="pre">(distances,</span> <span class="pre">paths)</span></tt> where <tt class="docutils literal"><span class="pre">distance[u][v]</span></tt> denotes the distance of a
+shortest path from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> and <tt class="docutils literal"><span class="pre">paths[u][v]</span></tt> denotes an inneighbor
+<span class="math">\(w\)</span> of <span class="math">\(v\)</span> such that <span class="math">\(dist(u,v)= 1 + dist(u,w)\)</span>.</div></blockquote>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Because this function works on matrices whose size is quadratic compared
+to the number of vertices, it uses short variables instead of long ones
+to divide by 2 the size in memory. This means that the current
+implementation does not run on a graph of more than 65536 nodes (this
+can be easily changed if necessary, but would require much more
+memory. It may be worth writing two versions). For information, the
+current version of the algorithm on a graph with <span class="math">\(65536=2^{16}\)</span> nodes
+creates in memory <span class="math">\(2\)</span> tables on <span class="math">\(2^{32}\)</span> short elements (2bytes each),
+for a total of <span class="math">\(2^{34}\)</span> bytes or <span class="math">\(16\)</span> gigabytes. Let us also remember
+that if the memory size is quadratic, the algorithm runs in cubic time.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When <tt class="docutils literal"><span class="pre">paths</span> <span class="pre">=</span> <span class="pre">False</span></tt> the algorithm saves roughly half of the memory as
+it does not have to maintain the matrix of predecessors. However,
+setting <tt class="docutils literal"><span class="pre">distances=False</span></tt> produces no such effect as the algorithm can
+not run without computing them. They will not be returned, but they will
+be stored while the method is running.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>Shortest paths in a small grid</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">Grid2dGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">floyd_warshall</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">floyd_warshall</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">{(0, 1): {(0, 1): None, (1, 0): (0, 0), (0, 0): (0, 1), (1, 1): (0, 1)},</span>
+<span class="go">(1, 0): {(0, 1): (0, 0), (1, 0): None, (0, 0): (1, 0), (1, 1): (1, 0)},</span>
+<span class="go">(0, 0): {(0, 1): (0, 0), (1, 0): (0, 0), (0, 0): None, (1, 1): (0, 1)},</span>
+<span class="go">(1, 1): {(0, 1): (1, 1), (1, 0): (1, 1), (0, 0): (0, 1), (1, 1): None}}</span>
+</pre></div>
+</div>
+<p>Checking the distances are correct</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">Grid2dGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">dist</span><span class="p">,</span><span class="n">path</span> <span class="o">=</span> <span class="n">floyd_warshall</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">distances</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span> <span class="n">dist</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">==</span> <span class="n">g</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">g</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">g</span> <span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Checking a random path is valid</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">random_vertex</span><span class="p">(),</span> <span class="n">g</span><span class="o">.</span><span class="n">random_vertex</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="k">while</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">p</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">path</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="n">dist</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Distances for all pairs of vertices in a diamond:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">DiamondGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">floyd_warshall</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">paths</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">distances</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">{0: {0: 0, 1: 1, 2: 1, 3: 2},</span>
+<span class="go"> 1: {0: 1, 1: 0, 2: 1, 3: 1},</span>
+<span class="go"> 2: {0: 1, 1: 1, 2: 0, 3: 1},</span>
+<span class="go"> 3: {0: 2, 1: 1, 2: 1, 3: 0}}</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Too large graphs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">floyd_warshall</span>
+<span class="gp">sage: </span><span class="n">floyd_warshall</span><span class="p">(</span><span class="n">Graph</span><span class="p">(</span><span class="mi">65536</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">The graph backend contains more than 65535 nodes</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.is_distance_regular">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">is_distance_regular</tt><big>(</big><em>G</em>, <em>parameters=False</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.is_distance_regular" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the graph is distance-regular</p>
+<p>A graph <span class="math">\(G\)</span> is distance-regular if for any integers <span class="math">\(j,k\)</span> the value
+of <span class="math">\(|\{x:d_G(x,u)=j,x\in V(G)\} \cap \{y:d_G(y,v)=j,y\in V(G)\}|\)</span> is constant
+for any two vertices <span class="math">\(u,v\in V(G)\)</span> at distance <span class="math">\(i\)</span> from each other.
+In particular <span class="math">\(G\)</span> is regular, of degree <span class="math">\(b_0\)</span> (see below), as one can take <span class="math">\(u=v\)</span>.</p>
+<p>Equivalently a graph is distance-regular if there exist integers <span class="math">\(b_i,c_i\)</span>
+such that for any two vertices <span class="math">\(u,v\)</span> at distance <span class="math">\(i\)</span> we have</p>
+<ul class="simple">
+<li><span class="math">\(b_i = |\{x:d_G(x,u)=i+1,x\in V(G)\}\cap N_G(v)\}|, \ 0\leq i\leq d-1\)</span></li>
+<li><span class="math">\(c_i = |\{x:d_G(x,u)=i-1,x\in V(G)\}\cap N_G(v)\}|, \ 1\leq i\leq d,\)</span></li>
+</ul>
+<p>where <span class="math">\(d\)</span> is the diameter of the graph.  For more information on
+distance-regular graphs, see its associated <a class="reference external" href="http://en.wikipedia.org/wiki/Distance-regular_graph">wikipedia
+page</a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">parameters</span></tt> (boolean) &#8211; if set to <tt class="docutils literal"><span class="pre">True</span></tt>, the function returns the
+pair <tt class="docutils literal"><span class="pre">(b,c)</span></tt> of lists of integers instead of <tt class="docutils literal"><span class="pre">True</span></tt> (see the definition
+above). Set to <tt class="docutils literal"><span class="pre">False</span></tt> by default.</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><a class="reference internal" href="generic_graph.html#sage.graphs.generic_graph.GenericGraph.is_regular" title="sage.graphs.generic_graph.GenericGraph.is_regular"><tt class="xref py py-meth docutils literal"><span class="pre">is_regular()</span></tt></a></li>
+<li><a class="reference internal" href="graph.html#sage.graphs.graph.Graph.is_strongly_regular" title="sage.graphs.graph.Graph.is_strongly_regular"><tt class="xref py py-meth docutils literal"><span class="pre">is_strongly_regular()</span></tt></a></li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">(</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">([3, 2, None], [None, 1, 1])</span>
+</pre></div>
+</div>
+<p>Cube graphs, which are not strongly regular, are a bit more interesting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">graphs</span><span class="o">.</span><span class="n">CubeGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">graphs</span><span class="o">.</span><span class="n">OddGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Disconnected graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">graphs</span><span class="o">.</span><span class="n">CubeGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">(</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">([1, None], [None, 1])</span>
+<span class="gp">sage: </span><span class="n">graphs</span><span class="o">.</span><span class="n">Tutte12Cage</span><span class="p">()</span><span class="o">.</span><span class="n">is_distance_regular</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">([3, 2, 2, 2, 2, 2, None], [None, 1, 1, 1, 1, 1, 3])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.shortest_path_all_pairs">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">shortest_path_all_pairs</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.shortest_path_all_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the matrix of predecessors in G.</p>
+<p>The matrix <span class="math">\(P\)</span> returned has size <span class="math">\(n^2\)</span>, and is such that vertex <span class="math">\(P[u,v]\)</span> is
+a predecessor of <span class="math">\(v\)</span> on a shortest <span class="math">\(uv\)</span>-path. Hence, this matrix efficiently
+encodes the information of a shortest <span class="math">\(uv\)</span>-path for any <span class="math">\(u,v\in G\)</span> : indeed,
+to go from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> you should first find a shortest <span class="math">\(uP[u,v]\)</span>-path, then
+jump from <span class="math">\(P[u,v]\)</span> to <span class="math">\(v\)</span> as it is one of its outneighbors.</p>
+<p>The integer corresponding to a vertex is its index in the list
+<tt class="docutils literal"><span class="pre">G.vertices()</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.distances_all_pairs</span> <span class="kn">import</span> <span class="n">shortest_path_all_pairs</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">shortest_path_all_pairs</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">{0: {0: None, 1: 0, 2: 1, 3: 4, 4: 0, 5: 0, 6: 1, 7: 5, 8: 5, 9: 4},</span>
+<span class="go"> 1: {0: 1, 1: None, 2: 1, 3: 2, 4: 0, 5: 0, 6: 1, 7: 2, 8: 6, 9: 6},</span>
+<span class="go"> 2: {0: 1, 1: 2, 2: None, 3: 2, 4: 3, 5: 7, 6: 1, 7: 2, 8: 3, 9: 7},</span>
+<span class="go"> 3: {0: 4, 1: 2, 2: 3, 3: None, 4: 3, 5: 8, 6: 8, 7: 2, 8: 3, 9: 4},</span>
+<span class="go"> 4: {0: 4, 1: 0, 2: 3, 3: 4, 4: None, 5: 0, 6: 9, 7: 9, 8: 3, 9: 4},</span>
+<span class="go"> 5: {0: 5, 1: 0, 2: 7, 3: 8, 4: 0, 5: None, 6: 8, 7: 5, 8: 5, 9: 7},</span>
+<span class="go"> 6: {0: 1, 1: 6, 2: 1, 3: 8, 4: 9, 5: 8, 6: None, 7: 9, 8: 6, 9: 6},</span>
+<span class="go"> 7: {0: 5, 1: 2, 2: 7, 3: 2, 4: 9, 5: 7, 6: 9, 7: None, 8: 5, 9: 7},</span>
+<span class="go"> 8: {0: 5, 1: 6, 2: 3, 3: 8, 4: 3, 5: 8, 6: 8, 7: 5, 8: None, 9: 6},</span>
+<span class="go"> 9: {0: 4, 1: 6, 2: 7, 3: 4, 4: 9, 5: 7, 6: 9, 7: 9, 8: 6, 9: None}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.distances_all_pairs.wiener_index">
+<tt class="descclassname">sage.graphs.distances_all_pairs.</tt><tt class="descname">wiener_index</tt><big>(</big><em>G</em><big>)</big><a class="headerlink" href="#sage.graphs.distances_all_pairs.wiener_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Wiener index of the graph.</p>
+<p>The Wiener index of a graph <span class="math">\(G\)</span> can be defined in two equivalent
+ways <a class="reference internal" href="#krg96b" id="id5">[KRG96b]</a> :</p>
+<ul class="simple">
+<li><span class="math">\(W(G) = \frac 1 2 \sum_{u,v\in G} d(u,v)\)</span> where <span class="math">\(d(u,v)\)</span> denotes the
+distance between vertices <span class="math">\(u\)</span> and <span class="math">\(v\)</span>.</li>
+<li>Let <span class="math">\(\Omega\)</span> be a set of <span class="math">\(\frac {n(n-1)} 2\)</span> paths in <span class="math">\(G\)</span> such that <span class="math">\(\Omega\)</span>
+contains exactly one shortest <span class="math">\(u-v\)</span> path for each set <span class="math">\(\{u,v\}\)</span> of
+vertices in <span class="math">\(G\)</span>. Besides, <span class="math">\(\forall e\in E(G)\)</span>, let <span class="math">\(\Omega(e)\)</span> denote the
+paths from <span class="math">\(\Omega\)</span> containing <span class="math">\(e\)</span>. We then have
+<span class="math">\(W(G) = \sum_{e\in E(G)}|\Omega(e)|\)</span>.</li>
+</ul>
+<p>EXAMPLE:</p>
+<p>From <a class="reference internal" href="#gyll93c" id="id6">[GYLL93c]</a>, cited in <a class="reference internal" href="#krg96b" id="id7">[KRG96b]</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">wiener_index</span><span class="p">()</span><span class="o">==</span><span class="n">w</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Distances/shortest paths between all pairs of vertices</a><ul>
+<li><a class="reference internal" href="#the-module-s-main-function">The module&#8217;s main function</a></li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="weakly_chordal.html"
+                                  title="previous chapter">Weakly chordal graphs</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="graph_latex.html"
+                                  title="next chapter">LaTeX options for graphs</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/graphs/distances_all_pairs.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph_latex.html" title="LaTeX options for graphs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="weakly_chordal.html" title="Weakly chordal graphs"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

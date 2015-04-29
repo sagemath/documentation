@@ -1,0 +1,579 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Famílias, Conversão e Coação &mdash; Tutorial Sage v6.6</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Tutorial Sage v6.6" href="index.html" />
+    <link rel="up" title="Um passeio guiado" href="tour.html" />
+    <link rel="next" title="Grupos Finitos, Grupos Abelianos" href="tour_groups.html" />
+    <link rel="prev" title="Polinômios" href="tour_polynomial.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navegação</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Índice Geral"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Índice de Módulos do Python"
+             >módulos</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="Grupos Finitos, Grupos Abelianos"
+             accesskey="N">próximo</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="Polinômios"
+             accesskey="P">anterior</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Tutorial Sage v6.6</a> &raquo;</li>
+
+          <li><a href="tour.html" accesskey="U">Um passeio guiado</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="familias-conversao-e-coacao">
+<span id="section-coercion"></span><h1>Famílias, Conversão e Coação<a class="headerlink" href="#familias-conversao-e-coacao" title="Link permanente para este título">¶</a></h1>
+<p>Esta seção pode parecer mais técnica do que as anteriores, mas
+acreditamos que é importante entender o significado de famílias e
+coação de modo a usar anéis e outras estruturas algébricas no Sage de
+forma efetiva e eficiente.</p>
+<p>Note que vamos explicar algumas noções, mas não vamos mostrar aqui
+como implementá-las. Um tutorial voltado à implementação está
+disponível (em inglês) como um
+<a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">tutorial temática</a>.</p>
+<div class="section" id="elementos">
+<h2>Elementos<a class="headerlink" href="#elementos" title="Link permanente para este título">¶</a></h2>
+<p>Caso se queira implementar um anel em Python, uma primeira aproximação
+seria criar uma classe para os elementos <tt class="docutils literal"><span class="pre">X</span></tt> do anel e adicionar os
+requeridos métodos (com underscores duplos) <tt class="docutils literal"><span class="pre">__add__</span></tt>, <tt class="docutils literal"><span class="pre">__sub</span></tt>,
+<tt class="docutils literal"><span class="pre">__mul__</span></tt>, obviamente garantindo que os axiomas de anel são
+verificados.</p>
+<p>Como o Python é uma linguagem de tipagem forte (ainda que de tipagem
+dinâmica), poderia-se, pelo menos a princípio, esperar-se que fosse
+implementado em Python uma classe para cada anel. No final das contas,
+o Python contém um tipo <tt class="docutils literal"><span class="pre">&lt;int&gt;</span></tt> para os inteiros, um tipo
+<tt class="docutils literal"><span class="pre">&lt;float&gt;</span></tt> para os reais, e assim por diante. Mas essa estratégia
+logo encontra uma limitação: Existe um número infinito de anéis, e não
+se pode implementar um número infinito de classes.</p>
+<p>Em vez disso, poderia-se criar uma hierarquia de classes projetada
+para implementar elementos de estruturas algébricas ubíquas, tais como
+grupos, anéis, anéis comutativos, corpos, álgebras, e assim por
+diante.</p>
+<p>Mas isso significa que elementos de anéis bastante diferentes podem
+ter o mesmo tipo.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Por outro lado, poderia-se ter também classes diferentes em Python
+fornecendo implementações diferentes da mesma estrutura matemática
+(por exemplo, matrizes densas versus matrizes esparsas).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint&#39;&gt;</span>
+<span class="go">&lt;class &#39;sage.rings.polynomial.polynomial_element_generic.Polynomial_generic_sparse&#39;&gt;</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_ntl.Polynomial_integer_dense_ntl&#39;&gt;</span>
+</pre></div>
+</div>
+<p>Isso apresenta dois problemas: Por um lado, se tivéssemos elementos
+que são duas instancias da mesma classe, então poderia-se esperar que
+o método <tt class="docutils literal"><span class="pre">__add__</span></tt> dessas classes permitisse somá-los; mas não
+se deseja isso, se os elementos pertencem a anéis bastante diferentes.
+Por outro lado, se possui-se elementos que pertencem a implementações
+diferentes do mesmo anel, então gostaria-se de somá-los, mas isso não
+pode ser feito diretamente se eles pertencem a classes diferentes em
+Python.</p>
+<p>A solução para esses problemas é chamada coação e será explicada a
+seguir.</p>
+<p>Todavia, é essencial que cada elemento saiba a qual pertence. Isso
+está disponível através método <tt class="docutils literal"><span class="pre">parent()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">c</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in a over Integer Ring</span>
+<span class="go">Sparse Univariate Polynomial Ring in b over Integer Ring</span>
+<span class="go">Univariate Polynomial Ring in c over Integer Ring (using NTL)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="familias-e-categorias">
+<h2>Famílias e Categorias<a class="headerlink" href="#familias-e-categorias" title="Link permanente para este título">¶</a></h2>
+<p>De forma similar à hierarquia de classes em Python voltada para
+elementos de estruturas algébricas, o Sage também fornece classes para
+as estruturas algébricas que contém esses elementos. Estruturas
+contendo elementos são chamadas &#8220;estruturas parente&#8221; no Sage, e existe
+uma classe básica para elas. Paralelamente à hierarquia de noções
+matemáticas, tem-se uma hierarquia de classes, a saber, para
+conjuntos, anéis, corpos e assim por diante:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Em álgebra, objetos que compartilham o mesmo tipo de estruturas
+algébricas são agrupados nas assim chamadas &#8220;categorias&#8221;. Logo, existe
+uma analogia aproximada entre a hierarquia de classes em Sage e a
+hierarquia de categorias. Todavia, essa analogia de classes em Python
+e categorias não deve ser enfatizada demais. No final das contas,
+categorias matemáticas também são implementadas no Sage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Rings</span><span class="p">()</span>
+<span class="go">Category of rings</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Join of Category of euclidean domains and Category of infinite enumerated sets</span>
+
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span><span class="o">.</span><span class="n">is_subcategory</span><span class="p">(</span><span class="n">Rings</span><span class="p">())</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Rings</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">QQ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Enquanto a hierarquia de classes no Sage é centrada nos detalhes de
+implementação, a construção de categorias em Sage é mais centrada
+na estrutura matemática. É possível implementar métodos e testes
+gerais independentemente de uma implementação específica nas
+categorias.</p>
+<p>Estruturas da mesma família em Sage são supostamente objetos únicos em
+Python. Por exemplo, uma vez que um anel de polinômios sobre um certo anel
+base e com uma certa lista de geradores é criada, o resultado é arquivado:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tipos-versus-parentes">
+<h2>Tipos versus Parentes<a class="headerlink" href="#tipos-versus-parentes" title="Link permanente para este título">¶</a></h2>
+<p>O tipo <tt class="docutils literal"><span class="pre">RingElement</span></tt> não deve ser confundido com a noção matemática
+de elemento de anel; por razões práticas, as vezes um objeto é uma
+instancia de <tt class="docutils literal"><span class="pre">RingElement</span></tt> embora ele não pertence a um anel:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cristovao</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">(</span><span class="mi">1492</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">cristovao</span><span class="p">,</span> <span class="n">RingElement</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Enquanto <em>famílias</em> são únicas, elementos iguais de uma família em Sage
+não são necessariamente idênticos. Isso contrasta com o comportamento
+do Python para alguns (embora não todos) inteiros:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c"># Python int</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="ow">is</span> <span class="mi">1</span>           <span class="c"># Sage Integer</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>É importante observar que elementos de anéis diferentes em geral não
+podem ser distinguidos pelos seus tipos, mas sim por sua família:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Finite Field of size 2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">Finite Field of size 5</span>
+</pre></div>
+</div>
+<p>Logo, de um ponto de vista algébrico, <strong>o parente de um elemento é
+mais importante do que seu tipo.</strong></p>
+</div>
+<div class="section" id="conversao-versus-coacao">
+<h2>Conversão versus Coação<a class="headerlink" href="#conversao-versus-coacao" title="Link permanente para este título">¶</a></h2>
+<p>Em alguns casos é possível converter um elemento de uma estrutura
+parente em um elemento de uma outra estrutura parente. Tal conversão
+pode ser tanto explícita como implícita (essa é chamada <em>coação</em>).</p>
+<p>O leitor pode conhecer as noções de <em>conversão de tipo</em> e <em>coação de
+tipo</em> como na linguagem C, por exemplo. Existem noções de <em>conversão</em>
+e <em>coação</em> em Sage também. Mas as noções em Sage são centradas em
+<em>família</em>, não em tipos. Então, por favor não confunda conversão de
+tipo em C com conversão em Sage!</p>
+<p>Aqui se encontra uma breve apresentação. Para uma descrição detalhada
+e informações sobre a implementação, referimos à seção sobre coação no
+manual de referência e para o <a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">tutorial</a>.</p>
+<p>Existem duas possibilidades extremas com respeito à possibilidade de
+fazer aritmética com elementos de <em>anéis diferentes</em>:</p>
+<ul class="simple">
+<li>Anéis diferentes são mundos diferentes, e não faz nenhum sentido
+somar ou multiplicar elementos de anéis diferentes; mesmo <tt class="docutils literal"><span class="pre">1</span> <span class="pre">+</span>
+<span class="pre">1/2</span></tt> não faz sentido, pois o primeiro somando é um inteiro e o
+segundo um racional.</li>
+</ul>
+<p>Ou</p>
+<ul class="simple">
+<li>Se um elemento <tt class="docutils literal"><span class="pre">r1</span></tt> de uma aner <tt class="docutils literal"><span class="pre">R1</span></tt> pode de alguma forma ser
+interpretado em um outro anel <tt class="docutils literal"><span class="pre">R2</span></tt>, então todas as operações
+aritméticas envolvendo <tt class="docutils literal"><span class="pre">r1</span></tt> e qualquer elemento de <tt class="docutils literal"><span class="pre">R2</span></tt> são
+permitidas. O elemento neutro da multiplicação existe em todos os
+corpos e em vários anéis, e eles devem ser todos iguais.</li>
+</ul>
+<p>O Sage faz uma concessão. Se <tt class="docutils literal"><span class="pre">P1</span></tt> e <tt class="docutils literal"><span class="pre">P2</span></tt> são estruturas da mesma família
+e <tt class="docutils literal"><span class="pre">p1</span></tt> é um elemento de <tt class="docutils literal"><span class="pre">P1</span></tt>, então o usuário pode explicitamente
+perguntar por uma interpretação de <tt class="docutils literal"><span class="pre">p1</span></tt> em <tt class="docutils literal"><span class="pre">P2</span></tt>. Isso pode não fazer
+sentido em todos os casos ou não estar definido para todos os elementos de
+<tt class="docutils literal"><span class="pre">P1</span></tt>, e fica a cargo do usuário assegurar que isso faz sentido. Nos
+referimos a isso como <strong>conversão</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">a</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Todavia, uma conversão <em>implícita</em> (ou automática) ocorrerá apenas se
+puder ser feita <em>completamente</em> e <em>consistentemente</em>. Rigor matemático
+é essencial nesse ponto.</p>
+<p>Uma tal conversão implícita é chamada <strong>coação</strong>. Se coação for
+definida, então deve coincidir com conversão. Duas condições devem ser
+satisfeitas para uma coação ser definida:</p>
+<ol class="arabic simple">
+<li>Uma coação de <tt class="docutils literal"><span class="pre">P1</span></tt> para <tt class="docutils literal"><span class="pre">P2</span></tt> deve ser dada por uma estrutura
+que preserva mapeamentos (por exemplo, um homomorfismo de anéis).
+Não é suficiente que <em>alguns</em> elementos de <tt class="docutils literal"><span class="pre">P1</span></tt> possam ser
+mapeados em <tt class="docutils literal"><span class="pre">P2</span></tt>, e o mapa deve respeitar a estrutura algébrica
+de <tt class="docutils literal"><span class="pre">P1</span></tt>.</li>
+<li>A escolha desses mapas de coação deve ser consistente: Se <tt class="docutils literal"><span class="pre">P3</span></tt> é
+uma terceira estrutura parente, então a composição da coação
+adotada de <tt class="docutils literal"><span class="pre">P1</span></tt> para <tt class="docutils literal"><span class="pre">P2</span></tt> com a coação de <tt class="docutils literal"><span class="pre">P2</span></tt> para <tt class="docutils literal"><span class="pre">P3</span></tt>
+deve coincidir com a coação adotada de <tt class="docutils literal"><span class="pre">P1</span></tt> para <tt class="docutils literal"><span class="pre">P3</span></tt>. Em
+particular, se existir uma coação de <tt class="docutils literal"><span class="pre">P1</span></tt> para <tt class="docutils literal"><span class="pre">P2</span></tt> e <tt class="docutils literal"><span class="pre">P2</span></tt>
+para <tt class="docutils literal"><span class="pre">P1</span></tt>, a composição deve ser o mapa identidade em <tt class="docutils literal"><span class="pre">P1</span></tt>.</li>
+</ol>
+<p>Logo, embora é possível converter cada elemento de <tt class="docutils literal"><span class="pre">GF(2)</span></tt> para
+<tt class="docutils literal"><span class="pre">GF(5)</span></tt>, não há coação, pois não existe homomorfismo de anel entre
+<tt class="docutils literal"><span class="pre">GF(2)</span></tt> e <tt class="docutils literal"><span class="pre">GF(5)</span></tt>.</p>
+<p>O segundo aspecto - consistência - é um pouco mais difícil de
+explicar. Vamos ilustrá-lo usando anéis de polinômios em mais de uma
+variável. Em aplicações, certamente faz mais sentido ter coações que
+preservam nomes. Então temos:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R1</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">R2</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">y</span>
+</pre></div>
+</div>
+<p>Se não existir homomorfismo de anel que preserve nomes, coação não é
+definida. Todavia, conversão pode ainda ser possível, a saber,
+mapeando geradores de anel de acordo com sua posição da lista de
+geradores:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">z</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x</span>
+</pre></div>
+</div>
+<p>Mas essas conversões que preservam a posição não se qualificam como
+coação: Compondo um mapa que preserva nomes de <tt class="docutils literal"><span class="pre">ZZ['x','y']</span></tt> para
+<tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt>, com um mapa que preserva nomes de <tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt>
+para <tt class="docutils literal"><span class="pre">ZZ['a','b']</span></tt>, resultaria em um mapa que não preserva nomes nem
+posição, violando a consistência.</p>
+<p>Se houver coação, ela será usada para comparar elementos de anéis
+diferentes ou fazer aritmética. Isso é frequentemente conveniente, mas
+o usuário deve estar ciente que estender a relação <tt class="docutils literal"><span class="pre">==</span></tt> além das
+fronteiras de famílias diferentes pode facilmente resultar em
+problemas. Por exemplo, enquanto <tt class="docutils literal"><span class="pre">==</span></tt> é supostamente uma relação de
+equivalência sobre os elementos de <em>um</em> anel, isso não é
+necessariamente o caso se anéis <em>diferentes</em> estão envolvidos. Por
+exemplo, <tt class="docutils literal"><span class="pre">1</span></tt> em <tt class="docutils literal"><span class="pre">ZZ</span></tt> e em um corpo finito são considerados iguais,
+pois existe uma coação canônica dos inteiros em qualquer corpo finito.
+Todavia, em geral não existe coação entre dois corpos finitos
+diferentes. Portanto temos</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Similarmente,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Uma outra consequência da condição de consistência é que coação pode
+apenas ir de anéis exatos (por exemplo, os racionais <tt class="docutils literal"><span class="pre">QQ</span></tt>) para
+anéis não-exatos (por exemplo, os números reais com uma precisão fixa
+<tt class="docutils literal"><span class="pre">RR</span></tt>), mas não na outra direção. A razão é que a composição da
+coação de <tt class="docutils literal"><span class="pre">QQ</span></tt> em <tt class="docutils literal"><span class="pre">RR</span></tt> com a conversão de <tt class="docutils literal"><span class="pre">RR</span></tt> para <tt class="docutils literal"><span class="pre">QQ</span></tt>
+deveria ser a identidade em <tt class="docutils literal"><span class="pre">QQ</span></tt>. Mas isso é impossível, pois alguns
+números racionais distintos podem ser tratados como iguais em <tt class="docutils literal"><span class="pre">RR</span></tt>,
+como no seguinte exemplo:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span> <span class="o">==</span> <span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span> <span class="o">==</span> <span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Quando se compara elementos de duas famílias <tt class="docutils literal"><span class="pre">P1</span></tt> e <tt class="docutils literal"><span class="pre">P2</span></tt>, é
+possível que não haja coação entre os dois anéis, mas existe uma
+escolha canônica de um parente <tt class="docutils literal"><span class="pre">P3</span></tt> de modo que tanto <tt class="docutils literal"><span class="pre">P1</span></tt> como
+<tt class="docutils literal"><span class="pre">P2</span></tt> são coagidos em <tt class="docutils literal"><span class="pre">P3</span></tt>. Nesse caso, coação vai ocorrer também.
+Um caso de uso típico é na soma de um número racional com um polinômio
+com coeficientes inteiros, resultando em um polinômio com coeficientes
+racionais:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P1</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="o">+</span><span class="n">q</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<p>Note que a princípio o resultado deveria também fazer sentido no
+corpo de frações de <tt class="docutils literal"><span class="pre">ZZ['x']</span></tt>. Todavia, o Sage tenta escolher um
+parente <em>canônico</em> comum que parece ser o mais natural (<tt class="docutils literal"><span class="pre">QQ['x']</span></tt> no
+nosso exemplo). Se várias famílias potencialmente comuns parecem
+igualmente naturais, o Sage <em>não</em> vai escolher um deles
+aleatoriamente. Os mecanismos sobre os quais essa escolha se baseia é
+explicado em um
+<a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">tutorial</a></p>
+<p>Nenhuma coação para um parente comum vai ocorrer no seguinte exemplo:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">+</span><span class="n">y</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: unsupported operand parent(s) for &#39;+&#39;</span>: <span class="n-Identifier">&#39;Univariate Polynomial Ring in x over Rational Field&#39; and &#39;Univariate Polynomial Ring in y over Rational Field&#39;</span>
+</pre></div>
+</div>
+<p>A razão é que o Sage não escolhe um dos potenciais candidatos
+<tt class="docutils literal"><span class="pre">QQ['x']['y']</span></tt>, <tt class="docutils literal"><span class="pre">QQ['y']['x']</span></tt>, <tt class="docutils literal"><span class="pre">QQ['x','y']</span></tt> ou
+<tt class="docutils literal"><span class="pre">QQ['y','x']</span></tt>, porque todas essas estruturas combinadas em pares
+diferentes parecem ser de famílias comuns naturais, e não existe escolha
+canônica aparente.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Tabela de Conteúdo</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Famílias, Conversão e Coação</a><ul>
+<li><a class="reference internal" href="#elementos">Elementos</a></li>
+<li><a class="reference internal" href="#familias-e-categorias">Famílias e Categorias</a></li>
+<li><a class="reference internal" href="#tipos-versus-parentes">Tipos versus Parentes</a></li>
+<li><a class="reference internal" href="#conversao-versus-coacao">Conversão versus Coação</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Tópico anterior</h4>
+            <p class="topless"><a href="tour_polynomial.html"
+                                  title="capítulo anterior">Polinômios</a></p>
+            <h4>Próximo tópico</h4>
+            <p class="topless"><a href="tour_groups.html"
+                                  title="próximo capítulo">Grupos Finitos, Grupos Abelianos</a></p>
+            <h3>Esta Página</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tour_coercion.txt"
+                     rel="nofollow">Exibir Fonte</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Pesquisa rápida</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Ir" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Digite os termos da busca ou o nome de um módulo, classe ou função.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navegação</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Índice Geral"
+             >índice</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Índice de Módulos do Python"
+             >módulos</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="Grupos Finitos, Grupos Abelianos"
+             >próximo</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="Polinômios"
+             >anterior</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Tutorial Sage v6.6</a> &raquo;</li>
+
+          <li><a href="tour.html" >Um passeio guiado</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Criado usando <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

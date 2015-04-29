@@ -1,0 +1,573 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parents, Conversion and Coercion &mdash; Sage Tutorial v6.6</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Sage Tutorial v6.6" href="index.html" />
+    <link rel="up" title="A Guided Tour" href="tour.html" />
+    <link rel="next" title="Finite Groups, Abelian Groups" href="tour_groups.html" />
+    <link rel="prev" title="Polynomials" href="tour_polynomial.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="Finite Groups, Abelian Groups"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="Polynomials"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Sage Tutorial v6.6</a> &raquo;</li>
+
+          <li><a href="tour.html" accesskey="U">A Guided Tour</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parents-conversion-and-coercion">
+<span id="section-coercion"></span><h1>Parents, Conversion and Coercion<a class="headerlink" href="#parents-conversion-and-coercion" title="Permalink to this headline">¶</a></h1>
+<p>This section may seem more technical than the previous, but we
+believe that it is important to understand the meaning of parents
+and coercion in order to use rings and other algebraic structures
+in Sage effectively and efficiently.</p>
+<p>Note that we try to explain notions, but we do not show here how to
+implement them. An implementation-oriented tutorial is available as a
+<a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">Sage thematic tutorial</a>.</p>
+<div class="section" id="elements">
+<h2>Elements<a class="headerlink" href="#elements" title="Permalink to this headline">¶</a></h2>
+<p>If one wants to implement a ring in Python, a first approximation is
+to create a class for the elements <tt class="docutils literal"><span class="pre">X</span></tt> of that ring and provide it
+with the required double underscore methods such as <tt class="docutils literal"><span class="pre">__add__</span></tt>,
+<tt class="docutils literal"><span class="pre">__sub__</span></tt>, <tt class="docutils literal"><span class="pre">__mul__</span></tt>, of course making sure that the ring axioms
+hold.</p>
+<p>As Python is a strongly typed (yet dynamically typed) language, one
+might, at least at first, expect that one implements one Python class
+for each ring. After all, Python contains one type <tt class="docutils literal"><span class="pre">&lt;int&gt;</span></tt> for the
+integers, one type <tt class="docutils literal"><span class="pre">&lt;float&gt;</span></tt> for the reals, and so on. But that
+approach must soon fail: There are infinitely many rings, and one can
+not implement infinitely many classes.</p>
+<p>Instead, one may create a hierarchy of classes designed to implement
+elements of ubiquitous algebraic structures, such as groups, rings,
+skew fields, commutative rings, fields, algebras, and so on.</p>
+<p>But that means that elements of fairly different rings can have the
+same type.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>On the other hand, one could also have different Python classes
+providing different implementations of the same mathematical structure
+(e.g., dense matrices versus sparse matrices)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint&#39;&gt;</span>
+<span class="go">&lt;class &#39;sage.rings.polynomial.polynomial_element_generic.Polynomial_generic_sparse&#39;&gt;</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_ntl.Polynomial_integer_dense_ntl&#39;&gt;</span>
+</pre></div>
+</div>
+<p>That poses two problems: On the one hand, if one has elements that are
+two instances of the same class, then one may expect that their
+<tt class="docutils literal"><span class="pre">__add__</span></tt> method will allow to add them; but one does not want that,
+if the elements belong to very different rings. On the other hand, if
+one has elements belonging to different implementations of the same
+ring, then one wants to add them, but that is not straight forward if
+they belong to different Python classes.</p>
+<p>The solution to these problems is called &#8220;coercion&#8221; and will be explained below.</p>
+<p>However, it is essential that each element knows what it is element of. That
+is available by the method <tt class="docutils literal"><span class="pre">parent()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">c</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in a over Integer Ring</span>
+<span class="go">Sparse Univariate Polynomial Ring in b over Integer Ring</span>
+<span class="go">Univariate Polynomial Ring in c over Integer Ring (using NTL)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parents-and-categories">
+<h2>Parents and categories<a class="headerlink" href="#parents-and-categories" title="Permalink to this headline">¶</a></h2>
+<p>Similar to the hierarchy of Python classes addressed to elements of
+algebraic structures, Sage also provides classes for the algebraic
+structures that contain these elements. Structures containing elements
+are called &#8220;parent structures&#8221; in Sage, and there is a base class for
+them. Roughly parallel to the hierarchy of mathematical notions, one
+has a hierarchy of classes, namely for sets, rings, fields, and so on:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>In algebra, objects sharing the same kind of algebraic structures are
+collected in so-called &#8220;categories&#8221;. So, there is a rough analogy
+between the class hierarchy in Sage and the hierarchy of
+categories. However, this analogy of Python classes and categories
+shouldn&#8217;t be stressed too much. After all, mathematical categories are
+implemented in Sage as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Rings</span><span class="p">()</span>
+<span class="go">Category of rings</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Join of Category of euclidean domains</span>
+<span class="go">    and Category of infinite enumerated sets</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span><span class="o">.</span><span class="n">is_subcategory</span><span class="p">(</span><span class="n">Rings</span><span class="p">())</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Rings</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">QQ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>While Sage&#8217;s class hierarchy is centered at implementation
+details, Sage&#8217;s category framework is more centered on mathematical
+structure. It is possible to implement generic methods and tests
+independent of a specific implementation in the categories.</p>
+<p>Parent structures in Sage are supposed to be unique Python
+objects. For example, once a polynomial ring over a certain base ring
+and with a certain list of generators is created, the result is
+cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="types-versus-parents">
+<h2>Types versus parents<a class="headerlink" href="#types-versus-parents" title="Permalink to this headline">¶</a></h2>
+<p>The type <tt class="docutils literal"><span class="pre">RingElement</span></tt> does not correspond perfectly to the
+mathematical notion of a ring element.  For example, although square
+matrices belong to a ring, they are not instances of <tt class="docutils literal"><span class="pre">RingElement</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="n">M</span>
+<span class="go">[0 0]</span>
+<span class="go">[0 0]</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">RingElement</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>While <em>parents</em> are unique, equal <em>elements</em> of a parent in Sage are not
+necessarily identical. This is in contrast to the behaviour of Python
+for some (albeit not all) integers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c"># Python int</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="ow">is</span> <span class="mi">1</span>           <span class="c"># Sage Integer</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>It is important to observe that elements of different rings are in
+general not distinguished by their type, but by their parent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Finite Field of size 2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">Finite Field of size 5</span>
+</pre></div>
+</div>
+<p>Hence, from an algebraic point of view, <strong>the parent of an element
+is more important than its type.</strong></p>
+</div>
+<div class="section" id="conversion-versus-coercion">
+<h2>Conversion versus Coercion<a class="headerlink" href="#conversion-versus-coercion" title="Permalink to this headline">¶</a></h2>
+<p>In some cases it is possible to convert an element of one parent
+structure into an element of a different parent structure. Such
+conversion can either be explicit or implicit (this is called
+<em>coercion</em>).</p>
+<p>The reader may know the notions <em>type conversion</em> and <em>type coercion</em>
+from, e.g., the C programming language. There are notions of
+<em>conversion</em> and <em>coercion</em> in Sage as well. But the notions in Sage
+are centered on <em>parents</em>, not on types. So, please don&#8217;t confuse
+type conversion in C with conversion in Sage!</p>
+<p>We give here a rather brief account. For a detailed description and
+for information on the implementation, we refer to the section on
+coercion in the reference manual and to the
+<a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">thematic tutorial</a>.</p>
+<p>There are two extremal positions concerning the possibility
+of doing arithmetic with elements of <em>different</em> rings:</p>
+<ul class="simple">
+<li>Different rings are different worlds, and it makes no sense
+whatsoever to add or multiply elements of different rings;
+even <tt class="docutils literal"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">1/2</span></tt> makes no sense, since the first summand is
+an integer and the second a rational.</li>
+</ul>
+<p>Or</p>
+<ul class="simple">
+<li>If an element <tt class="docutils literal"><span class="pre">r1</span></tt> of one ring <tt class="docutils literal"><span class="pre">R1</span></tt> can somehow be interpreted
+in another ring <tt class="docutils literal"><span class="pre">R2</span></tt>, then all arithmetic operations involving
+<tt class="docutils literal"><span class="pre">r1</span></tt> and any element of <tt class="docutils literal"><span class="pre">R2</span></tt> are allowed. The multiplicative
+unit exists in all fields and many rings, and they should all be
+equal.</li>
+</ul>
+<p>Sage favours a compromise. If <tt class="docutils literal"><span class="pre">P1</span></tt> and <tt class="docutils literal"><span class="pre">P2</span></tt> are parent structures
+and <tt class="docutils literal"><span class="pre">p1</span></tt> is an element of <tt class="docutils literal"><span class="pre">P1</span></tt>, then the user may explicitly ask
+for an interpretation of <tt class="docutils literal"><span class="pre">p1</span></tt> in <tt class="docutils literal"><span class="pre">P2</span></tt>. This may not be meaningful
+in all cases or not be defined for all elements of <tt class="docutils literal"><span class="pre">P1</span></tt>, and it is
+up to the user to ensure that it makes sense. We refer to this as
+<strong>conversion</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">a</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, an <em>implicit</em> (or automatic) conversion will only happen if
+this can be done <em>thoroughly</em> and <em>consistently</em>. Mathematical rigour
+is essential at that point.</p>
+<p>Such an implicit conversion is called <strong>coercion</strong>. If coercion is
+defined, then it must coincide with conversion. Two conditions must be
+satisfied for a coercion to be defined:</p>
+<ol class="arabic simple">
+<li>A coercion from <tt class="docutils literal"><span class="pre">P1</span></tt> to <tt class="docutils literal"><span class="pre">P2</span></tt> must be given by a structure
+preserving map (e.g., a ring homomorphism). It does not suffice
+that <em>some</em> elements of <tt class="docutils literal"><span class="pre">P1</span></tt> can be mapped to <tt class="docutils literal"><span class="pre">P2</span></tt>, and the
+map must respect the algebraic structure of <tt class="docutils literal"><span class="pre">P1</span></tt>.</li>
+<li>The choice of these coercion maps must be consistent: If <tt class="docutils literal"><span class="pre">P3</span></tt> is
+a third parent structure, then the composition of the chosen coercion
+from <tt class="docutils literal"><span class="pre">P1</span></tt> to <tt class="docutils literal"><span class="pre">P2</span></tt> with the coercion from <tt class="docutils literal"><span class="pre">P2</span></tt> to <tt class="docutils literal"><span class="pre">P3</span></tt> must
+coincide with the chosen coercion from <tt class="docutils literal"><span class="pre">P1</span></tt> to <tt class="docutils literal"><span class="pre">P3</span></tt>. In particular,
+if there is a coercion from <tt class="docutils literal"><span class="pre">P1</span></tt> to <tt class="docutils literal"><span class="pre">P2</span></tt> and <tt class="docutils literal"><span class="pre">P2</span></tt> to <tt class="docutils literal"><span class="pre">P1</span></tt>,
+the composition must be the identity map of <tt class="docutils literal"><span class="pre">P1</span></tt>.</li>
+</ol>
+<p>So, although it is possible to convert each element of <tt class="docutils literal"><span class="pre">GF(2)</span></tt> into
+<tt class="docutils literal"><span class="pre">GF(5)</span></tt>, there is no coercion, since there is no ring homomorphism
+between <tt class="docutils literal"><span class="pre">GF(2)</span></tt> and <tt class="docutils literal"><span class="pre">GF(5)</span></tt>.</p>
+<p>The second aspect - consistency - is a bit more difficult to explain.
+We illustrate it with multivariate polynomial rings. In applications,
+it certainly makes most sense to have name preserving coercions. So,
+we have:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R1</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">R2</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">y</span>
+</pre></div>
+</div>
+<p>If there is no name preserving ring homomorphism, coercion is not
+defined. However, conversion may still be possible, namely by mapping
+ring generators according to their position in the list of generators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">z</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x</span>
+</pre></div>
+</div>
+<p>But such position preserving conversions do not qualify as coercion:
+By composing a name preserving map from <tt class="docutils literal"><span class="pre">ZZ['x','y']</span></tt> to <tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt>
+with a position preserving map from <tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt> to <tt class="docutils literal"><span class="pre">ZZ['a','b']</span></tt>,
+a map would result that is neither name preserving nor position preserving,
+in violation to consistency.</p>
+<p>If there is a coercion, it will be used to compare elements of
+different rings or to do arithmetic. This is often convenient, but
+the user should be aware that extending the <tt class="docutils literal"><span class="pre">==</span></tt>-relation across
+the borders of different parents may easily result in overdoing it.
+For example, while <tt class="docutils literal"><span class="pre">==</span></tt> is supposed to be an equivalence relation
+on the elements of <em>one</em> ring, this is not necessarily the case if
+<em>different</em> rings are involved. For example, <tt class="docutils literal"><span class="pre">1</span></tt> in <tt class="docutils literal"><span class="pre">ZZ</span></tt> and in
+a finite field are considered equal, since there is a canonical coercion
+from the integers to any finite field. However, in general there is no
+coercion between two different finite fields. Therefore we have</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Similarly, we have</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Another consequence of the consistency condition is that coercions can
+only go from exact rings (e.g., the rationals <tt class="docutils literal"><span class="pre">QQ</span></tt>) to inexact rings
+(e.g., real numbers with a fixed precision <tt class="docutils literal"><span class="pre">RR</span></tt>), but not the other
+way around. The reason is that the composition of the coercion from
+<tt class="docutils literal"><span class="pre">QQ</span></tt> to <tt class="docutils literal"><span class="pre">RR</span></tt> with a conversion from <tt class="docutils literal"><span class="pre">RR</span></tt> to <tt class="docutils literal"><span class="pre">QQ</span></tt> is supposed
+to be the identity on <tt class="docutils literal"><span class="pre">QQ</span></tt>. But this is impossible, since some
+distinct rational numbers may very well be treated equal in <tt class="docutils literal"><span class="pre">RR</span></tt>, as
+in the following example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span> <span class="o">==</span> <span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span> <span class="o">==</span> <span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>When comparing elements of two parents <tt class="docutils literal"><span class="pre">P1</span></tt> and <tt class="docutils literal"><span class="pre">P2</span></tt>, it is possible
+that there is no coercion between the two rings, but there is a canonical
+choice of a parent <tt class="docutils literal"><span class="pre">P3</span></tt> so that both <tt class="docutils literal"><span class="pre">P1</span></tt> and <tt class="docutils literal"><span class="pre">P2</span></tt> coerce into <tt class="docutils literal"><span class="pre">P3</span></tt>.
+In this case, coercion will take place as well. A typical use case is the
+sum of a rational number and a polynomial with integer coefficients, yielding
+a polynomial with rational coefficients:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P1</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="o">+</span><span class="n">q</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<p>Note that in principle the result would also make sense in the
+fraction field of <tt class="docutils literal"><span class="pre">ZZ['x']</span></tt>. However, Sage tries to choose a
+<em>canonical</em> common parent that seems to be most natural (<tt class="docutils literal"><span class="pre">QQ['x']</span></tt>
+in our example). If several potential common parents seem equally
+natural, Sage will <em>not</em> pick one of them at random, in order to have
+a reliable result. The mechanisms which that choice is based upon is
+explained in the
+<a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">thematic tutorial</a>.</p>
+<p>No coercion into a common parent will take place in the following
+example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">+</span><span class="n">y</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: unsupported operand parent(s) for &#39;+&#39;</span>: <span class="n-Identifier">&#39;Univariate Polynomial Ring in x over Rational Field&#39; and &#39;Univariate Polynomial Ring in y over Rational Field&#39;</span>
+</pre></div>
+</div>
+<p>The reason is that Sage would not choose one of the potential
+candidates <tt class="docutils literal"><span class="pre">QQ['x']['y']</span></tt>, <tt class="docutils literal"><span class="pre">QQ['y']['x']</span></tt>, <tt class="docutils literal"><span class="pre">QQ['x','y']</span></tt> or
+<tt class="docutils literal"><span class="pre">QQ['y','x']</span></tt>, because all of these four pairwise different
+structures seem natural common parents, and there is no apparent
+canonical choice.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Parents, Conversion and Coercion</a><ul>
+<li><a class="reference internal" href="#elements">Elements</a></li>
+<li><a class="reference internal" href="#parents-and-categories">Parents and categories</a></li>
+<li><a class="reference internal" href="#types-versus-parents">Types versus parents</a></li>
+<li><a class="reference internal" href="#conversion-versus-coercion">Conversion versus Coercion</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="tour_polynomial.html"
+                                  title="previous chapter">Polynomials</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="tour_groups.html"
+                                  title="next chapter">Finite Groups, Abelian Groups</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tour_coercion.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="Finite Groups, Abelian Groups"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="Polynomials"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Sage Tutorial v6.6</a> &raquo;</li>
+
+          <li><a href="tour.html" >A Guided Tour</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

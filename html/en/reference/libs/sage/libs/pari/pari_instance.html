@@ -1,0 +1,1250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PARI C-library interface &mdash; Sage Reference Manual v6.6: C/C++ Library Interfaces</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: C/C++ Library Interfaces" href="../../../index.html" />
+    <link rel="next" title="fpLLL library" href="../fplll/fplll.html" />
+    <link rel="prev" title="Sage class for PARI’s GEN type" href="gen.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../fplll/fplll.html" title="fpLLL library"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Sage class for PARI’s GEN type"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pari-c-library-interface">
+<span id="sage-libs-pari-pari-instance"></span><h1>PARI C-library interface<a class="headerlink" href="#pari-c-library-interface" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.libs.pari.pari_instance"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein (2006-03-01): updated to work with PARI 2.2.12-beta</li>
+<li>William Stein (2006-03-06): added newtonpoly</li>
+<li>Justin Walker: contributed some of the function definitions</li>
+<li>Gonzalo Tornaria: improvements to conversions; much better error
+handling.</li>
+<li>Robert Bradshaw, Jeroen Demeyer, William Stein (2010-08-15):
+Upgrade to PARI 2.4.3 (#9343)</li>
+<li>Jeroen Demeyer (2011-11-12): rewrite various conversion routines
+(#11611, #11854, #11952)</li>
+<li>Peter Bruin (2013-11-17): split off this file from gen.pyx (#15185)</li>
+<li>Jeroen Demeyer (2014-02-09): upgrade to PARI 2.7 (#15767)</li>
+<li>Jeroen Demeyer (2014-09-19): upgrade to PARI 2.8 (#16997)</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="p">(</span><span class="s">&#39;5! + 10/x&#39;</span><span class="p">)</span>
+<span class="go">(120*x + 10)/x</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="p">(</span><span class="s">&#39;intnum(x=0,13,sin(x)+sin(x^2) + x)&#39;</span><span class="p">)</span>
+<span class="go">85.1885681951527</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="s">&#39;x^3-1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">factor</span><span class="p">();</span> <span class="n">v</span>
+<span class="go">[x - 1, 1; x^2 + x + 1, 1]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>   <span class="c"># indexing is 0-based unlike in GP.</span>
+<span class="go">[x - 1, x^2 + x + 1]~</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">[1, 1]~</span>
+</pre></div>
+</div>
+<p>Arithmetic obeys the usual coercion rules:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">pari</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.libs.pari.gen.gen&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">pari</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">&lt;type &#39;sage.libs.pari.gen.gen&#39;&gt;</span>
+</pre></div>
+</div>
+<p>GUIDE TO REAL PRECISION AND THE PARI LIBRARY</p>
+<p>The default real precision in communicating with the PARI library
+is the same as the default Sage real precision, which is 53 bits.
+Inexact Pari objects are therefore printed by default to 15 decimal
+digits (even if they are actually more precise).</p>
+<p>Default precision example (53 bits, 15 significant decimals):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="mf">1.23</span><span class="p">);</span> <span class="n">a</span>
+<span class="go">1.23000000000000</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
+<span class="go">0.942488801931698</span>
+</pre></div>
+</div>
+<p>Example with custom precision of 200 bits (60 significant
+decimals):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RealField</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="mf">1.23</span><span class="p">));</span> <span class="n">a</span>   <span class="c"># only 15 significant digits printed</span>
+<span class="go">1.23000000000000</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>         <span class="c"># but the number is known to precision of 200 bits</span>
+<span class="go">1.2300000000000000000000000000000000000000000000000000000000</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>      <span class="c"># only 15 significant digits printed</span>
+<span class="go">0.942488801931698</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">sin</span><span class="p">())</span>   <span class="c"># but the number is known to precision of 200 bits</span>
+<span class="go">0.94248880193169751002382356538924454146128740562765030213504</span>
+</pre></div>
+</div>
+<p>It is possible to change the number of printed decimals:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RealField</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>    <span class="c"># 200 bits of precision in computations</span>
+<span class="gp">sage: </span><span class="n">old_prec</span> <span class="o">=</span> <span class="n">pari</span><span class="o">.</span><span class="n">set_real_precision</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>  <span class="c"># 60 decimals printed</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="n">R</span><span class="p">(</span><span class="mf">1.23</span><span class="p">));</span> <span class="n">a</span>
+<span class="go">1.23000000000000000000000000000000000000000000000000000000000</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
+<span class="go">0.942488801931697510023823565389244541461287405627650302135038</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">set_real_precision</span><span class="p">(</span><span class="n">old_prec</span><span class="p">)</span>  <span class="c"># restore the default printing behavior</span>
+<span class="go">60</span>
+</pre></div>
+</div>
+<p>Unless otherwise indicated in the docstring, most Pari functions
+that return inexact objects use the precision of their arguments to
+decide the precision of the computation. However, if some of these
+arguments happen to be exact numbers (integers, rationals, etc.),
+an optional parameter indicates the precision (in bits) to which
+these arguments should be converted before the computation. If this
+precision parameter is missing, the default precision of 53 bits is
+used. The following first converts 2 into a real with 53-bit
+precision:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RealField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">pari</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sin</span><span class="p">())</span>
+<span class="go">0.909297426825682</span>
+</pre></div>
+</div>
+<p>We can ask for a better precision using the optional parameter:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RealField</span><span class="p">(</span><span class="mi">150</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">pari</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">150</span><span class="p">))</span>
+<span class="go">0.90929742682568169539601986591174484270225497</span>
+</pre></div>
+</div>
+<p>Warning regarding conversions Sage - Pari - Sage: Some care must be
+taken when juggling inexact types back and forth between Sage and
+Pari. In theory, calling p=pari(s) creates a Pari object p with the
+same precision as s; in practice, the Pari library&#8217;s precision is
+word-based, so it will go up to the next word. For example, a
+default 53-bit Sage real s will be bumped up to 64 bits by adding
+bogus 11 bits. The function p.python() returns a Sage object with
+exactly the same precision as the Pari object p. So
+pari(s).python() is definitely not equal to s, since it has 64 bits
+of precision, including the bogus 11 bits. The correct way of
+avoiding this is to coerce pari(s).python() back into a domain with
+the right precision. This has to be done by the user (or by Sage
+functions that use Pari library functions in gen.pyx). For
+instance, if we want to use the Pari library to compute sqrt(pi)
+with a precision of 100 bits:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RealField</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="n">pi</span><span class="p">);</span> <span class="n">s</span>
+<span class="go">3.1415926535897932384626433833</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">python</span><span class="p">();</span> <span class="n">x</span>  <span class="c"># wow, more digits than I expected!</span>
+<span class="go">1.7724538509055160272981674833410973484</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">prec</span><span class="p">()</span>           <span class="c"># has precision &#39;improved&#39; from 100 to 128?</span>
+<span class="go">128</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">==</span> <span class="n">RealField</span><span class="p">(</span><span class="mi">128</span><span class="p">)(</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>  <span class="c"># sadly, no!</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>               <span class="c"># x should be brought back to precision 100</span>
+<span class="go">1.7724538509055160272981674833</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Elliptic curves and precision: If you are working with elliptic
+curves, you should set the precision for each method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">pari</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">82</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">ellinit</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">eta1</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">elleta</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">100</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">eta1</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="go">3.6054636014326520859158205642077267748</span>
+<span class="gp">sage: </span><span class="n">eta1</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">elleta</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">180</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">eta1</span><span class="o">.</span><span class="n">sage</span><span class="p">()</span>
+<span class="go">3.60546360143265208591582056420772677481026899659802474544</span>
+</pre></div>
+</div>
+<p>Number fields and precision: TODO</p>
+<p>TESTS:</p>
+<p>Check that output from PARI&#8217;s print command is actually seen by
+Sage (ticket #9636):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="p">(</span><span class="s">&#39;print(&quot;test&quot;)&#39;</span><span class="p">)</span>
+<span class="go">test</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.libs.pari.pari_instance.PariInstance">
+<em class="property">class </em><tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">PariInstance</tt><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.libs.pari.pari_instance.PariInstance_auto" title="sage.libs.pari.pari_instance.PariInstance_auto"><tt class="xref py py-class docutils literal"><span class="pre">sage.libs.pari.pari_instance.PariInstance_auto</span></tt></a></p>
+<p>Initialize the PARI system.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">size</span></tt> &#8211; long, the number of bytes for the initial
+PARI stack (see note below)</li>
+<li><tt class="docutils literal"><span class="pre">maxprime</span></tt> &#8211; unsigned long, upper limit on a
+precomputed prime number table (default: 500000)</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>In Sage, the PARI stack is different than in GP or the
+PARI C library. In Sage, instead of the PARI stack
+holding the results of all computations, it <em>only</em> holds
+the results of an individual computation. Each time a new
+Python/PARI object is computed, it it copied to its own
+space in the Python heap, and the memory it occupied on the
+PARI stack is freed. Thus it is not necessary to make the
+stack very large. Also, unlike in PARI, if the stack does
+overflow, in most cases the PARI stack is automatically
+increased and the relevant step of the computation rerun.</p>
+<p class="last">This design obviously involves some performance penalties
+over the way PARI works, but it scales much better and is
+far more robust for large projects.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you do not want prime numbers, put <tt class="docutils literal"><span class="pre">maxprime=2</span></tt>, but be
+careful because many PARI functions require this table. If
+you get the error message &#8220;not enough precomputed primes&#8221;,
+increase this parameter.</p>
+</div>
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.allocatemem">
+<tt class="descname">allocatemem</tt><big>(</big><em>s=0</em>, <em>silent=False</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.allocatemem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the PARI stack space to the given size (or double the
+current size if <tt class="docutils literal"><span class="pre">s</span></tt> is <span class="math">\(0\)</span>).</p>
+<p>If <span class="math">\(s = 0\)</span> and insufficient memory is avaible to double, the
+PARI stack will be enlarged by a smaller amount.  In any case,
+a <tt class="docutils literal"><span class="pre">MemoryError</span></tt> will be raised if the requested memory cannot
+be allocated.</p>
+<p>The PARI stack is never automatically shrunk.  You can use the
+command <tt class="docutils literal"><span class="pre">pari.allocatemem(10^6)</span></tt> to reset the size to <span class="math">\(10^6\)</span>,
+which is the default size at startup.  Note that the results of
+computations using Sage&#8217;s PARI interface are copied to the
+Python heap, so they take up no space in the PARI stack.
+The PARI stack is cleared after every computation.</p>
+<p>It does no real harm to set this to a small value as the PARI
+stack will be automatically doubled when we run out of memory.
+However, it could make some calculations slower (since they have
+to be redone from the start after doubling the stack until the
+stack is big enough).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">s</span></tt> - an integer (default: 0).  A non-zero argument should
+be the size in bytes of the new PARI stack.  If <span class="math">\(s\)</span> is zero,
+try to double the current stack size.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">allocatemem</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">PARI stack size set to 10000000 bytes</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">allocatemem</span><span class="p">()</span>  <span class="c"># Double the current size</span>
+<span class="go">PARI stack size set to 20000000 bytes</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">stacksize</span><span class="p">()</span>
+<span class="go">20000000</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">allocatemem</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">PARI stack size set to 1000000 bytes</span>
+</pre></div>
+</div>
+<p>The following computation will automatically increase the PARI
+stack size:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="s">&#39;2^100000000&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">a</span></tt> is now a Python variable on the Python heap and does not
+take up any space on the PARI stack.  The PARI stack is still
+large because of the computation of <tt class="docutils literal"><span class="pre">a</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">stacksize</span><span class="p">()</span>
+<span class="go">16000000</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">allocatemem</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">PARI stack size set to 1000000 bytes</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">stacksize</span><span class="p">()</span>
+<span class="go">1000000</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Do the same without using the string interface and starting
+from a very small stack size:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">allocatemem</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">PARI stack size set to 1024 bytes</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">^</span><span class="mi">100000000</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">stacksize</span><span class="p">()</span>
+<span class="go">16777216</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.complex">
+<tt class="descname">complex</tt><big>(</big><em>re</em>, <em>im</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.complex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new complex number, initialized from re and im.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.debugstack">
+<tt class="descname">debugstack</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.debugstack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the internal PARI variables <tt class="docutils literal"><span class="pre">top</span></tt> (top of stack), <tt class="docutils literal"><span class="pre">avma</span></tt>
+(available memory address, think of this as the stack pointer),
+<tt class="docutils literal"><span class="pre">bot</span></tt> (bottom of stack).</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">debugstack</span><span class="p">()</span>  <span class="c"># random</span>
+<span class="go">top =  0x60b2c60</span>
+<span class="go">avma = 0x5875c38</span>
+<span class="go">bot =  0x57295e0</span>
+<span class="go">size = 1000000</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.default">
+<tt class="descname">default</tt><big>(</big><em>variable</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.double_to_gen">
+<tt class="descname">double_to_gen</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.double_to_gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.euler">
+<tt class="descname">euler</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.euler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Euler&#8217;s constant to the requested real precision (in bits).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">euler</span><span class="p">()</span>
+<span class="go">0.577215664901533</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">euler</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">python</span><span class="p">()</span>
+<span class="go">0.577215664901532860606512090082...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.factorial">
+<tt class="descname">factorial</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.factorial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the factorial of the integer n as a PARI gen.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">120</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+<span class="go">15511210043330985984000000</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.genus2red">
+<tt class="descname">genus2red</tt><big>(</big><em>P</em>, <em>P0=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.genus2red" title="Permalink to this definition">¶</a></dt>
+<dd><p>Let <span class="math">\(P\)</span> be a polynomial with integer coefficients.
+Determines the reduction of the (proper, smooth) genus 2
+curve <span class="math">\(C/\QQ\)</span>, defined by the hyperelliptic equation <span class="math">\(y^2 = P\)</span>.
+The special syntax <tt class="docutils literal"><span class="pre">genus2red([P,Q])</span></tt> is also allowed, where
+the polynomials <span class="math">\(P\)</span> and <span class="math">\(Q\)</span> have integer coefficients, to
+represent the model <span class="math">\(y^2 + Q(x)y = P(x)\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">polygen</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">genus2red</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+<span class="go">[1416875, [2, -1; 5, 4; 2267, 1], x^6 - 240*x^4 - 2550*x^3 - 11400*x^2 - 24100*x - 19855, [[2, [2, [Mod(1, 2)]], []], [5, [1, []], [&quot;[V] page 156&quot;, [3]]], [2267, [2, [Mod(432, 2267)]], [&quot;[I{1-0-0}] page 170&quot;, []]]]]</span>
+</pre></div>
+</div>
+<p>This is the old deprecated syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">genus2red</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">doctest:...: DeprecationWarning: The 2-argument version of genus2red() is deprecated, use genus2red(P) or genus2red([P,Q]) instead</span>
+<span class="go">See http://trac.sagemath.org/16997 for details.</span>
+<span class="go">[1416875, [2, -1; 5, 4; 2267, 1], x^6 - 240*x^4 - 2550*x^3 - 11400*x^2 - 24100*x - 19855, [[2, [2, [Mod(1, 2)]], []], [5, [1, []], [&quot;[V] page 156&quot;, [3]]], [2267, [2, [Mod(432, 2267)]], [&quot;[I{1-0-0}] page 170&quot;, []]]]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.get_debug_level">
+<tt class="descname">get_debug_level</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.get_debug_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the debug PARI C library variable.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.get_real_precision">
+<tt class="descname">get_real_precision</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.get_real_precision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current PARI default real precision.</p>
+<p>This is used both for creation of new objects from strings and for
+printing. It is the number of digits <em>IN DECIMAL</em> in which real
+numbers are printed. It also determines the precision of objects
+created by parsing strings (e.g. pari(&#8216;1.2&#8217;)), which is <em>not</em> the
+normal way of creating new pari objects in Sage. It has <em>no</em>
+effect on the precision of computations within the pari library.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">get_real_precision</span><span class="p">()</span>
+<span class="go">15</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.get_series_precision">
+<tt class="descname">get_series_precision</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.get_series_precision" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.getrand">
+<tt class="descname">getrand</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.getrand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns PARI&#8217;s current random number seed.</p>
+<p>OUTPUT:</p>
+<p>GEN of type t_VECSMALL</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="o">.</span><span class="n">getrand</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">type</span><span class="p">()</span>
+<span class="go">&#39;t_INT&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.init_primes">
+<tt class="descname">init_primes</tt><big>(</big><em>M</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.init_primes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recompute the primes table including at least all primes up to M
+(but possibly more).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">init_primes</span><span class="p">(</span><span class="mi">200000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We make sure that ticket <a class="reference external" href="http://trac.sagemath.org/11741">trac ticket #11741</a> has been fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">init_primes</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">30</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Cannot compute primes beyond 436273290</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.matrix">
+<tt class="descname">matrix</tt><big>(</big><em>m</em>, <em>n</em>, <em>entries=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>matrix(long m, long n, entries=None): Create and return the m x n
+PARI matrix with given list of entries.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.new_with_bits_prec">
+<tt class="descname">new_with_bits_prec</tt><big>(</big><em>s</em>, <em>precision</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.new_with_bits_prec" title="Permalink to this definition">¶</a></dt>
+<dd><p>pari.new_with_bits_prec(self, s, precision) creates s as a PARI
+gen with (at most) precision <em>bits</em> of precision.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.nth_prime">
+<tt class="descname">nth_prime</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.nth_prime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.pari_version">
+<tt class="descname">pari_version</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.pari_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.pi">
+<tt class="descname">pi</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.pi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the constant pi to the requested real precision
+(in bits).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">pi</span><span class="p">()</span>
+<span class="go">3.14159265358979</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">pi</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">python</span><span class="p">()</span>
+<span class="go">3.1415926535897932384626433832...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.polcyclo">
+<tt class="descname">polcyclo</tt><big>(</big><em>n</em>, <em>v=-1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.polcyclo" title="Permalink to this definition">¶</a></dt>
+<dd><p>polcyclo(n, v=x): cyclotomic polynomial of degree n, in variable
+v.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polcyclo</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">x^4 + 1</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polcyclo</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">)</span>
+<span class="go">z^6 + z^5 + z^4 + z^3 + z^2 + z + 1</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polcyclo</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">x - 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.polcyclo_eval">
+<tt class="descname">polcyclo_eval</tt><big>(</big><em>n</em>, <em>v</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.polcyclo_eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>polcyclo_eval(n, v): value of the nth cyclotomic polynomial at value v.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polcyclo_eval</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">17</span>
+<span class="gp">sage: </span><span class="n">cyclotomic_polynomial</span><span class="p">(</span><span class="mi">8</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">17</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.pollegendre">
+<tt class="descname">pollegendre</tt><big>(</big><em>n</em>, <em>v=-1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.pollegendre" title="Permalink to this definition">¶</a></dt>
+<dd><p>pollegendre(n, v=x): Legendre polynomial of degree n (n C-integer),
+in variable v.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">pollegendre</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">429/16*x^7 - 693/16*x^5 + 315/16*x^3 - 35/16*x</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">pollegendre</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">)</span>
+<span class="go">429/16*z^7 - 693/16*z^5 + 315/16*z^3 - 35/16*z</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">pollegendre</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.polsubcyclo">
+<tt class="descname">polsubcyclo</tt><big>(</big><em>n</em>, <em>d</em>, <em>v=-1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.polsubcyclo" title="Permalink to this definition">¶</a></dt>
+<dd><p>polsubcyclo(n, d, v=x): return the pari list of polynomial(s)
+defining the sub-abelian extensions of degree <span class="math">\(d\)</span> of the
+cyclotomic field <span class="math">\(\QQ(\zeta_n)\)</span>, where <span class="math">\(d\)</span>
+divides <span class="math">\(\phi(n)\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polsubcyclo</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">[x^4 + 1]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polsubcyclo</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">)</span>
+<span class="go">[z^2 - 2, z^2 + 1, z^2 + 2]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polsubcyclo</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">[x - 1]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">polsubcyclo</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.poltchebi">
+<tt class="descname">poltchebi</tt><big>(</big><em>n</em>, <em>v=-1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.poltchebi" title="Permalink to this definition">¶</a></dt>
+<dd><p>poltchebi(n, v=x): Chebyshev polynomial of the first kind of degree
+n, in variable v.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">poltchebi</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">64*x^7 - 112*x^5 + 56*x^3 - 7*x</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">poltchebi</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">)</span>
+<span class="go">64*z^7 - 112*z^5 + 56*z^3 - 7*z</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">poltchebi</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.prime_list">
+<tt class="descname">prime_list</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.prime_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>prime_list(n): returns list of the first n primes</p>
+<p>To extend the table of primes use pari.init_primes(M).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> - C long</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">gen</span></tt> - PARI list of first n primes</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">[2, 3, 5]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">pari</span><span class="o">.</span><span class="n">prime_list</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
+<span class="go">1000</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.primes_up_to_n">
+<tt class="descname">primes_up_to_n</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.primes_up_to_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the primes &lt;= n as a pari list.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">primes_up_to_n</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">primes_up_to_n</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">[2, 3, 5, 7, 11, 13, 17, 19]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.read">
+<tt class="descname">read</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a script from the named filename into the interpreter.  The
+functions defined in the script are then available for use from
+Sage/PARI.  The result of the last command in <tt class="docutils literal"><span class="pre">filename</span></tt> is
+returned.</p>
+<p>EXAMPLES:</p>
+<p>Create a gp file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="gp">sage: </span><span class="n">gpfile</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s">&quot;w&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gpfile</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;mysquare(n) = {</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gpfile</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;    n^2;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gpfile</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;}</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gpfile</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;polcyclo(5)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gpfile</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Read it in Sage, we get the result of the last line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">gpfile</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="go">x^4 + x^3 + x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>Call the function defined in the gp file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="p">(</span><span class="s">&#39;mysquare(12)&#39;</span><span class="p">)</span>
+<span class="go">144</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.set_debug_level">
+<tt class="descname">set_debug_level</tt><big>(</big><em>level</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.set_debug_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the debug PARI C library variable.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.set_real_precision">
+<tt class="descname">set_real_precision</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.set_real_precision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the PARI default real precision in decimal digits.</p>
+<p>This is used both for creation of new objects from strings and for
+printing. It is the number of digits <em>IN DECIMAL</em> in which real
+numbers are printed. It also determines the precision of objects
+created by parsing strings (e.g. pari(&#8216;1.2&#8217;)), which is <em>not</em> the
+normal way of creating new pari objects in Sage. It has <em>no</em>
+effect on the precision of computations within the pari library.</p>
+<p>Returns the previous PARI real precision.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">set_real_precision</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+<span class="go">15</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="p">(</span><span class="s">&#39;1.2&#39;</span><span class="p">)</span>
+<span class="go">1.20000000000000000000000000000000000000000000000000000000000</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">set_real_precision</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">60</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.set_series_precision">
+<tt class="descname">set_series_precision</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.set_series_precision" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.setrand">
+<tt class="descname">setrand</tt><big>(</big><em>seed</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.setrand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets PARI&#8217;s current random number seed.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">seed</span></tt> &#8211; either a strictly positive integer or a GEN of
+type <tt class="docutils literal"><span class="pre">t_VECSMALL</span></tt> as output by <tt class="docutils literal"><span class="pre">getrand()</span></tt></li>
+</ul>
+<p>This should not be called directly; instead, use Sage&#8217;s global
+random number seed handling in <tt class="docutils literal"><span class="pre">sage.misc.randstate</span></tt>
+and call <tt class="docutils literal"><span class="pre">current_randstate().set_seed_pari()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">pari</span><span class="o">.</span><span class="n">getrand</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">==</span> <span class="n">pari</span><span class="o">.</span><span class="n">getrand</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that invalid inputs are handled properly (<a class="reference external" href="http://trac.sagemath.org/11825">trac ticket #11825</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">setrand</span><span class="p">(</span><span class="s">&quot;foobar&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">PariError</span>: <span class="n-Identifier">incorrect type in setrand (t_POL)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.stacksize">
+<tt class="descname">stacksize</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.stacksize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current size of the PARI stack, which is <span class="math">\(10^6\)</span>
+by default.  However, the stack size is automatically doubled
+when needed.  It can also be set directly using
+<tt class="docutils literal"><span class="pre">pari.allocatemem()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">stacksize</span><span class="p">()</span>
+<span class="go">1000000</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance.vector">
+<tt class="descname">vector</tt><big>(</big><em>n</em>, <em>entries=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance.vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>vector(long n, entries=None): Create and return the length n PARI
+vector with given list of entries.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">vector</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="go">[1, 2, 5, 4, 3]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">vector</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="go">[x, 1]</span>
+<span class="gp">sage: </span><span class="n">pari</span><span class="o">.</span><span class="n">vector</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">IndexError</span>: <span class="n-Identifier">length of entries (=3) must equal n (=2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto">
+<em class="property">class </em><tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">PariInstance_auto</tt><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/parent_base.html#sage.structure.parent_base.ParentWithBase" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.parent_base.ParentWithBase</span></tt></a></p>
+<p>Part of the <a class="reference internal" href="#sage.libs.pari.pari_instance.PariInstance" title="sage.libs.pari.pari_instance.PariInstance"><tt class="xref py py-class docutils literal"><span class="pre">PariInstance</span></tt></a> class containing auto-generated functions.</p>
+<p>You must never use this class directly (in fact, Sage may crash if
+you do), use the derived class <a class="reference internal" href="#sage.libs.pari.pari_instance.PariInstance" title="sage.libs.pari.pari_instance.PariInstance"><tt class="xref py py-class docutils literal"><span class="pre">PariInstance</span></tt></a> instead.</p>
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.Catalan">
+<tt class="descname">Catalan</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.Catalan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.Euler">
+<tt class="descname">Euler</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.Euler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.I">
+<tt class="descname">I</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.I" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.Pi">
+<tt class="descname">Pi</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.Pi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.addhelp">
+<tt class="descname">addhelp</tt><big>(</big><em>sym</em>, <em>str</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.addhelp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.alias">
+<tt class="descname">alias</tt><big>(</big><em>newsym</em>, <em>sym</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.alias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.bernfrac">
+<tt class="descname">bernfrac</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.bernfrac" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.bernpol">
+<tt class="descname">bernpol</tt><big>(</big><em>n</em>, <em>v=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.bernpol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.bernreal">
+<tt class="descname">bernreal</tt><big>(</big><em>x</em>, <em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.bernreal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.bernvec">
+<tt class="descname">bernvec</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.bernvec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.default">
+<tt class="descname">default</tt><big>(</big><em>key=None</em>, <em>val=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.ellmodulareqn">
+<tt class="descname">ellmodulareqn</tt><big>(</big><em>N</em>, <em>x=None</em>, <em>y=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.ellmodulareqn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.factorial">
+<tt class="descname">factorial</tt><big>(</big><em>x</em>, <em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.factorial" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.fibonacci">
+<tt class="descname">fibonacci</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.fibonacci" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.galoisgetpol">
+<tt class="descname">galoisgetpol</tt><big>(</big><em>a</em>, <em>b=0</em>, <em>s=1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.galoisgetpol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getabstime">
+<tt class="descname">getabstime</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getabstime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getenv">
+<tt class="descname">getenv</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getenv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getheap">
+<tt class="descname">getheap</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getheap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getrand">
+<tt class="descname">getrand</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getrand" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getstack">
+<tt class="descname">getstack</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getstack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.gettime">
+<tt class="descname">gettime</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.gettime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.getwalltime">
+<tt class="descname">getwalltime</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.getwalltime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.install">
+<tt class="descname">install</tt><big>(</big><em>name</em>, <em>code</em>, <em>gpname=None</em>, <em>lib=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.install" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.intnumstep">
+<tt class="descname">intnumstep</tt><big>(</big><em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.intnumstep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.kill">
+<tt class="descname">kill</tt><big>(</big><em>sym</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.kill" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.mathilbert">
+<tt class="descname">mathilbert</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.mathilbert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.matid">
+<tt class="descname">matid</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.matid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.matpascal">
+<tt class="descname">matpascal</tt><big>(</big><em>n</em>, <em>q=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.matpascal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.numtoperm">
+<tt class="descname">numtoperm</tt><big>(</big><em>n</em>, <em>k</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.numtoperm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.partitions">
+<tt class="descname">partitions</tt><big>(</big><em>k</em>, <em>a=None</em>, <em>n=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.partitions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polchebyshev">
+<tt class="descname">polchebyshev</tt><big>(</big><em>n</em>, <em>flag=1</em>, <em>a=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polchebyshev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polcyclo">
+<tt class="descname">polcyclo</tt><big>(</big><em>n</em>, <em>a=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polcyclo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polhermite">
+<tt class="descname">polhermite</tt><big>(</big><em>n</em>, <em>a=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polhermite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.pollegendre">
+<tt class="descname">pollegendre</tt><big>(</big><em>n</em>, <em>a=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.pollegendre" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polsubcyclo">
+<tt class="descname">polsubcyclo</tt><big>(</big><em>n</em>, <em>d</em>, <em>v=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polsubcyclo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.poltchebi">
+<tt class="descname">poltchebi</tt><big>(</big><em>n</em>, <em>v=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.poltchebi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polylog">
+<tt class="descname">polylog</tt><big>(</big><em>m</em>, <em>x</em>, <em>flag=0</em>, <em>precision=0</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polylog" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.polzagier">
+<tt class="descname">polzagier</tt><big>(</big><em>n</em>, <em>m</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.polzagier" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.prime">
+<tt class="descname">prime</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.prime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.read">
+<tt class="descname">read</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.readvec">
+<tt class="descname">readvec</tt><big>(</big><em>filename=None</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.readvec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.stirling">
+<tt class="descname">stirling</tt><big>(</big><em>n</em>, <em>k</em>, <em>flag=1</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.stirling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.libs.pari.pari_instance.PariInstance_auto.version">
+<tt class="descname">version</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.PariInstance_auto.version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_bits_to_dec">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_bits_to_dec</tt><big>(</big><em>prec_in_bits</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_bits_to_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from precision expressed in bits to precision expressed in
+decimal.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_bits_to_dec</span>
+<span class="gp">sage: </span><span class="n">prec_bits_to_dec</span><span class="p">(</span><span class="mi">53</span><span class="p">)</span>
+<span class="go">15</span>
+<span class="gp">sage: </span><span class="p">[(</span><span class="mi">32</span><span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_bits_to_dec</span><span class="p">(</span><span class="mi">32</span><span class="o">*</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">)]</span>
+<span class="go">[(32, 9),</span>
+<span class="go">(64, 19),</span>
+<span class="go">(96, 28),</span>
+<span class="go">(128, 38),</span>
+<span class="go">(160, 48),</span>
+<span class="go">(192, 57),</span>
+<span class="go">(224, 67),</span>
+<span class="go">(256, 77)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_bits_to_words">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_bits_to_words</tt><big>(</big><em>prec_in_bits</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_bits_to_words" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from precision expressed in bits to pari real precision
+expressed in words. Note: this rounds up to the nearest word,
+adjusts for the two codewords of a pari real, and is
+architecture-dependent.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_bits_to_words</span>
+<span class="gp">sage: </span><span class="n">prec_bits_to_words</span><span class="p">(</span><span class="mi">70</span><span class="p">)</span>
+<span class="go">5   # 32-bit</span>
+<span class="go">4   # 64-bit</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">[(</span><span class="mi">32</span><span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_bits_to_words</span><span class="p">(</span><span class="mi">32</span><span class="o">*</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">)]</span>
+<span class="go">[(32, 3), (64, 4), (96, 5), (128, 6), (160, 7), (192, 8), (224, 9), (256, 10)] # 32-bit</span>
+<span class="go">[(32, 3), (64, 3), (96, 4), (128, 4), (160, 5), (192, 5), (224, 6), (256, 6)] # 64-bit</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_dec_to_bits">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_dec_to_bits</tt><big>(</big><em>prec_in_dec</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_dec_to_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from precision expressed in decimal to precision expressed
+in bits.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_dec_to_bits</span>
+<span class="gp">sage: </span><span class="n">prec_dec_to_bits</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">49</span>
+<span class="gp">sage: </span><span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_dec_to_bits</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+<span class="go">[(10, 33),</span>
+<span class="go">(20, 66),</span>
+<span class="go">(30, 99),</span>
+<span class="go">(40, 132),</span>
+<span class="go">(50, 166),</span>
+<span class="go">(60, 199),</span>
+<span class="go">(70, 232),</span>
+<span class="go">(80, 265),</span>
+<span class="go">(90, 298)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_dec_to_words">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_dec_to_words</tt><big>(</big><em>prec_in_dec</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_dec_to_words" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from precision expressed in decimal to precision expressed
+in words. Note: this rounds up to the nearest word, adjusts for the
+two codewords of a pari real, and is architecture-dependent.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_dec_to_words</span>
+<span class="gp">sage: </span><span class="n">prec_dec_to_words</span><span class="p">(</span><span class="mi">38</span><span class="p">)</span>
+<span class="go">6   # 32-bit</span>
+<span class="go">4   # 64-bit</span>
+<span class="gp">sage: </span><span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_dec_to_words</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+<span class="go">[(10, 4), (20, 5), (30, 6), (40, 7), (50, 8), (60, 9), (70, 10), (80, 11)] # 32-bit</span>
+<span class="go">[(10, 3), (20, 4), (30, 4), (40, 5), (50, 5), (60, 6), (70, 6), (80, 7)] # 64-bit</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_words_to_bits">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_words_to_bits</tt><big>(</big><em>prec_in_words</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_words_to_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from pari real precision expressed in words to precision
+expressed in bits. Note: this adjusts for the two codewords of a
+pari real, and is architecture-dependent.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_words_to_bits</span>
+<span class="gp">sage: </span><span class="n">prec_words_to_bits</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">256   # 32-bit</span>
+<span class="go">512   # 64-bit</span>
+<span class="gp">sage: </span><span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_words_to_bits</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+<span class="go">[(3, 32), (4, 64), (5, 96), (6, 128), (7, 160), (8, 192), (9, 224)]  # 32-bit</span>
+<span class="go">[(3, 64), (4, 128), (5, 192), (6, 256), (7, 320), (8, 384), (9, 448)] # 64-bit</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.libs.pari.pari_instance.prec_words_to_dec">
+<tt class="descclassname">sage.libs.pari.pari_instance.</tt><tt class="descname">prec_words_to_dec</tt><big>(</big><em>prec_in_words</em><big>)</big><a class="headerlink" href="#sage.libs.pari.pari_instance.prec_words_to_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from precision expressed in words to precision expressed in
+decimal. Note: this adjusts for the two codewords of a pari real,
+and is architecture-dependent.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.pari.pari_instance</span> <span class="kn">import</span> <span class="n">prec_words_to_dec</span>
+<span class="gp">sage: </span><span class="n">prec_words_to_dec</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">28   # 32-bit</span>
+<span class="go">57   # 64-bit</span>
+<span class="gp">sage: </span><span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">prec_words_to_dec</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+<span class="go">[(3, 9), (4, 19), (5, 28), (6, 38), (7, 48), (8, 57), (9, 67)] # 32-bit</span>
+<span class="go">[(3, 19), (4, 38), (5, 57), (6, 77), (7, 96), (8, 115), (9, 134)] # 64-bit</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="gen.html"
+                                  title="previous chapter">Sage class for PARI&#8217;s GEN type</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../fplll/fplll.html"
+                                  title="next chapter">fpLLL library</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/libs/pari/pari_instance.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../fplll/fplll.html" title="fpLLL library"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gen.html" title="Sage class for PARI’s GEN type"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

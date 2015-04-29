@@ -1,0 +1,637 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Sequences of bounded integers &mdash; Sage Reference Manual v6.6: Data Structures</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Data Structures" href="../../index.html" />
+    <link rel="prev" title="Bitsets" href="bitset.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitset.html" title="Bitsets"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Data Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sequences-of-bounded-integers">
+<span id="sage-data-structures-bounded-integer-sequences"></span><h1>Sequences of bounded integers<a class="headerlink" href="#sequences-of-bounded-integers" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.data_structures.bounded_integer_sequences"></span><p>This module provides <a class="reference internal" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence" title="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence"><tt class="xref py py-class docutils literal"><span class="pre">BoundedIntegerSequence</span></tt></a>, which implements
+sequences of bounded integers and is for many (but not all) operations faster
+than representing the same sequence as a Python <a class="reference external" href="http://docs.python.org/library/functions.html#tuple" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt></a>.</p>
+<p>The underlying data structure is similar to <tt class="xref py py-class docutils literal"><span class="pre">Bitset</span></tt>,
+which means that certain operations are implemented by using fast shift
+operations from MPIR.  The following boilerplate functions can be
+cimported in Cython modules:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_init(biseq_t</span> <span class="pre">R,</span> <span class="pre">mp_size_t</span> <span class="pre">l,</span> <span class="pre">mp_size_t</span> <span class="pre">itemsize)</span> <span class="pre">except</span> <span class="pre">-1</span></tt></p>
+<p>Allocate memory for a bounded integer sequence of length <tt class="docutils literal"><span class="pre">l</span></tt> with
+items fitting in <tt class="docutils literal"><span class="pre">itemsize</span></tt> bits.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">inline</span> <span class="pre">void</span> <span class="pre">biseq_dealloc(biseq_t</span> <span class="pre">S)</span></tt></p>
+<p>Deallocate the memory used by <tt class="docutils literal"><span class="pre">S</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_init_copy(biseq_t</span> <span class="pre">R,</span> <span class="pre">biseq_t</span> <span class="pre">S)</span></tt></p>
+<p>Initialize <tt class="docutils literal"><span class="pre">R</span></tt> as a copy of <tt class="docutils literal"><span class="pre">S</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">tuple</span> <span class="pre">biseq_pickle(biseq_t</span> <span class="pre">S)</span></tt></p>
+<p>Return a triple <tt class="docutils literal"><span class="pre">(bitset_data,</span> <span class="pre">itembitsize,</span> <span class="pre">length)</span></tt> defining <tt class="docutils literal"><span class="pre">S</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_unpickle(biseq_t</span> <span class="pre">R,</span> <span class="pre">tuple</span> <span class="pre">bitset_data,</span> <span class="pre">mp_bitcnt_t</span> <span class="pre">itembitsize,</span> <span class="pre">mp_size_t</span> <span class="pre">length)</span> <span class="pre">except</span> <span class="pre">-1</span></tt></p>
+<p>Initialise <tt class="docutils literal"><span class="pre">R</span></tt> from data returned by <tt class="docutils literal"><span class="pre">biseq_pickle</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_init_list(biseq_t</span> <span class="pre">R,</span> <span class="pre">list</span> <span class="pre">data,</span> <span class="pre">size_t</span> <span class="pre">bound)</span> <span class="pre">except</span> <span class="pre">-1</span></tt></p>
+<p>Convert a list to a bounded integer sequence, which must not be allocated.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">inline</span> <span class="pre">Py_hash_t</span> <span class="pre">biseq_hash(biseq_t</span> <span class="pre">S)</span></tt></p>
+<p>Hash value for <tt class="docutils literal"><span class="pre">S</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">inline</span> <span class="pre">int</span> <span class="pre">biseq_cmp(biseq_t</span> <span class="pre">S1,</span> <span class="pre">biseq_t</span> <span class="pre">S2)</span></tt></p>
+<p>Comparison of <tt class="docutils literal"><span class="pre">S1</span></tt> and <tt class="docutils literal"><span class="pre">S2</span></tt>. This takes into account the bound, the
+length, and the list of items of the two sequences.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_init_concat(biseq_t</span> <span class="pre">R,</span> <span class="pre">biseq_t</span> <span class="pre">S1,</span> <span class="pre">biseq_t</span> <span class="pre">S2)</span> <span class="pre">except</span> <span class="pre">-1</span></tt></p>
+<p>Concatenate <tt class="docutils literal"><span class="pre">S1</span></tt> and <tt class="docutils literal"><span class="pre">S2</span></tt> and write the result to <tt class="docutils literal"><span class="pre">R</span></tt>. Does not test
+whether the sequences have the same bound!</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">inline</span> <span class="pre">bint</span> <span class="pre">biseq_startswith(biseq_t</span> <span class="pre">S1,</span> <span class="pre">biseq_t</span> <span class="pre">S2)</span></tt></p>
+<p>Is <tt class="docutils literal"><span class="pre">S1=S2+something</span></tt>? Does not check whether the sequences have the same
+bound!</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">mp_size_t</span> <span class="pre">biseq_contains(biseq_t</span> <span class="pre">S1,</span> <span class="pre">biseq_t</span> <span class="pre">S2,</span> <span class="pre">mp_size_t</span> <span class="pre">start)</span> <span class="pre">except</span> <span class="pre">-2</span></tt></p>
+<p>Return the position in <tt class="docutils literal"><span class="pre">S1</span></tt> of <tt class="docutils literal"><span class="pre">S2</span></tt> as a subsequence of
+<tt class="docutils literal"><span class="pre">S1[start:]</span></tt>, or <tt class="docutils literal"><span class="pre">-1</span></tt> if <tt class="docutils literal"><span class="pre">S2</span></tt> is not a subsequence. Does not check
+whether the sequences have the same bound!</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">mp_size_t</span> <span class="pre">biseq_starswith_tail(biseq_t</span> <span class="pre">S1,</span> <span class="pre">biseq_t</span> <span class="pre">S2,</span> <span class="pre">mp_size_t</span> <span class="pre">start)</span> <span class="pre">except</span> <span class="pre">-2:</span></tt></p>
+<p>Return the smallest number <tt class="docutils literal"><span class="pre">i</span></tt> such that the bounded integer sequence
+<tt class="docutils literal"><span class="pre">S1</span></tt> starts with the sequence <tt class="docutils literal"><span class="pre">S2[i:]</span></tt>, where <tt class="docutils literal"><span class="pre">start</span> <span class="pre">&lt;=</span> <span class="pre">i</span> <span class="pre">&lt;</span>
+<span class="pre">S1.length</span></tt>, or return <tt class="docutils literal"><span class="pre">-1</span></tt> if no such <tt class="docutils literal"><span class="pre">i</span></tt> exists.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">mp_size_t</span> <span class="pre">biseq_index(biseq_t</span> <span class="pre">S,</span> <span class="pre">size_t</span> <span class="pre">item,</span> <span class="pre">mp_size_t</span> <span class="pre">start)</span> <span class="pre">except</span> <span class="pre">-2</span></tt></p>
+<p>Return the position in <tt class="docutils literal"><span class="pre">S</span></tt> of the item in <tt class="docutils literal"><span class="pre">S[start:]</span></tt>, or <tt class="docutils literal"><span class="pre">-1</span></tt> if
+<tt class="docutils literal"><span class="pre">S[start:]</span></tt> does not contain the item.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">size_t</span> <span class="pre">biseq_getitem(biseq_t</span> <span class="pre">S,</span> <span class="pre">mp_size_t</span> <span class="pre">index)</span></tt></p>
+<p>Return <tt class="docutils literal"><span class="pre">S[index]</span></tt>, without checking margins.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">size_t</span> <span class="pre">biseq_getitem_py(biseq_t</span> <span class="pre">S,</span> <span class="pre">mp_size_t</span> <span class="pre">index)</span></tt></p>
+<p>Return <tt class="docutils literal"><span class="pre">S[index]</span></tt> as Python <tt class="docutils literal"><span class="pre">int</span></tt> or <tt class="docutils literal"><span class="pre">long</span></tt>, without checking margins.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">biseq_inititem(biseq_t</span> <span class="pre">S,</span> <span class="pre">mp_size_t</span> <span class="pre">index,</span> <span class="pre">size_t</span> <span class="pre">item)</span></tt></p>
+<p>Set <tt class="docutils literal"><span class="pre">S[index]</span> <span class="pre">=</span> <span class="pre">item</span></tt>, without checking margins and assuming that <tt class="docutils literal"><span class="pre">S[index]</span></tt>
+has previously been zero.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">inline</span> <span class="pre">void</span> <span class="pre">biseq_clearitem(biseq_t</span> <span class="pre">S,</span> <span class="pre">mp_size_t</span> <span class="pre">index)</span></tt></p>
+<p>Set <tt class="docutils literal"><span class="pre">S[index]</span> <span class="pre">=</span> <span class="pre">0</span></tt>, without checking margins.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">bint</span> <span class="pre">biseq_init_slice(biseq_t</span> <span class="pre">R,</span> <span class="pre">biseq_t</span> <span class="pre">S,</span> <span class="pre">mp_size_t</span> <span class="pre">start,</span> <span class="pre">mp_size_t</span> <span class="pre">stop,</span> <span class="pre">mp_size_t</span> <span class="pre">step)</span> <span class="pre">except</span> <span class="pre">-1</span></tt></p>
+<p>Initialise <tt class="docutils literal"><span class="pre">R</span></tt> with <tt class="docutils literal"><span class="pre">S[start:stop:step]</span></tt>.</p>
+</li>
+</ul>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Simon King, Jeroen Demeyer (2014-10): initial version (<a class="reference external" href="http://trac.sagemath.org/15820">trac ticket #15820</a>)</li>
+</ul>
+<dl class="class">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence">
+<em class="property">class </em><tt class="descclassname">sage.data_structures.bounded_integer_sequences.</tt><tt class="descname">BoundedIntegerSequence</tt><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>A sequence of non-negative uniformely bounded integers.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">bound</span></tt> &#8211; non-negative integer. When zero, a <tt class="xref py py-class docutils literal"><span class="pre">ValueError</span></tt>
+will be raised. Otherwise, the given bound is replaced by the
+power of two that is at least the given bound.</li>
+<li><tt class="docutils literal"><span class="pre">data</span></tt> &#8211; a list of integers.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>We showcase the similarities and differences between bounded integer
+sequences and lists respectively tuples.</p>
+<p>To distinguish from tuples or lists, we use pointed brackets for the
+string representation of bounded integer sequences:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">20</span><span class="p">]);</span> <span class="n">S</span>
+<span class="go">&lt;2, 7, 20&gt;</span>
+</pre></div>
+</div>
+<p>Each bounded integer sequence has a bound that is a power of two, such
+that all its item are less than this bound:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span>
+<span class="go">32</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">OverflowError</span>: <span class="n-Identifier">list item 20 larger than 15</span>
+</pre></div>
+</div>
+<p>Bounded integer sequences are iterable, and we see that we can recover the
+originally given list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">31</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="n">L</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Getting items and slicing works in the same way as for lists:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4999</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="n">L</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">3000</span><span class="p">,</span><span class="mi">4500</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">m</span><span class="p">:</span><span class="n">n</span><span class="p">:</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">L</span><span class="p">[</span><span class="n">m</span><span class="p">:</span><span class="n">n</span><span class="p">:</span><span class="n">s</span><span class="p">]</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">n</span><span class="p">:</span><span class="n">m</span><span class="p">:</span><span class="o">-</span><span class="n">s</span><span class="p">])</span> <span class="o">==</span> <span class="n">L</span><span class="p">[</span><span class="n">n</span><span class="p">:</span><span class="n">m</span><span class="p">:</span><span class="o">-</span><span class="n">s</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.index" title="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.index"><tt class="xref py py-meth docutils literal"><span class="pre">index()</span></tt></a> method works different for bounded integer sequences and
+tuples or lists. If one asks for the index of an item, the behaviour is
+the same. But we can also ask for the index of a sub-sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">L</span><span class="p">[</span><span class="mi">200</span><span class="p">])</span> <span class="o">==</span> <span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">L</span><span class="p">[</span><span class="mi">200</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">2000</span><span class="p">])</span>    <span class="c"># random</span>
+<span class="go">100</span>
+</pre></div>
+</div>
+<p>Similarly, containment tests work for both items and sub-sequences:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="p">[</span><span class="mi">200</span><span class="p">]</span> <span class="ow">in</span> <span class="n">S</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">[</span><span class="mi">200</span><span class="p">:</span><span class="mi">400</span><span class="p">]</span> <span class="ow">in</span> <span class="n">S</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">[</span><span class="mi">200</span><span class="p">]</span><span class="o">+</span><span class="n">S</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span> <span class="ow">in</span> <span class="n">S</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Bounded integer sequences are immutable, and thus copies are
+identical. This is the same for tuples, but of course not for lists:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="ow">is</span> <span class="n">T</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="ow">is</span> <span class="n">S</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">L</span><span class="p">)</span> <span class="ow">is</span> <span class="n">L</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Concatenation works in the same way for lists, tuples and bounded
+integer sequences:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">31</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="o">+</span><span class="n">T</span><span class="p">)</span><span class="o">==</span><span class="n">L</span><span class="o">+</span><span class="n">M</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">T</span><span class="o">+</span><span class="n">S</span><span class="p">)</span><span class="o">==</span><span class="n">M</span><span class="o">+</span><span class="n">L</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">T</span><span class="o">+</span><span class="n">S</span> <span class="o">==</span> <span class="n">S</span><span class="o">+</span><span class="n">T</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">M</span><span class="o">+</span><span class="n">L</span> <span class="o">==</span> <span class="n">L</span><span class="o">+</span><span class="n">M</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, comparison works different for lists and bounded integer
+sequences. Bounded integer sequences are first compared by bound, then by
+length, and eventually by <em>reverse</em> lexicographical ordering:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">&lt;</span> <span class="n">T</span>   <span class="c"># compare by bound, not length</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">&lt;</span> <span class="n">S</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">T</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">&lt;</span> <span class="n">T</span>    <span class="c"># compare by length, not lexicographically</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">&lt;</span> <span class="n">S</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">&gt;</span> <span class="n">S</span>   <span class="c"># compare by reverse lexicographic ordering...</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">&gt;</span> <span class="n">T</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="c"># direct lexicographic ordering is different</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>We test against various corner cases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">OverflowError</span>: <span class="n-Identifier">can&#39;t convert negative value to size_t</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">&lt;0, 0, 0&gt;</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">OverflowError</span>: <span class="n-Identifier">list item 1 larger than 0</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">positive bound expected</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">[])</span>
+<span class="go">&lt;&gt;</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">[])</span> <span class="o">==</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">[])</span> <span class="c"># The bounds differ</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">])[</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">&lt;&gt;</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.bound">
+<tt class="descname">bound</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bound of this bounded integer sequence.</p>
+<p>All items of this sequence are non-negative integers less than the
+returned bound. The bound is a power of two.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span>
+<span class="go">32</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="o">.</span><span class="n">bound</span><span class="p">()</span>
+<span class="go">64</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.index">
+<tt class="descname">index</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The index of a given item or sub-sequence of <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">5 is not in sequence</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">]))</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">]))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">not a sub-sequence</span>
+</pre></div>
+</div>
+<p>The bound of (sub-)sequences matters:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">]))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">not a sub-sequence</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">7</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">bound</span><span class="p">())</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">32 is not in sequence</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">9</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">11</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">-3 is not in sequence</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">1267650600228229401496703205376 is not in sequence</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">an integer is required</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts this bounded integer sequence to a list</p>
+<p>NOTE:</p>
+<p>A conversion to a list is also possible by iterating over the
+sequence.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">26</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">list</span><span class="p">()</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">==</span> <span class="n">L</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The discussion at <a class="reference external" href="http://trac.sagemath.org/15820">trac ticket #15820</a> explains why the following is a good test:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="go">[0, 0, 0, 0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.maximal_overlap">
+<tt class="descname">maximal_overlap</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.maximal_overlap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">self</span></tt>&#8216;s maximal trailing sub-sequence that <tt class="docutils literal"><span class="pre">other</span></tt> starts with.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">None</span></tt> if there is no overlap</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">X</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">X</span><span class="o">+</span><span class="n">S</span><span class="p">)</span><span class="o">.</span><span class="n">maximal_overlap</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">&lt;2, 7, 2, 3, 0, 0, 0, 0, 0, 0, 0&gt;</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="p">(</span><span class="n">X</span><span class="o">+</span><span class="n">S</span><span class="p">)</span><span class="o">.</span><span class="n">maximal_overlap</span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">None</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">X</span><span class="o">+</span><span class="n">S</span><span class="p">)</span><span class="o">.</span><span class="n">maximal_overlap</span><span class="p">(</span><span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="go">&lt;0, 0&gt;</span>
+<span class="gp">sage: </span><span class="n">B1</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">4</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B2</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">4</span><span class="p">,[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B1</span><span class="o">.</span><span class="n">maximal_overlap</span><span class="p">(</span><span class="n">B2</span><span class="p">)</span>
+<span class="go">&lt;2, 3, 2, 3, 2, 3&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.startswith">
+<tt class="descname">startswith</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.startswith" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells whether <tt class="docutils literal"><span class="pre">self</span></tt> starts with a given bounded integer sequence</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">26</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">27</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L0</span> <span class="o">=</span> <span class="n">L</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">27</span><span class="p">,</span> <span class="n">L0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">L0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">27</span><span class="p">,</span> <span class="n">L0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">L0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">L0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">27</span><span class="p">,</span> <span class="n">L0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">L0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The bounds of the sequences must be compatible, or <a class="reference internal" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.startswith" title="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence.startswith"><tt class="xref py py-meth docutils literal"><span class="pre">startswith()</span></tt></a>
+returns <tt class="docutils literal"><span class="pre">False</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="n">L0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.data_structures.bounded_integer_sequences.NewBISEQ">
+<tt class="descclassname">sage.data_structures.bounded_integer_sequences.</tt><tt class="descname">NewBISEQ</tt><big>(</big><em>bitset_data</em>, <em>itembitsize</em>, <em>length</em><big>)</big><a class="headerlink" href="#sage.data_structures.bounded_integer_sequences.NewBISEQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for unpickling of <a class="reference internal" href="#sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence" title="sage.data_structures.bounded_integer_sequences.BoundedIntegerSequence"><tt class="xref py py-class docutils literal"><span class="pre">BoundedIntegerSequence</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.data_structures.bounded_integer_sequences</span> <span class="kn">import</span> <span class="n">BoundedIntegerSequence</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">26</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">S</span><span class="p">))</span> <span class="o">==</span> <span class="n">S</span>    <span class="c"># indirect doctest</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>We test a corner case:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">8</span><span class="p">,[])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">&lt;&gt;</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">S</span><span class="p">))</span> <span class="o">==</span> <span class="n">S</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>And another one:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">BoundedIntegerSequence</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">26</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+<span class="go">&lt;8, 8, 26, 18, 18, 8, 22, 4, 17, 22, 22, 7, 12, 4, 1, 7, 21, 7, 10, 10&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="bitset.html"
+                                  title="previous chapter">Bitsets</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/data_structures/bounded_integer_sequences.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bitset.html" title="Bitsets"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Data Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,709 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PQ-Trees &mdash; Sage Reference Manual v6.6: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Graph Theory" href="../../index.html" />
+    <link rel="next" title="Generation of trees" href="trees.html" />
+    <link rel="prev" title="Spanning trees" href="spanning_tree.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trees.html" title="Generation of trees"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="spanning_tree.html" title="Spanning trees"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pq-trees">
+<span id="sage-graphs-pq-trees"></span><h1>PQ-Trees<a class="headerlink" href="#pq-trees" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.pq_trees"></span><p>This module implements PQ-Trees, a data structure use to represent all
+permutations of the columns of a matrix which satisfy the <em>consecutive ones</em>
+<em>property</em>:</p>
+<blockquote>
+<div><p>A binary matrix satisfies the <em>consecutive ones property</em> if the 1s are
+contiguous in each of its rows (or equivalently, if no row contains the regexp
+pattern <span class="math">\(10^+1\)</span>).</p>
+<p>Alternatively, one can say that a sequence of sets <span class="math">\(S_1,...,S_n\)</span> satisfies the
+<em>consecutive ones property</em> if for any <span class="math">\(x\)</span> the indices of the sets containing
+<span class="math">\(x\)</span> is an interval of <span class="math">\([1,n]\)</span>.</p>
+</div></blockquote>
+<p>This module is used for the recognition of Interval Graphs (see
+<a class="reference internal" href="generic_graph.html#sage.graphs.generic_graph.GenericGraph.is_interval" title="sage.graphs.generic_graph.GenericGraph.is_interval"><tt class="xref py py-meth docutils literal"><span class="pre">is_interval()</span></tt></a>).</p>
+<p><strong>P-tree and Q-tree</strong></p>
+<ul>
+<li><p class="first">A <span class="math">\(P\)</span>-tree with children <span class="math">\(c_1,...,c_k\)</span> (which can be <span class="math">\(P\)</span>-trees, <span class="math">\(Q\)</span>-trees, or
+actual sets of points) indicates that all <span class="math">\(k!\)</span> permutations of the children
+are allowed.</p>
+<p>Example: <span class="math">\(\{1,2\},\{3,4\},\{5,6\}\)</span> (disjoint sets can be permuted in any way)</p>
+</li>
+<li><p class="first">A <span class="math">\(Q\)</span>-tree with children <span class="math">\(c_1,...,c_k\)</span> (which can be <span class="math">\(P\)</span>-trees, <span class="math">\(Q\)</span>-trees, or
+actual sets of points) indicates that only two permutations of its children
+are allowed: <span class="math">\(c_1,...,c_k\)</span> or <span class="math">\(c_k,...,c_1\)</span>.</p>
+<p>Example: <span class="math">\(\{1,2\},\{2,3\},\{3,4\},\{4,5\},\{5,6\}\)</span> (only two permutations of
+these sets have the <em>consecutive ones property</em>).</p>
+</li>
+</ul>
+<p><strong>Computation of all possible orderings</strong></p>
+<ol class="arabic">
+<li><p class="first">In order to compute all permutations of a sequence of sets <span class="math">\(S_1,...,S_k\)</span>
+satisfying the <em>consecutive ones property</em>, we initialize <span class="math">\(T\)</span> as a <span class="math">\(P\)</span>-tree
+whose children are all the <span class="math">\(S_1,...,S_k\)</span>, thus representing the set of all
+<span class="math">\(k!\)</span> permutations of them.</p>
+</li>
+<li><p class="first">We select some element <span class="math">\(x\)</span> and update the data structure <span class="math">\(T\)</span> to restrict the
+permutations it describes to those that keep the occurrences of <span class="math">\(x\)</span> on an
+interval of <span class="math">\([1,...,k]\)</span>. This will result in a new <span class="math">\(P\)</span>-tree whose children
+are:</p>
+<ul class="simple">
+<li>all <span class="math">\(\bar c_x\)</span> sets <span class="math">\(S_i\)</span> which do <em>not</em> contain <span class="math">\(x\)</span>.</li>
+<li>a new <span class="math">\(P\)</span>-tree whose children are the <span class="math">\(c_x\)</span> sets <span class="math">\(S_i\)</span> containing <span class="math">\(x\)</span>.</li>
+</ul>
+<p>This describes the set of all <span class="math">\(c_x!\times \bar c'_x!\)</span> permutations of
+<span class="math">\(S_1,...,S_k\)</span> that keep the sets containing <span class="math">\(x\)</span> on an interval.</p>
+</li>
+<li><p class="first">We take a second element <span class="math">\(x'\)</span> and update the data structure <span class="math">\(T\)</span> to restrict
+the permutations it describes to those that keep <span class="math">\(x'\)</span> on an interval of
+<span class="math">\([1,...,k]\)</span>. The sets <span class="math">\(S_1,...,S_k\)</span> belong to 4 categories:</p>
+<ul class="simple">
+<li>The family <span class="math">\(S_{00}\)</span> of sets which do not contain any of
+<span class="math">\(x,x'\)</span>.</li>
+<li>The family <span class="math">\(S_{01}\)</span> of sets which contain <span class="math">\(x'\)</span> but do not contain
+<span class="math">\(x\)</span>.</li>
+<li>The family <span class="math">\(S_{10}\)</span> of sets which contain <span class="math">\(x\)</span> but do not contain
+<span class="math">\(x'\)</span>.</li>
+<li>The family <span class="math">\(S_{11}\)</span> of sets which contain <span class="math">\(x'\)</span> and <span class="math">\(x'\)</span>.</li>
+</ul>
+<p>With these notations, the permutations of <span class="math">\(S_1,...,S_k\)</span> which keep the
+occurrences of <span class="math">\(x\)</span> and <span class="math">\(x'\)</span> on an interval are of two forms:</p>
+<ul class="simple">
+<li>&lt;some sets <span class="math">\(S_{00}\)</span>&gt;, &lt;sets from <span class="math">\(S_{10}\)</span>&gt;, &lt;sets from <span class="math">\(S_{11}\)</span>&gt;, &lt;sets from <span class="math">\(S_{01}\)</span>&gt;, &lt;other sets from <span class="math">\(S_{00}\)</span>&gt;</li>
+<li>&lt;some sets <span class="math">\(S_{00}\)</span>&gt;, &lt;sets from <span class="math">\(S_{01}\)</span>&gt;, &lt;sets from <span class="math">\(S_{11}\)</span>&gt;, &lt;sets from <span class="math">\(S_{10}\)</span>&gt;, &lt;other sets from <span class="math">\(S_{00}\)</span>&gt;</li>
+</ul>
+<p>These permutations can be modeled with the following <span class="math">\(PQ\)</span>-tree:</p>
+<ul class="simple">
+<li>A <span class="math">\(P\)</span>-tree whose children are:<ul>
+<li>All sets from <span class="math">\(S_{00}\)</span></li>
+<li>A <span class="math">\(Q\)</span>-tree whose children are:<ul>
+<li>A <span class="math">\(P\)</span>-tree with whose children are the sets from <span class="math">\(S_{10}\)</span></li>
+<li>A <span class="math">\(P\)</span>-tree with whose children are the sets from <span class="math">\(S_{11}\)</span></li>
+<li>A <span class="math">\(P\)</span>-tree with whose children are the sets from <span class="math">\(S_{01}\)</span></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first">One at a time, we update the data structure with each element until they are
+all exhausted, or until we reach a proof that no permutation satisfying the
+<em>consecutive ones property</em> exists.</p>
+<p>Using these two types of tree, and exploring the different cases of
+intersection, it is possible to represent all the possible permutations of
+our sets satisfying our constraints, or to prove that no such ordering
+exists. This is the whole purpose of this module, and is explained with more
+details in many places, for example in the following document from Hajiaghayi
+<a class="reference internal" href="#haj" id="id1">[Haj]</a>.</p>
+</li>
+</ol>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="haj" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Haj]</a></td><td>M. Hajiaghayi
+<a class="reference external" href="http://www-math.mit.edu/~hajiagha/pp11.ps">http://www-math.mit.edu/~hajiagha/pp11.ps</a></td></tr>
+</tbody>
+</table>
+<p>Authors:</p>
+<p>Nathann Cohen (initial implementation)</p>
+<div class="section" id="methods-and-functions">
+<h2>Methods and functions<a class="headerlink" href="#methods-and-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sage.graphs.pq_trees.P">
+<em class="property">class </em><tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">P</tt><big>(</big><em>seq</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.P" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.graphs.pq_trees.PQ" title="sage.graphs.pq_trees.PQ"><tt class="xref py py-class docutils literal"><span class="pre">sage.graphs.pq_trees.PQ</span></tt></a></p>
+<p>A P-Tree is a PQ-Tree whose children can be permuted in any way.</p>
+<p>For more information, see the documentation of <a class="reference internal" href="#module-sage.graphs.pq_trees" title="sage.graphs.pq_trees"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.pq_trees</span></tt></a>.</p>
+<dl class="method">
+<dt id="sage.graphs.pq_trees.P.cardinality">
+<tt class="descname">cardinality</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.P.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of orderings allowed by the structure.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.graphs.pq_trees.P.orderings" title="sage.graphs.pq_trees.P.orderings"><tt class="xref py py-meth docutils literal"><span class="pre">orderings()</span></tt></a> &#8211; iterate over all admissible orderings</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">cardinality</span><span class="p">()</span>
+<span class="go">5040</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(1, True)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">cardinality</span><span class="p">()</span>
+<span class="go">1440</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.P.orderings">
+<tt class="descname">orderings</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.P.orderings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over all orderings of the sets allowed by the structure.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.graphs.pq_trees.P.cardinality" title="sage.graphs.pq_trees.P.cardinality"><tt class="xref py py-meth docutils literal"><span class="pre">cardinality()</span></tt></a> &#8211; return the number of orderings</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">orderings</span><span class="p">():</span>
+<span class="go">....:    print o</span>
+<span class="go">({2, 4}, {1, 2}, {0, 8}, {0, 5})</span>
+<span class="go">({2, 4}, {1, 2}, {0, 5}, {0, 8})</span>
+<span class="go">({2, 4}, {0, 8}, {1, 2}, {0, 5})</span>
+<span class="go">({2, 4}, {0, 8}, {0, 5}, {1, 2})</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.P.set_contiguous">
+<tt class="descname">set_contiguous</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.P.set_contiguous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates <tt class="docutils literal"><span class="pre">self</span></tt> so that the sets containing <tt class="docutils literal"><span class="pre">v</span></tt> are
+contiguous for any admissible permutation of its subtrees.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; an element of the ground set</li>
+</ul>
+<p>OUTPUT:</p>
+<p>According to the cases :</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">(EMPTY,</span> <span class="pre">ALIGNED)</span></tt> if no set of the tree contains
+an occurrence of <tt class="docutils literal"><span class="pre">v</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">(FULL,</span> <span class="pre">ALIGNED)</span></tt> if all the sets of the tree contain
+<tt class="docutils literal"><span class="pre">v</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">(PARTIAL,</span> <span class="pre">ALIGNED)</span></tt> if some (but not all) of the sets
+contain <tt class="docutils literal"><span class="pre">v</span></tt>, all of which are aligned
+to the right of the ordering at the end when the function ends</li>
+<li><tt class="docutils literal"><span class="pre">(PARTIAL,</span> <span class="pre">UNALIGNED)</span></tt> if some (but not all) of the
+sets contain <tt class="docutils literal"><span class="pre">v</span></tt>, though it is impossible to align them
+all to the right</li>
+</ul>
+</div></blockquote>
+<p>In any case, the sets containing <tt class="docutils literal"><span class="pre">v</span></tt> are contiguous when this
+function ends. If there is no possibility of doing so, the function
+raises a <tt class="docutils literal"><span class="pre">ValueError</span></tt> exception.</p>
+<p>EXAMPLE:</p>
+<p>Ensuring the sets containing <tt class="docutils literal"><span class="pre">0</span></tt> are continuous:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(1, True)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">p</span>
+<span class="go">(&#39;P&#39;, [{1, 2}, {2, 3}, {2, 4}, {8, 2}, {9, 2}, (&#39;P&#39;, [{0, 3}, {0, 4}])])</span>
+</pre></div>
+</div>
+<p>Impossible situation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(1, True)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">(1, True)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">(1, True)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Impossible</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.graphs.pq_trees.PQ">
+<em class="property">class </em><tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">PQ</tt><big>(</big><em>seq</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>PQ-Trees</p>
+<p>This class should not be instantiated by itself: it is extended by
+<a class="reference internal" href="#sage.graphs.pq_trees.P" title="sage.graphs.pq_trees.P"><tt class="xref py py-class docutils literal"><span class="pre">P</span></tt></a> and <a class="reference internal" href="#sage.graphs.pq_trees.Q" title="sage.graphs.pq_trees.Q"><tt class="xref py py-class docutils literal"><span class="pre">Q</span></tt></a>. See the documentation of
+<a class="reference internal" href="#module-sage.graphs.pq_trees" title="sage.graphs.pq_trees"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.pq_trees</span></tt></a> for more information.</p>
+<p>AUTHOR : Nathann Cohen</p>
+<dl class="method">
+<dt id="sage.graphs.pq_trees.PQ.flatten">
+<tt class="descname">flatten</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ.flatten" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a flattened copy of <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>If self has only one child, we may as well consider its
+child&#8217;s children, as <tt class="docutils literal"><span class="pre">self</span></tt> encodes no information. This
+method recursively &#8220;flattens&#8221; trees having only on PQ-tree
+child, and returns it.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([</span><span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<span class="go">(&#39;P&#39;, [{2, 4}, {8, 2}, {9, 2}])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.PQ.number_of_children">
+<tt class="descname">number_of_children</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ.number_of_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of children of <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">number_of_children</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.PQ.ordering">
+<tt class="descname">ordering</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ.ordering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current ordering given by listing the leaves from
+left to right.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">ordering</span><span class="p">()</span>
+<span class="go">[{1, 2}, {2, 3}, {2, 4}, {8, 2}, {9, 2}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.PQ.reverse">
+<tt class="descname">reverse</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ.reverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively reverses <tt class="docutils literal"><span class="pre">self</span></tt> and its children</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">ordering</span><span class="p">()</span>
+<span class="go">[{1, 2}, {2, 3}, {2, 4}, {8, 2}, {9, 2}]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">ordering</span><span class="p">()</span>
+<span class="go">[{9, 2}, {8, 2}, {2, 4}, {2, 3}, {1, 2}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.PQ.simplify">
+<tt class="descname">simplify</tt><big>(</big><em>v</em>, <em>left=False</em>, <em>right=False</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.PQ.simplify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a simplified copy of self according to the element <tt class="docutils literal"><span class="pre">v</span></tt></p>
+<p>If <tt class="docutils literal"><span class="pre">self</span></tt> is a partial P-tree for <tt class="docutils literal"><span class="pre">v</span></tt>, we would like to
+restrict the permutations of its children to permutations
+keeping the children containing <tt class="docutils literal"><span class="pre">v</span></tt> contiguous. This
+function also &#8220;locks&#8221; all the elements not containing <tt class="docutils literal"><span class="pre">v</span></tt>
+inside a <span class="math">\(P\)</span>-tree, which is useful when one want to keep the
+elements containing <tt class="docutils literal"><span class="pre">v</span></tt> on one side (which is the case when
+this method is called).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">left,</span> <span class="pre">right</span></tt> (boolean) &#8211; whether <tt class="docutils literal"><span class="pre">v</span></tt> is aligned to the
+right or to the left</li>
+<li><tt class="docutils literal"><span class="pre">v</span></tt>&#8211; an element of the ground set</li>
+</ul>
+<p>OUTPUT:</p>
+<p>If <tt class="docutils literal"><span class="pre">self</span></tt> is a <span class="math">\(Q\)</span>-Tree, the sequence of its children is
+returned. If <tt class="docutils literal"><span class="pre">self</span></tt> is a <span class="math">\(P\)</span>-tree, 2 <span class="math">\(P\)</span>-tree are returned,
+namely the two <span class="math">\(P\)</span>-tree defined above and restricting the
+permutations, in the order implied by <tt class="docutils literal"><span class="pre">left,</span> <span class="pre">right</span></tt> (if
+<tt class="docutils literal"><span class="pre">right</span> <span class="pre">=True</span></tt>, the second <span class="math">\(P\)</span>-tree will be the one gathering
+the elements containing <tt class="docutils literal"><span class="pre">v</span></tt>, if <tt class="docutils literal"><span class="pre">left=True</span></tt>, the
+opposite).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method is assumes that <tt class="docutils literal"><span class="pre">self</span></tt> is partial for <tt class="docutils literal"><span class="pre">v</span></tt>,
+and aligned to the side indicated by <tt class="docutils literal"><span class="pre">left,</span> <span class="pre">right</span></tt>.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>A <span class="math">\(P\)</span>-Tree</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">P</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[(&#39;P&#39;, [{2, 4}, {1, 2}]), (&#39;P&#39;, [{0, 8}, {0, 5}])]</span>
+</pre></div>
+</div>
+<p>A <span class="math">\(Q\)</span>-Tree</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[{2, 4}, {1, 2}, {0, 8}, {0, 5}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.graphs.pq_trees.Q">
+<em class="property">class </em><tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">Q</tt><big>(</big><em>seq</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.Q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.graphs.pq_trees.PQ" title="sage.graphs.pq_trees.PQ"><tt class="xref py py-class docutils literal"><span class="pre">sage.graphs.pq_trees.PQ</span></tt></a></p>
+<p>A Q-Tree is a PQ-Tree whose children are ordered up to reversal</p>
+<p>For more information, see the documentation of <a class="reference internal" href="#module-sage.graphs.pq_trees" title="sage.graphs.pq_trees"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.pq_trees</span></tt></a>.</p>
+<dl class="method">
+<dt id="sage.graphs.pq_trees.Q.cardinality">
+<tt class="descname">cardinality</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.Q.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of orderings allowed by the structure.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.graphs.pq_trees.Q.orderings" title="sage.graphs.pq_trees.Q.orderings"><tt class="xref py py-meth docutils literal"><span class="pre">orderings()</span></tt></a> &#8211; iterate over all admissible orderings</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">.</span><span class="n">cardinality</span><span class="p">()</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.Q.orderings">
+<tt class="descname">orderings</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.Q.orderings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates over all orderings of the sets allowed by the structure</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.graphs.pq_trees.Q.cardinality" title="sage.graphs.pq_trees.Q.cardinality"><tt class="xref py py-meth docutils literal"><span class="pre">cardinality()</span></tt></a> &#8211; return the number of orderings</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">q</span><span class="o">.</span><span class="n">orderings</span><span class="p">():</span>
+<span class="go">....:    print o</span>
+<span class="go">({2, 4}, {1, 2}, {0, 8}, {0, 5})</span>
+<span class="go">({0, 5}, {0, 8}, {1, 2}, {2, 4})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.pq_trees.Q.set_contiguous">
+<tt class="descname">set_contiguous</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.Q.set_contiguous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates <tt class="docutils literal"><span class="pre">self</span></tt> so that the sets containing <tt class="docutils literal"><span class="pre">v</span></tt> are
+contiguous for any admissible permutation of its subtrees.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; an element of the ground set</li>
+</ul>
+<p>OUTPUT:</p>
+<p>According to the cases :</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">(EMPTY,</span> <span class="pre">ALIGNED)</span></tt> if no set of the tree contains
+an occurrence of <tt class="docutils literal"><span class="pre">v</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">(FULL,</span> <span class="pre">ALIGNED)</span></tt> if all the sets of the tree contain
+<tt class="docutils literal"><span class="pre">v</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">(PARTIAL,</span> <span class="pre">ALIGNED)</span></tt> if some (but not all) of the sets
+contain <tt class="docutils literal"><span class="pre">v</span></tt>, all of which are aligned
+to the right of the ordering at the end when the function ends</li>
+<li><tt class="docutils literal"><span class="pre">(PARTIAL,</span> <span class="pre">UNALIGNED)</span></tt> if some (but not all) of the
+sets contain <tt class="docutils literal"><span class="pre">v</span></tt>, though it is impossible to align them
+all to the right</li>
+</ul>
+</div></blockquote>
+<p>In any case, the sets containing <tt class="docutils literal"><span class="pre">v</span></tt> are contiguous when this
+function ends. If there is no possibility of doing so, the function
+raises a <tt class="docutils literal"><span class="pre">ValueError</span></tt> exception.</p>
+<p>EXAMPLE:</p>
+<p>Ensuring the sets containing <tt class="docutils literal"><span class="pre">0</span></tt> are continuous:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">P</span><span class="p">,</span> <span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]])])</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(1, False)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">q</span>
+<span class="go">(&#39;Q&#39;, [{2, 3}, {1, 3}, {0, 3}, {0, 4}, {4, 5}])</span>
+</pre></div>
+</div>
+<p>Impossible situation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Q</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_contiguous</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Impossible</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.pq_trees.flatten">
+<tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">flatten</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.flatten" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.pq_trees.new_P">
+<tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">new_P</tt><big>(</big><em>liste</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.new_P" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.pq_trees.new_Q">
+<tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">new_Q</tt><big>(</big><em>liste</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.new_Q" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.pq_trees.reorder_sets">
+<tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">reorder_sets</tt><big>(</big><em>sets</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.reorder_sets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reorders a collection of sets such that each element appears on an
+interval.</p>
+<p>Given a collection of sets <span class="math">\(C = S_1,...,S_k\)</span> on a ground set <span class="math">\(X\)</span>,
+this function attempts to reorder them in such a way that <span class="math">\(\forall
+x \in X\)</span> and <span class="math">\(i&lt;j\)</span> with <span class="math">\(x\in S_i, S_j\)</span>, then <span class="math">\(x\in S_l\)</span> for every
+<span class="math">\(i&lt;l&lt;j\)</span> if it exists.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">sets</span></tt> - a list of instances of <tt class="docutils literal"><span class="pre">list,</span> <span class="pre">Set</span></tt> or <tt class="docutils literal"><span class="pre">set</span></tt></li>
+</ul>
+<p>ALGORITHM:</p>
+<p>PQ-Trees</p>
+<p>EXAMPLE:</p>
+<p>There is only one way (up to reversal) to represent contiguously
+the sequence ofsets <span class="math">\(\{i-1, i, i+1\}\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.pq_trees</span> <span class="kn">import</span> <span class="n">reorder_sets</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">Set</span><span class="p">([</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">15</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>We apply a random permutation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">Permutations</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span><span class="o">.</span><span class="n">random_element</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="p">[</span> <span class="n">seq</span><span class="p">[</span><span class="n">p</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ordered</span> <span class="o">=</span> <span class="n">reorder_sets</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+<span class="gp">... </span>     <span class="n">ordered</span> <span class="o">=</span> <span class="n">ordered</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">ordered</span>
+<span class="go">[{0, 1, 2}, {1, 2, 3}, {2, 3, 4}, {3, 4, 5}, {4, 5, 6}, {5, 6, 7}, {8, 6, 7}, {8, 9, 7}, {8, 9, 10}, {9, 10, 11}, {10, 11, 12}, {11, 12, 13}, {12, 13, 14}, {13, 14, 15}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.pq_trees.set_contiguous">
+<tt class="descclassname">sage.graphs.pq_trees.</tt><tt class="descname">set_contiguous</tt><big>(</big><em>tree</em>, <em>x</em><big>)</big><a class="headerlink" href="#sage.graphs.pq_trees.set_contiguous" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">PQ-Trees</a><ul>
+<li><a class="reference internal" href="#methods-and-functions">Methods and functions</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="spanning_tree.html"
+                                  title="previous chapter">Spanning trees</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="trees.html"
+                                  title="next chapter">Generation of trees</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/graphs/pq_trees.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trees.html" title="Generation of trees"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="spanning_tree.html" title="Spanning trees"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

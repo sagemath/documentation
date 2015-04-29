@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Ctypes &mdash; Thematic Tutorials v6.6</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.6" href="../index.html" />
+    <link rel="up" title="Using Compiled Code Interactively" href="using_compiled_code_iteractively.html" />
+    <link rel="next" title="More complicated ctypes example" href="ctypes_examples.html" />
+    <link rel="prev" title="Weave" href="weave.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ctypes_examples.html" title="More complicated ctypes example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="weave.html" title="Weave"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" accesskey="U">Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="ctypes">
+<h1>Ctypes<a class="headerlink" href="#ctypes" title="Permalink to this headline">¶</a></h1>
+<p>Ctypes is a very interesting python package which lets you import
+shared object libraries into python and call them directly. I
+should say that even though this is called ctypes, it can be used
+just as well to call functions from libraries written in fortran.
+The only complication is you need to know what a fortran function
+looks like to C. This is simple everything is a pointer, so if your
+fortran function would be called as foo(A,N) where A is an array
+and N is its length, then to call it from C it takes a pointer to
+an array of doubles and a pointer to an int. The other thing to be
+aware of is that from C, fortran functions usually have an
+underscore appended. That is, a fortran function foo would appear
+as foo
+from C (this is usually the case but is compiler dependent). Having
+said this, the following examples are in C.</p>
+<p>As an example suppose you write the following simple C program</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include &lt;stdio.h&gt;</span>
+
+<span class="kt">int</span> <span class="nf">sum</span><span class="p">(</span><span class="kt">double</span> <span class="o">*</span><span class="n">x</span><span class="p">,</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+  <span class="kt">double</span> <span class="n">counter</span><span class="p">;</span>
+  <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">counter</span><span class="o">=</span><span class="n">counter</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="n">counter</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>which you want to call from python. First make a shared object
+library by doing (at the command line)</p>
+<div class="highlight-python"><div class="highlight"><pre>gcc -c sum.c
+gcc -shared -o sum.so sum.o
+</pre></div>
+</div>
+<p>Note that on OSX -shared should be replaced by -dynamiclib and
+sum.so should be called sum.dylib Then you can do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">my_sum</span><span class="o">=</span><span class="n">CDLL</span><span class="p">(</span><span class="s">&#39;sum.so&#39;</span><span class="p">)</span>
+<span class="n">a</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">my_sum</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">c_void_p</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Note here that a.ctypes.data
+as(c
+void
+p) returns a ctypes object that is void pointer to the underlying
+array of a. Note that even though sum takes a double*, as long as
+we have a pointer to the correct data it doesn&#8217;t matter what its
+type is since it will be automatically cast.</p>
+<p>Note that actually there are other ways to pass in the required
+array of doubles. For example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="n">c_double</span><span class="o">*</span><span class="mi">10</span><span class="p">)()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+   <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">i</span>
+<span class="n">my_sum</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This example only uses ctypes. Ctypes has wrappers for C data types
+so for example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span><span class="o">=</span><span class="n">c_double</span><span class="p">(</span><span class="mf">10.4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>would create a ctypes double object which could be passed to a C
+function. Note that there is a byref function that lets you pass
+parameters by reference. This is used in the next example. c
+double*10, is a python object that represents an array of 10
+doubles and</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="n">c_double</span><span class="o">*</span><span class="mi">10</span><span class="p">)()</span>
+</pre></div>
+</div>
+<p>sets a equal to an array of 10 doubles. I find this method is
+usually less useful than using numpy arrays when the data is
+mathematical as numpy arrays are more well integrated into python
+and sage.</p>
+<p>Here is an example of using ctypes to directly call lapack. Note
+that this will only work if you have a lapack shared object library
+on your system. Also on linux the file would be liblapack.so and
+you will probably use dgesv
+(OSX use CLAPACK hence the lack of the underscore).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="k">def</span> <span class="nf">ctypes_solve</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">a</span><span class="o">=</span><span class="n">CDLL</span><span class="p">(</span><span class="s">&#39;/usr/lib/liblapack.dylib&#39;</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">numpy</span>
+    <span class="n">p</span><span class="o">=</span><span class="p">(</span><span class="n">c_int</span><span class="o">*</span><span class="n">n</span><span class="p">)()</span>
+    <span class="n">size</span><span class="o">=</span><span class="n">c_int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">ones</span><span class="o">=</span><span class="n">c_int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ok</span><span class="o">=</span><span class="n">c_int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">dgesv</span><span class="p">(</span><span class="n">byref</span><span class="p">(</span><span class="n">size</span><span class="p">),</span><span class="n">byref</span><span class="p">(</span><span class="n">ones</span><span class="p">),</span><span class="n">m</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">c_void_p</span><span class="p">),</span>
+            <span class="n">byref</span><span class="p">(</span><span class="n">size</span><span class="p">),</span><span class="n">p</span><span class="p">,</span><span class="n">b</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">c_void_p</span><span class="p">),</span><span class="n">byref</span><span class="p">(</span><span class="n">size</span><span class="p">),</span><span class="n">byref</span><span class="p">(</span><span class="n">ok</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>For completeness, let us consider a way to solve the laplace
+equation using C types. Suppose you have written a simple solver in
+C and you want to call it from python so you can easily test
+different boundary conditions. Your C program might look like
+this.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include &lt;math.h&gt;</span>
+<span class="cp">#include &lt;stdio.h&gt;</span>
+
+<span class="kt">double</span> <span class="nf">timestep</span><span class="p">(</span><span class="kt">double</span> <span class="o">*</span><span class="n">u</span><span class="p">,</span><span class="kt">int</span> <span class="n">nx</span><span class="p">,</span><span class="kt">int</span> <span class="n">ny</span><span class="p">,</span><span class="kt">double</span> <span class="n">dx</span><span class="p">,</span><span class="kt">double</span> <span class="n">dy</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">double</span> <span class="n">tmp</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span><span class="n">dx2</span><span class="p">,</span><span class="n">dy2</span><span class="p">,</span><span class="n">dnr_inv</span><span class="p">;</span>
+  <span class="n">dx2</span><span class="o">=</span><span class="n">dx</span><span class="o">*</span><span class="n">dx</span><span class="p">;</span>
+  <span class="n">dy2</span><span class="o">=</span><span class="n">dy</span><span class="o">*</span><span class="n">dy</span><span class="p">;</span>
+  <span class="n">dnr_inv</span><span class="o">=</span><span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="n">dx2</span><span class="o">+</span><span class="n">dy2</span><span class="p">);</span>
+  <span class="n">err</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="p">];</span>
+    <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">u</span><span class="p">[(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="p">])</span><span class="o">*</span><span class="n">dy2</span> <span class="o">+</span>
+          <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">dx2</span><span class="p">)</span><span class="o">*</span><span class="n">dnr_inv</span><span class="p">;</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">nx</span><span class="o">+</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">tmp</span><span class="p">;</span>
+    <span class="n">err</span> <span class="o">+=</span> <span class="n">diff</span><span class="o">*</span><span class="n">diff</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+ <span class="k">return</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">err</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">double</span> <span class="nf">solve_in_C</span><span class="p">(</span><span class="kt">double</span> <span class="o">*</span><span class="n">u</span><span class="p">,</span><span class="kt">int</span> <span class="n">nx</span><span class="p">,</span><span class="kt">int</span> <span class="n">ny</span><span class="p">,</span><span class="kt">double</span> <span class="n">dx</span><span class="p">,</span><span class="kt">double</span> <span class="n">dy</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">double</span> <span class="n">err</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">iter</span><span class="p">;</span>
+  <span class="n">iter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">err</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">iter</span> <span class="o">&lt;</span><span class="mi">10000</span> <span class="o">&amp;&amp;</span> <span class="n">err</span> <span class="o">&gt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+      <span class="p">{</span>
+    <span class="n">err</span><span class="o">=</span><span class="n">timestep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">);</span>
+    <span class="n">iter</span><span class="o">++</span><span class="p">;</span>
+      <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We can compile it by running at the command line</p>
+<div class="highlight-python"><div class="highlight"><pre>gcc -c laplace.c
+gcc -shared -o laplace.so laplace.o
+</pre></div>
+</div>
+<p>Now in sage (notebook or command line) execute</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">laplace</span><span class="o">=</span><span class="n">CDLL</span><span class="p">(</span><span class="s">&#39;/home/jkantor/laplace.so&#39;</span><span class="p">)</span>
+<span class="n">laplace</span><span class="o">.</span><span class="n">timestep</span><span class="o">.</span><span class="n">restype</span><span class="o">=</span><span class="n">c_double</span>
+<span class="n">laplace</span><span class="o">.</span><span class="n">solve_in_C</span><span class="o">.</span><span class="n">restype</span><span class="o">=</span><span class="n">c_double</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">u</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">51</span><span class="p">,</span><span class="mi">51</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">pi_c</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">x</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">pi_c</span><span class="o">+</span><span class="n">pi_c</span><span class="o">/</span><span class="mi">50</span><span class="p">,</span><span class="n">pi_c</span><span class="o">/</span><span class="mi">50</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">u</span><span class="p">[</span><span class="mi">50</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+  <span class="nb">iter</span> <span class="o">=</span><span class="mi">0</span>
+  <span class="n">err</span> <span class="o">=</span> <span class="mi">2</span>
+  <span class="n">n</span><span class="o">=</span><span class="n">c_int</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">51</span><span class="p">))</span>
+  <span class="n">pi_c</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">50</span><span class="p">)</span>
+  <span class="n">dx</span><span class="o">=</span><span class="n">c_double</span><span class="p">(</span><span class="n">pi_c</span><span class="p">)</span>
+  <span class="k">while</span><span class="p">(</span><span class="nb">iter</span> <span class="o">&lt;</span><span class="mi">5000</span> <span class="ow">and</span> <span class="n">err</span><span class="o">&gt;</span><span class="mf">1e-6</span><span class="p">):</span>
+     <span class="n">err</span><span class="o">=</span><span class="n">laplace</span><span class="o">.</span><span class="n">timestep</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">c_void_p</span><span class="p">),</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+     <span class="nb">iter</span><span class="o">+=</span><span class="mi">1</span>
+     <span class="k">if</span><span class="p">(</span><span class="nb">iter</span> <span class="o">%</span><span class="mi">50</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">((</span><span class="n">err</span><span class="p">,</span><span class="nb">iter</span><span class="p">))</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">err</span><span class="p">,</span><span class="nb">iter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the line laplace.timestep.restype=c
+double. By default ctypes assumes the return values are ints. If
+they are not you need to tell it by setting restype to the correct
+return type. If you execute the above code, then solve(u) will
+solve the system. It is comparable to the weave or fortran
+solutions taking around .2 seconds. Alternatively you could do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">n</span><span class="o">=</span><span class="n">c_int</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">51</span><span class="p">))</span>
+<span class="n">dx</span><span class="o">=</span><span class="n">c_double</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">50</span><span class="p">))</span>
+<span class="n">laplace</span><span class="o">.</span><span class="n">solve_in_C</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">c_void_p</span><span class="p">),</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>which computes the solution entirely in C. This is very fast.
+Admittedly we could have had our fortran or weave routines do the
+entire solution at the C/Fortran level and we would have the same
+speed.</p>
+<p>As I said earlier you can just as easily call a shared object
+library that is written in Fortran using ctypes. The key point is
+it must be a shared object library and all fortran arguments are
+passed by reference, that is as pointers or using byref. Also even
+though we used very simple data types, it is possible to deal with
+more complicated C structures. For this and more about ctypes see
+<a class="reference external" href="http://python.net/crew/theller/ctypes/">http://python.net/crew/theller/ctypes/</a></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="weave.html"
+                                  title="previous chapter">Weave</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="ctypes_examples.html"
+                                  title="next chapter">More complicated ctypes example</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/numerical_sage/ctypes.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ctypes_examples.html" title="More complicated ctypes example"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="weave.html" title="Weave"
+             >previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" >Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

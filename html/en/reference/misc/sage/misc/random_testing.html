@@ -1,0 +1,415 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Random testing &mdash; Sage Reference Manual v6.6: Miscellaneous</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Miscellaneous" href="../../index.html" />
+    <link rel="next" title="Inspect Python, Sage, and Cython objects" href="sageinspect.html" />
+    <link rel="prev" title="Sage Input Formatting" href="sage_input.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sageinspect.html" title="Inspect Python, Sage, and Cython objects"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sage_input.html" title="Sage Input Formatting"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="random-testing">
+<span id="sage-misc-random-testing"></span><h1>Random testing<a class="headerlink" href="#random-testing" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.random_testing"></span><p>Some Sage modules do random testing in their doctests; that is, they
+construct test cases using a random number generator.  To get the
+broadest possible test coverage, we want everybody who runs the
+doctests to use a different random seed; but we also want to be able
+to reproduce the problems when debugging.  This module provides a
+decorator to help write random testers that meet these goals.</p>
+<dl class="function">
+<dt id="sage.misc.random_testing.random_testing">
+<tt class="descclassname">sage.misc.random_testing.</tt><tt class="descname">random_testing</tt><big>(</big><em>fn</em><big>)</big><a class="headerlink" href="#sage.misc.random_testing.random_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This decorator helps create random testers.  These can be run as
+part of the standard Sage test suite; everybody who runs the test
+will use a different random number seed, so many different random
+tests will eventually be run.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">fn</span></tt> - The function that we are wrapping for random testing.</li>
+</ul>
+</div></blockquote>
+<p>The resulting function will take two additional arguments, <em>seed</em>
+(default <tt class="docutils literal"><span class="pre">None</span></tt>) and <em>print_seed</em> (default <tt class="docutils literal"><span class="pre">False</span></tt>).  The
+result will set the random number seed to the given seed value (or
+to a truly random value, if <em>seed</em> is not specified), then call
+the original function.  If <em>print_seed</em> is true, then the seed will
+be printed before calling the original function.  If the original
+function raises an exception, then the random seed that was used
+will be displayed, along with a message entreating the user to
+submit a bug report.  All other arguments will be passed through
+to the original function.</p>
+<p>Here is a set of recommendations for using this wrapper.</p>
+<p>The function to be tested should take arguments specifying the
+difficulty of the test (size of the test cases, number of
+iterations, etc.), as well as an argument <em>verbose</em> (defaulting to
+false).  With <em>verbose</em> true, it should print the values being
+tested.  Suppose <tt class="docutils literal"><span class="pre">test_foo()</span></tt> takes an argument for number of
+iterations.  Then the doctests could be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">test_foo</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">test_foo</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">test_foo</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="c"># long time</span>
+</pre></div>
+</div>
+<p>The first doctest, with the specified seed and <tt class="docutils literal"><span class="pre">verbose=True</span></tt>, simply
+verifies that the tests really are reproducible (that <tt class="docutils literal"><span class="pre">test_foo</span></tt>
+is correctly using the <tt class="xref py py-mod docutils literal"><span class="pre">randstate</span></tt> framework).  The next two tests
+use truly random seeds, and will print out the seed used if the test
+fails (raises an exception).</p>
+<p>If you want a very long-running test using this setup, you should do
+something like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">10</span><span class="p">):</span> <span class="n">test_foo</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>instead of:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">test_foo</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the test fails after several hours, the latter snippet would
+make you rerun the test for several hours while reproducing and
+debugging the problem.  With the former snippet, you only need to
+rerun <tt class="docutils literal"><span class="pre">test_foo(100)</span></tt> with a known-failing random seed.</p>
+<p>See <a class="reference internal" href="#sage.misc.random_testing.test_add_commutes" title="sage.misc.random_testing.test_add_commutes"><tt class="xref py py-func docutils literal"><span class="pre">sage.misc.random_testing.test_add_commutes()</span></tt></a> for a
+simple example using this decorator, and <tt class="xref py py-mod docutils literal"><span class="pre">sage.rings.tests</span></tt>
+for realistic uses.</p>
+<p>Setting <em>print_seed</em> to true is useless in doctests, because the
+random seed printed will never match the expected doctest result
+(and using <tt class="docutils literal"><span class="pre">#</span> <span class="pre">random</span></tt> means the doctest framework will never
+report an error even if one happens).  However, it is useful if
+you have a random test that sometimes segfaults.  The normal
+print-the-random-seed-on-exceptions won&#8217;t work then, so you can
+run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">while</span> <span class="bp">True</span><span class="p">:</span> <span class="n">test_foo</span><span class="p">(</span><span class="n">print_seed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and look at the last seed that was printed before it crashed.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.random_testing</span> <span class="kn">import</span> <span class="n">random_testing</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="s">&#39;oh look, a docstring&#39;</span>
+<span class="gp">... </span>      <span class="n">n</span> <span class="o">=</span> <span class="n">ZZ</span><span class="o">.</span><span class="n">random_element</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">... </span>      <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+<span class="gp">... </span>          <span class="k">print</span> <span class="s">&quot;Random value: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span>
+<span class="gp">... </span>      <span class="k">assert</span><span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">49681376900427</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">random_testing</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Random value: 49681376900427</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Random value: 1049538412064764</span>
+<span class="go">Random testing has revealed a problem in foo</span>
+<span class="go">Please report this bug!  You may be the first</span>
+<span class="go">person in the world to have seen this problem.</span>
+<span class="go">Please include this random seed in your bug report:</span>
+<span class="go">Random seed: 15</span>
+<span class="go">AssertionError()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">()</span> <span class="c"># random</span>
+<span class="go">Random testing has revealed a problem in foo</span>
+<span class="go">Please report this bug!  You may be the first</span>
+<span class="go">person in the world to have seen this problem.</span>
+<span class="go">Please include this random seed in your bug report:</span>
+<span class="go">Random seed: 272500700755151445506092479579811710040</span>
+<span class="go">AssertionError()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">&#39;oh look, a docstring&#39;</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;foo&#39;</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">bar</span><span class="p">():</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">bar</span> <span class="o">=</span> <span class="n">random_testing</span><span class="p">(</span><span class="n">bar</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">bar</span><span class="p">(</span><span class="n">print_seed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="c"># random</span>
+<span class="go">Random seed: 262841091890156346923539765543814146051</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.random_testing.test_add_commutes">
+<tt class="descclassname">sage.misc.random_testing.</tt><tt class="descname">test_add_commutes</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sage.misc.random_testing.test_add_commutes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a simple demonstration of the <a class="reference internal" href="#sage.misc.random_testing.random_testing" title="sage.misc.random_testing.random_testing"><tt class="xref py py-func docutils literal"><span class="pre">random_testing()</span></tt></a> decorator and
+its recommended usage.</p>
+<p>We test that addition is commutative over rationals.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.random_testing</span> <span class="kn">import</span> <span class="n">test_add_commutes</span>
+<span class="gp">sage: </span><span class="n">test_add_commutes</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">a == -4, b == 0 ...</span>
+<span class="go">Passes!</span>
+<span class="go">a == -1/2, b == -1/95 ...</span>
+<span class="go">Passes!</span>
+<span class="gp">sage: </span><span class="n">test_add_commutes</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_add_commutes</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="c"># long time</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.random_testing.test_add_is_mul">
+<tt class="descclassname">sage.misc.random_testing.</tt><tt class="descname">test_add_is_mul</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#sage.misc.random_testing.test_add_is_mul" title="Permalink to this definition">¶</a></dt>
+<dd><p>This example demonstrates a failing <a class="reference internal" href="#sage.misc.random_testing.random_testing" title="sage.misc.random_testing.random_testing"><tt class="xref py py-func docutils literal"><span class="pre">random_testing()</span></tt></a> test,
+and shows how to reproduce the error.</p>
+<p>DO NOT USE THIS AS AN EXAMPLE OF HOW TO USE
+<a class="reference internal" href="#sage.misc.random_testing.random_testing" title="sage.misc.random_testing.random_testing"><tt class="xref py py-func docutils literal"><span class="pre">random_testing()</span></tt></a>!  Instead, look at
+<a class="reference internal" href="#sage.misc.random_testing.test_add_commutes" title="sage.misc.random_testing.test_add_commutes"><tt class="xref py py-func docutils literal"><span class="pre">sage.misc.random_testing.test_add_commutes()</span></tt></a>.</p>
+<p>We test that <tt class="docutils literal"><span class="pre">a+b</span> <span class="pre">==</span> <span class="pre">a*b</span></tt>, for <em>a</em>, <em>b</em> rational.  This is of
+course false, so the test will almost always fail.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.random_testing</span> <span class="kn">import</span> <span class="n">test_add_is_mul</span>
+</pre></div>
+</div>
+<p>We start by testing that we get reproducible results when setting
+<em>seed</em> to 0.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">test_add_is_mul</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">a == -4, b == 0 ...</span>
+<span class="go">Random testing has revealed a problem in test_add_is_mul</span>
+<span class="go">Please report this bug!  You may be the first</span>
+<span class="go">person in the world to have seen this problem.</span>
+<span class="go">Please include this random seed in your bug report:</span>
+<span class="go">Random seed: 0</span>
+<span class="go">AssertionError()</span>
+</pre></div>
+</div>
+<p>Normally in a <tt class="docutils literal"><span class="pre">&#64;random_testing</span></tt> doctest, we would leave off the
+<tt class="docutils literal"><span class="pre">verbose=True</span></tt> and the <tt class="docutils literal"><span class="pre">#</span> <span class="pre">random</span></tt>.  We put it in here so that we can
+verify that we are seeing the exact same error when we reproduce
+the error below.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">test_add_is_mul</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="c"># random</span>
+<span class="go">a == -2/7, b == 1 ...</span>
+<span class="go">Random testing has revealed a problem in test_add_is_mul</span>
+<span class="go">Please report this bug!  You may be the first</span>
+<span class="go">person in the world to have seen this problem.</span>
+<span class="go">Please include this random seed in your bug report:</span>
+<span class="go">Random seed: 216390410596009428782506007128692114173</span>
+<span class="go">AssertionError()</span>
+</pre></div>
+</div>
+<p>OK, now assume that some user has reported a
+<a class="reference internal" href="#sage.misc.random_testing.test_add_is_mul" title="sage.misc.random_testing.test_add_is_mul"><tt class="xref py py-func docutils literal"><span class="pre">test_add_is_mul()</span></tt></a> failure.  We can specify the same
+<em>random_seed</em> that was found in the bug report, and we will get the
+exact same failure so that we can debug the &#8220;problem&#8221;.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">test_add_is_mul</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">216390410596009428782506007128692114173</span><span class="p">)</span>
+<span class="go">a == -2/7, b == 1 ...</span>
+<span class="go">Random testing has revealed a problem in test_add_is_mul</span>
+<span class="go">Please report this bug!  You may be the first</span>
+<span class="go">person in the world to have seen this problem.</span>
+<span class="go">Please include this random seed in your bug report:</span>
+<span class="go">Random seed: 216390410596009428782506007128692114173</span>
+<span class="go">AssertionError()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="sage_input.html"
+                                  title="previous chapter">Sage Input Formatting</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="sageinspect.html"
+                                  title="next chapter">Inspect Python, Sage, and Cython objects</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/random_testing.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sageinspect.html" title="Inspect Python, Sage, and Cython objects"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sage_input.html" title="Sage Input Formatting"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

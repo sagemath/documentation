@@ -1,0 +1,891 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Static sparse graph backend &mdash; Sage Reference Manual v6.6: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Graph Theory" href="../../../index.html" />
+    <link rel="next" title="Implements various backends for Sage graphs." href="graph_backends.html" />
+    <link rel="prev" title="Static Sparse Graphs" href="static_sparse_graph.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph_backends.html" title="Implements various backends for Sage graphs."
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="static_sparse_graph.html" title="Static Sparse Graphs"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="static-sparse-graph-backend">
+<span id="sage-graphs-base-static-sparse-backend"></span><h1>Static sparse graph backend<a class="headerlink" href="#static-sparse-graph-backend" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.base.static_sparse_backend"></span><p>This module implement a immutable sparse graph backend using the data structure
+from <a class="reference internal" href="static_sparse_graph.html#module-sage.graphs.base.static_sparse_graph" title="sage.graphs.base.static_sparse_graph"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.base.static_sparse_graph</span></tt></a>. It supports both directed and
+undirected graphs, as well as vertex/edge labels, loops and multiple edges. As
+it uses a very compact C structure it should be very small in memory.</p>
+<p>As it is a sparse data structure, you can expect it to be very efficient when
+you need to list the graph&#8217;s edge, or those incident to a vertex, but an
+adjacency test can be much longer than in a dense data structure (i.e. like in
+<a class="reference internal" href="static_dense_graph.html#module-sage.graphs.base.static_dense_graph" title="sage.graphs.base.static_dense_graph"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.base.static_dense_graph</span></tt></a>)</p>
+<div class="section" id="two-classes">
+<h2>Two classes<a class="headerlink" href="#two-classes" title="Permalink to this headline">¶</a></h2>
+<p>This module implements two classes</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph" title="sage.graphs.base.static_sparse_backend.StaticSparseCGraph"><tt class="xref py py-class docutils literal"><span class="pre">StaticSparseCGraph</span></tt></a> extends <a class="reference internal" href="c_graph.html#sage.graphs.base.c_graph.CGraph" title="sage.graphs.base.c_graph.CGraph"><tt class="xref py py-class docutils literal"><span class="pre">CGraph</span></tt></a>
+and is a Cython class that manages the definition/deallocation of the
+<tt class="docutils literal"><span class="pre">short_digraph</span></tt> structure. It does not know anything about labels on
+vertices.</li>
+<li><a class="reference internal" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend" title="sage.graphs.base.static_sparse_backend.StaticSparseBackend"><tt class="xref py py-class docutils literal"><span class="pre">StaticSparseBackend</span></tt></a> extends
+<a class="reference internal" href="c_graph.html#sage.graphs.base.c_graph.CGraphBackend" title="sage.graphs.base.c_graph.CGraphBackend"><tt class="xref py py-class docutils literal"><span class="pre">CGraphBackend</span></tt></a> and is a Python class that
+does know about vertex labels and contains an instance of
+<a class="reference internal" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph" title="sage.graphs.base.static_sparse_backend.StaticSparseCGraph"><tt class="xref py py-class docutils literal"><span class="pre">StaticSparseCGraph</span></tt></a> as an internal variable. The input/output of its
+methods are labeled vertices, which it translates to integer id before
+forwarding them to the <a class="reference internal" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph" title="sage.graphs.base.static_sparse_backend.StaticSparseCGraph"><tt class="xref py py-class docutils literal"><span class="pre">StaticSparseCGraph</span></tt></a> instance.</li>
+</ul>
+</div>
+<div class="section" id="classes-and-methods">
+<h2>Classes and methods<a class="headerlink" href="#classes-and-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend">
+<em class="property">class </em><tt class="descclassname">sage.graphs.base.static_sparse_backend.</tt><tt class="descname">StaticSparseBackend</tt><big>(</big><em>G</em>, <em>loops=False</em>, <em>multiedges=False</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="c_graph.html#sage.graphs.base.c_graph.CGraphBackend" title="sage.graphs.base.c_graph.CGraphBackend"><tt class="xref py py-class docutils literal"><span class="pre">sage.graphs.base.c_graph.CGraphBackend</span></tt></a></p>
+<p>A graph <a class="reference internal" href="graph_backends.html#module-sage.graphs.base.graph_backends" title="sage.graphs.base.graph_backends"><tt class="xref py py-mod docutils literal"><span class="pre">backend</span></tt></a> for static
+sparse graphs.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">sparse_graph</span><span class="o">.</span><span class="n">SparseGraphBackend</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">iterator_edges</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">),</span> <span class="bp">True</span><span class="p">))</span>
+<span class="go">[(0, 1, None)]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_edges</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">[(0, 1, None), (0, 4, None), (0, 5, None)]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">digraphs</span><span class="o">.</span><span class="n">DeBruijn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">=</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">.</span><span class="n">edges</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">(&#39;000&#39;, &#39;000&#39;, &#39;0&#39;)</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">.</span><span class="n">edges_incident</span><span class="p">(</span><span class="s">&#39;111&#39;</span><span class="p">)</span>
+<span class="go">[(&#39;111&#39;, &#39;110&#39;, &#39;0&#39;), (&#39;111&#39;, &#39;111&#39;, &#39;1&#39;), (&#39;111&#39;, &#39;112&#39;, &#39;2&#39;), (&#39;111&#39;, &#39;113&#39;, &#39;3&#39;)]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">gi</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">=</span><span class="n">Graph</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">==</span> <span class="n">gi</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">gi</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gi</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span> <span class="p">{</span> <span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="mi">3</span><span class="p">:</span> <span class="p">{</span><span class="mi">4</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="mi">4</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span> <span class="p">},</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">gi</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">({</span><span class="mi">1</span><span class="p">:{</span><span class="mi">2</span><span class="p">:</span><span class="mi">28</span><span class="p">,</span> <span class="mi">6</span><span class="p">:</span><span class="mi">10</span><span class="p">},</span> <span class="mi">2</span><span class="p">:{</span><span class="mi">3</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">14</span><span class="p">},</span> <span class="mi">3</span><span class="p">:{</span><span class="mi">4</span><span class="p">:</span><span class="mi">12</span><span class="p">},</span> <span class="mi">4</span><span class="p">:{</span><span class="mi">5</span><span class="p">:</span><span class="mi">22</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">18</span><span class="p">},</span> <span class="mi">5</span><span class="p">:{</span><span class="mi">6</span><span class="p">:</span><span class="mi">25</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">24</span><span class="p">}})</span>
+<span class="gp">sage: </span><span class="n">GI</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">({</span><span class="mi">1</span><span class="p">:{</span><span class="mi">2</span><span class="p">:</span><span class="mi">28</span><span class="p">,</span> <span class="mi">6</span><span class="p">:</span><span class="mi">10</span><span class="p">},</span> <span class="mi">2</span><span class="p">:{</span><span class="mi">3</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">14</span><span class="p">},</span> <span class="mi">3</span><span class="p">:{</span><span class="mi">4</span><span class="p">:</span><span class="mi">12</span><span class="p">},</span> <span class="mi">4</span><span class="p">:{</span><span class="mi">5</span><span class="p">:</span><span class="mi">22</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">18</span><span class="p">},</span> <span class="mi">5</span><span class="p">:{</span><span class="mi">6</span><span class="p">:</span><span class="mi">25</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">24</span><span class="p">}},</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">==</span> <span class="n">GI</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">OddGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">distance_graph</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">HI</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">HI</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">HI</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">({</span><span class="mi">1</span><span class="p">:{</span><span class="mi">1</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]}},</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[1]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">[(1, 1, 1), (1, 1, 2), (1, 1, 3)]</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://trac.sagemath.org/15810">trac ticket #15810</a> is fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">DiGraph</span><span class="p">({</span><span class="mi">1</span><span class="p">:{</span><span class="mi">2</span><span class="p">:[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">:[</span><span class="s">&#39;c&#39;</span><span class="p">]},</span> <span class="mi">2</span><span class="p">:{</span><span class="mi">3</span><span class="p">:[</span><span class="s">&#39;d&#39;</span><span class="p">]}},</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">is_directed_acyclic</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.allows_loops">
+<tt class="descname">allows_loops</tt><big>(</big><em>value=None</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.allows_loops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the graph allows loops</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; only useful for compatibility with other graph backends,
+where this method can be used to define this boolean. This method
+raises an exception if <tt class="docutils literal"><span class="pre">value</span></tt> is not equal to <tt class="docutils literal"><span class="pre">None</span></tt>.</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">allows_loops</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">loops</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">allows_loops</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.degree">
+<tt class="descname">degree</tt><big>(</big><em>v</em>, <em>directed</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the degree of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+<li><tt class="docutils literal"><span class="pre">directed</span></tt> &#8211; boolean; whether to take into account the
+orientation of this graph in counting the degree of <tt class="docutils literal"><span class="pre">v</span></tt>.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://trac.sagemath.org/17225">trac ticket #17225</a> about the degree of a vertex with a loop:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Graph</span><span class="p">({</span><span class="mi">0</span><span class="p">:[</span><span class="mi">0</span><span class="p">]},</span><span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">Graph</span><span class="p">({</span><span class="mi">0</span><span class="p">:[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]},</span><span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">7</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.get_edge_label">
+<tt class="descname">get_edge_label</tt><big>(</big><em>u</em>, <em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.get_edge_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the edge label for <tt class="docutils literal"><span class="pre">(u,v)</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u,v</span></tt> &#8211; two vertices</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">g</span><span class="o">.</span><span class="n">get_edge_label</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">None</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">g</span><span class="o">.</span><span class="n">get_edge_label</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;Hey&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">One of the two vertices does not belong to the graph</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">g</span><span class="o">.</span><span class="n">get_edge_label</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">The edge does not exist</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">digraphs</span><span class="o">.</span><span class="n">DeBruijn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s">&#39;00&#39;</span><span class="p">,</span><span class="s">&#39;01&#39;</span><span class="p">,</span><span class="s">&#39;1&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s">&#39;00&#39;</span><span class="p">,</span><span class="s">&#39;01&#39;</span><span class="p">,</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.has_edge">
+<tt class="descname">has_edge</tt><big>(</big><em>u</em>, <em>v</em>, <em>l</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.has_edge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether this graph has edge <tt class="docutils literal"><span class="pre">(u,v)</span></tt> with label <tt class="docutils literal"><span class="pre">l</span></tt>.</p>
+<p>If <tt class="docutils literal"><span class="pre">l</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, return whether this graph has an edge <tt class="docutils literal"><span class="pre">(u,v)</span></tt>
+with any label.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u,v</span></tt> &#8211; two vertices</li>
+<li><tt class="docutils literal"><span class="pre">l</span></tt> &#8211; a label</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;e&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.has_vertex">
+<tt class="descname">has_vertex</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.has_vertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if the vertex belongs to the graph</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex (or not?)</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_vertex</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_vertex</span><span class="p">(</span><span class="s">&quot;Hey&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.in_degree">
+<tt class="descname">in_degree</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.in_degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the in-degree of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_edges">
+<tt class="descname">iterator_edges</tt><big>(</big><em>vertices</em>, <em>labels</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an iterator over the graph&#8217;s edges.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">vertices</span></tt> &#8211; only returns the edges incident to at least one vertex
+of <tt class="docutils literal"><span class="pre">vertices</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">labels</span></tt> &#8211; whether to return edge labels too</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_edges</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_verts</span><span class="p">(</span><span class="bp">None</span><span class="p">),</span> <span class="bp">False</span><span class="p">))</span>
+<span class="go">[(0, 1), (0, 4), (0, 5), (1, 2), (1, 6), (2, 3), (2, 7),</span>
+<span class="go">(3, 4), (3, 8), (4, 9), (5, 7), (5, 8), (6, 8), (6, 9), (7, 9)]</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://trac.sagemath.org/15665">trac ticket #15665</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Graph</span><span class="p">(</span><span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_in_edges">
+<tt class="descname">iterator_in_edges</tt><big>(</big><em>vertices</em>, <em>labels</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_in_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over the incoming edges incident to a sequence of vertices.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">vertices</span></tt> &#8211; a list of vertices</li>
+<li><tt class="docutils literal"><span class="pre">labels</span></tt> &#8211; whether to return labels too</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_in_edges</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span><span class="bp">False</span><span class="p">))</span>
+<span class="go">[(0, 1), (0, 4), (0, 5)]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_in_edges</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span><span class="bp">True</span><span class="p">))</span>
+<span class="go">[(0, 1, None), (0, 4, None), (0, 5, None)]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">DiGraph</span><span class="p">(</span><span class="n">digraphs</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="n">immutable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">incoming_edges</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">[(1, 2, None)]</span>
+<span class="gp">sage: </span><span class="n">DiGraph</span><span class="p">(</span><span class="n">digraphs</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">incoming_edges</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">[(1, 2, None)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_in_nbrs">
+<tt class="descname">iterator_in_nbrs</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_in_nbrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-neighbors of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">neighbors_in</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[1, 4, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_nbrs">
+<tt class="descname">iterator_nbrs</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_nbrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the neighbors of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[1, 4, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_out_edges">
+<tt class="descname">iterator_out_edges</tt><big>(</big><em>vertices</em>, <em>labels</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_out_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over the outbound edges incident to a sequence of vertices.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">vertices</span></tt> &#8211; a list of vertices</li>
+<li><tt class="docutils literal"><span class="pre">labels</span></tt> &#8211; whether to return labels too</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_out_edges</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="bp">False</span><span class="p">))</span>
+<span class="go">[(0, 1), (0, 4), (0, 5)]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_out_edges</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span><span class="bp">True</span><span class="p">))</span>
+<span class="go">[(0, 1, None), (0, 4, None), (0, 5, None)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_out_nbrs">
+<tt class="descname">iterator_out_nbrs</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_out_nbrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-neighbors of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">neighbors_out</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[1, 4, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_verts">
+<tt class="descname">iterator_verts</tt><big>(</big><em>vertices</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.iterator_verts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an iterator over the vertices</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">vertices</span></tt> &#8211; a list of objects. The method will only return the
+elements of the graph which are contained in <tt class="docutils literal"><span class="pre">vertices</span></tt>. It&#8217;s not
+very efficient. If <tt class="docutils literal"><span class="pre">vertices</span></tt> is equal to <tt class="docutils literal"><span class="pre">None</span></tt>, all the vertices
+are returned.</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_verts</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">iterator_verts</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="s">&quot;Hey&quot;</span><span class="p">,</span><span class="s">&quot;I am a french fry&quot;</span><span class="p">]))</span>
+<span class="go">[1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.multiple_edges">
+<tt class="descname">multiple_edges</tt><big>(</big><em>value=None</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.multiple_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the graph allows multiple edges</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; only useful for compatibility with other graph backends,
+where this method can be used to define this boolean. This method
+raises an exception if <tt class="docutils literal"><span class="pre">value</span></tt> is not equal to <tt class="docutils literal"><span class="pre">None</span></tt>.</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">multiple_edges</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">multiple_edges</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.num_edges">
+<tt class="descname">num_edges</tt><big>(</big><em>directed</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.num_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of edges</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">directed</span></tt> (boolean) &#8211; whether to consider the graph as directed or
+not.</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">num_edges</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">15</span>
+</pre></div>
+</div>
+<p>Testing the exception:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">digraphs</span><span class="o">.</span><span class="n">Circuit</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">num_edges</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">NotImplementedError</span>: <span class="n-Identifier">Sorry, I have no idea what is expected in this situation. I don&#39;t think that it is well-defined either, especially for multigraphs.</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://trac.sagemath.org/15491">trac ticket #15491</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">digraphs</span><span class="o">.</span><span class="n">RandomDirectedGNP</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="o">.</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">=</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gi</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">gi</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.num_verts">
+<tt class="descname">num_verts</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.num_verts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of vertices</p>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">num_verts</span><span class="p">()</span>
+<span class="go">10</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.out_degree">
+<tt class="descname">out_degree</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.out_degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-degree of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">v</span></tt> &#8211; a vertex</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">(),</span> <span class="n">data_structure</span><span class="o">=</span><span class="s">&quot;static_sparse&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseBackend.relabel">
+<tt class="descname">relabel</tt><big>(</big><em>perm</em>, <em>directed</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseBackend.relabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Relabel the graphs&#8217; vertices. No way.</p>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseBackend</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseBackend</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">relabel</span><span class="p">([],</span><span class="bp">True</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Thou shalt not relabel an immutable graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph">
+<em class="property">class </em><tt class="descclassname">sage.graphs.base.static_sparse_backend.</tt><tt class="descname">StaticSparseCGraph</tt><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="c_graph.html#sage.graphs.base.c_graph.CGraph" title="sage.graphs.base.c_graph.CGraph"><tt class="xref py py-class docutils literal"><span class="pre">sage.graphs.base.c_graph.CGraph</span></tt></a></p>
+<p><a class="reference internal" href="c_graph.html#module-sage.graphs.base.c_graph" title="sage.graphs.base.c_graph"><tt class="xref py py-mod docutils literal"><span class="pre">CGraph</span></tt></a> class based on the sparse graph
+data structure <a class="reference internal" href="static_sparse_graph.html#module-sage.graphs.base.static_sparse_graph" title="sage.graphs.base.static_sparse_graph"><tt class="xref py py-mod docutils literal"><span class="pre">static</span> <span class="pre">sparse</span> <span class="pre">graphs</span></tt></a>.</p>
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.add_vertex">
+<tt class="descname">add_vertex</tt><big>(</big><em>k</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.add_vertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a vertex to the graph. No way.</p>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_vertex</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Thou shalt not add a vertex to an immutable graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.del_vertex">
+<tt class="descname">del_vertex</tt><big>(</big><em>k</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.del_vertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a vertex from the graph. No way.</p>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">del_vertex</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Thou shalt not remove a vertex from an immutable graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.has_arc">
+<tt class="descname">has_arc</tt><big>(</big><em>u</em>, <em>v</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.has_arc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if uv is an edge of the graph</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u,v</span></tt> &#8211; integers</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_arc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_arc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.has_vertex">
+<tt class="descname">has_vertex</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.has_vertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests if a vertex belongs to the graph</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; an integer</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_vertex</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">has_vertex</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.in_degree">
+<tt class="descname">in_degree</tt><big>(</big><em>u</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.in_degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the in-degree of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u</span></tt> &#8211; a vertex</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">The vertex does not belong to the graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.in_neighbors">
+<tt class="descname">in_neighbors</tt><big>(</big><em>u</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.in_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the in-neighbors of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u</span></tt> &#8211; a vertex</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[1, 4, 5]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">in_neighbors</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">The vertex does not belong to the graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.out_degree">
+<tt class="descname">out_degree</tt><big>(</big><em>u</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.out_degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the out-degree of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u</span></tt> &#8211; a vertex</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">The vertex does not belong to the graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.out_neighbors">
+<tt class="descname">out_neighbors</tt><big>(</big><em>u</em><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.out_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>List the out-neighbors of a vertex</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">u</span></tt> &#8211; a vertex</li>
+</ul>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[1, 4, 5]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">out_neighbors</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">LookupError</span>: <span class="n-Identifier">The vertex does not belong to the graph</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.base.static_sparse_backend.StaticSparseCGraph.verts">
+<tt class="descname">verts</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.graphs.base.static_sparse_backend.StaticSparseCGraph.verts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of vertices</p>
+<p>TEST:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.base.static_sparse_backend</span> <span class="kn">import</span> <span class="n">StaticSparseCGraph</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">StaticSparseCGraph</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">verts</span><span class="p">()</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Static sparse graph backend</a><ul>
+<li><a class="reference internal" href="#two-classes">Two classes</a></li>
+<li><a class="reference internal" href="#classes-and-methods">Classes and methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="static_sparse_graph.html"
+                                  title="previous chapter">Static Sparse Graphs</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="graph_backends.html"
+                                  title="next chapter">Implements various backends for Sage graphs.</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/graphs/base/static_sparse_backend.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph_backends.html" title="Implements various backends for Sage graphs."
+             >next</a> |</li>
+        <li class="right" >
+          <a href="static_sparse_graph.html" title="Static Sparse Graphs"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

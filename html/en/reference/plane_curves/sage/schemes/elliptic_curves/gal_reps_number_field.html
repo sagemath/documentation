@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Galois representations for elliptic curves over number fields. &mdash; Sage Reference Manual v6.6: Plane curves</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Plane curves" href="../../../index.html" />
+    <link rel="next" title="Isogeny class of elliptic curves over number fields" href="isogeny_class.html" />
+    <link rel="prev" title="Galois representations attached to elliptic curves" href="gal_reps.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="isogeny_class.html" title="Isogeny class of elliptic curves over number fields"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gal_reps.html" title="Galois representations attached to elliptic curves"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Plane curves</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="galois-representations-for-elliptic-curves-over-number-fields">
+<span id="sage-schemes-elliptic-curves-gal-reps-number-field"></span><h1>Galois representations for elliptic curves over number fields.<a class="headerlink" href="#galois-representations-for-elliptic-curves-over-number-fields" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.schemes.elliptic_curves.gal_reps_number_field"></span><p>This file contains the code to compute for which primes the Galois
+representation attached to an elliptic curve (over an arbitrary
+number field) is surjective. The functions in this file are called by
+the <span class="math">\(is_surjective\)</span> and <span class="math">\(non_surjective\)</span> methods of an elliptic curve
+over a number field.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">29</span><span class="p">)</span> <span class="c"># Cyclotomic character not surjective.</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">31</span><span class="p">)</span> <span class="c"># See Section 5.10 of [Serre72].</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span>  <span class="c"># long time (4s on sage.math, 2014)</span>
+<span class="go">[3, 5, 29]</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="mi">1728</span><span class="p">)</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="c"># CM</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span>  <span class="c"># long time (2s on sage.math, 2014)</span>
+<span class="go">[0]</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Eric Larson (2012-05-28): initial version.</li>
+<li>Eric Larson (2014-08-13): added isogeny_bound function.</li>
+</ul>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="serre72" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Serre72]</td><td>Serre. Propriétés galoisiennes des points d&#8217;ordre fini des
+courbes elliptiques. Inventiones mathematicae, 1972.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="sutherland12" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Sutherland12]</td><td>Sutherland. A local-global principle for rational
+isogenies of prime degree. Journal de Theorie des Nombres de Bordeaux,
+2012.</td></tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation">
+<em class="property">class </em><tt class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</tt><tt class="descname">GaloisRepresentation</tt><big>(</big><em>E</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>The compatible family of Galois representation
+attached to an elliptic curve over a number field.</p>
+<p>Given an elliptic curve <span class="math">\(E\)</span> over a number field <span class="math">\(K\)</span>
+and a rational prime number <span class="math">\(p\)</span>, the <span class="math">\(p^n\)</span>-torsion
+<span class="math">\(E[p^n]\)</span> points of <span class="math">\(E\)</span> is a representation of the
+absolute Galois group <span class="math">\(G_K\)</span> of <span class="math">\(K\)</span>. As <span class="math">\(n\)</span> varies
+we obtain the Tate module <span class="math">\(T_p E\)</span> which is a
+a representation of <span class="math">\(G_K\)</span> on a free <span class="math">\(\ZZ_p\)</span>-module
+of rank <span class="math">\(2\)</span>. As <span class="math">\(p\)</span> varies the representations
+are compatible.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;11a1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span>
+<span class="go">Compatible family of Galois representations associated to the Elliptic Curve defined by y^2 + y = x^3 + (-1)*x^2 + (-10)*x + (-20) over Number Field in a with defining polynomial x^2 + 1</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.elliptic_curve">
+<tt class="descname">elliptic_curve</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.elliptic_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the elliptic curve associated to this representation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">elliptic_curve</span><span class="p">()</span> <span class="o">==</span> <span class="n">E</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.is_surjective">
+<tt class="descname">is_surjective</tt><big>(</big><em>p</em>, <em>A=100</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.is_surjective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> if the mod-p representation is (provably)
+surjective onto <span class="math">\(Aut(E[p]) = GL_2(\mathbb{F}_p)\)</span>.  Return
+<tt class="docutils literal"><span class="pre">False</span></tt> if it is (probably) not.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">p</span></tt> - int - a prime number.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">A</span></tt> - int - a bound on the number of traces of Frobenius to use</dt>
+<dd><p class="first last">while trying to prove surjectivity.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">29</span><span class="p">)</span> <span class="c"># Cyclotomic character not surjective.</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="c"># See Section 5.10 of [Serre72].</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>If <span class="math">\(E\)</span> is defined over <span class="math">\(\QQ\)</span>, then the exceptional primes for <span class="math">\(E_{/K}\)</span>
+are the same as the exceptional primes for <span class="math">\(E\)</span>, except for those primes
+that are ramified in <span class="math">\(K/\QQ\)</span> or are less than <span class="math">\([K:\QQ]\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">11</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">14</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rhoQQ</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rhoK</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rhoQQ</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="n">rhoK</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">rhoQQ</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="n">rhoK</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">rhoQQ</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="n">rhoK</span><span class="o">.</span><span class="n">is_surjective</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.isogeny_bound">
+<tt class="descname">isogeny_bound</tt><big>(</big><em>A=100</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.isogeny_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of primes <span class="math">\(p\)</span> including all primes for which
+the image of the mod-<span class="math">\(p\)</span> representation is contained in a
+Borel.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For the actual list of primes <span class="math">\(p\)</span> at which the
+representation is reducible see <a class="reference internal" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.reducible_primes" title="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.reducible_primes"><tt class="xref py py-meth docutils literal"><span class="pre">reducible_primes()</span></tt></a>.</p>
+</div>
+<p>INPUT:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">A</span></tt> - int (a bound on the number of traces of Frobenius to</dt>
+<dd><p class="first last">use while trying to prove the mod-<span class="math">\(p\)</span>
+representation is not contained in a Borel).</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">list</span></tt> - A list of primes which contains (but may not be
+equal to) all <span class="math">\(p\)</span> for which the image of the mod-<span class="math">\(p\)</span>
+representation is contained in a Borel subgroup.  At any
+prime not in this list, the image is definitely not
+contained in a Borel. If E has <span class="math">\(CM\)</span> defined over <span class="math">\(K\)</span>, the list
+[0] is returned.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># See Section 5.10 of [Serre72].</span>
+<span class="go">[3, 5]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">1728</span><span class="p">))</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># CM over K</span>
+<span class="go">[0]</span>
+<span class="gp">sage: </span><span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># CM NOT over K</span>
+<span class="go">[2, 3]</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">2268945</span><span class="o">/</span><span class="mi">128</span><span class="p">))</span> <span class="c"># c.f. [Sutherland12]</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># No 7-isogeny, but...</span>
+<span class="go">[7]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.non_surjective">
+<tt class="descname">non_surjective</tt><big>(</big><em>A=100</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.non_surjective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of primes <span class="math">\(p\)</span> including all primes for which the mod-<span class="math">\(p\)</span>
+representation might not be surjective.</p>
+<p>INPUT:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">A</span></tt> - int (a bound on the number of traces of Frobenius to use</dt>
+<dd><p class="first last">while trying to prove surjectivity).</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">list</span></tt> - A list of primes where mod-<span class="math">\(p\)</span> representation is
+very likely not surjective. At any prime not in this list,
+the representation is definitely surjective. If <span class="math">\(E\)</span> has CM,
+the list [0] is returned.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span> <span class="c"># See Section 5.10 of [Serre72].</span>
+<span class="go">[3, 5, 29]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="c"># X_0(11)</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span>  <span class="c"># long time (4s on sage.math, 2014)</span>
+<span class="go">[3, 5]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="mi">1728</span><span class="p">)</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">K</span><span class="p">)</span> <span class="c"># CM</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span>
+<span class="go">[0]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">5</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="mi">146329141248</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">327201914880</span><span class="p">)</span> <span class="c"># CM</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">non_surjective</span><span class="p">()</span> <span class="c"># long time (3s on sage.math, 2014)</span>
+<span class="go">[0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.reducible_primes">
+<tt class="descname">reducible_primes</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation.reducible_primes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of primes <span class="math">\(p\)</span> for which the mod-<span class="math">\(p\)</span>
+representation is reducible, or [0] for CM curves.</p>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">list</span></tt> - A list of those primes <span class="math">\(p\)</span> for which the mod-<span class="math">\(p\)</span>
+representation is contained in a Borel subgroup, i.e. is
+reducible.  If E has CM <em>defined over K</em>, the list [0] is
+returned (in this case the representation is reducible for
+infinitely many primes).</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># See Section 5.10 of [Serre72].</span>
+<span class="go">[3, 5]</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">reducible_primes</span><span class="p">()</span>
+<span class="go">[3, 5]</span>
+
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">1728</span><span class="p">))</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># CM over K</span>
+<span class="go">[0]</span>
+<span class="gp">sage: </span><span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span><span class="o">.</span><span class="n">reducible_primes</span><span class="p">()</span> <span class="c"># CM but NOT over K</span>
+<span class="go">[2, 3]</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">2268945</span><span class="o">/</span><span class="mi">128</span><span class="p">))</span> <span class="c"># c.f. [Sutherland12]</span>
+<span class="gp">sage: </span><span class="n">rho</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">galois_representation</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">isogeny_bound</span><span class="p">()</span> <span class="c"># ... but there is no 7-isogeny ...</span>
+<span class="go">[7]</span>
+<span class="gp">sage: </span><span class="n">rho</span><span class="o">.</span><span class="n">reducible_primes</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="gal_reps.html"
+                                  title="previous chapter">Galois representations attached to elliptic curves</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="isogeny_class.html"
+                                  title="next chapter">Isogeny class of elliptic curves over number fields</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/schemes/elliptic_curves/gal_reps_number_field.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="isogeny_class.html" title="Isogeny class of elliptic curves over number fields"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gal_reps.html" title="Galois representations attached to elliptic curves"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Plane curves</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

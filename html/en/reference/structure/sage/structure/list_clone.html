@@ -1,0 +1,962 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Elements, Array and Lists With Clone Protocol &mdash; Sage Reference Manual v6.6: Basic Structures</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Basic Structures" href="../../index.html" />
+    <link rel="next" title="Elements, Array and Lists With Clone Protocol, demonstration classes" href="list_clone_demo.html" />
+    <link rel="prev" title="Dynamic classes" href="dynamic_class.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="list_clone_demo.html" title="Elements, Array and Lists With Clone Protocol, demonstration classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="dynamic_class.html" title="Dynamic classes"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="elements-array-and-lists-with-clone-protocol">
+<span id="sage-structure-list-clone"></span><h1>Elements, Array and Lists With Clone Protocol<a class="headerlink" href="#elements-array-and-lists-with-clone-protocol" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.structure.list_clone"></span><p>This module defines several classes which are subclasses of
+<a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> and which roughly implement
+the &#8220;prototype&#8221; design pattern (see <a class="reference internal" href="#pro" id="id1">[Pro]</a>, <a class="reference internal" href="#gof" id="id2">[GOF]</a>). Those classes are
+intended to be used to model <em>mathematical</em> objects, which are by essence
+immutable. However, in many occasions, one wants to construct the
+data-structure encoding of a new mathematical object by small modifications of
+the data structure encoding some already built object. For the resulting
+data-structure to correctly encode the mathematical object, some structural
+invariants must hold. One problem is that, in many cases, during the
+modification process, there is no possibility but to break the invariants.</p>
+<p>For example, in a list modeling a permutation of <span class="math">\(\{1,\dots,n\}\)</span>, the integers
+must be distinct. A very common operation is to take a permutation to make a
+copy with some small modifications, like exchanging two consecutive values in
+the list or cycling some values. Though the result is clearly a permutations
+there&#8217;s no way to avoid breaking the permutations invariants at some point
+during the modifications.</p>
+<p>The main purpose of this module is to define the class</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> as an abstract super class,</li>
+</ul>
+<p>and its subclasses:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.structure.list_clone.ClonableArray" title="sage.structure.list_clone.ClonableArray"><tt class="xref py py-class docutils literal"><span class="pre">ClonableArray</span></tt></a> for arrays (lists of fixed length) of objects;</li>
+<li><a class="reference internal" href="#sage.structure.list_clone.ClonableList" title="sage.structure.list_clone.ClonableList"><tt class="xref py py-class docutils literal"><span class="pre">ClonableList</span></tt></a> for (resizable) lists of objects;</li>
+<li><a class="reference internal" href="#sage.structure.list_clone.NormalizedClonableList" title="sage.structure.list_clone.NormalizedClonableList"><tt class="xref py py-class docutils literal"><span class="pre">NormalizedClonableList</span></tt></a> for lists of objects with a normalization method;</li>
+<li><a class="reference internal" href="#sage.structure.list_clone.ClonableIntArray" title="sage.structure.list_clone.ClonableIntArray"><tt class="xref py py-class docutils literal"><span class="pre">ClonableIntArray</span></tt></a> for arrays of int.</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p>The following parents from <a class="reference internal" href="list_clone_demo.html#module-sage.structure.list_clone_demo" title="sage.structure.list_clone_demo"><tt class="xref py py-mod docutils literal"><span class="pre">sage.structure.list_clone_demo</span></tt></a>
+demonstrate how to use them:</p>
+<ul class="last simple">
+<li><tt class="docutils literal"><span class="pre">IncreasingArrays()</span></tt> (see
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingArray" title="sage.structure.list_clone_demo.IncreasingArray"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingArray</span></tt></a>
+and the parent class
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingArrays" title="sage.structure.list_clone_demo.IncreasingArrays"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingArrays</span></tt></a>)</li>
+<li><tt class="docutils literal"><span class="pre">IncreasingLists()</span></tt> (see
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingList" title="sage.structure.list_clone_demo.IncreasingList"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingList</span></tt></a>
+and the parent class
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingLists" title="sage.structure.list_clone_demo.IncreasingLists"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingLists</span></tt></a>)</li>
+<li><tt class="docutils literal"><span class="pre">SortedLists()</span></tt> (see
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.SortedList" title="sage.structure.list_clone_demo.SortedList"><tt class="xref py py-class docutils literal"><span class="pre">SortedList</span></tt></a>
+and the parent class
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.SortedLists" title="sage.structure.list_clone_demo.SortedLists"><tt class="xref py py-class docutils literal"><span class="pre">SortedLists</span></tt></a>)</li>
+<li><tt class="docutils literal"><span class="pre">IncreasingIntArrays()</span></tt> (see
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingIntArray" title="sage.structure.list_clone_demo.IncreasingIntArray"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingIntArray</span></tt></a>
+and the parent class
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingIntArrays" title="sage.structure.list_clone_demo.IncreasingIntArrays"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingIntArrays</span></tt></a>)</li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<p>We now demonstrate how
+<a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingArray" title="sage.structure.list_clone_demo.IncreasingArray"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingArray</span></tt></a> works, creating an
+instance <tt class="docutils literal"><span class="pre">el</span></tt> through its parent <tt class="docutils literal"><span class="pre">IncreasingArrays()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span> <span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<span class="go">[1, 4, 8]</span>
+</pre></div>
+</div>
+<p>If one tries to create this way a list which in not increasing, an error is
+raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span> <span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+<p>Once created modifying <tt class="docutils literal"><span class="pre">el</span></tt> is forbidden:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">P</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span> <span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>However, you can modify a temporarily mutable clone:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc[1] = 3</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">el</span><span class="p">,</span> <span class="n">elc</span><span class="p">]</span>
+<span class="go">[[1, 4, 8], [1, 3, 8]]</span>
+</pre></div>
+</div>
+<p>We check that the original and the modified copy now are in a proper immutable
+state:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">(),</span> <span class="n">elc</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">(True, True)</span>
+<span class="gp">sage: </span><span class="n">elc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>You can break the property that the list is increasing during the
+modification:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc2</span><span class="p">:</span>
+<span class="go">....:     elc2[1] = 12</span>
+<span class="go">....:     print elc2</span>
+<span class="go">....:     elc2[2] = 25</span>
+<span class="go">[1, 12, 8]</span>
+<span class="gp">sage: </span><span class="n">elc2</span>
+<span class="go">[1, 12, 25]</span>
+</pre></div>
+</div>
+<p>But this property must be restored at the end of the <tt class="docutils literal"><span class="pre">with</span></tt> block; otherwise
+an error is raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">elc2</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">el3</span><span class="p">:</span>
+<span class="go">....:     el3[1] = 100</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+<p>Finally, as an alternative to the <tt class="docutils literal"><span class="pre">with</span></tt> syntax one can use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">el4</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">elc2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">el4</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="gp">sage: </span><span class="n">el4</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">el4</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<blockquote>
+<div><table class="docutils citation" frame="void" id="pro" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Pro]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id3">2</a>)</em> Prototype pattern
+<a class="reference external" href="http://en.wikipedia.org/wiki/Prototype_pattern">http://en.wikipedia.org/wiki/Prototype_pattern</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="gof" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[GOF]</td><td><em>(<a class="fn-backref" href="#id2">1</a>, <a class="fn-backref" href="#id4">2</a>)</em> Design Patterns: Elements of Reusable Object-Oriented
+Software. E. Gamma; R. Helm; R. Johnson; J. Vlissides (1994).
+Addison-Wesley. ISBN 0-201-63361-2.</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Florent Hivert (2010-03): initial revision</li>
+</ul>
+<dl class="class">
+<dt id="sage.structure.list_clone.ClonableArray">
+<em class="property">class </em><tt class="descclassname">sage.structure.list_clone.</tt><tt class="descname">ClonableArray</tt><a class="headerlink" href="#sage.structure.list_clone.ClonableArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.list_clone.ClonableElement</span></tt></a></p>
+<p>Array with clone protocol</p>
+<p>The class of objects which are
+<a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> behave as arrays
+(i.e. lists of fixed length) and implement the clone protocol. See
+<a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> for details about clone protocol.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">parent</span></tt> &#8211; a <a class="reference internal" href="parent.html#sage.structure.parent.Parent" title="sage.structure.parent.Parent"><tt class="xref py py-class docutils literal"><span class="pre">Parent</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">lst</span></tt>    &#8211; a list</li>
+<li><tt class="docutils literal"><span class="pre">check</span></tt>  &#8211; a boolean specifying if the invariant must be checked
+using method <a class="reference internal" href="#sage.structure.list_clone.ClonableArray.check" title="sage.structure.list_clone.ClonableArray.check"><tt class="xref py py-meth docutils literal"><span class="pre">check()</span></tt></a>.</li>
+<li><tt class="docutils literal"><span class="pre">immutable</span></tt> &#8211; a boolean telling wether the created element is
+immutable (defaults to <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingArray" title="sage.structure.list_clone_demo.IncreasingArray"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingArray</span></tt></a> for
+an example of usage.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">IA</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ia1</span> <span class="o">=</span> <span class="n">IA</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">]);</span> <span class="n">ia1</span>
+<span class="go">[1, 4, 6]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">ia1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">ia2</span><span class="p">:</span>
+<span class="go">....:      ia2[1] = 5</span>
+<span class="gp">sage: </span><span class="n">ia2</span>
+<span class="go">[1, 5, 6]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">ia1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">ia2</span><span class="p">:</span>
+<span class="go">....:      ia2[1] = 7</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableArray.check">
+<tt class="descname">check</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableArray.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that <tt class="docutils literal"><span class="pre">self</span></tt> fulfill the invariants</p>
+<p>This is an abstract method. Subclasses are supposed to overload
+<tt class="docutils literal"><span class="pre">check</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone</span> <span class="kn">import</span> <span class="n">ClonableArray</span>
+<span class="gp">sage: </span><span class="n">ClonableArray</span><span class="p">(</span><span class="n">Parent</span><span class="p">(),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span> <span class="c"># indirect doctest</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">NotImplementedError</span>: <span class="n-Identifier">this should never be called, please overload the check method</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span> <span class="c"># indirect doctest</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableArray.count">
+<tt class="descname">count</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableArray.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns number of <tt class="docutils literal"><span class="pre">i</span></tt>&#8216;s for which <tt class="docutils literal"><span class="pre">s[i]</span> <span class="pre">==</span> <span class="pre">key</span></tt></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableArray.index">
+<tt class="descname">index</tt><big>(</big><em>x</em>, <em>start=None</em>, <em>stop=None</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableArray.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the smallest <tt class="docutils literal"><span class="pre">k</span></tt> such that <tt class="docutils literal"><span class="pre">s[k]</span> <span class="pre">==</span> <span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">i</span> <span class="pre">&lt;=</span> <span class="pre">k</span> <span class="pre">&lt;</span> <span class="pre">j</span></tt></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">5 is not in list</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.list_clone.ClonableElement">
+<em class="property">class </em><tt class="descclassname">sage.structure.list_clone.</tt><tt class="descname">ClonableElement</tt><a class="headerlink" href="#sage.structure.list_clone.ClonableElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.Element</span></tt></a></p>
+<p>Abstract class for elements with clone protocol</p>
+<p>This class is a subclass of <a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a>
+and implements the &#8220;prototype&#8221; design pattern (see <a class="reference internal" href="#pro" id="id3">[Pro]</a>, <a class="reference internal" href="#gof" id="id4">[GOF]</a>). The role
+of this class is:</p>
+<ul class="simple">
+<li>to manage copy and mutability and hashing of elements</li>
+<li>to ensure that at the end of a piece of code an object is restored in a
+meaningful mathematical state.</li>
+</ul>
+<p>A class <tt class="docutils literal"><span class="pre">C</span></tt> inheriting from <a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> must implement
+the following two methods</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obj.__copy__()</span></tt> &#8211; returns a fresh copy of obj</li>
+<li><tt class="docutils literal"><span class="pre">obj.check()</span></tt> &#8211; returns nothing, raise an exception if <tt class="docutils literal"><span class="pre">obj</span></tt>
+doesn&#8217;t satisfies the data structure invariants</li>
+</ul>
+<p>and ensure to call <tt class="docutils literal"><span class="pre">obj._require_mutable()</span></tt> at the beginning of any
+modifying method.</p>
+<p>Additionally, one can also implement</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obj._hash_()</span></tt> &#8211; return the hash value of <tt class="docutils literal"><span class="pre">obj</span></tt>.</li>
+</ul>
+<p>Then, given an instance <tt class="docutils literal"><span class="pre">obj</span></tt> of <tt class="docutils literal"><span class="pre">C</span></tt>, the following sequences of
+instructions ensures that the invariants of <tt class="docutils literal"><span class="pre">new_obj</span></tt> are properly
+restored at the end:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">obj</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">new_obj</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="c"># lot of invariant breaking modifications on new_obj</span>
+    <span class="o">...</span>
+<span class="c"># invariants are ensured to be fulfilled</span>
+</pre></div>
+</div>
+<p>The following equivalent sequence of instructions can be used if speed is
+needed, in particular in Cython code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">new_obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">__copy__</span><span class="p">()</span>
+<span class="o">...</span>
+<span class="c"># lot of invariant breaking modifications on new_obj</span>
+<span class="o">...</span>
+<span class="n">new_obj</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">()</span>
+<span class="n">new_obj</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+<span class="c"># invariants are ensured to be fulfilled</span>
+</pre></div>
+</div>
+<p>Finally, if the class implements the <tt class="docutils literal"><span class="pre">_hash_</span></tt> method, then
+<a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> ensures that the hash value can only be
+computed on an immutable object. It furthermore caches it so that
+it is only computed once.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">for the hash caching mechanism to work correctly, the hash
+value cannot be 0.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>The following code shows a minimal example of usage of
+<a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a>. We implement a class or pairs <span class="math">\((x,y)\)</span>
+such that <span class="math">\(x &lt; y\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone</span> <span class="kn">import</span> <span class="n">ClonableElement</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">IntPair</span><span class="p">(</span><span class="n">ClonableElement</span><span class="p">):</span>
+<span class="go">....:      def __init__(self, parent, x, y):</span>
+<span class="go">....:          ClonableElement.__init__(self, parent=parent)</span>
+<span class="go">....:          self._x = x</span>
+<span class="go">....:          self._y = y</span>
+<span class="go">....:          self.set_immutable()</span>
+<span class="go">....:          self.check()</span>
+<span class="go">....:      def _repr_(self):</span>
+<span class="go">....:          return &quot;(x=%s, y=%s)&quot;%(self._x, self._y)</span>
+<span class="go">....:      def check(self):</span>
+<span class="go">....:          if self._x &gt;= self._y:</span>
+<span class="go">....:              raise ValueError, &quot;Incorrectly ordered pair&quot;</span>
+<span class="go">....:      def get_x(self): return self._x</span>
+<span class="go">....:      def get_y(self): return self._y</span>
+<span class="go">....:      def set_x(self, v): self._require_mutable(); self._x = v</span>
+<span class="go">....:      def set_y(self, v): self._require_mutable(); self._y = v</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">we don&#8217;t need to define <tt class="docutils literal"><span class="pre">__copy__</span></tt> since it is properly
+inherited from <a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a>.</p>
+</div>
+<p>We now demonstrate the behavior. Let&#8217;s create an <tt class="docutils literal"><span class="pre">IntPair</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">myParent</span> <span class="o">=</span> <span class="n">Parent</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IntPair</span><span class="p">(</span><span class="n">myParent</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="n">el</span>
+<span class="go">(x=1, y=3)</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">get_x</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>Modifying it is forbidden:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">set_x</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>However, you can modify a mutable copy:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">el1</span><span class="p">:</span>
+<span class="go">....:      el1.set_x(2)</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">el</span><span class="p">,</span> <span class="n">el1</span><span class="p">]</span>
+<span class="go">[(x=1, y=3), (x=2, y=3)]</span>
+</pre></div>
+</div>
+<p>We check that the original and the modified copy are in a proper immutable
+state:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">(),</span> <span class="n">el1</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">(True, True)</span>
+<span class="gp">sage: </span><span class="n">el1</span><span class="o">.</span><span class="n">set_x</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>A modification which doesn&#8217;t restore the invariant <span class="math">\(x &lt; y\)</span> at the end is
+illegal and raise an exception:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc2</span><span class="p">:</span>
+<span class="go">....:      elc2.set_x(5)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Incorrectly ordered pair</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableElement.clone">
+<tt class="descname">clone</tt><big>(</big><em>check=True</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableElement.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a clone that is mutable copy of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">check</span></tt> &#8211; a boolean indicating if <tt class="docutils literal"><span class="pre">self.check()</span></tt> must be called
+after modifications.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">el1</span><span class="p">:</span>
+<span class="go">....:      el1[2] = 5</span>
+<span class="gp">sage: </span><span class="n">el1</span>
+<span class="go">[1, 2, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableElement.is_immutable">
+<tt class="descname">is_immutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableElement.is_immutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">self</span></tt> is immutable (can not be changed)
+and <tt class="docutils literal"><span class="pre">False</span></tt> if it is not.</p>
+<p>To make <tt class="docutils literal"><span class="pre">self</span></tt> immutable use <tt class="docutils literal"><span class="pre">self.set_immutable()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">el</span><span class="p">)</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">el1</span><span class="p">:</span>
+<span class="go">....:      print [el.is_immutable(), el1.is_immutable()]</span>
+<span class="go">[True, False]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableElement.is_mutable">
+<tt class="descname">is_mutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableElement.is_mutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">self</span></tt> is mutable (can be changed) and <tt class="docutils literal"><span class="pre">False</span></tt>
+if it is not.</p>
+<p>To make this object immutable use <tt class="docutils literal"><span class="pre">self.set_immutable()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">el</span><span class="p">)</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">el1</span><span class="p">:</span>
+<span class="go">....:      print [el.is_mutable(), el1.is_mutable()]</span>
+<span class="go">[False, True]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableElement.set_immutable">
+<tt class="descname">set_immutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableElement.set_immutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes <tt class="docutils literal"><span class="pre">self</span></tt> immutable, so it can never again be changed.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el1</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">el</span><span class="p">);</span> <span class="n">el1</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">el1</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">();</span>  <span class="n">el1</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">el1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.list_clone.ClonableIntArray">
+<em class="property">class </em><tt class="descclassname">sage.structure.list_clone.</tt><tt class="descname">ClonableIntArray</tt><a class="headerlink" href="#sage.structure.list_clone.ClonableIntArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.list_clone.ClonableElement</span></tt></a></p>
+<p>Array of int with clone protocol</p>
+<p>The class of objects which are
+<a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> behave as list of int and
+implement the clone protocol. See <a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> for details
+about clone protocol.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">parent</span></tt> &#8211; a <a class="reference internal" href="parent.html#sage.structure.parent.Parent" title="sage.structure.parent.Parent"><tt class="xref py py-class docutils literal"><span class="pre">Parent</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">lst</span></tt>      &#8211; a list</li>
+<li><tt class="docutils literal"><span class="pre">check</span></tt> &#8211; a boolean specifying if the invariant must be checked
+using method <a class="reference internal" href="#sage.structure.list_clone.ClonableIntArray.check" title="sage.structure.list_clone.ClonableIntArray.check"><tt class="xref py py-meth docutils literal"><span class="pre">check()</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">immutable</span></tt> &#8211; a boolean telling wether the created element is
+immutable (defaults to <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingIntArray" title="sage.structure.list_clone_demo.IncreasingIntArray"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingIntArray</span></tt></a>
+for an example of usage.</p>
+</div>
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableIntArray.check">
+<tt class="descname">check</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableIntArray.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that <tt class="docutils literal"><span class="pre">self</span></tt> fulfill the invariants</p>
+<p>This is an abstract method. Subclasses are supposed to overload
+<tt class="docutils literal"><span class="pre">check</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone</span> <span class="kn">import</span> <span class="n">ClonableArray</span>
+<span class="gp">sage: </span><span class="n">ClonableArray</span><span class="p">(</span><span class="n">Parent</span><span class="p">(),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span> <span class="c"># indirect doctest</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">NotImplementedError</span>: <span class="n-Identifier">this should never be called, please overload the check method</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingIntArrays</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingIntArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span> <span class="c"># indirect doctest</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableIntArray.index">
+<tt class="descname">index</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableIntArray.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingIntArrays</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">IncreasingIntArrays</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError: list.index(x)</span>: <span class="n-Identifier">x not in list</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableIntArray.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableIntArray.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert self into a Python list.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingIntArrays</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">IncreasingIntArrays</span><span class="p">()(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">==</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">list</span><span class="p">()</span> <span class="o">==</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">IncreasingIntArrays</span><span class="p">()(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">list</span><span class="p">()</span> <span class="o">==</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.list_clone.ClonableList">
+<em class="property">class </em><tt class="descclassname">sage.structure.list_clone.</tt><tt class="descname">ClonableList</tt><a class="headerlink" href="#sage.structure.list_clone.ClonableList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.structure.list_clone.ClonableArray" title="sage.structure.list_clone.ClonableArray"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.list_clone.ClonableArray</span></tt></a></p>
+<p>List with clone protocol</p>
+<p>The class of objects which are
+<a class="reference internal" href="element.html#sage.structure.element.Element" title="sage.structure.element.Element"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> behave as lists and
+implement the clone protocol. See <a class="reference internal" href="#sage.structure.list_clone.ClonableElement" title="sage.structure.list_clone.ClonableElement"><tt class="xref py py-class docutils literal"><span class="pre">ClonableElement</span></tt></a> for details
+about clone protocol.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.IncreasingList" title="sage.structure.list_clone_demo.IncreasingList"><tt class="xref py py-class docutils literal"><span class="pre">IncreasingList</span></tt></a> for
+an example of usage.</p>
+</div>
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableList.append">
+<tt class="descname">append</tt><big>(</big><em>el</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableList.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends <tt class="docutils literal"><span class="pre">el</span></tt> to <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>INPUT: <tt class="docutils literal"><span class="pre">el</span></tt> &#8211; any object</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingLists</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.append(4)</span>
+<span class="go">....:      elc.append(6)</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 6]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.append(4)</span>
+<span class="go">....:      elc.append(2)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableList.extend">
+<tt class="descname">extend</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableList.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends <tt class="docutils literal"><span class="pre">self</span></tt> by the content of the iterable <tt class="docutils literal"><span class="pre">it</span></tt></p>
+<p>INPUT: <tt class="docutils literal"><span class="pre">it</span></tt> &#8211; any iterable</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingLists</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span><span class="mi">11</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.extend((10,11))</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 5, 8, 9, 10, 11]</span>
+
+<span class="gp">sage: </span><span class="n">el2</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">15</span><span class="p">,</span> <span class="mi">16</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.extend(el2)</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 5, 8, 9, 15, 16]</span>
+
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.extend((6,7))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableList.insert">
+<tt class="descname">insert</tt><big>(</big><em>index</em>, <em>el</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableList.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts <tt class="docutils literal"><span class="pre">el</span></tt> in <tt class="docutils literal"><span class="pre">self</span></tt> at position <tt class="docutils literal"><span class="pre">index</span></tt></p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">el</span></tt> &#8211; any object</li>
+<li><tt class="docutils literal"><span class="pre">index</span></tt> &#8211; any int</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingLists</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.insert(3, 6)</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 5, 6, 8, 9]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.insert(2, 6)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">array is not increasing</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableList.pop">
+<tt class="descname">pop</tt><big>(</big><em>index=-1</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableList.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove <tt class="docutils literal"><span class="pre">self[index]</span></tt> from <tt class="docutils literal"><span class="pre">self</span></tt> and returns it</p>
+<p>INPUT: <tt class="docutils literal"><span class="pre">index</span></tt> - any int, default to -1</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingLists</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      print elc.pop()</span>
+<span class="go">9</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 5, 8]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      print elc.pop(2)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 4, 8, 9]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.list_clone.ClonableList.remove">
+<tt class="descname">remove</tt><big>(</big><em>el</em><big>)</big><a class="headerlink" href="#sage.structure.list_clone.ClonableList.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the first occurence of <tt class="docutils literal"><span class="pre">el</span></tt> from <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>INPUT: <tt class="docutils literal"><span class="pre">el</span></tt> - any object</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">IncreasingLists</span>
+<span class="gp">sage: </span><span class="n">el</span> <span class="o">=</span> <span class="n">IncreasingLists</span><span class="p">()([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">el</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.remove(4)</span>
+<span class="gp">sage: </span><span class="n">elc</span>
+<span class="go">[1, 5, 8, 9]</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">el</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">elc</span><span class="p">:</span>
+<span class="go">....:      elc.remove(10)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError: list.remove(x)</span>: <span class="n-Identifier">x not in list</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.list_clone.NormalizedClonableList">
+<em class="property">class </em><tt class="descclassname">sage.structure.list_clone.</tt><tt class="descname">NormalizedClonableList</tt><a class="headerlink" href="#sage.structure.list_clone.NormalizedClonableList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.structure.list_clone.ClonableList" title="sage.structure.list_clone.ClonableList"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.list_clone.ClonableList</span></tt></a></p>
+<p>List with clone protocol and normal form</p>
+<p>This is a subclass of <a class="reference internal" href="#sage.structure.list_clone.ClonableList" title="sage.structure.list_clone.ClonableList"><tt class="xref py py-class docutils literal"><span class="pre">ClonableList</span></tt></a> which call a method
+<a class="reference internal" href="#sage.structure.list_clone.NormalizedClonableList.normalize" title="sage.structure.list_clone.NormalizedClonableList.normalize"><tt class="xref py py-meth docutils literal"><span class="pre">normalize()</span></tt></a> at creation and after any modification of its instance.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="list_clone_demo.html#sage.structure.list_clone_demo.SortedList" title="sage.structure.list_clone_demo.SortedList"><tt class="xref py py-class docutils literal"><span class="pre">SortedList</span></tt></a> for an
+example of usage.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>We construct a sorted list through its parent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">SortedLists</span>
+<span class="gp">sage: </span><span class="n">SL</span> <span class="o">=</span> <span class="n">SortedLists</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sl1</span> <span class="o">=</span> <span class="n">SL</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">]);</span> <span class="n">sl1</span>
+<span class="go">[1, 2, 4, 6]</span>
+</pre></div>
+</div>
+<p>Normalization is also performed atfer modification:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">sl1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">as</span> <span class="n">sl2</span><span class="p">:</span>
+<span class="go">....:      sl2[1] = 12</span>
+<span class="gp">sage: </span><span class="n">sl2</span>
+<span class="go">[1, 4, 6, 12]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.structure.list_clone.NormalizedClonableList.normalize">
+<tt class="descname">normalize</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.list_clone.NormalizedClonableList.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>This is an abstract method. Subclasses are supposed to overload
+<a class="reference internal" href="#sage.structure.list_clone.NormalizedClonableList.normalize" title="sage.structure.list_clone.NormalizedClonableList.normalize"><tt class="xref py py-meth docutils literal"><span class="pre">normalize()</span></tt></a>. The call <tt class="docutils literal"><span class="pre">self.normalize()</span></tt> is supposed to</p>
+<ul class="simple">
+<li>call <tt class="docutils literal"><span class="pre">self._require_mutable()</span></tt> to check that <tt class="docutils literal"><span class="pre">self</span></tt> is in a
+proper mutable state</li>
+<li>modify <tt class="docutils literal"><span class="pre">self</span></tt> to put it in a normal form</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.list_clone_demo</span> <span class="kn">import</span> <span class="n">SortedList</span><span class="p">,</span> <span class="n">SortedLists</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="n">SortedList</span><span class="p">(</span><span class="n">SortedLists</span><span class="p">(),</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span>
+<span class="go">[2, 2, 3]</span>
+<span class="gp">sage: </span><span class="n">l</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">list is not strictly increasing</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="dynamic_class.html"
+                                  title="previous chapter">Dynamic classes</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="list_clone_demo.html"
+                                  title="next chapter">Elements, Array and Lists With Clone Protocol, demonstration classes</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/structure/list_clone.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="list_clone_demo.html" title="Elements, Array and Lists With Clone Protocol, demonstration classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="dynamic_class.html" title="Dynamic classes"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

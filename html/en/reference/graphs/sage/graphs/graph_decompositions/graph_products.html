@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Products of graphs &mdash; Sage Reference Manual v6.6: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Graph Theory" href="../../../index.html" />
+    <link rel="next" title="Convexity properties of graphs" href="../convexity_properties.html" />
+    <link rel="prev" title="Bandwidth of undirected graphs" href="bandwidth.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../convexity_properties.html" title="Convexity properties of graphs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bandwidth.html" title="Bandwidth of undirected graphs"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="products-of-graphs">
+<span id="sage-graphs-graph-decompositions-graph-products"></span><h1>Products of graphs<a class="headerlink" href="#products-of-graphs" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.graph_decompositions.graph_products"></span><p>This module gathers everything related to graph products. At the moment it
+contains an implementation of a recognition algorithm for graphs that can be
+written as a cartesian product of smaller ones.</p>
+<p>References:</p>
+<blockquote>
+<div><table class="docutils citation" frame="void" id="hik11" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[HIK11]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>)</em> Handbook of Product Graphs,
+R. Hammack, W. Imrich, S. Klavzar,
+CRC press, 2011</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>Author:</p>
+<ul class="simple">
+<li>Nathann Cohen (May 2012 &#8211; coded while watching the election of Francois
+Hollande on TV)</li>
+</ul>
+<div class="section" id="cartesian-product-of-graphs-the-recognition-problem">
+<h2>Cartesian product of graphs &#8211; the recognition problem<a class="headerlink" href="#cartesian-product-of-graphs-the-recognition-problem" title="Permalink to this headline">¶</a></h2>
+<p>First, a definition:</p>
+<blockquote>
+<div><p><strong>Definition</strong> The cartesian product of two graphs <span class="math">\(G\)</span> and <span class="math">\(H\)</span>, denoted
+<span class="math">\(G\square H\)</span>, is a graph defined on the pairs <span class="math">\((g, h)\in V(G)\times V(H)\)</span>.</p>
+<p>Two elements <span class="math">\((g, h),(g', h')\in V(G\square H)\)</span> are adjacent in <span class="math">\(G\square H\)</span>
+if and only if :</p>
+<ul class="simple">
+<li><span class="math">\(g=g'\)</span> and <span class="math">\(hh'\in H\)</span>; or</li>
+<li><span class="math">\(h=h'\)</span> and <span class="math">\(gg'\in G\)</span></li>
+</ul>
+</div></blockquote>
+<p>Two remarks follow :</p>
+<ol class="arabic simple">
+<li>The cartesian product is commutative</li>
+<li>Any edge <span class="math">\(uv\)</span> of a graph <span class="math">\(G_1 \square \cdots \square G_k\)</span> can be given a color
+<span class="math">\(i\)</span> corresponding to the unique index <span class="math">\(i\)</span> such that <span class="math">\(u_i\)</span> and <span class="math">\(v_i\)</span> differ.</li>
+</ol>
+<p>The problem that is of interest to us in the present module is the following:</p>
+<blockquote>
+<div><strong>Recognition problem</strong> Given a graph <span class="math">\(G\)</span>, can we guess whether there exist
+graphs <span class="math">\(G_1, ..., G_k\)</span> such that <span class="math">\(G=G_1\square \cdots \square G_k\)</span> ?</div></blockquote>
+<p>This problem can actually be solved, and the resulting factorization is
+unique. What is explained below can be found in the book <em>Handbook of Product
+Graphs</em> <a class="reference internal" href="#hik11" id="id1">[HIK11]</a>.</p>
+<p>Everything is actually based on simple observations. Given a graph <span class="math">\(G\)</span>, finding
+out whether <span class="math">\(G\)</span> can be written as the product of several graphs can be attempted
+by trying to color its edges according to some rules. Indeed, if we are to color
+the edges of <span class="math">\(G\)</span> in such a way that each color class represents a factor of <span class="math">\(G\)</span>,
+we must ensure several things.</p>
+<blockquote>
+<div><p><strong>Remark 1</strong> In any cycle of <span class="math">\(G\)</span> no color can appear exactly once.</p>
+<p>Indeed, if only one edge <span class="math">\(uv\)</span> of a cycle were labelled with color <span class="math">\(i\)</span>, it
+would mean that:</p>
+<ol class="arabic simple">
+<li>The only difference between <span class="math">\(u\)</span> and <span class="math">\(v\)</span> lies in their <span class="math">\(i\)</span> th coordinate</li>
+<li>It is possible to go from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> by changing only coordinates
+different from the <span class="math">\(i\)</span> th</li>
+</ol>
+<p>A contradiction indeed.</p>
+<img alt="../../../_images/cycle.png" src="../../../_images/cycle.png" />
+<p>That means that, for instance, the edges of a triangle necessarily have the
+same color.</p>
+<p><strong>Remark 2</strong> If two consecutive edges <span class="math">\(u_1u_2\)</span> and <span class="math">\(u_2u_3\)</span> have different
+colors, there necessarily exists a unique vertex <span class="math">\(u_4\)</span> different from <span class="math">\(u_2\)</span>
+and incident to both <span class="math">\(u_1\)</span> and <span class="math">\(u_3\)</span>.</p>
+<p>In this situation, opposed edges necessarily have the same colors because of
+the previous remark.</p>
+<img alt="../../../_images/square.png" src="../../../_images/square.png" />
+<p><strong>1st criterion</strong> : As a corollary, we know that:</p>
+<ol class="arabic simple">
+<li>If two vertices <span class="math">\(u,v\)</span> have a <em>unique</em> common neighbor <span class="math">\(x\)</span>, then <span class="math">\(ux\)</span> and
+<span class="math">\(xv\)</span> have the same color.</li>
+<li>If two vertices <span class="math">\(u, v\)</span> have more that two common neighbors <span class="math">\(x_1, ...,
+x_k\)</span> then all edges between the <span class="math">\(x_i\)</span> and the vertices of <span class="math">\(u,v\)</span> have the
+same color. This is also a consequence of the first remark.</li>
+</ol>
+<p><strong>2nd criterion</strong> : if two edges <span class="math">\(uv\)</span> and <span class="math">\(u'v'\)</span> of the product graph
+<span class="math">\(G\square H\)</span> are such that <span class="math">\(d(u,u')+d(v,v')\neq d(u,v') + d(v,u')\)</span> then the
+two edges <span class="math">\(uv\)</span> and <span class="math">\(u'v'\)</span> necessarily have the same color.</p>
+<blockquote>
+<div>This is a consequence of the fact that for any two vertices <span class="math">\(u,v\)</span> of
+<span class="math">\(G\square H\)</span> (where <span class="math">\(u=(u_G,u_H)\)</span> and <span class="math">\(v=(v_G,v_H)\)</span>), we have <span class="math">\(d(u,v) =
+d_G(u_G,v_G)+d_H(u_H,v_H)\)</span>. Indeed, a shortest path from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> in
+<span class="math">\(G\square H\)</span> contains the information of a shortest path from <span class="math">\(u_G\)</span> to <span class="math">\(v_G\)</span>
+in <span class="math">\(G\)</span>, and a shortest path from <span class="math">\(u_H\)</span> to <span class="math">\(v_H\)</span> in <span class="math">\(H\)</span>.</div></blockquote>
+</div></blockquote>
+<div class="section" id="the-algorithm">
+<h3>The algorithm<a class="headerlink" href="#the-algorithm" title="Permalink to this headline">¶</a></h3>
+<p>The previous remarks tell us that some edges are in some way equivalent to some
+others, i.e. that their colors are equal. In order to compute the coloring we
+are looking for, we therefore build a graph on the <em>edges</em> of a graph <span class="math">\(G\)</span>,
+linking two edges whenever they are found to be equivalent according to the
+previous remarks.</p>
+<p>All that is left to do is to compute the connected components of this new graph,
+as each of them representing the edges of a factor. Of course, only one
+connected component indicates that the graph has no factorization.</p>
+<p>Then again, please refer to <a class="reference internal" href="#hik11" id="id2">[HIK11]</a> for any technical question.</p>
+</div>
+<div class="section" id="to-do">
+<h3>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h3>
+<p>This implementation is made at Python level, and some parts of the algorithm
+could be rewritten in Cython to save time. Especially when enumerating all pairs
+of edges and computing their distances. This can easily be done in C with the
+functions from the <a class="reference internal" href="../distances_all_pairs.html#module-sage.graphs.distances_all_pairs" title="sage.graphs.distances_all_pairs"><tt class="xref py py-mod docutils literal"><span class="pre">sage.graphs.distances_all_pairs</span></tt></a> module.</p>
+</div>
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sage.graphs.graph_decompositions.graph_products.is_cartesian_product">
+<tt class="descclassname">sage.graphs.graph_decompositions.graph_products.</tt><tt class="descname">is_cartesian_product</tt><big>(</big><em>g</em>, <em>certificate=False</em>, <em>relabeling=False</em><big>)</big><a class="headerlink" href="#sage.graphs.graph_decompositions.graph_products.is_cartesian_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests whether the graph is a cartesian product.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">certificate</span></tt> (boolean) &#8211; if <tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span> <span class="pre">False</span></tt> (default) the
+method only returns <tt class="docutils literal"><span class="pre">True</span></tt> or <tt class="docutils literal"><span class="pre">False</span></tt> answers. If <tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span>
+<span class="pre">True</span></tt>, the <tt class="docutils literal"><span class="pre">True</span></tt> answers are replaced by the list of the factors of
+the graph.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">relabeling</span></tt> (boolean) &#8211; if <tt class="docutils literal"><span class="pre">relabeling</span> <span class="pre">=</span> <span class="pre">True</span></tt> (implies
+<tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span> <span class="pre">True</span></tt>), the method also returns a dictionary associating
+to each vertex its natural coordinates as a vertex of a product graph. If
+<span class="math">\(g\)</span> is not a cartesian product, <tt class="docutils literal"><span class="pre">None</span></tt> is returned instead.</p>
+<p>This is set to <tt class="docutils literal"><span class="pre">False</span></tt> by default.</p>
+</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><a class="reference internal" href="../generic_graph.html#sage.graphs.generic_graph.GenericGraph.cartesian_product" title="sage.graphs.generic_graph.GenericGraph.cartesian_product"><tt class="xref py py-meth docutils literal"><span class="pre">sage.graphs.generic_graph.GenericGraph.cartesian_product()</span></tt></a></li>
+<li><a class="reference internal" href="#module-sage.graphs.graph_decompositions.graph_products" title="sage.graphs.graph_decompositions.graph_products"><tt class="xref py py-mod docutils literal"><span class="pre">graph_products</span></tt></a> &#8211; a module on
+graph products.</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This algorithm may run faster whenever the graph&#8217;s vertices are integers
+(see <a class="reference internal" href="../generic_graph.html#sage.graphs.generic_graph.GenericGraph.relabel" title="sage.graphs.generic_graph.GenericGraph.relabel"><tt class="xref py py-meth docutils literal"><span class="pre">relabel()</span></tt></a>). Give it a
+try if it is too slow !</p>
+</div>
+<p>EXAMPLE:</p>
+<p>The Petersen graph is prime:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.graph_products</span> <span class="kn">import</span> <span class="n">is_cartesian_product</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">is_cartesian_product</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>A 2d grid is the product of paths:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">Grid2dGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">is_cartesian_product</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">certificate</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p1</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p2</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Forgetting the graph&#8217;s labels, then finding them back:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">relabel</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_cartesian_product</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">relabeling</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">(True, {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (0, 3),</span>
+<span class="go">        4: (0, 4), 5: (5, 0), 6: (5, 1), 7: (5, 2),</span>
+<span class="go">        8: (5, 3), 9: (5, 4), 10: (10, 0), 11: (10, 1),</span>
+<span class="go">        12: (10, 2), 13: (10, 3), 14: (10, 4), 15: (15, 0),</span>
+<span class="go">        16: (15, 1), 17: (15, 2), 18: (15, 3), 19: (15, 4),</span>
+<span class="go">        20: (20, 0), 21: (20, 1), 22: (20, 2), 23: (20, 3),</span>
+<span class="go">        24: (20, 4)})</span>
+</pre></div>
+</div>
+<p>And of course, we find the factors back when we build a graph from a
+product:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span><span class="o">.</span><span class="n">cartesian_product</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">g1</span><span class="p">,</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">is_cartesian_product</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">certificate</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">any</span><span class="p">(</span> <span class="n">x</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">g1</span><span class="p">,</span><span class="n">g2</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">any</span><span class="p">(</span> <span class="n">x</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">g1</span><span class="p">,</span><span class="n">g2</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Wagner&#8217;s Graph (<a class="reference external" href="http://trac.sagemath.org/13599">trac ticket #13599</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">WagnerGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_cartesian_product</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Products of graphs</a><ul>
+<li><a class="reference internal" href="#cartesian-product-of-graphs-the-recognition-problem">Cartesian product of graphs &#8211; the recognition problem</a><ul>
+<li><a class="reference internal" href="#the-algorithm">The algorithm</a></li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="bandwidth.html"
+                                  title="previous chapter">Bandwidth of undirected graphs</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../convexity_properties.html"
+                                  title="next chapter">Convexity properties of graphs</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/graphs/graph_decompositions/graph_products.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../convexity_properties.html" title="Convexity properties of graphs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bandwidth.html" title="Bandwidth of undirected graphs"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,904 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Dense univariate polynomials over \(\ZZ/n\ZZ\), implemented using NTL. &mdash; Sage Reference Manual v6.6: Polynomial Rings</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Polynomial Rings" href="../../../index.html" />
+    <link rel="up" title="Univariate Polynomials and Polynomial Rings" href="../../../polynomial_rings_univar.html" />
+    <link rel="next" title="Dense univariate polynomials over \(\RR\), implemented using MPFR" href="polynomial_real_mpfr_dense.html" />
+    <link rel="prev" title="Dense univariate polynomials over \(\ZZ/n\ZZ\), implemented using FLINT." href="polynomial_zmod_flint.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polynomial_real_mpfr_dense.html" title="Dense univariate polynomials over \(\RR\), implemented using MPFR"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="polynomial_zmod_flint.html" title="Dense univariate polynomials over \(\ZZ/n\ZZ\), implemented using FLINT."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_univar.html" accesskey="U">Univariate Polynomials and Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dense-univariate-polynomials-over-implemented-using-ntl">
+<span id="sage-rings-polynomial-polynomial-modn-dense-ntl"></span><h1>Dense univariate polynomials over  <span class="math">\(\ZZ/n\ZZ\)</span>, implemented using NTL.<a class="headerlink" href="#dense-univariate-polynomials-over-implemented-using-ntl" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.polynomial.polynomial_modn_dense_ntl"></span><p>This implementation is generally slower than the FLINT implementation in
+<a class="reference internal" href="polynomial_zmod_flint.html#module-sage.rings.polynomial.polynomial_zmod_flint" title="sage.rings.polynomial.polynomial_zmod_flint"><tt class="xref py py-mod docutils literal"><span class="pre">polynomial_zmod_flint</span></tt></a>, so we use FLINT by
+default when the modulus is small enough; but NTL does not require that <span class="math">\(n\)</span> be
+<tt class="docutils literal"><span class="pre">int</span></tt>-sized, so we use it as default when <span class="math">\(n\)</span> is too large for FLINT.</p>
+<p>Note that the classes <a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz" title="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz"><tt class="xref py py-class docutils literal"><span class="pre">Polynomial_dense_modn_ntl_zz</span></tt></a> and
+<a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ" title="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ"><tt class="xref py py-class docutils literal"><span class="pre">Polynomial_dense_modn_ntl_ZZ</span></tt></a> are different; the former is limited to
+moduli less than a certain bound, while the latter supports arbitrarily large
+moduli.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Robert Bradshaw: Split off from polynomial_element_generic.py (2007-09)</li>
+<li>Robert Bradshaw: Major rewrite to use NTL directly (2007-09)</li>
+</ul>
+<dl class="class">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">Polynomial_dense_mod_n</tt><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="polynomial_element.html#sage.rings.polynomial.polynomial_element.Polynomial" title="sage.rings.polynomial.polynomial_element.Polynomial"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.polynomial_element.Polynomial</span></tt></a></p>
+<p>A dense polynomial over the integers modulo n, where n is composite, with
+the underlying arithmetic done using NTL.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">17</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">x^6 + 14*x^4 + 2*x^3 + x^2 + 14*x + 1</span>
+
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">dumps</span><span class="p">())</span> <span class="o">==</span> <span class="n">f</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">+</span><span class="n">q</span>
+<span class="go">10*x</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Ring of integers modulo 100 (using NTL)</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span>
+<span class="go">10*x</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="p">({</span><span class="mi">10</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+<span class="go">7*x^10</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.degree">
+<tt class="descname">degree</tt><big>(</big><em>gen=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the degree of this polynomial.  The zero polynomial
+has degree -1.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.int_list">
+<tt class="descname">int_list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.int_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new copy of the list of the underlying
+elements of self.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">_</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">17</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="go">[83, 3, 0, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.ntl_ZZ_pX">
+<tt class="descname">ntl_ZZ_pX</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.ntl_ZZ_pX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return underlying NTL representation of this polynomial.  Additional
+&#8216;&#8217;bonus&#8217;&#8217; functionality is available through this function.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You must call <tt class="docutils literal"><span class="pre">ntl.set_modulus(ntl.ZZ(n))</span></tt> before doing
+arithmetic with this object!</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.ntl_set_directly">
+<tt class="descname">ntl_set_directly</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.ntl_set_directly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value of this polynomial directly from a vector or string.</p>
+<p>Polynomials over the integers modulo n are stored internally using
+NTL&#8217;s <tt class="docutils literal"><span class="pre">ZZ_pX</span></tt> class.  Use this function to set the value of this
+polynomial using the NTL constructor, which is potentially <em>very</em> fast.
+The input v is either a vector of ints or a string of the form <tt class="docutils literal"><span class="pre">[</span> <span class="pre">n1</span>
+<span class="pre">n2</span> <span class="pre">n3</span> <span class="pre">...</span> <span class="pre">]</span></tt> where the ni are integers and there are no commas between
+them. The optimal input format is the string format, since that&#8217;s what
+NTL uses by default.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.polynomial_modn_dense_ntl</span> <span class="kn">import</span> <span class="n">Polynomial_dense_mod_n</span> <span class="k">as</span> <span class="n">poly_modn_dense</span>
+<span class="gp">sage: </span><span class="n">poly_modn_dense</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]))</span>
+<span class="go">3*x^2 + 98*x + 1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">poly_modn_dense</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">ntl_set_directly</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">3*x^2 + 98*x + 1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">ntl_set_directly</span><span class="p">(</span><span class="s">&#39;[1 -2 3 4]&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">4*x^3 + 3*x^2 + 98*x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.quo_rem">
+<tt class="descname">quo_rem</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.quo_rem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple (quotient, remainder) where self = quotient*other +
+remainder.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.shift">
+<tt class="descname">shift</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this polynomial multiplied by the power <span class="math">\(x^n\)</span>. If <span class="math">\(n\)</span> is negative,
+terms below <span class="math">\(x^n\)</span> will be discarded. Does not change this polynomial.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">12345678901234567890</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go"> x^2 + 2*x + 4</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go"> x + 2</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+<span class="go"> 0</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go"> x^4 + 2*x^3 + 4*x^2</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>David Harvey (2006-08-06)</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.small_roots">
+<tt class="descname">small_roots</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n.small_roots" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.small_roots" title="sage.rings.polynomial.polynomial_modn_dense_ntl.small_roots"><tt class="xref py py-func docutils literal"><span class="pre">sage.rings.polynomial.polynomial_modn_dense_ntl.small_roots()</span></tt></a>
+for the documentation of this function.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">N</span> <span class="o">=</span> <span class="mi">10001</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">Zmod</span><span class="p">(</span><span class="mi">10001</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">10</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">5000</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">222</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">small_roots</span><span class="p">()</span>
+<span class="go">[4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">Polynomial_dense_mod_p</tt><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n" title="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n</span></tt></a></p>
+<p>A dense polynomial over the integers modulo p, where p is prime.</p>
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.discriminant">
+<tt class="descname">discriminant</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.discriminant" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">_</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">19</span><span class="p">),</span><span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">17</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">discriminant</span><span class="p">()</span>
+<span class="go">12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.gcd">
+<tt class="descname">gcd</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.gcd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the greatest common divisor of this polynomial and <tt class="docutils literal"><span class="pre">other</span></tt>, as
+a monic polynomial.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; a polynomial defined over the same ring as <tt class="docutils literal"><span class="pre">self</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="n">implementation</span><span class="o">=</span><span class="s">&quot;NTL&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span><span class="n">g</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">x + 2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.resultant">
+<tt class="descname">resultant</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.resultant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the resultant of self and other, which must lie in the same
+polynomial ring.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; a polynomial</li>
+</ul>
+<p>OUTPUT: an element of the base ring of the polynomial ring</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">19</span><span class="p">),</span><span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>  <span class="n">g</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">resultant</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">r</span>
+<span class="go">11</span>
+<span class="gp">sage: </span><span class="n">r</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">GF</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.xgcd">
+<tt class="descname">xgcd</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_p.xgcd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the extended gcd of this element and <tt class="docutils literal"><span class="pre">other</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; an element in the same polynomial ring</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A tuple <tt class="docutils literal"><span class="pre">(r,s,t)</span></tt> of elements in the polynomial ring such
+that <tt class="docutils literal"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">s*self</span> <span class="pre">+</span> <span class="pre">t*other</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(x, 0, 1)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(x + 2, 0, 1)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">zero</span><span class="p">()</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+<span class="go">(1, 0, 1)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">xgcd</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">(x^2 + x + 1, 0, 1)</span>
+<span class="gp">sage: </span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">xgcd</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">(x + 2, 1, 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">Polynomial_dense_modn_ntl_ZZ</tt><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n" title="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n</span></tt></a></p>
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.degree">
+<tt class="descname">degree</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">14</span><span class="o">^</span><span class="mi">34</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">14</span><span class="o">^</span><span class="mi">43</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.is_gen">
+<tt class="descname">is_gen</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.is_gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.quo_rem">
+<tt class="descname">quo_rem</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.quo_rem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <span class="math">\(q\)</span> and <span class="math">\(r\)</span>, with the degree of <span class="math">\(r\)</span> less than the degree of <span class="math">\(right\)</span>,
+such that <span class="math">\(q * right + r = self\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">30</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">5</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span>
+<span class="go">x^3 + 999999999999999999999999999998*x^2 + 3*x + 999999999999999999999999999996</span>
+<span class="gp">sage: </span><span class="n">r</span>
+<span class="go">5*x + 5</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">*</span><span class="n">g</span> <span class="o">+</span> <span class="n">r</span>
+<span class="go">x^5 + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.reverse">
+<tt class="descname">reverse</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.reverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses the coefficients of self. The reverse of <span class="math">\(f(x)\)</span> is <span class="math">\(x^n
+f(1/x)\)</span>.</p>
+<p>The degree will go down if the constant term is zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">12</span><span class="o">^</span><span class="mi">29</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="go">5*x^4 + 2*x^3 + 1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="go">x^2 + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.shift">
+<tt class="descname">shift</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift self to left by <span class="math">\(n\)</span>, which is multiplication by <span class="math">\(x^n\)</span>,
+truncating if <span class="math">\(n\)</span> is negative.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">12</span><span class="o">^</span><span class="mi">30</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">7</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">x^8 + x^2 + x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">x^6 + 1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="n">f</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.truncate">
+<tt class="descname">truncate</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.truncate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this polynomial mod <span class="math">\(x^n\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">15</span><span class="o">^</span><span class="mi">30</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">));</span> <span class="n">f</span>
+<span class="go">x^9 + x^8 + x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">x^5 + x^4 + x^3 + x^2 + x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.valuation">
+<tt class="descname">valuation</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_ZZ.valuation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the valuation of self, that is, the power of the
+lowest non-zero monomial of self.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">50</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">99</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">99</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">-</span><span class="n">x</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">+Infinity</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">Polynomial_dense_modn_ntl_zz</tt><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n" title="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_mod_n</span></tt></a></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">Integers</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">21</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">357627868652344</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.degree">
+<tt class="descname">degree</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.degree" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">77</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="mi">77</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.int_list">
+<tt class="descname">int_list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.int_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the coefficients of self as efficiently as possible as a
+list of python ints.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.polynomial_modn_dense_ntl</span> <span class="kn">import</span> <span class="n">Polynomial_dense_mod_n</span> <span class="k">as</span> <span class="n">poly_modn_dense</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">poly_modn_dense</span><span class="p">(</span><span class="n">R</span><span class="p">,[</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">int_list</span><span class="p">()</span>
+<span class="go">[5, 0, 0, 1]</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">int_list</span><span class="p">()]</span>
+<span class="go">[&lt;type &#39;int&#39;&gt;, &lt;type &#39;int&#39;&gt;, &lt;type &#39;int&#39;&gt;, &lt;type &#39;int&#39;&gt;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.is_gen">
+<tt class="descname">is_gen</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.is_gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.ntl_set_directly">
+<tt class="descname">ntl_set_directly</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.ntl_set_directly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.quo_rem">
+<tt class="descname">quo_rem</tt><big>(</big><em>right</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.quo_rem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <span class="math">\(q\)</span> and <span class="math">\(r\)</span>, with the degree of <span class="math">\(r\)</span> less than the degree of <span class="math">\(right\)</span>,
+such that <span class="math">\(q * right + r = self\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">125</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">5</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">quo_rem</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span>
+<span class="go">x^3 + 123*x^2 + 3*x + 121</span>
+<span class="gp">sage: </span><span class="n">r</span>
+<span class="go">5*x + 5</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="o">*</span><span class="n">g</span> <span class="o">+</span> <span class="n">r</span>
+<span class="go">x^5 + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.reverse">
+<tt class="descname">reverse</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.reverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses the coefficients of self. The reverse of <span class="math">\(f(x)\)</span> is <span class="math">\(x^n f(1/x)\)</span>.</p>
+<p>The degree will go down if the constant term is zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">77</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="go">76*x^4 + 76*x^3 + 1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="go">76*x^2 + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.shift">
+<tt class="descname">shift</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift self to left by <span class="math">\(n\)</span>, which is multiplication by <span class="math">\(x^n\)</span>,
+truncating if <span class="math">\(n\)</span> is negative.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">77</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">7</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">x^8 + x^2 + x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">x^6 + 1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="n">f</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">R</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.truncate">
+<tt class="descname">truncate</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.truncate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns this polynomial mod <span class="math">\(x^n\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">77</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">));</span> <span class="n">f</span>
+<span class="go">x^9 + x^8 + x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">x^5 + x^4 + x^3 + x^2 + x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.valuation">
+<tt class="descname">valuation</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.Polynomial_dense_modn_ntl_zz.valuation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the valuation of self, that is, the power of the
+lowest non-zero monomial of self.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">-</span><span class="mi">3</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">99</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">99</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">-</span><span class="n">x</span><span class="p">;</span> <span class="n">f</span><span class="o">.</span><span class="n">valuation</span><span class="p">()</span>
+<span class="go">+Infinity</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.make_element">
+<tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">make_element</tt><big>(</big><em>parent</em>, <em>args</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.make_element" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.polynomial_modn_dense_ntl.small_roots">
+<tt class="descclassname">sage.rings.polynomial.polynomial_modn_dense_ntl.</tt><tt class="descname">small_roots</tt><big>(</big><em>self</em>, <em>X=None</em>, <em>beta=1.0</em>, <em>epsilon=None</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.polynomial_modn_dense_ntl.small_roots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Let <span class="math">\(N\)</span> be the characteristic of the base ring this polynomial
+is defined over: <tt class="docutils literal"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">self.base_ring().characteristic()</span></tt>.
+This method returns small roots of this polynomial modulo some
+factor <span class="math">\(b\)</span> of <span class="math">\(N\)</span> with the constraint that <span class="math">\(b &gt;= N^\beta\)</span>.
+Small in this context means that if <span class="math">\(x\)</span> is a root of <span class="math">\(f\)</span>
+modulo <span class="math">\(b\)</span> then <span class="math">\(|x| &lt; X\)</span>. This <span class="math">\(X\)</span> is either provided by the
+user or the maximum <span class="math">\(X\)</span> is chosen such that this algorithm
+terminates in polynomial time. If <span class="math">\(X\)</span> is chosen automatically
+it is <span class="math">\(X = ceil(1/2 N^{\beta^2/\delta - \epsilon})\)</span>.
+The algorithm may also return some roots which are larger than <span class="math">\(X\)</span>.
+&#8216;This algorithm&#8217; in this context means Coppersmith&#8217;s algorithm for finding
+small roots using the LLL algorithm. The implementation of this algorithm
+follows Alexander May&#8217;s PhD thesis referenced below.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">X</span></tt> &#8211; an absolute bound for the root (default: see above)</li>
+<li><tt class="docutils literal"><span class="pre">beta</span></tt> &#8211; compute a root mod <span class="math">\(b\)</span> where <span class="math">\(b\)</span> is a factor of <span class="math">\(N\)</span> and <span class="math">\(b
+\ge N^\beta\)</span>. (Default: 1.0, so <span class="math">\(b = N\)</span>.)</li>
+<li><tt class="docutils literal"><span class="pre">epsilon</span></tt> &#8211; the parameter <span class="math">\(\epsilon\)</span> described above. (Default: <span class="math">\(\beta/8\)</span>)</li>
+<li><tt class="docutils literal"><span class="pre">**kwds</span></tt> &#8211; passed through to method <a class="reference external" href="../../../../matrices/sage/matrix/matrix_integer_dense.html#sage.matrix.matrix_integer_dense.Matrix_integer_dense.LLL" title="(in Sage Reference Manual: Matrices and Spaces of Matrices v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">Matrix_integer_dense.LLL()</span></tt></a>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>First consider a small example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">N</span> <span class="o">=</span> <span class="mi">10001</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">Zmod</span><span class="p">(</span><span class="mi">10001</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">10</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">5000</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">222</span>
+</pre></div>
+</div>
+<p>This polynomial has no roots without modular reduction (i.e. over <span class="math">\(\ZZ\)</span>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<p>To compute its roots we need to factor the modulus <span class="math">\(N\)</span> and use the Chinese
+remainder theorem:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="p">,</span><span class="n">q</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">prime_divisors</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span>
+<span class="go">[(4, 1)]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="n">q</span><span class="p">))</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span>
+<span class="go">[(4, 1)]</span>
+
+<span class="gp">sage: </span><span class="n">crt</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>This root is quite small compared to <span class="math">\(N\)</span>, so we can attempt to
+recover it without factoring <span class="math">\(N\)</span> using Coppersmith&#8217;s small root
+method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">small_roots</span><span class="p">()</span>
+<span class="go">[4]</span>
+</pre></div>
+</div>
+<p>An application of this method is to consider RSA. We are using 512-bit RSA
+with public exponent <span class="math">\(e=3\)</span> to encrypt a 56-bit DES key. Because it would be
+easy to attack this setting if no padding was used we pad the key <span class="math">\(K\)</span> with
+1s to get a large number:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Nbits</span><span class="p">,</span> <span class="n">Kbits</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">56</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>We choose two primes of size 256-bit each:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">2</span><span class="o">^</span><span class="mi">256</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">8</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="mi">2</span><span class="o">^</span><span class="mi">256</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">8</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">q</span>
+<span class="gp">sage: </span><span class="n">ZmodN</span> <span class="o">=</span> <span class="n">Zmod</span><span class="p">(</span> <span class="n">N</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>We choose a random key:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">ZZ</span><span class="o">.</span><span class="n">random_element</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">^</span><span class="n">Kbits</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and pad it with 512-56=456 1s:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Kdigits</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">digits</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">Kbits</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">Nbits</span><span class="o">-</span><span class="n">Kbits</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Kdigits</span><span class="p">)):</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Kdigits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we encrypt the resulting message:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">ZmodN</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">^</span><span class="n">e</span>
+</pre></div>
+</div>
+<p>To recover <span class="math">\(K\)</span> we consider the following polynomial modulo <span class="math">\(N\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZmodN</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="n">Nbits</span> <span class="o">-</span> <span class="mi">2</span><span class="o">^</span><span class="n">Kbits</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="n">e</span> <span class="o">-</span> <span class="n">C</span>
+</pre></div>
+</div>
+<p>and recover its small roots:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Kbar</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">small_roots</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">==</span> <span class="n">Kbar</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The same algorithm can be used to factor <span class="math">\(N = pq\)</span> if partial
+knowledge about <span class="math">\(q\)</span> is available. This example is from the
+Magma handbook:</p>
+<p>First, we set up <span class="math">\(p\)</span>, <span class="math">\(q\)</span> and <span class="math">\(N\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">length</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="gp">sage: </span><span class="n">hidden</span> <span class="o">=</span> <span class="mi">110</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">next_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">length</span><span class="o">/</span><span class="mi">2</span><span class="p">)))</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">next_prime</span><span class="p">(</span> <span class="nb">round</span><span class="p">(</span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">()</span><span class="o">*</span><span class="n">p</span><span class="p">)</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">N</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">q</span>
+</pre></div>
+</div>
+<p>Now we disturb the low 110 bits of <span class="math">\(q\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">qbar</span> <span class="o">=</span> <span class="n">q</span> <span class="o">+</span> <span class="n">ZZ</span><span class="o">.</span><span class="n">random_element</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">^</span><span class="n">hidden</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And try to recover <span class="math">\(q\)</span> from it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Zmod</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">qbar</span>
+</pre></div>
+</div>
+<p>We know that the error is <span class="math">\(\le 2^{\text{hidden}}-1\)</span> and that the modulus
+we are looking for is <span class="math">\(\ge \sqrt{N}\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_verbose</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">small_roots</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="mi">2</span><span class="o">^</span><span class="n">hidden</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># time random</span>
+<span class="go">verbose 2 (&lt;module&gt;) m = 4</span>
+<span class="go">verbose 2 (&lt;module&gt;) t = 4</span>
+<span class="go">verbose 2 (&lt;module&gt;) X = 1298074214633706907132624082305023</span>
+<span class="go">verbose 1 (&lt;module&gt;) LLL of 8x8 matrix (algorithm fpLLL:wrapper)</span>
+<span class="go">verbose 1 (&lt;module&gt;) LLL finished (time = 0.006998)</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">==</span> <span class="n">qbar</span> <span class="o">-</span> <span class="n">d</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<p>Don Coppersmith. <em>Finding a small root of a univariate modular equation.</em>
+In Advances in Cryptology, EuroCrypt 1996, volume 1070 of Lecture
+Notes in Computer Science, p. 155&#8211;165. Springer, 1996.
+<a class="reference external" href="http://cr.yp.to/bib/2001/coppersmith.pdf">http://cr.yp.to/bib/2001/coppersmith.pdf</a></p>
+<p>Alexander May. <em>New RSA Vulnerabilities Using Lattice Reduction Methods.</em>
+PhD thesis, University of Paderborn, 2003.
+<a class="reference external" href="http://www.cs.uni-paderborn.de/uploads/tx_sibibtex/bp.pdf">http://www.cs.uni-paderborn.de/uploads/tx_sibibtex/bp.pdf</a></p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="polynomial_zmod_flint.html"
+                                  title="previous chapter">Dense univariate polynomials over <span class="math">\(\ZZ/n\ZZ\)</span>, implemented using FLINT.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="polynomial_real_mpfr_dense.html"
+                                  title="next chapter">Dense univariate polynomials over <span class="math">\(\RR\)</span>, implemented using MPFR</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/rings/polynomial/polynomial_modn_dense_ntl.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polynomial_real_mpfr_dense.html" title="Dense univariate polynomials over \(\RR\), implemented using MPFR"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="polynomial_zmod_flint.html" title="Dense univariate polynomials over \(\ZZ/n\ZZ\), implemented using FLINT."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_univar.html" >Univariate Polynomials and Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

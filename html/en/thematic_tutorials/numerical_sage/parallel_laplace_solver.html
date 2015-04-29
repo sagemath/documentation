@@ -1,0 +1,362 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parallel Laplace Solver &mdash; Thematic Tutorials v6.6</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.6" href="../index.html" />
+    <link rel="up" title="Parallel Computation" href="parallel_computation.html" />
+    <link rel="next" title="Visualization" href="visualization.html" />
+    <link rel="prev" title="mpi4py" href="mpi4py.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visualization.html" title="Visualization"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mpi4py.html" title="mpi4py"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="parallel_computation.html" accesskey="U">Parallel Computation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parallel-laplace-solver">
+<h1>Parallel Laplace Solver<a class="headerlink" href="#parallel-laplace-solver" title="Permalink to this headline">¶</a></h1>
+<p>The following code solves Laplace&#8217;s equation in parallel on a grid.
+It divides a square into <span class="math">\(n\)</span> parallel strips where
+<span class="math">\(n\)</span> is the number of processes and uses jacobi-iteration.
+The way the code works is that the root process creates a matrix
+and distributes the pieces to the other processes. At each
+iteration each process passes its upper row to the process above
+and its lower row to the process below since they need to know the
+values at neighboring points to do the iteration. Then they iterate
+and repeat. Every 500 iterations the error estimates from the
+processes are collected using Gather. you can compare the output of
+this with the solver we wrote in the section on f2py.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">size</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">size</span>
+<span class="n">rank</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">rank</span>
+<span class="n">num_points</span><span class="o">=</span><span class="mi">500</span>
+<span class="n">sendbuf</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">dx</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">num_points</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">r_</span>
+<span class="n">j</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">rows_per_process</span><span class="o">=</span><span class="n">num_points</span><span class="o">/</span><span class="n">size</span>
+<span class="n">max_iter</span><span class="o">=</span><span class="mi">5000</span>
+<span class="n">num_iter</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">total_err</span><span class="o">=</span><span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">numpyTimeStep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">):</span>
+    <span class="n">dx2</span><span class="p">,</span> <span class="n">dy2</span> <span class="o">=</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">dnr_inv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="n">dx2</span> <span class="o">+</span> <span class="n">dy2</span><span class="p">)</span>
+    <span class="n">u_old</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c"># The actual iteration</span>
+    <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="mi">2</span><span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">dy2</span> <span class="o">+</span>
+                     <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">*</span><span class="n">dx2</span><span class="p">)</span><span class="o">*</span><span class="n">dnr_inv</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">u_old</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">v</span><span class="p">))</span>
+
+
+<span class="k">if</span> <span class="n">MPI</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;num_points: </span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">num_points</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;dx: </span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">dx</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;row_per_procss: </span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">rows_per_process</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_points</span><span class="p">,</span><span class="n">num_points</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">pi_c</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">r_</span><span class="p">[</span><span class="mf">0.0</span><span class="p">:</span><span class="n">pi_c</span><span class="p">:</span><span class="n">num_points</span><span class="o">*</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">m</span><span class="p">[</span><span class="n">num_points</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">rows_per_process</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">rows_per_process</span><span class="p">,:]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+    <span class="n">sendbuf</span><span class="o">=</span><span class="n">l</span>
+
+
+<span class="n">my_grid</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="n">num_iter</span> <span class="o">&lt;</span>  <span class="n">max_iter</span> <span class="ow">and</span> <span class="n">total_err</span> <span class="o">&gt;</span> <span class="mf">10e-6</span><span class="p">:</span>
+
+
+    <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Send</span><span class="p">(</span><span class="n">my_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:],</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rank</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">rank</span><span class="o">&lt;</span> <span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">row_above</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Recv</span><span class="p">(</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Send</span><span class="p">(</span><span class="n">my_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:],</span><span class="n">rank</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">row_above</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Recv</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Send</span><span class="p">(</span><span class="n">my_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rank</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">rank</span><span class="o">&lt;</span> <span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">row_below</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Recv</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">rank</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Send</span><span class="p">(</span><span class="n">my_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">MPI</span><span class="o">.</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">row_below</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+
+    <span class="k">if</span> <span class="n">rank</span> <span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">rank</span> <span class="o">&lt;</span> <span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">row_below</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">num_points</span><span class="p">)</span>
+        <span class="n">row_above</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">num_points</span><span class="p">)</span>
+        <span class="n">u</span><span class="p">,</span><span class="n">err</span> <span class="o">=</span><span class="n">numpyTimeStep</span><span class="p">(</span><span class="n">r_</span><span class="p">[</span><span class="n">row_above</span><span class="p">,</span><span class="n">my_grid</span><span class="p">,</span><span class="n">row_below</span><span class="p">],</span><span class="n">dx</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">my_grid</span><span class="o">=</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>
+
+    <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">row_below</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">num_points</span><span class="p">)</span>
+        <span class="n">u</span><span class="p">,</span><span class="n">err</span><span class="o">=</span><span class="n">numpyTimeStep</span><span class="p">(</span><span class="n">r_</span><span class="p">[</span><span class="n">my_grid</span><span class="p">,</span><span class="n">row_below</span><span class="p">],</span><span class="n">dx</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">my_grid</span><span class="o">=</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>
+
+    <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">row_above</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">num_points</span><span class="p">)</span>
+        <span class="n">u</span><span class="p">,</span><span class="n">err</span><span class="o">=</span><span class="n">numpyTimeStep</span><span class="p">(</span><span class="n">r_</span><span class="p">[</span><span class="n">row_above</span><span class="p">,</span><span class="n">my_grid</span><span class="p">],</span><span class="n">dx</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">my_grid</span><span class="o">=</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:,:]</span>
+
+
+    <span class="k">if</span> <span class="n">num_iter</span><span class="o">%</span><span class="mi">500</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">err_list</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Gather</span><span class="p">(</span><span class="n">err</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">total_err</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">err_list</span><span class="p">:</span>
+                <span class="n">total_err</span><span class="o">=</span><span class="n">total_err</span><span class="o">+</span><span class="n">numpy</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">a</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">total_err</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">total_err</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;error: </span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">total_err</span><span class="p">)</span>
+
+
+    <span class="n">num_iter</span><span class="o">=</span><span class="n">num_iter</span><span class="o">+</span><span class="mi">1</span>
+
+
+
+<span class="n">recvbuf</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Gather</span><span class="p">(</span><span class="n">my_grid</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">sol</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">)</span>
+    <span class="n">sol</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_points</span><span class="p">,</span><span class="n">num_points</span><span class="p">)</span>
+<span class="c">##Write your own code to do something with the solution</span>
+    <span class="k">print</span> <span class="n">num_iter</span>
+    <span class="k">print</span> <span class="n">sol</span>
+</pre></div>
+</div>
+<p>For small grid sizes this will be slower than a straightforward
+serial implementation, this is because there is overhead from the
+communication, and for small grids the interprocess communication
+takes more time than just doing the iteration. However, on a
+1000x1000 grid I find that using 4 processors, the parallel version
+takes only 6 seconds while the serial version we wrote earlier
+takes 20 seconds.</p>
+<p>Excercise: Rewrite the above using f2py or weave, so that each
+process compiles a fortran or C timestep function and uses that,
+how fast can you get this?</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="mpi4py.html"
+                                  title="previous chapter">mpi4py</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="visualization.html"
+                                  title="next chapter">Visualization</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/numerical_sage/parallel_laplace_solver.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="visualization.html" title="Visualization"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mpi4py.html" title="mpi4py"
+             >previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="parallel_computation.html" >Parallel Computation</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

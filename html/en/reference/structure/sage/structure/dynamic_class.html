@@ -1,0 +1,586 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Dynamic classes &mdash; Sage Reference Manual v6.6: Basic Structures</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Basic Structures" href="../../index.html" />
+    <link rel="next" title="Elements, Array and Lists With Clone Protocol" href="list_clone.html" />
+    <link rel="prev" title="Factory for cached representations" href="factory.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="list_clone.html" title="Elements, Array and Lists With Clone Protocol"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="factory.html" title="Factory for cached representations"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="dynamic-classes">
+<span id="sage-structure-dynamic-class"></span><h1>Dynamic classes<a class="headerlink" href="#dynamic-classes" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.structure.dynamic_class"></span><p class="rubric">Why dynamic classes?</p>
+<p>The short answer:</p>
+<ul class="simple">
+<li>Multiple inheritance is a powerful tool for constructing new classes
+by combining preexisting building blocks.</li>
+<li>There is a combinatorial explosion in the number of potentially
+useful classes that can be produced this way.</li>
+<li>The implementation of standard mathematical constructions calls for
+producing such combinations automatically.</li>
+<li>Dynamic classes, i.e. classes created on the fly by the Python
+interpreter, are a natural mean to achieve this.</li>
+</ul>
+<p>The long answer:</p>
+<p>Say we want to construct a new class <tt class="docutils literal"><span class="pre">MyPermutation</span></tt> for
+permutations in a given set <span class="math">\(S\)</span> (in Sage, <span class="math">\(S\)</span> will be modelled by a
+parent, but we won&#8217;t discuss this point here).  First, we have to
+choose a data structure for the permutations, typically among the
+following:</p>
+<ul class="simple">
+<li>Stored by cycle type</li>
+<li>Stored by code</li>
+<li>Stored in list notation
+- C arrays of short ints (for small permutations)
+- python lists of ints (for huge permutations)
+- ...</li>
+<li>Stored by reduced word</li>
+<li>Stored as a function</li>
+<li>...</li>
+</ul>
+<p>Luckily, the Sage library provides (or will provide) classes
+implementing each of those data structures. Those classes all share a
+common interface (or possibly a common abstract base class). So we can
+just derive our class from the chosen one:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyPermutation</span><span class="p">(</span><span class="n">PermutationCycleType</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Then we may want to further choose a specific memory behavior (unique
+representation, copy-on-write) which (hopefuly) can again be achieved
+by inheritance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyPermutation</span><span class="p">(</span><span class="n">UniqueRepresentation</span><span class="p">,</span> <span class="n">PermutationCycleType</span><span class="p">):</span>
+     <span class="o">...</span>
+</pre></div>
+</div>
+<p>Finaly, we may want to endow the permutations in <span class="math">\(S\)</span> with further
+operations coming from the (algebraic) structure of <span class="math">\(S\)</span>:</p>
+<ul class="simple">
+<li>group operations</li>
+<li>or just monoid operations (for a subset of permutations not stable by inverse)</li>
+<li>poset operations (for left/right/Bruhat order)</li>
+<li>word operations (searching for substrings, patterns, ...)</li>
+</ul>
+<p>Or any combination thereof. Now, our class typically looks like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyPermutation</span><span class="p">(</span><span class="n">UniqueRepresentation</span><span class="p">,</span> <span class="n">PermutationCycleType</span><span class="p">,</span> <span class="n">PosetElement</span><span class="p">,</span> <span class="n">GroupElement</span><span class="p">):</span>
+     <span class="o">...</span>
+</pre></div>
+</div>
+<p>Note the combinatorial explosion in the potential number of classes
+which can be created this way.</p>
+<p>In practice, such classes will be used in mathematical constructions
+like:</p>
+<div class="highlight-python"><div class="highlight"><pre>SymmetricGroup(5).subset(... TODO: find a good example in the context above ...)
+</pre></div>
+</div>
+<p>In such a construction, the structure of the result, and therefore the
+operations on its elements can only be determined at execution
+time. Let us take another standard construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">A</span> <span class="o">=</span> <span class="n">cartesian_product</span><span class="p">(</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>Depending on the structure of <span class="math">\(B\)</span> and <span class="math">\(C\)</span>, and possibly on further
+options passed down by the user, <span class="math">\(A\)</span> may be:</p>
+<ul class="simple">
+<li>an enumerated set</li>
+<li>a group</li>
+<li>an algebra</li>
+<li>a poset</li>
+<li>...</li>
+</ul>
+<p>Or any combination thereof.</p>
+<p>Hardcoding classes for all potential combinations would be at best
+tedious. Furthermore, this would require a cumbersome mechanism to
+lookup the appropriate class depending on the desired combination.</p>
+<p>Instead, one may use the ability of Python to create new classes
+dynamicaly:</p>
+<div class="highlight-python"><div class="highlight"><pre>type(&quot;class name&quot;, tuple of base classes, dictionary of methods)
+</pre></div>
+</div>
+<p>This paradigm is powerful, but there are some technicalities to
+address. The purpose of this library is to standardize its use within
+Sage, and in particular to ensure that the constructed classes are
+reused whenever possible (unique representation), and can be pickled.</p>
+<p class="rubric">Combining dynamic classes and Cython classes</p>
+<p>Cython classes cannot inherit from a dynamic class (there might be
+some partial support for this in the future). On the other hand, such
+an inheritance can be partially emulated using <tt class="xref py py-meth docutils literal"><span class="pre">__getattr__()</span></tt>. See
+<tt class="docutils literal"><span class="pre">sage.categories.examples.semigroups_cython</span></tt> for an example.</p>
+<dl class="class">
+<dt id="sage.structure.dynamic_class.DynamicClasscallMetaclass">
+<em class="property">class </em><tt class="descclassname">sage.structure.dynamic_class.</tt><tt class="descname">DynamicClasscallMetaclass</tt><a class="headerlink" href="#sage.structure.dynamic_class.DynamicClasscallMetaclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.structure.dynamic_class.DynamicMetaclass" title="sage.structure.dynamic_class.DynamicMetaclass"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.dynamic_class.DynamicMetaclass</span></tt></a>, <a class="reference external" href="../../../misc/sage/misc/classcall_metaclass.html#sage.misc.classcall_metaclass.ClasscallMetaclass" title="(in Sage Reference Manual: Miscellaneous v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.classcall_metaclass.ClasscallMetaclass</span></tt></a></p>
+<p>This invokes the nested_pickle on construction.</p>
+<p>sage: from sage.misc.nested_class import NestedClassMetaclass
+sage: class A(object):
+...       __metaclass__ = NestedClassMetaclass
+...       class B(object):
+...           pass
+...
+sage: A.B
+&lt;class &#8216;__main__.A.B&#8217;&gt;
+sage: getattr(sys.modules[&#8216;__main__&#8217;], &#8216;A.B&#8217;, &#8216;Not found&#8217;)
+&lt;class &#8216;__main__.A.B&#8217;&gt;</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.dynamic_class.DynamicMetaclass">
+<em class="property">class </em><tt class="descclassname">sage.structure.dynamic_class.</tt><tt class="descname">DynamicMetaclass</tt><a class="headerlink" href="#sage.structure.dynamic_class.DynamicMetaclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#type" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">type</span></tt></a></p>
+<p>A metaclass implementing an appropriate reduce-by-construction method</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.dynamic_class.TestClass">
+<em class="property">class </em><tt class="descclassname">sage.structure.dynamic_class.</tt><tt class="descname">TestClass</tt><a class="headerlink" href="#sage.structure.dynamic_class.TestClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class used for checking that introspection works</p>
+<dl class="method">
+<dt id="sage.structure.dynamic_class.TestClass.bla">
+<tt class="descname">bla</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.dynamic_class.TestClass.bla" title="Permalink to this definition">¶</a></dt>
+<dd><p>bla ...</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.structure.dynamic_class.dynamic_class">
+<tt class="descclassname">sage.structure.dynamic_class.</tt><tt class="descname">dynamic_class</tt><big>(</big><em>name</em>, <em>bases</em>, <em>cls=None</em>, <em>reduction=None</em>, <em>doccls=None</em>, <em>prepend_cls_bases=True</em>, <em>cache=True</em><big>)</big><a class="headerlink" href="#sage.structure.dynamic_class.dynamic_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; a string</li>
+<li><tt class="docutils literal"><span class="pre">bases</span></tt> &#8211; a tuple of classes</li>
+<li><tt class="docutils literal"><span class="pre">cls</span></tt> &#8211; a class or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">reduction</span></tt> &#8211; a tuple or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">doccls</span></tt> &#8211; a class or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">prepend_cls_bases</span></tt> &#8211; a boolean (default: <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">cache</span></tt> &#8211; a boolean or <tt class="docutils literal"><span class="pre">&quot;ignore_reduction&quot;</span></tt> (default: <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+<p>Constructs dynamically a new class <tt class="docutils literal"><span class="pre">C</span></tt> with name <tt class="docutils literal"><span class="pre">name</span></tt>, and
+bases <tt class="docutils literal"><span class="pre">bases</span></tt>. If <tt class="docutils literal"><span class="pre">cls</span></tt> is provided, then its methods will be
+inserted into <tt class="docutils literal"><span class="pre">C</span></tt>, and its bases will be prepended to <tt class="docutils literal"><span class="pre">bases</span></tt>
+(unless <tt class="docutils literal"><span class="pre">prepend_cls_bases</span></tt> is <tt class="docutils literal"><span class="pre">False</span></tt>).</p>
+<p>The module, documentation and source instrospection is taken from
+<tt class="docutils literal"><span class="pre">doccls</span></tt>, or <tt class="docutils literal"><span class="pre">cls</span></tt> if <tt class="docutils literal"><span class="pre">doccls</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, or <tt class="docutils literal"><span class="pre">bases[0]</span></tt>
+if both are <tt class="docutils literal"><span class="pre">None</span></tt> (therefore <tt class="docutils literal"><span class="pre">bases</span></tt> should be non empty if
+<tt class="docutils literal"><span class="pre">cls`</span> <span class="pre">is</span> <span class="pre">``None</span></tt>).</p>
+<p>The constructed class can safely be pickled (assuming the
+arguments themselves can).</p>
+<p>Unless <tt class="docutils literal"><span class="pre">cache</span></tt> is <tt class="docutils literal"><span class="pre">False</span></tt>, the result is cached, ensuring unique
+representation of dynamic classes.</p>
+<p>See <a class="reference internal" href="#module-sage.structure.dynamic_class" title="sage.structure.dynamic_class"><tt class="xref py py-mod docutils literal"><span class="pre">sage.structure.dynamic_class</span></tt></a> for a discussion of the
+dynamic classes paradigm, and its relevance to Sage.</p>
+<p>EXAMPLES:</p>
+<p>To setup the stage, we create a class Foo with some methods,
+cached methods, and lazy attributes, and a class Bar:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.lazy_attribute</span> <span class="kn">import</span> <span class="n">lazy_attribute</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">cached_function</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.dynamic_class</span> <span class="kn">import</span> <span class="n">dynamic_class</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="s">&quot;The Foo class&quot;</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="n">x</span>
+<span class="gp">... </span>      <span class="nd">@cached_method</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">... </span>      <span class="nd">@lazy_attribute</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">Bar</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>We now create a class FooBar which is a copy of Foo, except that it
+also inherits from Bar:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FooBar</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;FooBar&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,),</span> <span class="n">Foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">FooBar</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">f</span><span class="p">()</span>
+<span class="go">9</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">f</span><span class="p">()</span> <span class="ow">is</span> <span class="n">x</span><span class="o">.</span><span class="n">f</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">x</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">bar</span><span class="p">()</span>
+<span class="go">9</span>
+<span class="gp">sage: </span><span class="n">FooBar</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;FooBar&#39;</span>
+<span class="gp">sage: </span><span class="n">FooBar</span><span class="o">.</span><span class="n">__module__</span>
+<span class="go">&#39;__main__&#39;</span>
+
+<span class="gp">sage: </span><span class="n">Foo</span><span class="o">.</span><span class="n">__bases__</span>
+<span class="go">(&lt;type &#39;object&#39;&gt;,)</span>
+<span class="gp">sage: </span><span class="n">FooBar</span><span class="o">.</span><span class="n">__bases__</span>
+<span class="go">(&lt;type &#39;object&#39;&gt;, &lt;class __main__.Bar at ...&gt;)</span>
+<span class="gp">sage: </span><span class="n">Foo</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="go">[&lt;class &#39;__main__.Foo&#39;&gt;, &lt;type &#39;object&#39;&gt;]</span>
+<span class="gp">sage: </span><span class="n">FooBar</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="go">[&lt;class &#39;__main__.FooBar&#39;&gt;, &lt;type &#39;object&#39;&gt;, &lt;class __main__.Bar at ...&gt;]</span>
+</pre></div>
+</div>
+<p class="rubric">Pickling</p>
+<p>Dynamic classes are pickled by construction. Namely, upon
+unpickling, the class will be reconstructed by recalling
+dynamic_class with the same arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span><span class="o">.</span><span class="n">__reduce__</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span>
+<span class="go">(&lt;function dynamic_class at ...&gt;, (&#39;FooBar&#39;, (&lt;class __main__.Bar at ...&gt;,), &lt;class &#39;__main__.Foo&#39;&gt;, None, None))</span>
+</pre></div>
+</div>
+<p>Technically, this is achieved by using a metaclass, since the
+Python pickling protocol for classes is to pickle by name:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.structure.dynamic_class.DynamicMetaclass&#39;&gt;</span>
+</pre></div>
+</div>
+<p>The following (meaningless) example illustrates how to customize
+the result of the reduction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">BarFoo</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)))</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">BarFoo</span><span class="p">)</span><span class="o">.</span><span class="n">__reduce__</span><span class="p">(</span><span class="n">BarFoo</span><span class="p">)</span>
+<span class="go">(&lt;type &#39;str&#39;&gt;, (3,))</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">BarFoo</span><span class="p">))</span>
+<span class="go">&#39;3&#39;</span>
+</pre></div>
+</div>
+<p class="rubric">Caching</p>
+<p>By default, the built class is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;FooBar&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,),</span> <span class="n">Foo</span><span class="p">)</span> <span class="ow">is</span> <span class="n">FooBar</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;FooBar&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,),</span> <span class="n">Foo</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="ow">is</span> <span class="n">FooBar</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>and the result depends on the reduction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)))</span> <span class="ow">is</span> <span class="n">BarFoo</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)))</span> <span class="ow">is</span> <span class="n">BarFoo</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>With <tt class="docutils literal"><span class="pre">cache=False</span></tt>, a new class is created each time:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FooBar1</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;FooBar&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,),</span> <span class="n">Foo</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span> <span class="n">FooBar1</span>
+<span class="go">&lt;class &#39;__main__.FooBar&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">FooBar2</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;FooBar&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,),</span> <span class="n">Foo</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span> <span class="n">FooBar2</span>
+<span class="go">&lt;class &#39;__main__.FooBar&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">FooBar1</span> <span class="ow">is</span> <span class="n">FooBar</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">FooBar2</span> <span class="ow">is</span> <span class="n">FooBar1</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>With <tt class="docutils literal"><span class="pre">cache=&quot;ignore_reduction&quot;</span></tt>, the class does not depend on
+the reduction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">BarFoo</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)),</span> <span class="n">cache</span><span class="o">=</span><span class="s">&quot;ignore_reduction&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)),</span> <span class="n">cache</span><span class="o">=</span><span class="s">&quot;ignore_reduction&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">BarFoo</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>In particular, the reduction used is that provided upon creating the
+first class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;BarFoo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Foo</span><span class="p">,),</span> <span class="n">Bar</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,)),</span> <span class="n">cache</span><span class="o">=</span><span class="s">&quot;ignore_reduction&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">_reduction</span>
+<span class="go">(&lt;type &#39;str&#39;&gt;, (3,))</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The behaviour upon creating several dynamic classes from the
+same data but with different values for <tt class="docutils literal"><span class="pre">cache</span></tt> option is
+currently left unspecified. In other words, for a given
+application, it is recommended to consistently use the same
+value for that option.</p>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">__main__</span>
+<span class="gp">sage: </span><span class="n">__main__</span><span class="o">.</span><span class="n">Foo</span> <span class="o">=</span> <span class="n">Foo</span>
+<span class="gp">sage: </span><span class="n">__main__</span><span class="o">.</span><span class="n">Bar</span> <span class="o">=</span> <span class="n">Bar</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">FooBar</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">__dict__</span>      <span class="c"># Breaks without the __dict__ deletion in dynamic_class_internal</span>
+<span class="go">{&#39;_x&#39;: 3}</span>
+
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span><span class="o">.</span><span class="n">__reduce__</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span>
+<span class="go">(&lt;function dynamic_class at ...&gt;, (&#39;FooBar&#39;, (&lt;class __main__.Bar at ...&gt;,), &lt;class &#39;__main__.Foo&#39;&gt;, None, None))</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">cPickle</span>
+<span class="gp">sage: </span><span class="n">cPickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">cPickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">FooBar</span><span class="p">))</span> <span class="o">==</span> <span class="n">FooBar</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We check that instrospection works reasonably:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getdoc</span><span class="p">(</span><span class="n">FooBar</span><span class="p">)</span>
+<span class="go">&#39;The Foo class\n&#39;</span>
+</pre></div>
+</div>
+<p>Finally, we check that classes derived from UniqueRepresentation
+are handled gracefuly (despite them also using a metaclass):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FooUnique</span> <span class="o">=</span> <span class="n">dynamic_class</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">Bar</span><span class="p">,</span> <span class="n">UniqueRepresentation</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">FooUnique</span><span class="p">))</span> <span class="ow">is</span> <span class="n">FooUnique</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.structure.dynamic_class.dynamic_class_internal">
+<tt class="descclassname">sage.structure.dynamic_class.</tt><tt class="descname">dynamic_class_internal</tt><big>(</big><em>name</em>, <em>bases</em>, <em>cls=None</em>, <em>reduction=None</em>, <em>doccls=None</em>, <em>prepend_cls_bases=True</em><big>)</big><a class="headerlink" href="#sage.structure.dynamic_class.dynamic_class_internal" title="Permalink to this definition">¶</a></dt>
+<dd><p>See sage.structure.dynamic_class.dynamic_class? for indirect doctests.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Foo1</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">dynamic_class_internal</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="nb">object</span><span class="p">,))</span>
+<span class="gp">sage: </span><span class="n">Foo2</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">dynamic_class_internal</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="nb">object</span><span class="p">,),</span> <span class="n">doccls</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Foo3</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">dynamic_class_internal</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">,</span> <span class="p">(</span><span class="nb">object</span><span class="p">,),</span> <span class="n">cls</span>    <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">__name__</span>  <span class="o">==</span> <span class="s">&#39;Foo&#39;</span>    <span class="k">for</span> <span class="n">Foo</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo1</span><span class="p">,</span> <span class="n">Foo2</span><span class="p">,</span> <span class="n">Foo3</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">__bases__</span> <span class="o">==</span> <span class="p">(</span><span class="nb">object</span><span class="p">,)</span> <span class="k">for</span> <span class="n">Foo</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Foo1</span><span class="p">,</span> <span class="n">Foo2</span><span class="p">,</span> <span class="n">Foo3</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo1</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="n">__module__</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo2</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="o">.</span><span class="n">__module__</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo3</span><span class="o">.</span><span class="n">__module__</span> <span class="o">==</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="o">.</span><span class="n">__module__</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo1</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">==</span> <span class="nb">object</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo2</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">==</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Foo3</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">==</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">dynamic_class</span><span class="o">.</span><span class="n">TestClass</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We check that instrospection works reasonably:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="gp">sage: </span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">Foo2</span><span class="p">)</span>
+<span class="go">&#39;.../sage/structure/dynamic_class.pyc&#39;</span>
+<span class="gp">sage: </span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">Foo3</span><span class="p">)</span>
+<span class="go">&#39;.../sage/structure/dynamic_class.pyc&#39;</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getsourcelines</span><span class="p">(</span><span class="n">Foo2</span><span class="p">)</span>
+<span class="go">([&#39;class TestClass:...&#39;], ...)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getsourcelines</span><span class="p">(</span><span class="n">Foo3</span><span class="p">)</span>
+<span class="go">([&#39;class TestClass:...&#39;], ...)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getsourcelines</span><span class="p">(</span><span class="n">Foo2</span><span class="p">())</span>
+<span class="go">([&#39;class TestClass:...&#39;], ...)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getsourcelines</span><span class="p">(</span><span class="n">Foo3</span><span class="p">())</span>
+<span class="go">([&#39;class TestClass:...&#39;], ...)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">misc</span><span class="o">.</span><span class="n">sageinspect</span><span class="o">.</span><span class="n">sage_getsourcelines</span><span class="p">(</span><span class="n">Foo3</span><span class="p">()</span><span class="o">.</span><span class="n">bla</span><span class="p">)</span>
+<span class="go">([&#39;    def bla():...&#39;], ...)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="factory.html"
+                                  title="previous chapter">Factory for cached representations</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="list_clone.html"
+                                  title="next chapter">Elements, Array and Lists With Clone Protocol</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/structure/dynamic_class.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="list_clone.html" title="Elements, Array and Lists With Clone Protocol"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="factory.html" title="Factory for cached representations"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1029 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Free algebras &mdash; Sage Reference Manual v6.6: Algebras</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Algebras" href="../../index.html" />
+    <link rel="next" title="Free algebra elements" href="free_algebra_element.html" />
+    <link rel="prev" title="Morphisms Between Finite Algebras" href="finite_dimensional_algebras/finite_dimensional_algebra_morphism.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="free_algebra_element.html" title="Free algebra elements"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="finite_dimensional_algebras/finite_dimensional_algebra_morphism.html" title="Morphisms Between Finite Algebras"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Algebras</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="free-algebras">
+<span id="sage-algebras-free-algebra"></span><h1>Free algebras<a class="headerlink" href="#free-algebras" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.algebras.free_algebra"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>David Kohel (2005-09)</li>
+<li>William Stein (2006-11-01): add all doctests; implemented many
+things.</li>
+<li>Simon King (2011-04): Put free algebras into the category framework.
+Reimplement free algebra constructor, using a
+<a class="reference external" href="../../../structure/sage/structure/factory.html#sage.structure.factory.UniqueFactory" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">UniqueFactory</span></tt></a> for handling
+different implementations of free algebras. Allow degree weights
+for free algebras in letterplace implementation.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;m,n&#39;</span><span class="p">);</span> <span class="n">G</span>
+<span class="go">Free Algebra on 2 generators (m, n) over Free Algebra on 3 generators (x, y, z) over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Free Algebra on 3 generators (x, y, z) over Integer Ring</span>
+</pre></div>
+</div>
+<p>The above free algebra is based on a generic implementation. By
+<a class="reference external" href="http://trac.sagemath.org/7797">trac ticket #7797</a>, there is a different implementation
+<a class="reference internal" href="letterplace/free_algebra_letterplace.html#sage.algebras.letterplace.free_algebra_letterplace.FreeAlgebra_letterplace" title="sage.algebras.letterplace.free_algebra_letterplace.FreeAlgebra_letterplace"><tt class="xref py py-class docutils literal"><span class="pre">FreeAlgebra_letterplace</span></tt></a>
+based on Singular&#8217;s letterplace rings. It is currently restricted to
+weighted homogeneous elements and is therefore not the default. But the
+arithmetic is much faster than in the generic implementation.
+Moreover, we can compute Groebner bases with degree bound for its
+two-sided ideals, and thus provide ideal containment tests:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span>
+<span class="go">Free Associative Unital Algebra on 3 generators (x, y, z) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">+</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">-</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">F</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">degbound</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">Twosided Ideal (y*z*y*y - y*z*y*z + y*z*z*y - y*z*z*z, y*z*y*x + y*z*y*z + y*z*z*x + y*z*z*z, y*y*z*y - y*y*z*z + y*z*z*y - y*z*z*z, y*y*z*x + y*y*z*z + y*z*z*x + y*z*z*z, y*y*y - y*y*z + y*z*y - y*z*z, y*y*x + y*y*z + y*z*x + y*z*z, x*y + y*z, x*x - y*x - y*y - y*z) of Free Associative Unital Algebra on 3 generators (x, y, z) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span> <span class="o">-</span> <span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">x</span> <span class="ow">in</span> <span class="n">I</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Positive integral degree weights for the letterplace implementation
+was introduced in <a class="reference external" href="http://trac.sagemath.org/7797">trac ticket #7797</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">,</span> <span class="n">degrees</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">y</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">z</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">-</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">F</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">quo</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">b</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">c*c</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;xx&#39;</span><span class="p">,</span> <span class="s">&#39;zba&#39;</span><span class="p">,</span> <span class="s">&#39;Y&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;xx&#39;</span><span class="p">,</span> <span class="s">&#39;zba&#39;</span><span class="p">,</span> <span class="s">&#39;Y&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="s">&#39;ab&#39;</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that the letterplace implementation can only be used if the corresponding
+(multivariate) polynomial ring has an implementation in Singular:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="s">&#39;ab&#39;</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">NotImplementedError</span>: <span class="n-Identifier">The letterplace implementation is not available for the free algebra you requested</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.algebras.free_algebra.FreeAlgebraFactory">
+<em class="property">class </em><tt class="descclassname">sage.algebras.free_algebra.</tt><tt class="descname">FreeAlgebraFactory</tt><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebraFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/factory.html#sage.structure.factory.UniqueFactory" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.factory.UniqueFactory</span></tt></a></p>
+<p>A constructor of free algebras.</p>
+<p>See <a class="reference internal" href="#module-sage.algebras.free_algebra" title="sage.algebras.free_algebra"><tt class="xref py py-mod docutils literal"><span class="pre">free_algebra</span></tt></a> for examples and corner cases.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">Free Algebra on 3 generators (x0, x1, x2) over Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">x^2 + x*y + x*z + y*x + y^2 + y*z + z*x + z*y + z^2</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;xx, zba, Y&#39;</span><span class="p">)</span>
+<span class="go">Free Algebra on 3 generators (xx, zba, Y) over Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">)</span>
+<span class="go">Free Algebra on 3 generators (a, b, c) over Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">)</span>
+<span class="go">Free Algebra on 1 generators (z,) over Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">])</span>
+<span class="go">Free Algebra on 1 generators (alpha,) over Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">Free Algebra on 2 generators (x0, x1) over Free Algebra on 1 generators (a,) over Integer Ring</span>
+</pre></div>
+</div>
+<p>Free algebras are globally unique:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">G</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">)</span>  <span class="c"># indirect doctest</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="ow">is</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">F</span><span class="p">)</span> <span class="ow">is</span> <span class="n">F</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">F</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>By <a class="reference external" href="http://trac.sagemath.org/7797">trac ticket #7797</a>, we provide a different implementation of free
+algebras, based on Singular&#8217;s &#8220;letterplace rings&#8221;. Our letterplace
+wrapper allows for chosing positive integral degree weights for the
+generators of the free algebra. However, only (weighted) homogenous
+elements are supported. Of course, isomorphic algebras in different
+implementations are not identical:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">==</span> <span class="n">G</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="ow">is</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">G</span><span class="p">)</span> <span class="ow">is</span> <span class="n">G</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">G</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">,</span> <span class="n">degrees</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">!=</span> <span class="n">H</span> <span class="o">!=</span> <span class="n">G</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="ow">is</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">,</span> <span class="n">degrees</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">copy</span><span class="p">(</span><span class="n">H</span><span class="p">)</span> <span class="ow">is</span> <span class="n">H</span> <span class="ow">is</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">H</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">H</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Free algebras commute with their base ring.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">K</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="o">^</span><span class="mi">3</span><span class="p">;</span> <span class="n">s</span>
+<span class="go">a*b^2*c^3</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">Free Algebra on 1 generators (c,) over Free Algebra on 2 generators (a, b) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">a*b^2*c^3</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebraFactory.create_key">
+<tt class="descname">create_key</tt><big>(</big><em>base_ring</em>, <em>arg1=None</em>, <em>arg2=None</em>, <em>sparse=False</em>, <em>order='degrevlex'</em>, <em>names=None</em>, <em>name=None</em>, <em>implementation=None</em>, <em>degrees=None</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebraFactory.create_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the key under which a free algebra is stored.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">])</span>
+<span class="go">(Finite Field of size 5, (&#39;x&#39;, &#39;y&#39;, &#39;z&#39;))</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(Finite Field of size 5, (&#39;x&#39;, &#39;y&#39;, &#39;z&#39;))</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;xyz&#39;</span><span class="p">)</span>
+<span class="go">(Finite Field of size 5, (&#39;x&#39;, &#39;y&#39;, &#39;z&#39;))</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="go">(Multivariate Polynomial Ring in x, y, z over Finite Field of size 5,)</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="go">(Multivariate Polynomial Ring in x, y, z over Finite Field of size 5,)</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;xyz&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">)</span>
+<span class="go">(Multivariate Polynomial Ring in x, y, z over Finite Field of size 5,)</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_key</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;xyz&#39;</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">,</span> <span class="n">degrees</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">((1, 2, 3), Multivariate Polynomial Ring in x, y, z, x_ over Finite Field of size 5)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebraFactory.create_object">
+<tt class="descname">create_object</tt><big>(</big><em>version</em>, <em>key</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebraFactory.create_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the free algebra that belongs to a unique key.</p>
+<p>NOTE:</p>
+<p>Of course, that method should not be called directly,
+since it does not use the cache of free algebras.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_object</span><span class="p">(</span><span class="s">&#39;4.7.1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">],))</span>
+<span class="go">Free Associative Unital Algebra on 2 generators (x, y) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">FreeAlgebra</span><span class="o">.</span><span class="n">create_object</span><span class="p">(</span><span class="s">&#39;4.7.1&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">],))</span> <span class="ow">is</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic">
+<em class="property">class </em><tt class="descclassname">sage.algebras.free_algebra.</tt><tt class="descname">FreeAlgebra_generic</tt><big>(</big><em>R</em>, <em>n</em>, <em>names</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../combinat/sage/combinat/free_module.html#sage.combinat.free_module.CombinatorialFreeModule" title="(in Sage Reference Manual: Combinatorics v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.combinat.free_module.CombinatorialFreeModule</span></tt></a>, <a class="reference external" href="../../../rings/sage/rings/ring.html#sage.rings.ring.Algebra" title="(in Sage Reference Manual: General Rings, Ideals, and Morphisms v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.ring.Algebra</span></tt></a></p>
+<p>The free algebra on <span class="math">\(n\)</span> generators over a base ring.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">R</span></tt> &#8211; a ring</li>
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; an integer</li>
+<li><tt class="docutils literal"><span class="pre">names</span></tt> &#8211; the generator names</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="n">F</span>
+<span class="go">Free Algebra on 3 generators (x, y, z) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">gens</span><span class="p">())</span>
+<span class="go">x*y*z</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">([</span> <span class="n">F</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="n">i</span><span class="o">%</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="p">])</span>
+<span class="go">x*y*z*x*y*z*x*y*z*x*y*z</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">([</span> <span class="n">F</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="n">i</span><span class="o">%</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="p">])</span> <span class="o">+</span> <span class="n">mul</span><span class="p">([</span> <span class="n">F</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="n">i</span><span class="o">%</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="p">])</span>
+<span class="go">x*y*x*y*x*y*x*y*x*y*x*y + x*y*z*x*y*z*x*y*z*x*y*z</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">4 + 5*x^2 - x*y + 4*x*z - y*x + y^2 + x^4 + x^3*z + x*z*x^2 + x*z*x*z</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Free algebras commute with their base ring.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span><span class="o">^</span><span class="mi">3</span><span class="p">;</span> <span class="n">s</span>
+<span class="go">a*b^2*c^3</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">Free Algebra on 2 generators (c, d) over Free Algebra on 2 generators (a, b) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">a*b^2*c^3</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.Element">
+<tt class="descname">Element</tt><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">FreeAlgebraElement</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.algebra_generators">
+<tt class="descname">algebra_generators</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.algebra_generators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the algebra generators of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">algebra_generators</span><span class="p">()</span>
+<span class="go">Finite family {&#39;y&#39;: y, &#39;x&#39;: x, &#39;z&#39;: z}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.g_algebra">
+<tt class="descname">g_algebra</tt><big>(</big><em>relations</em>, <em>names=None</em>, <em>order='degrevlex'</em>, <em>check=True</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.g_algebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <span class="math">\(G\)</span>-Algebra derived from this algebra by relations.
+By default is assumed, that two variables commute.</p>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>Coercion doesn&#8217;t work yet, there is some cheating about assumptions</li>
+<li>The optional argument <tt class="docutils literal"><span class="pre">check</span></tt> controls checking the degeneracy
+conditions. Furthermore, the default values interfere with
+non-degeneracy conditions.</li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">g_algebra</span><span class="p">({</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">})</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">*</span><span class="n">y</span>
+<span class="go">x*y</span>
+<span class="gp">sage: </span><span class="n">y</span><span class="o">*</span><span class="n">x</span>
+<span class="go">-x*y</span>
+<span class="gp">sage: </span><span class="n">z</span><span class="o">*</span><span class="n">x</span>
+<span class="go">x*z</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">g_algebra</span><span class="p">({</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="p">})</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">y</span><span class="o">*</span><span class="n">x</span>
+<span class="go">-x*y + 1</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">g_algebra</span><span class="p">({</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">+</span><span class="n">z</span><span class="p">})</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">y</span><span class="o">*</span><span class="n">x</span>
+<span class="go">-x*y + z</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.gen">
+<tt class="descname">gen</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <tt class="docutils literal"><span class="pre">i</span></tt>-th generator of the algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">x</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.gens">
+<tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the generators of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x, y, z)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.is_commutative">
+<tt class="descname">is_commutative</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.is_commutative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this free algebra is commutative.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.is_field">
+<tt class="descname">is_field</tt><big>(</big><em>proof=True</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.is_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this Free Algebra is a field, which is only if the
+base ring is a field and there are no generators</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.lie_polynomial">
+<tt class="descname">lie_polynomial</tt><big>(</big><em>w</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.lie_polynomial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Lie polynomial associated to the Lyndon word <tt class="docutils literal"><span class="pre">w</span></tt>. If
+<tt class="docutils literal"><span class="pre">w</span></tt> is not Lyndon, then return the product of Lie polynomials of the
+Lyndon factorization of <tt class="docutils literal"><span class="pre">w</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">w</span></tt> &#8211; a word or an element of the free monoid</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeMonoid</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x*y - y*x</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="go">y*x</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="go">x^2*y*x - x*y*x^2</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">y</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="p">)</span>
+<span class="go">y*z*x*z*x*z - y*z*x*z^2*x - y*z^2*x^2*z + y*z^2*x*z*x</span>
+<span class="go"> - z*y*x*z*x*z + z*y*x*z^2*x + z*y*z*x^2*z - z*y*z*x*z*x</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>We test some corner cases and alternative inputs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&#39;xy&#39;</span><span class="p">))</span>
+<span class="go">x*y - y*x</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="s">&#39;xy&#39;</span><span class="p">)</span>
+<span class="go">x*y - y*x</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="n">Word</span><span class="p">([]))</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">lie_polynomial</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.monoid">
+<tt class="descname">monoid</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.monoid" title="Permalink to this definition">¶</a></dt>
+<dd><p>The free monoid of generators of the algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span>
+<span class="go">Free monoid on 3 generators (x, y, z)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.ngens">
+<tt class="descname">ngens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.ngens" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of generators of the algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">ngens</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.one_basis">
+<tt class="descname">one_basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.one_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the index of the basis element <span class="math">\(1\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">one_basis</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">one_basis</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Free monoid on 2 generators (x, y)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.pbw_basis">
+<tt class="descname">pbw_basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.pbw_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Poincare-Birkhoff-Witt (PBW) basis of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">poincare_birkhoff_witt_basis</span><span class="p">()</span>
+<span class="go">The Poincare-Birkhoff-Witt basis of Free Algebra on 2 generators (x, y) over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.pbw_element">
+<tt class="descname">pbw_element</tt><big>(</big><em>elt</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.pbw_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the element <tt class="docutils literal"><span class="pre">elt</span></tt> in the Poincare-Birkhoff-Witt basis.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">pbw_element</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">y</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">2*PBW[1] + PBW[x*y]</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">pbw_element</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+<span class="go">PBW[1]</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">pbw_element</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="go">PBW[x*y]*PBW[x] + PBW[y]*PBW[x]^2 + PBW[x^3*y] + PBW[x^2*y]*PBW[x]</span>
+<span class="go"> + PBW[x*y]*PBW[x]^2 + PBW[y]*PBW[x]^3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.poincare_birkhoff_witt_basis">
+<tt class="descname">poincare_birkhoff_witt_basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.poincare_birkhoff_witt_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Poincare-Birkhoff-Witt (PBW) basis of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">poincare_birkhoff_witt_basis</span><span class="p">()</span>
+<span class="go">The Poincare-Birkhoff-Witt basis of Free Algebra on 2 generators (x, y) over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.product_on_basis">
+<tt class="descname">product_on_basis</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.product_on_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the product of the basis elements indexed by <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;x,y,z&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">product_on_basis</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x*y*z*y</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.quo">
+<tt class="descname">quo</tt><big>(</big><em>mons</em>, <em>mats=None</em>, <em>names=None</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.quo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a quotient algebra.</p>
+<p>The quotient algebra is defined via the action of a free algebra
+<span class="math">\(A\)</span> on a (finitely generated) free module. The input for the quotient
+algebra is a list of monomials (in the underlying monoid for <span class="math">\(A\)</span>)
+which form a free basis for the module of <span class="math">\(A\)</span>, and a list of
+matrices, which give the action of the free generators of <span class="math">\(A\)</span> on this
+monomial basis.</p>
+<p>EXAMPLES:</p>
+<p>Here is the quaternion algebra defined in terms of three generators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">mons</span> <span class="o">=</span> <span class="p">[</span> <span class="n">F</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mats</span> <span class="o">=</span> <span class="p">[</span><span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span>  <span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span>  <span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">H</span><span class="o">.&lt;</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">quotient</span><span class="p">(</span><span class="n">mons</span><span class="p">,</span> <span class="n">mats</span><span class="p">);</span> <span class="n">H</span>
+<span class="go">Free algebra quotient on 3 generators (&#39;i&#39;, &#39;j&#39;, &#39;k&#39;) and dimension 4 over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.FreeAlgebra_generic.quotient">
+<tt class="descname">quotient</tt><big>(</big><em>mons</em>, <em>mats=None</em>, <em>names=None</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.FreeAlgebra_generic.quotient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a quotient algebra.</p>
+<p>The quotient algebra is defined via the action of a free algebra
+<span class="math">\(A\)</span> on a (finitely generated) free module. The input for the quotient
+algebra is a list of monomials (in the underlying monoid for <span class="math">\(A\)</span>)
+which form a free basis for the module of <span class="math">\(A\)</span>, and a list of
+matrices, which give the action of the free generators of <span class="math">\(A\)</span> on this
+monomial basis.</p>
+<p>EXAMPLES:</p>
+<p>Here is the quaternion algebra defined in terms of three generators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">mons</span> <span class="o">=</span> <span class="p">[</span> <span class="n">F</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mats</span> <span class="o">=</span> <span class="p">[</span><span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span>  <span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span>  <span class="n">M</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">H</span><span class="o">.&lt;</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">quotient</span><span class="p">(</span><span class="n">mons</span><span class="p">,</span> <span class="n">mats</span><span class="p">);</span> <span class="n">H</span>
+<span class="go">Free algebra quotient on 3 generators (&#39;i&#39;, &#39;j&#39;, &#39;k&#39;) and dimension 4 over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra">
+<em class="property">class </em><tt class="descclassname">sage.algebras.free_algebra.</tt><tt class="descname">PBWBasisOfFreeAlgebra</tt><big>(</big><em>alg</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../combinat/sage/combinat/free_module.html#sage.combinat.free_module.CombinatorialFreeModule" title="(in Sage Reference Manual: Combinatorics v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.combinat.free_module.CombinatorialFreeModule</span></tt></a></p>
+<p>The Poincare-Birkhoff-Witt basis of the free algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">px</span><span class="p">,</span> <span class="n">py</span> <span class="o">=</span> <span class="n">PBW</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span>
+<span class="go">PBW[x*y] + PBW[y]*PBW[x]</span>
+<span class="gp">sage: </span><span class="n">py</span> <span class="o">*</span> <span class="n">px</span>
+<span class="go">PBW[y]*PBW[x]</span>
+<span class="gp">sage: </span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="n">px</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span>
+<span class="go">-2*PBW[x*y] - 2*PBW[y]*PBW[x] + PBW[x*y^3]*PBW[x] + PBW[y]*PBW[x*y^2]*PBW[x]</span>
+<span class="go"> + PBW[y]^2*PBW[x*y]*PBW[x] + PBW[y]^3*PBW[x]^2</span>
+</pre></div>
+</div>
+<p>We can convert between the two bases:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">y</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span> <span class="n">p</span>
+<span class="go">2*PBW[1] + PBW[x*y]</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">2 + x*y - y*x</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_element</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="o">==</span> <span class="n">f</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">px</span><span class="o">*</span><span class="n">py</span> <span class="o">+</span> <span class="n">py</span><span class="o">^</span><span class="mi">4</span><span class="o">*</span><span class="n">px</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">x*y + y^4*x^2</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="p">(</span><span class="n">F</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">==</span> <span class="n">p</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that multiplication in the PBW basis agrees with multiplication
+as monomials:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="n">px</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">px</span> <span class="o">*</span> <span class="n">py</span><span class="p">)</span> <span class="o">==</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that going between the two bases is the identity:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="n">j</span><span class="o">.</span><span class="n">to_monoid_element</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">Words</span><span class="p">(</span><span class="s">&#39;xy&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">F</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">m</span><span class="p">)))</span> <span class="o">==</span> <span class="n">PBW</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">L</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">F</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">F</span><span class="p">(</span><span class="n">m</span><span class="p">)))</span> <span class="o">==</span> <span class="n">F</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">L</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.Element">
+<em class="property">class </em><tt class="descname">Element</tt><big>(</big><em>M</em>, <em>x</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../combinat/sage/combinat/free_module.html#sage.combinat.free_module.CombinatorialFreeModuleElement" title="(in Sage Reference Manual: Combinatorics v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.combinat.free_module.CombinatorialFreeModuleElement</span></tt></a></p>
+<p>Create a combinatorial module element. This should never be
+called directly, but only through the parent combinatorial
+free module&#8217;s <tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt> method.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">CombinatorialFreeModule</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">B</span><span class="p">[</span><span class="s">&#39;c&#39;</span><span class="p">];</span> <span class="n">f</span>
+<span class="go">B[&#39;a&#39;] + 3*B[&#39;c&#39;]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">==</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.Element.expand">
+<tt class="descname">expand</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.Element.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expand <tt class="docutils literal"><span class="pre">self</span></tt> in the monomials of the free algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">PBW</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">4</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span>
+<span class="go">x + x^2*y - x*y*x + y^4*x</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.algebra_generators">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">algebra_generators</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.algebra_generators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the generators of <tt class="docutils literal"><span class="pre">self</span></tt> as an algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">gens</span> <span class="o">=</span> <span class="n">PBW</span><span class="o">.</span><span class="n">algebra_generators</span><span class="p">();</span> <span class="n">gens</span>
+<span class="go">(PBW[x], PBW[y])</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">PBW</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gens</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.expansion">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">expansion</tt><big>(</big><em>t</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.expansion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the expansion of the element <tt class="docutils literal"><span class="pre">t</span></tt> of the Poincare-Birkhoff-Witt
+basis in the monomials of the free algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">monoid</span><span class="p">()</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">expansion</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">))</span>
+<span class="go">x*y - y*x</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">expansion</span><span class="p">(</span><span class="n">PBW</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">expansion</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">3 + 2*x + x*y*x - y*x^2</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that we have the correct parent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">expansion</span><span class="p">(</span><span class="n">PBW</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">F</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">expansion</span><span class="p">(</span><span class="n">PBW</span><span class="o">.</span><span class="n">one</span><span class="p">())</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">F</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.free_algebra">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">free_algebra</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.free_algebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the associated free algebra of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">free_algebra</span><span class="p">()</span>
+<span class="go">Free Algebra on 2 generators (x, y) over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.gen">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">gen</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <tt class="docutils literal"><span class="pre">i</span></tt>-th generator of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">PBW[x]</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">PBW[y]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.gens">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the generators of <tt class="docutils literal"><span class="pre">self</span></tt> as an algebra.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">gens</span> <span class="o">=</span> <span class="n">PBW</span><span class="o">.</span><span class="n">algebra_generators</span><span class="p">();</span> <span class="n">gens</span>
+<span class="go">(PBW[x], PBW[y])</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">PBW</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gens</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.one_basis">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">one_basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.one_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the index of the basis element for <span class="math">\(1\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">one_basis</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">one_basis</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Free monoid on 2 generators (x, y)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.product">
+<tt class="descclassname">PBWBasisOfFreeAlgebra.</tt><tt class="descname">product</tt><big>(</big><em>u</em>, <em>v</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.PBWBasisOfFreeAlgebra.product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the product of two elements <tt class="docutils literal"><span class="pre">u</span></tt> and <tt class="docutils literal"><span class="pre">v</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">PBW</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="go">PBW[x*y] + PBW[y]*PBW[x]</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+<span class="go">PBW[y]*PBW[x]</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="go">PBW[y]^2*PBW[x^2*y]*PBW[x] + PBW[y]^2*PBW[x*y]*PBW[x]^2 + PBW[y]^3*PBW[x]^3</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that multiplication agrees with the multiplication in the
+free algebra:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">PBW</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pbw_basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">PBW</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x*y</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="go">x*y*x</span>
+<span class="gp">sage: </span><span class="n">PBW</span><span class="p">(</span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">==</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">x</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.algebras.free_algebra.is_FreeAlgebra">
+<tt class="descclassname">sage.algebras.free_algebra.</tt><tt class="descname">is_FreeAlgebra</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.algebras.free_algebra.is_FreeAlgebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if x is a free algebra; otherwise, return False.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.algebras.free_algebra</span> <span class="kn">import</span> <span class="n">is_FreeAlgebra</span>
+<span class="gp">sage: </span><span class="n">is_FreeAlgebra</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">is_FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">is_FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_FreeAlgebra</span><span class="p">(</span><span class="n">FreeAlgebra</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="n">implementation</span><span class="o">=</span><span class="s">&#39;letterplace&#39;</span><span class="p">,</span> <span class="n">degrees</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">)))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="finite_dimensional_algebras/finite_dimensional_algebra_morphism.html"
+                                  title="previous chapter">Morphisms Between Finite Algebras</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="free_algebra_element.html"
+                                  title="next chapter">Free algebra elements</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/algebras/free_algebra.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="free_algebra_element.html" title="Free algebra elements"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="finite_dimensional_algebras/finite_dimensional_algebra_morphism.html" title="Morphisms Between Finite Algebras"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Algebras</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

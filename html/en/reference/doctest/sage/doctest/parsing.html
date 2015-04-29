@@ -1,0 +1,855 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parsing docstrings &mdash; Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework" href="../../index.html" />
+    <link rel="next" title="Reporting doctest results" href="reporting.html" />
+    <link rel="prev" title="Processes for running doctests" href="forker.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reporting.html" title="Reporting doctest results"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="forker.html" title="Processes for running doctests"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parsing-docstrings">
+<span id="sage-doctest-parsing"></span><h1>Parsing docstrings<a class="headerlink" href="#parsing-docstrings" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.doctest.parsing"></span><p>This module contains functions and classes that parse docstrings.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>David Roe (2012-03-27) &#8211; initial version, based on Robert Bradshaw&#8217;s code.</li>
+<li>Jeroen Demeyer(2014-08-28) &#8211; much improved handling of tolerances
+using interval arithmetic (<a class="reference external" href="http://trac.sagemath.org/16889">trac ticket #16889</a>).</li>
+</ul>
+<dl class="class">
+<dt id="sage.doctest.parsing.MarkedOutput">
+<em class="property">class </em><tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">MarkedOutput</tt><a class="headerlink" href="#sage.doctest.parsing.MarkedOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></a></p>
+<p>A subclass of string with context for whether another string
+matches it.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">MarkedOutput</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;abc&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">rel_tol</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span> <span class="o">=</span> <span class="o">.</span><span class="mo">05</span><span class="p">)</span>
+<span class="go">&#39;abc&#39;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">rel_tol</span>
+<span class="go">0.0500000000000000</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.parsing.MarkedOutput.update">
+<tt class="descname">update</tt><big>(</big><em>**kwds</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.MarkedOutput.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">MarkedOutput</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0007401&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span> <span class="o">=</span> <span class="o">.</span><span class="mo">0000001</span><span class="p">)</span>
+<span class="go">&#39;0.0007401&#39;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">rel_tol</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">abs_tol</span>
+<span class="go">1.00000000000000e-7</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.parsing.OriginalSource">
+<em class="property">class </em><tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">OriginalSource</tt><big>(</big><em>example</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.OriginalSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context swapping out the pre-parsed source with the original for
+better reporting.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DocTestDefaults</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">sage_source</span>
+<span class="go">&#39;doctest_var = 42; doctest_var^2\n&#39;</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">source</span>
+<span class="go">&#39;doctest_var = Integer(42); doctest_var**Integer(2)\n&#39;</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">OriginalSource</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">OriginalSource</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="n">ex</span><span class="o">.</span><span class="n">source</span>
+<span class="go">&#39;doctest_var = 42; doctest_var^2\n&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.parsing.SageDocTestParser">
+<em class="property">class </em><tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">SageDocTestParser</tt><big>(</big><em>long=False</em>, <em>optional_tags=()</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageDocTestParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTestParser" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTestParser</span></tt></a></p>
+<p>A version of the standard doctest parser which handles Sage&#8217;s
+custom options and tolerances in floating point arithmetic.</p>
+<dl class="method">
+<dt id="sage.doctest.parsing.SageDocTestParser.parse">
+<tt class="descname">parse</tt><big>(</big><em>string</em>, <em>*args</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageDocTestParser.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Sage specialization of <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTestParser" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTestParser</span></tt></a>.</p>
+<p>INPUTS:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">string</span></tt> &#8211; the string to parse.</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; optional string giving the name indentifying string,
+to be used in error messages.</li>
+</ul>
+<p>OUTPUTS:</p>
+<ul class="simple">
+<li>A list consisting of strings and <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a>
+instances.  There will be at least one string between
+successive examples (exactly one unless or long or optional
+tests are removed), and it will begin and end with a string.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageDocTestParser</span>
+<span class="gp">sage: </span><span class="n">DTP</span> <span class="o">=</span> <span class="n">SageDocTestParser</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;magma&#39;</span><span class="p">,</span><span class="s">&#39;guava&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">example</span> <span class="o">=</span> <span class="s">&#39;Explanatory text::</span><span class="se">\n\n</span><span class="s">    sage: E = magma(&quot;EllipticCurve([1, 1, 1, -10, -10])&quot;) # optional: magma</span><span class="se">\n\n</span><span class="s">Later text&#39;</span>
+<span class="gp">sage: </span><span class="n">parsed</span> <span class="o">=</span> <span class="n">DTP</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">parsed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&#39;Explanatory text::\n\n&#39;</span>
+<span class="gp">sage: </span><span class="n">parsed</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sage_source</span>
+<span class="go">&#39;E = magma(&quot;EllipticCurve([1, 1, 1, -10, -10])&quot;) # optional: magma\n&#39;</span>
+<span class="gp">sage: </span><span class="n">parsed</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">&#39;\nLater text&#39;</span>
+</pre></div>
+</div>
+<p>If the doctest parser is not created to accept a given
+optional argument, the corresponding examples will just be
+removed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">DTP2</span> <span class="o">=</span> <span class="n">SageDocTestParser</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;sage&#39;</span><span class="p">,))</span>
+<span class="gp">sage: </span><span class="n">parsed2</span> <span class="o">=</span> <span class="n">DTP2</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">parsed2</span>
+<span class="go">[&#39;Explanatory text::\n\n&#39;, &#39;\nLater text&#39;]</span>
+</pre></div>
+</div>
+<p>You can mark doctests as having a particular tolerance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">example2</span> <span class="o">=</span> <span class="s">&#39;sage: gamma(1.6) # tol 2.0e-11</span><span class="se">\n</span><span class="s">0.893515349287690&#39;</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">DTP</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">example2</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">sage_source</span>
+<span class="go">&#39;gamma(1.6) # tol 2.0e-11\n&#39;</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">want</span>
+<span class="go">&#39;0.893515349287690\n&#39;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.doctest.parsing.MarkedOutput&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="o">.</span><span class="n">tol</span>
+<span class="go">2.000000000000000000?e-11</span>
+</pre></div>
+</div>
+<p>You can use continuation lines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s">&quot;sage: for i in range(4):</span><span class="se">\n</span><span class="s">....:     print i</span><span class="se">\n</span><span class="s">....:</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">DTP2</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">s</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">source</span>
+<span class="go">&#39;for i in range(Integer(4)):\n    print i\n&#39;</span>
+</pre></div>
+</div>
+<p>Sage currently accepts backslashes as indicating that the end
+of the current line should be joined to the next line.  This
+feature allows for breaking large integers over multiple lines
+but is not standard for Python doctesting.  It&#8217;s not
+guaranteed to persist, but works in Sage 5.5:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="mi">1234</span>\
+<span class="go">....:     5678</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">n</span>
+<span class="go">12345678</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.integer.Integer&#39;&gt;</span>
+</pre></div>
+</div>
+<p>It also works without the line continuation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="mi">8765</span>\
+<span class="go">4321</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">m</span>
+<span class="go">87654321</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.parsing.SageOutputChecker">
+<em class="property">class </em><tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">SageOutputChecker</tt><a class="headerlink" href="#sage.doctest.parsing.SageOutputChecker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.OutputChecker" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.OutputChecker</span></tt></a></p>
+<p>A modification of the doctest OutputChecker that can check
+relative and absolute tolerance of answers.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span><span class="p">,</span> <span class="n">MarkedOutput</span><span class="p">,</span> <span class="n">SageDocTestParser</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span>
+<span class="gp">sage: </span><span class="n">optflag</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span>
+<span class="gp">sage: </span><span class="n">DTP</span> <span class="o">=</span> <span class="n">SageDocTestParser</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;magma&#39;</span><span class="p">,</span><span class="s">&#39;guava&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">OC</span> <span class="o">=</span> <span class="n">SageOutputChecker</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">example2</span> <span class="o">=</span> <span class="s">&#39;sage: gamma(1.6) # tol 2.0e-11</span><span class="se">\n</span><span class="s">0.893515349287690&#39;</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">DTP</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">example2</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">sage_source</span>
+<span class="go">&#39;gamma(1.6) # tol 2.0e-11\n&#39;</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">want</span>
+<span class="go">&#39;0.893515349287690\n&#39;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.doctest.parsing.MarkedOutput&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="o">.</span><span class="n">tol</span>
+<span class="go">2.000000000000000000?e-11</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">,</span> <span class="s">&#39;0.893515349287690&#39;</span><span class="p">,</span> <span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">,</span> <span class="s">&#39;0.8935153492877&#39;</span><span class="p">,</span> <span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">,</span> <span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">want</span><span class="p">,</span> <span class="s">&#39;x + 0.8935153492877&#39;</span><span class="p">,</span> <span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.parsing.SageOutputChecker.add_tolerance">
+<tt class="descname">add_tolerance</tt><big>(</big><em>wantval</em>, <em>want</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageOutputChecker.add_tolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enlarge the real interval element <tt class="docutils literal"><span class="pre">wantval</span></tt> according to
+the tolerance options in <tt class="docutils literal"><span class="pre">want</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">wantval</span></tt> &#8211; a real interval element</li>
+<li><tt class="docutils literal"><span class="pre">want</span></tt> &#8211; a <a class="reference internal" href="#sage.doctest.parsing.MarkedOutput" title="sage.doctest.parsing.MarkedOutput"><tt class="xref py py-class docutils literal"><span class="pre">MarkedOutput</span></tt></a> describing the tolerance</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>an interval element containing <tt class="docutils literal"><span class="pre">wantval</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">MarkedOutput</span><span class="p">,</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="n">OC</span> <span class="o">=</span> <span class="n">SageOutputChecker</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">want_tol</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">want_abs</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">want_rel</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">want_tol</span><span class="p">)</span><span class="o">.</span><span class="n">endpoints</span><span class="p">()</span>
+<span class="go">(3.14127849432443, 3.14190681285516)</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">want_abs</span><span class="p">)</span><span class="o">.</span><span class="n">endpoints</span><span class="p">()</span>
+<span class="go">(3.14149265358979, 3.14169265358980)</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">want_rel</span><span class="p">)</span><span class="o">.</span><span class="n">endpoints</span><span class="p">()</span>
+<span class="go">(3.14127849432443, 3.14190681285516)</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mf">1e1000</span><span class="p">,</span> <span class="n">want_tol</span><span class="p">)</span>
+<span class="go">1.000?e1000</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mf">1e1000</span><span class="p">,</span> <span class="n">want_abs</span><span class="p">)</span>
+<span class="go">1.000000000000000?e1000</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mf">1e1000</span><span class="p">,</span> <span class="n">want_rel</span><span class="p">)</span>
+<span class="go">1.000?e1000</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">want_tol</span><span class="p">)</span>
+<span class="go">0.000?</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">want_abs</span><span class="p">)</span>
+<span class="go">0.000?</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">add_tolerance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">want_rel</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.parsing.SageOutputChecker.check_output">
+<tt class="descname">check_output</tt><big>(</big><em>want</em>, <em>got</em>, <em>optionflags</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageOutputChecker.check_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks to see if the output matches the desired output.</p>
+<p>If <tt class="docutils literal"><span class="pre">want</span></tt> is a <a class="reference internal" href="#sage.doctest.parsing.MarkedOutput" title="sage.doctest.parsing.MarkedOutput"><tt class="xref py py-class docutils literal"><span class="pre">MarkedOutput</span></tt></a> instance, takes into account the desired tolerance.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">want</span></tt> &#8211; a string or <a class="reference internal" href="#sage.doctest.parsing.MarkedOutput" title="sage.doctest.parsing.MarkedOutput"><tt class="xref py py-class docutils literal"><span class="pre">MarkedOutput</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">got</span></tt> &#8211; a string</li>
+<li><tt class="docutils literal"><span class="pre">optionflags</span></tt> &#8211; an integer, passed down to <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.OutputChecker" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.OutputChecker</span></tt></a></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>boolean, whether <tt class="docutils literal"><span class="pre">got</span></tt> matches <tt class="docutils literal"><span class="pre">want</span></tt> up to the specified tolerance.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">MarkedOutput</span><span class="p">,</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span>
+<span class="gp">sage: </span><span class="n">optflag</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span>
+<span class="gp">sage: </span><span class="n">rndstr</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;I&#39;m wrong!&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">random</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tentol</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tenabs</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tenrel</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">zerotol</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">zeroabs</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">zerorel</span> <span class="o">=</span> <span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">zero</span> <span class="o">=</span> <span class="s">&quot;0.0&quot;</span>
+<span class="gp">sage: </span><span class="n">nf</span> <span class="o">=</span> <span class="s">&quot;9.5&quot;</span>
+<span class="gp">sage: </span><span class="n">ten</span> <span class="o">=</span> <span class="s">&quot;10.05&quot;</span>
+<span class="gp">sage: </span><span class="n">eps</span> <span class="o">=</span> <span class="s">&quot;-0.05&quot;</span>
+<span class="gp">sage: </span><span class="n">OC</span> <span class="o">=</span> <span class="n">SageOutputChecker</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">rndstr</span><span class="p">,</span><span class="n">nf</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tentol</span><span class="p">,</span><span class="n">nf</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tentol</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tentol</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenabs</span><span class="p">,</span><span class="n">nf</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenabs</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenabs</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenrel</span><span class="p">,</span><span class="n">nf</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenrel</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">tenrel</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerotol</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerotol</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerotol</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zeroabs</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zeroabs</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zeroabs</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerorel</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerorel</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">zerorel</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>More explicit tolerance checks:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">x</span>  <span class="c"># rel tol 1e10</span>
+<span class="gp">sage: </span><span class="k">raise</span> <span class="ne">RuntimeError</span>   <span class="c"># rel tol 1e10</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>
+<span class="gp">sage: </span><span class="mi">1</span>  <span class="c"># abs tol 2</span>
+<span class="go">-0.5</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="s">&quot;0.9999&quot;</span>    <span class="c"># rel tol 1e-4</span>
+<span class="go">1.0</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="s">&quot;1.00001&quot;</span>   <span class="c"># abs tol 1e-5</span>
+<span class="go">1.0</span>
+<span class="gp">sage: </span><span class="mi">0</span>  <span class="c"># rel tol 1</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>Spaces before numbers or between the sign and number are ignored:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="s">&quot;[ - 1, 2]&quot;</span>  <span class="c"># abs tol 1e-10</span>
+<span class="go">[-1,2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.parsing.SageOutputChecker.human_readable_escape_sequences">
+<tt class="descname">human_readable_escape_sequences</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageOutputChecker.human_readable_escape_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make ANSI escape sequences human readable.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="s">&#39;This is </span><span class="se">\x1b</span><span class="s">[1mbold</span><span class="se">\x1b</span><span class="s">[0m text&#39;</span>
+<span class="go">This is &lt;CSI-1m&gt;bold&lt;CSI-0m&gt; text</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="n">OC</span> <span class="o">=</span> <span class="n">SageOutputChecker</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">teststr</span> <span class="o">=</span> <span class="s">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+<span class="go">....:     &#39;bold\x1b[1m&#39;,</span>
+<span class="go">....:     &#39;red\x1b[31m&#39;,</span>
+<span class="go">....:     &#39;oscmd\x1ba&#39;])</span>
+<span class="gp">sage: </span><span class="n">OC</span><span class="o">.</span><span class="n">human_readable_escape_sequences</span><span class="p">(</span><span class="n">teststr</span><span class="p">)</span>
+<span class="go">&#39;bold&lt;CSI-1m&gt;-red&lt;CSI-31m&gt;-oscmd&lt;ESC-a&gt;&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.parsing.SageOutputChecker.output_difference">
+<tt class="descname">output_difference</tt><big>(</big><em>example</em>, <em>got</em>, <em>optionflags</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.SageOutputChecker.output_difference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report on the differences between the desired result and what
+was actually obtained.</p>
+<p>If <tt class="docutils literal"><span class="pre">want</span></tt> is a <a class="reference internal" href="#sage.doctest.parsing.MarkedOutput" title="sage.doctest.parsing.MarkedOutput"><tt class="xref py py-class docutils literal"><span class="pre">MarkedOutput</span></tt></a> instance, takes into account the desired tolerance.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">got</span></tt> &#8211; a string</li>
+<li><tt class="docutils literal"><span class="pre">optionflags</span></tt> &#8211; an integer, passed down to <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.OutputChecker" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.OutputChecker</span></tt></a></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a string, describing how <tt class="docutils literal"><span class="pre">got</span></tt> fails to match <tt class="docutils literal"><span class="pre">example.want</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">MarkedOutput</span><span class="p">,</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span>
+<span class="gp">sage: </span><span class="n">optflag</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span>
+<span class="gp">sage: </span><span class="n">tentol</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">tenabs</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">tenrel</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;10.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">zerotol</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">zeroabs</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">zerorel</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;0.0</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_tol</span><span class="o">=.</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">tlist</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">Example</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">MarkedOutput</span><span class="p">(</span><span class="s">&quot;[10.0, 10.0, 10.0, 10.0, 10.0, 10.0]</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="mf">1.0</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">zero</span> <span class="o">=</span> <span class="s">&quot;0.0&quot;</span>
+<span class="gp">sage: </span><span class="n">nf</span> <span class="o">=</span> <span class="s">&quot;9.5&quot;</span>
+<span class="gp">sage: </span><span class="n">ten</span> <span class="o">=</span> <span class="s">&quot;10.05&quot;</span>
+<span class="gp">sage: </span><span class="n">eps</span> <span class="o">=</span> <span class="s">&quot;-0.05&quot;</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="s">&quot;[9.9, 8.7, 10.3, 11.2, 10.8, 10.0]&quot;</span>
+<span class="gp">sage: </span><span class="n">OC</span> <span class="o">=</span> <span class="n">SageOutputChecker</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tenabs</span><span class="p">,</span><span class="n">nf</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    9.5</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs 9.5, tolerance 5e-01 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tentol</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    0.0</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs 0.0, tolerance 1e+00 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tentol</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    -0.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs -0.05, tolerance 1e+00 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tlist</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    [10.0, 10.0, 10.0, 10.0, 10.0, 10.0]</span>
+<span class="go">Got:</span>
+<span class="go">    [9.9, 8.7, 10.3, 11.2, 10.8, 10.0]</span>
+<span class="go">Tolerance exceeded in 2 of 6:</span>
+<span class="go">    10.0 vs 8.7, tolerance 1e+00 &gt; 1e+00</span>
+<span class="go">    10.0 vs 11.2, tolerance 1e+00 &gt; 1e+00</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tenabs</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    0.0</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs 0.0, tolerance 1e+01 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tenrel</span><span class="p">,</span><span class="n">zero</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    0.0</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs 0.0, tolerance 1e+00 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">tenrel</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    10.0</span>
+<span class="go">Got:</span>
+<span class="go">    -0.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    10.0 vs -0.05, tolerance 1e+00 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">zerotol</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    0.0</span>
+<span class="go">Got:</span>
+<span class="go">    10.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    0.0 vs 10.05, tolerance 1e+01 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">zeroabs</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    0.0</span>
+<span class="go">Got:</span>
+<span class="go">    10.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    0.0 vs 10.05, tolerance 1e+01 &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">zerorel</span><span class="p">,</span><span class="n">eps</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    0.0</span>
+<span class="go">Got:</span>
+<span class="go">    -0.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    0.0 vs -0.05, tolerance inf &gt; 1e-01</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">OC</span><span class="o">.</span><span class="n">output_difference</span><span class="p">(</span><span class="n">zerorel</span><span class="p">,</span><span class="n">ten</span><span class="p">,</span><span class="n">optflag</span><span class="p">)</span>
+<span class="go">Expected:</span>
+<span class="go">    0.0</span>
+<span class="go">Got:</span>
+<span class="go">    10.05</span>
+<span class="go">Tolerance exceeded:</span>
+<span class="go">    0.0 vs 10.05, tolerance inf &gt; 1e-01</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.get_source">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">get_source</tt><big>(</big><em>example</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.get_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the source with the leading &#8216;sage: &#8216; stripped off.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">get_source</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">DictAsObject</span>
+<span class="gp">sage: </span><span class="n">example</span> <span class="o">=</span> <span class="n">DictAsObject</span><span class="p">({})</span>
+<span class="gp">sage: </span><span class="n">example</span><span class="o">.</span><span class="n">sage_source</span> <span class="o">=</span> <span class="s">&quot;2 + 2&quot;</span>
+<span class="gp">sage: </span><span class="n">example</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="s">&quot;sage: 2 + 2&quot;</span>
+<span class="gp">sage: </span><span class="n">get_source</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+<span class="go">&#39;2 + 2&#39;</span>
+<span class="gp">sage: </span><span class="n">example</span> <span class="o">=</span> <span class="n">DictAsObject</span><span class="p">({})</span>
+<span class="gp">sage: </span><span class="n">example</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="s">&quot;3 + 3&quot;</span>
+<span class="gp">sage: </span><span class="n">get_source</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
+<span class="go">&#39;3 + 3&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.make_marked_output">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">make_marked_output</tt><big>(</big><em>s</em>, <em>D</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.make_marked_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Auxilliary function for pickling.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">make_marked_output</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">make_marked_output</span><span class="p">(</span><span class="s">&quot;0.0007401&quot;</span><span class="p">,{</span><span class="s">&#39;abs_tol&#39;</span><span class="p">:</span><span class="o">.</span><span class="mo">0000001</span><span class="p">})</span>
+<span class="gp">sage: </span><span class="n">s</span>
+<span class="go">&#39;0.0007401&#39;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">abs_tol</span>
+<span class="go">1.00000000000000e-7</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.parse_optional_tags">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">parse_optional_tags</tt><big>(</big><em>string</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.parse_optional_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a set consisting of the optional tags from the following
+set that occur in a comment on the first line of the input string.</p>
+<ul class="simple">
+<li>&#8216;long time&#8217;</li>
+<li>&#8216;not implemented&#8217;</li>
+<li>&#8216;not tested&#8217;</li>
+<li>&#8216;known bug&#8217;</li>
+<li>&#8216;optional: PKG_NAME&#8217; &#8211; the set will just contain &#8216;PKG_NAME&#8217;</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">parse_optional_tags</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;sage: magma(&#39;2 + 2&#39;)# optional: magma&quot;</span><span class="p">)</span>
+<span class="go">{&#39;magma&#39;}</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;sage: #optional -- mypkg&quot;</span><span class="p">)</span>
+<span class="go">{&#39;mypkg&#39;}</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;sage: print(1)  # parentheses are optional here&quot;</span><span class="p">)</span>
+<span class="go">set()</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;sage: print(1)  # optional&quot;</span><span class="p">)</span>
+<span class="go">{&#39;&#39;}</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;sage: #optional -- foo bar, baz&quot;</span><span class="p">)))</span>
+<span class="go">[&#39;bar&#39;, &#39;foo&#39;]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;    sage: factor(10^(10^10) + 1) # LoNg TiME, NoT TeSTED; OptioNAL -- P4cka9e&quot;</span><span class="p">)))</span>
+<span class="go">[&#39;long time&#39;, &#39;not tested&#39;, &#39;p4cka9e&#39;]</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;    sage: raise RuntimeError # known bug&quot;</span><span class="p">)</span>
+<span class="go">{&#39;bug&#39;}</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;    sage: determine_meaning_of_life() # long time, not implemented&quot;</span><span class="p">)))</span>
+<span class="go">[&#39;long time&#39;, &#39;not implemented&#39;]</span>
+</pre></div>
+</div>
+<p>We don&#8217;t parse inside strings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;    sage: print &#39;  # long time&#39;&quot;</span><span class="p">)</span>
+<span class="go">set()</span>
+<span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;    sage: print &#39;  # long time&#39;  # not tested&quot;</span><span class="p">)</span>
+<span class="go">{&#39;not tested&#39;}</span>
+</pre></div>
+</div>
+<p>UTF-8 works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">parse_optional_tags</span><span class="p">(</span><span class="s">&quot;&#39;ěščřžýáíéďĎ&#39;&quot;</span><span class="p">)</span>
+<span class="go">set()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.parse_tolerance">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">parse_tolerance</tt><big>(</big><em>source</em>, <em>want</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.parse_tolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a version of <tt class="docutils literal"><span class="pre">want</span></tt> marked up with the tolerance tags
+specified in <tt class="docutils literal"><span class="pre">source</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">source</span></tt> &#8211; a string, the source of a doctest</li>
+<li><tt class="docutils literal"><span class="pre">want</span></tt> &#8211; a string, the desired output of the doctest</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">want</span></tt> if there are no tolerance tags specified; a
+<a class="reference internal" href="#sage.doctest.parsing.MarkedOutput" title="sage.doctest.parsing.MarkedOutput"><tt class="xref py py-class docutils literal"><span class="pre">MarkedOutput</span></tt></a> version otherwise.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">parse_tolerance</span>
+<span class="gp">sage: </span><span class="n">marked</span> <span class="o">=</span> <span class="n">parse_tolerance</span><span class="p">(</span><span class="s">&quot;sage: s.update(abs_tol = .0000001)&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">marked</span><span class="p">)</span>
+<span class="go">&lt;type &#39;str&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">marked</span> <span class="o">=</span> <span class="n">parse_tolerance</span><span class="p">(</span><span class="s">&quot;sage: s.update(tol = 0.1); s.rel_tol # abs tol     0.01 &quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">marked</span><span class="o">.</span><span class="n">tol</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">marked</span><span class="o">.</span><span class="n">rel_tol</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">marked</span><span class="o">.</span><span class="n">abs_tol</span>
+<span class="go">0.010000000000000000000?</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.pre_hash">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">pre_hash</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.pre_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepends a string with its length.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">pre_hash</span>
+<span class="gp">sage: </span><span class="n">pre_hash</span><span class="p">(</span><span class="s">&quot;abc&quot;</span><span class="p">)</span>
+<span class="go">&#39;3:abc&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.parsing.reduce_hex">
+<tt class="descclassname">sage.doctest.parsing.</tt><tt class="descname">reduce_hex</tt><big>(</big><em>fingerprints</em><big>)</big><a class="headerlink" href="#sage.doctest.parsing.reduce_hex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a symmetric function of the arguments as hex strings.</p>
+<p>The arguments should be 32 character strings consiting of hex
+digits: 0-9 and a-f.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">reduce_hex</span>
+<span class="gp">sage: </span><span class="n">reduce_hex</span><span class="p">([</span><span class="s">&quot;abc&quot;</span><span class="p">,</span> <span class="s">&quot;12399aedf&quot;</span><span class="p">])</span>
+<span class="go">&#39;0000000000000000000000012399a463&#39;</span>
+<span class="gp">sage: </span><span class="n">reduce_hex</span><span class="p">([</span><span class="s">&quot;12399aedf&quot;</span><span class="p">,</span><span class="s">&quot;abc&quot;</span><span class="p">])</span>
+<span class="go">&#39;0000000000000000000000012399a463&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="forker.html"
+                                  title="previous chapter">Processes for running doctests</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="reporting.html"
+                                  title="next chapter">Reporting doctest results</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/doctest/parsing.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reporting.html" title="Reporting doctest results"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="forker.html" title="Processes for running doctests"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

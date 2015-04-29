@@ -1,0 +1,983 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Riemann Mapping &mdash; Sage Reference Manual v6.6: Symbolic Calculus</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Symbolic Calculus" href="../../index.html" />
+    <link rel="next" title="Real Interpolation using GSL" href="../gsl/interpolation.html" />
+    <link rel="prev" title="Numerical Integration" href="../gsl/integration.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../gsl/interpolation.html" title="Real Interpolation using GSL"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../gsl/integration.html" title="Numerical Integration"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Symbolic Calculus</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="riemann-mapping">
+<span id="sage-calculus-riemann"></span><h1>Riemann Mapping<a class="headerlink" href="#riemann-mapping" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.calculus.riemann"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>Ethan Van Andel (2009-2011): initial version and upgrades</li>
+<li>Robert Bradshaw (2009): his &#8220;complex_plot&#8221; was adapted for plot_colored</li>
+</ul>
+<p>Development supported by NSF award No. 0702939.</p>
+<dl class="class">
+<dt id="sage.calculus.riemann.Riemann_Map">
+<em class="property">class </em><tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">Riemann_Map</tt><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>The <tt class="docutils literal"><span class="pre">Riemann_Map</span></tt> class computes an interior or exterior Riemann map,
+or an Ahlfors map of a region given by the supplied boundary curve(s)
+and center point. The class also provides various methods to
+evaluate, visualize, or extract data from the map.</p>
+<p>A Riemann map conformally maps a simply connected region in
+the complex plane to the unit disc. The Ahlfors map does the same thing
+for multiply connected regions.</p>
+<p>Note that all the methods are numerical. As a result all answers have
+some imprecision. Moreover, maps computed with small number of
+collocation points, or for unusually shaped regions, may be very
+inaccurate. Error computations for the ellipse can be found in the
+documentation for <a class="reference internal" href="#sage.calculus.riemann.analytic_boundary" title="sage.calculus.riemann.analytic_boundary"><tt class="xref py py-meth docutils literal"><span class="pre">analytic_boundary()</span></tt></a> and <a class="reference internal" href="#sage.calculus.riemann.analytic_interior" title="sage.calculus.riemann.analytic_interior"><tt class="xref py py-meth docutils literal"><span class="pre">analytic_interior()</span></tt></a>.</p>
+<p><a class="reference internal" href="#bsv" id="id1">[BSV]</a> provides an overview of the Riemann map and discusses the research
+that lead to the creation of this module.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">fs</span></tt> &#8211; A list of the boundaries of the region, given as
+complex-valued functions with domain <span class="math">\(0\)</span> to <span class="math">\(2*pi\)</span>. Note that the
+outer boundary must be parameterized counter clockwise
+(i.e. <tt class="docutils literal"><span class="pre">e^(I*t)</span></tt>) while the inner boundaries must be clockwise
+(i.e. <tt class="docutils literal"><span class="pre">e^(-I*t)</span></tt>).</li>
+<li><tt class="docutils literal"><span class="pre">fprimes</span></tt> &#8211; A list of the derivatives of the boundary functions.
+Must be in the same order as <tt class="docutils literal"><span class="pre">fs</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">a</span></tt> &#8211; Complex, the center of the Riemann map. Will be mapped to
+the origin of the unit disc. Note that <tt class="docutils literal"><span class="pre">a</span></tt> MUST be within
+the region in order for the results to be mathematically valid.</li>
+</ul>
+<p>The following inputs may be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">N</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">500</span></tt>), the number of collocation points
+used to compute the map. More points will give more accurate results,
+especially near the boundaries, but will take longer to compute.</li>
+<li><tt class="docutils literal"><span class="pre">exterior</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>), if set to <tt class="docutils literal"><span class="pre">True</span></tt>, the
+exterior map will be computed, mapping the exterior of the region to the
+exterior of the unit circle.</li>
+</ul>
+<p>The following inputs may be passed as named parameters in unusual
+circumstances:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ncorners</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">4</span></tt>), if mapping a figure with
+(equally t-spaced) corners &#8211; corners that make a significant change in
+the direction of the boundary &#8211; better results may be sometimes obtained by
+accurately giving this parameter. Used to add the proper constant to
+the theta correspondence function.</li>
+<li><tt class="docutils literal"><span class="pre">opp</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>), set to <tt class="docutils literal"><span class="pre">True</span></tt> in very rare
+cases where the theta correspondence function is off by <tt class="docutils literal"><span class="pre">pi</span></tt>, that
+is, if red is mapped left of the origin in the color plot.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>The unit circle identity map:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>  <span class="c"># long time (4 sec)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">()</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">()</span>  <span class="c"># long time</span>
+<span class="go">Graphics object consisting of 22 graphics primitives</span>
+</pre></div>
+</div>
+<p>The exterior map for the unit circle:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">exterior</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>  <span class="c"># long time (4 sec)</span>
+<span class="gp">sage: </span><span class="c">#spiderwebs are not supported for exterior maps</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">()</span> <span class="c"># long time</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>The unit circle with a small hole:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hfprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*-</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="n">hf</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">,</span> <span class="n">hfprime</span><span class="p">],</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="c">#spiderweb and color plots cannot be added for multiply</span>
+<span class="gp">sage: </span><span class="c">#connected regions. Instead we do this.</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">(</span><span class="n">withcolor</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>  <span class="c"># long time</span>
+<span class="go">Graphics object consisting of 3 graphics primitives</span>
+</pre></div>
+</div>
+<p>A square:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ps</span> <span class="o">=</span> <span class="n">polygon_spline</span><span class="p">([(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">real</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">fprime</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">real</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">ncorners</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">()</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">()</span>  <span class="c"># long time</span>
+<span class="go">Graphics object consisting of 22 graphics primitives</span>
+</pre></div>
+</div>
+<p>Compute rough error for this map:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="mf">0.75</span>  <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="s">&quot;error =&quot;</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">inverse_riemann_map</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">-</span> <span class="n">x</span>  <span class="c"># long time</span>
+<span class="go">error = (-0.000...+0.0016...j)</span>
+</pre></div>
+</div>
+<p>A fun, complex region for demonstration purposes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ef1</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">.</span><span class="mi">2</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+.</span><span class="mi">4</span><span class="o">+.</span><span class="mi">4</span><span class="o">*</span><span class="n">I</span>
+<span class="gp">sage: </span><span class="n">ef1p</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">I</span><span class="o">*.</span><span class="mi">2</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ef2</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">.</span><span class="mi">2</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-.</span><span class="mi">4</span><span class="o">+.</span><span class="mi">4</span><span class="o">*</span><span class="n">I</span>
+<span class="gp">sage: </span><span class="n">ef2p</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">I</span><span class="o">*.</span><span class="mi">2</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pts</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-.</span><span class="mi">5</span><span class="p">,</span><span class="o">-.</span><span class="mi">15</span><span class="o">-</span><span class="mi">20</span><span class="o">/</span><span class="mi">1000</span><span class="p">),(</span><span class="o">-.</span><span class="mi">6</span><span class="p">,</span><span class="o">-.</span><span class="mi">27</span><span class="o">-</span><span class="mi">10</span><span class="o">/</span><span class="mi">1000</span><span class="p">),(</span><span class="o">-.</span><span class="mi">45</span><span class="p">,</span><span class="o">-.</span><span class="mi">45</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">-.</span><span class="mi">65</span><span class="o">+</span><span class="mi">10</span><span class="o">/</span><span class="mi">1000</span><span class="p">),(</span><span class="o">.</span><span class="mi">45</span><span class="p">,</span><span class="o">-.</span><span class="mi">45</span><span class="p">),(</span><span class="o">.</span><span class="mi">6</span><span class="p">,</span><span class="o">-.</span><span class="mi">27</span><span class="o">-</span><span class="mi">10</span><span class="o">/</span><span class="mi">1000</span><span class="p">),(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">-.</span><span class="mi">15</span><span class="o">-</span><span class="mi">10</span><span class="o">/</span><span class="mi">1000</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">-.</span><span class="mi">43</span><span class="o">+</span><span class="mi">10</span><span class="o">/</span><span class="mi">1000</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="n">pts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cs</span> <span class="o">=</span> <span class="n">complex_cubic_spline</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mfprime</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cs</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">,</span><span class="n">ef1</span><span class="p">,</span><span class="n">ef2</span><span class="p">,</span><span class="n">mf</span><span class="p">],[</span><span class="n">fp</span><span class="p">,</span><span class="n">ef1p</span><span class="p">,</span><span class="n">ef2p</span><span class="p">,</span><span class="n">mfprime</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="n">N</span> <span class="o">=</span> <span class="mi">400</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">(</span><span class="n">plot_points</span> <span class="o">=</span> <span class="mi">400</span><span class="p">)</span> <span class="c"># long time</span>
+</pre></div>
+</div>
+<p>ALGORITHM:</p>
+<p>This class computes the Riemann Map via the Szego kernel using an
+adaptation of the method described by <a class="reference internal" href="#kt" id="id2">[KT]</a>.</p>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="kt" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[KT]</a></td><td>N. Kerzman and M. R. Trummer. &#8220;Numerical Conformal Mapping via
+the Szego kernel&#8221;. Journal of Computational and Applied Mathematics,
+14(1-2): 111&#8211;123, 1986.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="bsv" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[BSV]</a></td><td>M. Bolt, S. Snoeyink, E. Van Andel. &#8220;Visual representation of
+the Riemann map and Ahlfors map via the Kerzman-Stein equation&#8221;.
+Involve 3-4 (2010), 405-420.</td></tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.compute_on_grid">
+<tt class="descname">compute_on_grid</tt><big>(</big><em>plot_range</em>, <em>x_points</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.compute_on_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Riemann map on a grid of points. Note that these points
+are complex of the form z = x + y*i.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">plot_range</span></tt> &#8211; a tuple of the form <tt class="docutils literal"><span class="pre">[xmin,</span> <span class="pre">xmax,</span> <span class="pre">ymin,</span> <span class="pre">ymax]</span></tt>.
+If the value is <tt class="docutils literal"><span class="pre">[]</span></tt>, the default plotting window of the map will
+be used.</li>
+<li><tt class="docutils literal"><span class="pre">x_points</span></tt> &#8211; int, the size of the grid in the x direction
+The number of points in the y_direction is scaled accordingly</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a tuple containing <tt class="docutils literal"><span class="pre">[z_values,</span> <span class="pre">xmin,</span> <span class="pre">xmax,</span> <span class="pre">ymin,</span> <span class="pre">ymax]</span></tt>
+where <tt class="docutils literal"><span class="pre">z_values</span></tt> is the evaluation of the map on the specified grid.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>General usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">data</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">compute_on_grid</span><span class="p">([],</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">8</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">(-0.0879...+0.9709...j)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.get_szego">
+<tt class="descname">get_szego</tt><big>(</big><em>boundary=-1</em>, <em>absolute_value=False</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.get_szego" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a discretized version of the Szego kernel for each boundary
+function.</p>
+<p>INPUT:</p>
+<p>The following inputs may be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">boundary</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">-1</span></tt>) if &lt; 0,
+<a class="reference internal" href="#sage.calculus.riemann.Riemann_Map.get_theta_points" title="sage.calculus.riemann.Riemann_Map.get_theta_points"><tt class="xref py py-meth docutils literal"><span class="pre">get_theta_points()</span></tt></a> will return the points for all boundaries.
+If &gt;= 0, <a class="reference internal" href="#sage.calculus.riemann.Riemann_Map.get_theta_points" title="sage.calculus.riemann.Riemann_Map.get_theta_points"><tt class="xref py py-meth docutils literal"><span class="pre">get_theta_points()</span></tt></a> will return only the points for
+the boundary specified.</li>
+<li><tt class="docutils literal"><span class="pre">absolute_value</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>) if <tt class="docutils literal"><span class="pre">True</span></tt>, will
+return the absolute value of the (complex valued) Szego kernel
+instead of the kernel itself. Useful for plotting.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A list of points of the form
+<tt class="docutils literal"><span class="pre">[t</span> <span class="pre">value,</span> <span class="pre">value</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">Szego</span> <span class="pre">kernel</span> <span class="pre">at</span> <span class="pre">that</span> <span class="pre">t]</span></tt>.</p>
+<p>EXAMPLES:</p>
+<p>Generic use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sz</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_szego</span><span class="p">(</span><span class="n">boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_szego</span><span class="p">(</span><span class="n">absolute_value</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">list_plot</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>Extending the points by a spline:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">0.0012158...</span>
+<span class="gp">sage: </span><span class="n">plot</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span> <span class="c"># plot the kernel</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>The unit circle with a small hole:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hfprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*-</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="n">hf</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">,</span> <span class="n">hfprime</span><span class="p">],</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Getting the szego for a specifc boundary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sz0</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_szego</span><span class="p">(</span><span class="n">boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sz1</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_szego</span><span class="p">(</span><span class="n">boundary</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.get_theta_points">
+<tt class="descname">get_theta_points</tt><big>(</big><em>boundary=-1</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.get_theta_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array of points of the form
+<tt class="docutils literal"><span class="pre">[t</span> <span class="pre">value,</span> <span class="pre">theta</span> <span class="pre">in</span> <span class="pre">e^(I*theta)]</span></tt>, that is, a discretized version
+of the theta/boundary correspondence function. In other words, a point
+in this array [t1, t2] represents that the boundary point given by f(t1)
+is mapped to a point on the boundary of the unit circle given by e^(I*t2).</p>
+<p>For multiply connected domains, <tt class="docutils literal"><span class="pre">get_theta_points</span></tt> will list the
+points for each boundary in the order that they were supplied.</p>
+<p>INPUT:</p>
+<p>The following input must all be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">boundary</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">-1</span></tt>) if &lt; 0,
+<tt class="docutils literal"><span class="pre">get_theta_points()</span></tt> will return the points for all boundaries.
+If &gt;= 0, <tt class="docutils literal"><span class="pre">get_theta_points()</span></tt> will return only the points for
+the boundary specified.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A list of points of the form <tt class="docutils literal"><span class="pre">[t</span> <span class="pre">value,</span> <span class="pre">theta</span> <span class="pre">in</span> <span class="pre">e^(I*theta)]</span></tt>.</p>
+<p>EXAMPLES:</p>
+<p>Getting the list of points, extending it via a spline, getting the
+points for only the outside of a multiply connected domain:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_theta_points</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">list_plot</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>Extending the points by a spline:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">1.627660...</span>
+</pre></div>
+</div>
+<p>The unit circle with a small hole:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">hfprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*-</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">,</span> <span class="n">hf</span><span class="p">],</span> <span class="p">[</span><span class="n">hf</span><span class="p">,</span> <span class="n">hfprime</span><span class="p">],</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Getting the boundary correspondence for a specifc boundary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">tp0</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_theta_points</span><span class="p">(</span><span class="n">boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tp1</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_theta_points</span><span class="p">(</span><span class="n">boundary</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.inverse_riemann_map">
+<tt class="descname">inverse_riemann_map</tt><big>(</big><em>pt</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.inverse_riemann_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the inverse Riemann mapping of a point. That is, given <tt class="docutils literal"><span class="pre">pt</span></tt>
+on the interior of the unit disc, <tt class="docutils literal"><span class="pre">inverse_riemann_map()</span></tt> will
+return the point on the original region that would be Riemann
+mapped to <tt class="docutils literal"><span class="pre">pt</span></tt>. Note that this method does not work for multiply
+connected domains.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">pt</span></tt> &#8211; A complex number (usually with absolute value &lt;= 1)
+representing the point to be inverse mapped.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The point on the region that Riemann maps to the input point.</p>
+<p>EXAMPLES:</p>
+<p>Can work for different types of complex numbers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">inverse_riemann_map</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="go">(0.406880...+0.3614702...j)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">inverse_riemann_map</span><span class="p">(</span><span class="mf">0.95</span><span class="p">)</span>
+<span class="go">(0.486319...-4.90019052...j)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">inverse_riemann_map</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">-</span> <span class="mf">0.3</span><span class="o">*</span><span class="n">I</span><span class="p">)</span>
+<span class="go">(0.1653244...-0.180936...j)</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">inverse_riemann_map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+<span class="go">(-0.156280...+0.321819...j)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.plot_boundaries">
+<tt class="descname">plot_boundaries</tt><big>(</big><em>plotjoined=True, rgbcolor=[0, 0, 0], thickness=1</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.plot_boundaries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the boundaries of the region for the Riemann map. Note that
+this method DOES work for multiply connected domains.</p>
+<p>INPUT:</p>
+<p>The following inputs may be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">plotjoined</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">True</span></tt>) If <tt class="docutils literal"><span class="pre">False</span></tt>,
+discrete points will be drawn; otherwise they will be connected
+by lines. In this case, if <tt class="docutils literal"><span class="pre">plotjoined=False</span></tt>, the points shown
+will be the original collocation points used to generate the
+Riemann map.</li>
+<li><tt class="docutils literal"><span class="pre">rgbcolor</span></tt> &#8211; float array (default: <tt class="docutils literal"><span class="pre">[0,0,0]</span></tt>) the
+red-green-blue color of the boundary.</li>
+<li><tt class="docutils literal"><span class="pre">thickness</span></tt> &#8211; positive float (default: <tt class="docutils literal"><span class="pre">1</span></tt>) the thickness of
+the lines or points in the boundary.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>General usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Default plot:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_boundaries</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>Big blue collocation points:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_boundaries</span><span class="p">(</span><span class="n">plotjoined</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rgbcolor</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.plot_colored">
+<tt class="descname">plot_colored</tt><big>(</big><em>plot_range=</em>, <span class="optional">[</span><span class="optional">]</span><em>plot_points=100</em>, <em>interpolation='catrom'</em>, <em>**options</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.plot_colored" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a colored plot of the Riemann map. A red point on the
+colored plot corresponds to a red point on the unit disc.</p>
+<p>INPUT:</p>
+<p>The following inputs may be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">plot_range</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">[]</span></tt>) list of 4 values
+<tt class="docutils literal"><span class="pre">(xmin,</span> <span class="pre">xmax,</span> <span class="pre">ymin,</span> <span class="pre">ymax)</span></tt>. Declare if you do not want the plot
+to use the default range for the figure.</li>
+<li><tt class="docutils literal"><span class="pre">plot_points</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">100</span></tt>), number of points to
+plot in the x direction. Points in the y direction are scaled
+accordingly. Note that very large values can cause this function to
+run slowly.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>Given a Riemann map m, general usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>Plot zoomed in on a specific spot:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">(</span><span class="n">plot_range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">25</span><span class="p">,</span><span class="o">.</span><span class="mi">75</span><span class="p">])</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>High resolution plot:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">(</span><span class="n">plot_points</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>  <span class="c"># long time (29s on sage.math, 2012)</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+<p>To generate the unit circle map, it&#8217;s helpful to see what the
+colors correspond to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_colored</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 1 graphics primitive</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.plot_spiderweb">
+<tt class="descname">plot_spiderweb</tt><big>(</big><em>spokes=16, circles=4, pts=32, linescale=0.99, rgbcolor=[0, 0, 0], thickness=1, plotjoined=True, withcolor=False, plot_points=200, min_mag=0.001, interpolation='catrom', **options</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.plot_spiderweb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a traditional &#8220;spiderweb plot&#8221; of the Riemann map. Shows
+what concentric circles and radial lines map to. The radial lines
+may exhibit erratic behavior near the boundary; if this occurs,
+decreasing <tt class="docutils literal"><span class="pre">linescale</span></tt> may mitigate the problem.</p>
+<p>For multiply connected domains the spiderweb is by necessity
+generated using the forward mapping. This method is more
+computationally intensive. In addition, these spiderwebs cannot
+be <tt class="docutils literal"><span class="pre">added</span></tt> to color plots. Instead the <tt class="docutils literal"><span class="pre">withcolor</span></tt> option
+must be used.</p>
+<p>In addition, spiderweb plots are not currently supported for
+exterior maps.</p>
+<p>INPUT:</p>
+<p>The following inputs may be passed in as named parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">spokes</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">16</span></tt>) the number of equally
+spaced radial lines to plot.</li>
+<li><tt class="docutils literal"><span class="pre">circles</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">4</span></tt>) the number of equally
+spaced circles about the center to plot.</li>
+<li><tt class="docutils literal"><span class="pre">pts</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">32</span></tt>) the number of points to
+plot. Each radial line is made by <tt class="docutils literal"><span class="pre">1*pts</span></tt> points, each circle
+has <tt class="docutils literal"><span class="pre">2*pts</span></tt> points. Note that high values may cause erratic
+behavior of the radial lines near the boundaries.
+- only for simply connected domains</li>
+<li><tt class="docutils literal"><span class="pre">linescale</span></tt> &#8211; float between 0 and 1. Shrinks the radial lines
+away from the boundary to reduce erratic behavior.
+- only for simply connected domains</li>
+<li><tt class="docutils literal"><span class="pre">rgbcolor</span></tt> &#8211; float array (default: <tt class="docutils literal"><span class="pre">[0,0,0]</span></tt>) the
+red-green-blue color of the spiderweb.</li>
+<li><tt class="docutils literal"><span class="pre">thickness</span></tt> &#8211; positive float (default: <tt class="docutils literal"><span class="pre">1</span></tt>) the thickness of
+the lines or points in the spiderweb.</li>
+<li><tt class="docutils literal"><span class="pre">plotjoined</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">True</span></tt>) If <tt class="docutils literal"><span class="pre">False</span></tt>,
+discrete points will be drawn; otherwise they will be connected
+by lines.
+- only for simply connected domains</li>
+<li><tt class="docutils literal"><span class="pre">withcolor</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>) If <tt class="docutils literal"><span class="pre">True</span></tt>,
+The spiderweb will be overlaid on the basic color plot.</li>
+<li><tt class="docutils literal"><span class="pre">plot_points</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">200</span></tt>) the size of the grid in the x direction
+The number of points in the y_direction is scaled accordingly.
+Note that very large values can cause this function to run slowly.
+- only for multiply connected domains</li>
+<li><tt class="docutils literal"><span class="pre">min_mag</span></tt> &#8211; float (default: <tt class="docutils literal"><span class="pre">0.001</span></tt>) The magnitude cutoff
+below which spiderweb points are not drawn. This only applies
+to multiply connected domains and is designed to prevent
+&#8220;fuzz&#8221; at the edge of the domain. Some complicated multiply
+connected domains (particularly those with corners) may
+require a larger value to look clean outside.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>General usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Default plot:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 21 graphics primitives</span>
+</pre></div>
+</div>
+<p>Simplified plot with many discrete points:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">(</span><span class="n">spokes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">circles</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pts</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">linescale</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">plotjoined</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 6 graphics primitives</span>
+</pre></div>
+</div>
+<p>Plot with thick, red lines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">(</span><span class="n">rgbcolor</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 21 graphics primitives</span>
+</pre></div>
+</div>
+<p>To generate the unit circle map, it&#8217;s helpful to see what the
+original spiderweb looks like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 21 graphics primitives</span>
+</pre></div>
+</div>
+<p>A multiply connected region with corners. We set <tt class="docutils literal"><span class="pre">min_mag</span></tt> higher
+to remove &#8220;fuzz&#8221; outside the domain:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ps</span> <span class="o">=</span> <span class="n">polygon_spline</span><span class="p">([(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">z1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="n">z1p</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">z2</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">+</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">);</span> <span class="n">z2p</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">z3</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">);</span> <span class="n">z3p</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">z1</span><span class="p">,</span><span class="n">z2</span><span class="p">,</span><span class="n">z3</span><span class="p">],[</span><span class="n">z1p</span><span class="p">,</span><span class="n">z2p</span><span class="p">,</span><span class="n">z3p</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="n">ncorners</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">plot_spiderweb</span><span class="p">(</span><span class="n">withcolor</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">plot_points</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">thickness</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">min_mag</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span> <span class="c"># long time</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.calculus.riemann.Riemann_Map.riemann_map">
+<tt class="descname">riemann_map</tt><big>(</big><em>pt</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.Riemann_Map.riemann_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Riemann mapping of a point. That is, given <tt class="docutils literal"><span class="pre">pt</span></tt> on
+the interior of the mapped region, <tt class="docutils literal"><span class="pre">riemann_map</span></tt> will return
+the point on the unit disk that <tt class="docutils literal"><span class="pre">pt</span></tt> maps to. Note that this
+method only works for interior points; accuracy breaks down very close
+to the boundary. To get boundary corrospondance, use
+<a class="reference internal" href="#sage.calculus.riemann.Riemann_Map.get_theta_points" title="sage.calculus.riemann.Riemann_Map.get_theta_points"><tt class="xref py py-meth docutils literal"><span class="pre">get_theta_points()</span></tt></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">pt</span></tt> &#8211; A complex number representing the point to be
+inverse mapped.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A complex number representing the point on the unit circle that
+the input point maps to.</p>
+<p>EXAMPLES:</p>
+<p>Can work for different types of complex numbers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">+</span> <span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="go">(0.137514...+0.876696...j)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">CDF</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="mf">1.3</span><span class="o">*</span><span class="n">I</span><span class="p">)</span>
+<span class="go">(-1.56...e-05+0.989694...j)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="go">(0.73324...+3.2...e-06j)</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">))</span>
+<span class="go">(1.405757...e-05+8.06...e-10j)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.analytic_boundary">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">analytic_boundary</tt><big>(</big><em>t</em>, <em>n</em>, <em>epsilon</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.analytic_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides an exact (for n = infinity) Riemann boundary
+correspondence for the ellipse with axes 1 + epsilon and 1 - epsilon. The
+boundary is therefore given by e^(I*t)+epsilon*e^(-I*t). It is primarily
+useful for testing the accuracy of the numerical <a class="reference internal" href="#sage.calculus.riemann.Riemann_Map" title="sage.calculus.riemann.Riemann_Map"><tt class="xref py py-class docutils literal"><span class="pre">Riemann_Map</span></tt></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">t</span></tt> &#8211; The boundary parameter, from 0 to 2*pi</li>
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; integer - the number of terms to include.
+10 is fairly accurate, 20 is very accurate.</li>
+<li><tt class="docutils literal"><span class="pre">epsilon</span></tt> &#8211; float - the skew of the ellipse (0 is circular)</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A theta value from 0 to 2*pi, corresponding to the point on the
+circle e^(I*theta)</p>
+<p>TESTS:</p>
+<p>Checking the accuracy of this function for different n values:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">analytic_boundary</span>
+<span class="gp">sage: </span><span class="n">t100</span> <span class="o">=</span> <span class="n">analytic_boundary</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">abs</span><span class="p">(</span><span class="n">analytic_boundary</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">t100</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">^-</span><span class="mi">8</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">abs</span><span class="p">(</span><span class="n">analytic_boundary</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">t100</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">^-</span><span class="mi">15</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Using this to check the accuracy of the Riemann_Map boundary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">+.</span><span class="mi">3</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="n">I</span><span class="o">*.</span><span class="mi">3</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fp</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">get_theta_points</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">test_pt</span> <span class="o">=</span> <span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="p">(</span><span class="n">test_pt</span><span class="p">)</span> <span class="o">-</span> <span class="n">analytic_boundary</span><span class="p">(</span><span class="n">test_pt</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">^-</span><span class="mi">4</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.analytic_interior">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">analytic_interior</tt><big>(</big><em>z</em>, <em>n</em>, <em>epsilon</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.analytic_interior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides a nearly exact compuation of the Riemann Map of an interior
+point of the ellipse with axes 1 + epsilon and 1 - epsilon. It is
+primarily useful for testing the accuracy of the numerical Riemann Map.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">z</span></tt> &#8211; complex - the point to be mapped.</li>
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; integer - the number of terms to include.
+10 is fairly accurate, 20 is very accurate.</li>
+</ul>
+<p>TESTS:</p>
+<p>Testing the accuracy of <a class="reference internal" href="#sage.calculus.riemann.Riemann_Map" title="sage.calculus.riemann.Riemann_Map"><tt class="xref py py-class docutils literal"><span class="pre">Riemann_Map</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">analytic_interior</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">+.</span><span class="mi">3</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="n">I</span><span class="o">*.</span><span class="mi">3</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],[</span><span class="n">fp</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span><span class="o">-</span><span class="n">analytic_interior</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">^-</span><span class="mi">4</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],[</span><span class="n">fp</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="mi">2000</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">riemann_map</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span><span class="o">-</span><span class="n">analytic_interior</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="o">.</span><span class="mi">3</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">^-</span><span class="mi">6</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.cauchy_kernel">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">cauchy_kernel</tt><big>(</big><em>t</em>, <em>args</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.cauchy_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intermediate function for the integration in <tt class="xref py py-meth docutils literal"><span class="pre">analytic_interior()</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">t</span></tt> &#8211; The boundary parameter, meant to be integrated over</li>
+<li><tt class="docutils literal"><span class="pre">args</span></tt> &#8211; a tuple containing:<ul>
+<li><tt class="docutils literal"><span class="pre">epsilon</span></tt> &#8211; float - the skew of the ellipse (0 is circular)</li>
+<li><tt class="docutils literal"><span class="pre">z</span></tt> &#8211; complex - the point to be mapped.</li>
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; integer - the number of terms to include.
+10 is fairly accurate, 20 is very accurate.</li>
+<li><tt class="docutils literal"><span class="pre">part</span></tt> &#8211; will return the real (&#8216;r&#8217;), imaginary (&#8216;i&#8217;) or
+complex (&#8216;c&#8217;) value of the kernel</li>
+</ul>
+</li>
+</ul>
+<p>TESTS:</p>
+<p>This is primarily tested implicitly by <tt class="xref py py-meth docutils literal"><span class="pre">analytic_interior()</span></tt>.
+Here is a simple test:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">cauchy_kernel</span>
+<span class="gp">sage: </span><span class="n">cauchy_kernel</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,(</span><span class="o">.</span><span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="o">+.</span><span class="mi">2</span><span class="o">*</span><span class="n">I</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">))</span>
+<span class="go">(-0.584136405997...+0.5948650858950...j)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.complex_to_rgb">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">complex_to_rgb</tt><big>(</big><em>z_values</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.complex_to_rgb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert from a (Numpy) array of complex numbers to its corresponding
+matrix of RGB values.  For internal use of <a class="reference internal" href="#sage.calculus.riemann.Riemann_Map.plot_colored" title="sage.calculus.riemann.Riemann_Map.plot_colored"><tt class="xref py py-meth docutils literal"><span class="pre">plot_colored()</span></tt></a>
+only.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">z_values</span></tt> &#8211; A Numpy array of complex numbers.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>An <span class="math">\(N \times M \times 3\)</span> floating point Numpy array <tt class="docutils literal"><span class="pre">X</span></tt>, where
+<tt class="docutils literal"><span class="pre">X[i,j]</span></tt> is an (r,g,b) tuple.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">complex_to_rgb</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">sage: </span><span class="n">complex_to_rgb</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">))</span>
+<span class="go">array([[[ 1.        ,  1.        ,  1.        ],</span>
+<span class="go">        [ 1.        ,  0.05558355,  0.05558355],</span>
+<span class="go">        [ 0.17301243,  0.        ,  0.        ]]])</span>
+
+<span class="gp">sage: </span><span class="n">complex_to_rgb</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="mi">1000</span><span class="n">j</span><span class="p">]],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">))</span>
+<span class="go">array([[[ 1.        ,  1.        ,  1.        ],</span>
+<span class="go">        [ 0.52779177,  1.        ,  0.05558355],</span>
+<span class="go">        [ 0.08650622,  0.17301243,  0.        ]]])</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">complex_to_rgb</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">]])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">Argument &#39;z_values&#39; has incorrect type (expected numpy.ndarray, got list)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.complex_to_spiderweb">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">complex_to_spiderweb</tt><big>(</big><em>z_values</em>, <em>dr</em>, <em>dtheta</em>, <em>spokes</em>, <em>circles</em>, <em>rgbcolor</em>, <em>thickness</em>, <em>withcolor</em>, <em>min_mag</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.complex_to_spiderweb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a grid of complex numbers into a matrix containing rgb data
+for the Riemann spiderweb plot.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">z_values</span></tt> &#8211; A grid of complex numbers, as a list of lists.</li>
+<li><tt class="docutils literal"><span class="pre">dr</span></tt> &#8211; grid of floats, the r derivative of <tt class="docutils literal"><span class="pre">z_values</span></tt>.
+Used to determine precision.</li>
+<li><tt class="docutils literal"><span class="pre">dtheta</span></tt> &#8211; grid of floats, the theta derivative of <tt class="docutils literal"><span class="pre">z_values</span></tt>.
+Used to determine precision.</li>
+<li><tt class="docutils literal"><span class="pre">spokes</span></tt> &#8211; integer - the number of equally spaced radial lines to plot.</li>
+<li><tt class="docutils literal"><span class="pre">circles</span></tt> &#8211; integer - the number of equally spaced circles about the
+center to plot.</li>
+<li><tt class="docutils literal"><span class="pre">rgbcolor</span></tt> &#8211; float array - the red-green-blue color of the
+lines of the spiderweb.</li>
+<li><tt class="docutils literal"><span class="pre">thickness</span></tt> &#8211; positive float - the thickness of the lines or points
+in the spiderweb.</li>
+<li><tt class="docutils literal"><span class="pre">withcolor</span></tt> &#8211; boolean - If <tt class="docutils literal"><span class="pre">True</span></tt> the spiderweb will be overlaid
+on the basic color plot.</li>
+<li><tt class="docutils literal"><span class="pre">min_mag</span></tt> &#8211; float - The magnitude cutoff below which spiderweb
+points are not drawn. This only applies to multiply connected
+domains and is designed to prevent &#8220;fuzz&#8221; at the edge of the
+domain. Some complicated multiply connected domains (particularly
+those with corners) may require a larger value to look clean
+outside.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>An <span class="math">\(N x M x 3\)</span> floating point Numpy array <tt class="docutils literal"><span class="pre">X</span></tt>, where
+<tt class="docutils literal"><span class="pre">X[i,j]</span></tt> is an (r,g,b) tuple.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">complex_to_spiderweb</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">sage: </span><span class="n">zval</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],[</span><span class="o">.</span><span class="mi">2</span><span class="o">+.</span><span class="mi">3</span><span class="n">j</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-.</span><span class="mi">3</span><span class="n">j</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]],</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">deriv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">.</span><span class="mi">1</span><span class="p">]],</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">complex_to_spiderweb</span><span class="p">(</span><span class="n">zval</span><span class="p">,</span> <span class="n">deriv</span><span class="p">,</span><span class="n">deriv</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="bp">False</span><span class="p">,</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="go">array([[[ 1.,  1.,  1.],</span>
+<span class="go">        [ 1.,  1.,  1.],</span>
+<span class="go">        [ 1.,  1.,  1.]],</span>
+
+<span class="go">       [[ 1.,  1.,  1.],</span>
+<span class="go">        [ 0.,  0.,  0.],</span>
+<span class="go">        [ 1.,  1.,  1.]],</span>
+
+<span class="go">       [[ 1.,  1.,  1.],</span>
+<span class="go">        [ 1.,  1.,  1.],</span>
+<span class="go">        [ 1.,  1.,  1.]]])</span>
+
+<span class="gp">sage: </span><span class="n">complex_to_spiderweb</span><span class="p">(</span><span class="n">zval</span><span class="p">,</span> <span class="n">deriv</span><span class="p">,</span><span class="n">deriv</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="go">array([[[ 1.        ,  1.        ,  1.        ],</span>
+<span class="go">        [ 1.        ,  0.05558355,  0.05558355],</span>
+<span class="go">        [ 0.17301243,  0.        ,  0.        ]],</span>
+
+<span class="go">       [[ 1.        ,  0.96804683,  0.48044583],</span>
+<span class="go">        [ 0.        ,  0.        ,  0.        ],</span>
+<span class="go">        [ 0.77351965,  0.5470393 ,  1.        ]],</span>
+
+<span class="go">       [[ 1.        ,  1.        ,  1.        ],</span>
+<span class="go">        [ 1.        ,  1.        ,  1.        ],</span>
+<span class="go">        [ 1.        ,  1.        ,  1.        ]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.calculus.riemann.get_derivatives">
+<tt class="descclassname">sage.calculus.riemann.</tt><tt class="descname">get_derivatives</tt><big>(</big><em>z_values</em>, <em>xstep</em>, <em>ystep</em><big>)</big><a class="headerlink" href="#sage.calculus.riemann.get_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the r*e^(I*theta) form of derivatives from the grid of points. The
+derivatives are computed using quick-and-dirty taylor expansion and
+assuming analyticity. As such <tt class="docutils literal"><span class="pre">get_derivatives</span></tt> is primarily intended
+to be used for comparisions in <tt class="docutils literal"><span class="pre">plot_spiderweb</span></tt> and not for
+applications that require great precision.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">z_values</span></tt> &#8211; The values for a complex function evaluated on a grid
+in the complex plane, usually from <tt class="docutils literal"><span class="pre">compute_on_grid</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">xstep</span></tt> &#8211; float, the spacing of the grid points in the real direction</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A tuple of arrays, [<tt class="docutils literal"><span class="pre">dr</span></tt>, <tt class="docutils literal"><span class="pre">dtheta</span></tt>], with each array 2 less in both
+dimensions than <tt class="docutils literal"><span class="pre">z_values</span></tt><ul>
+<li><tt class="docutils literal"><span class="pre">dr</span></tt> - the abs of the derivative of the function in the +r direction</li>
+<li><tt class="docutils literal"><span class="pre">dtheta</span></tt> - the rate of accumulation of angle in the +theta direction</li>
+</ul>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>Standard usage with compute_on_grid:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.calculus.riemann</span> <span class="kn">import</span> <span class="n">get_derivatives</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fprime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">I</span><span class="o">*</span><span class="n">e</span><span class="o">^</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">Riemann_Map</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">fprime</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">data</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">compute_on_grid</span><span class="p">([],</span><span class="mi">19</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">xstep</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mi">19</span>
+<span class="gp">sage: </span><span class="n">ystep</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">-</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mi">19</span>
+<span class="gp">sage: </span><span class="n">dr</span><span class="p">,</span> <span class="n">dtheta</span> <span class="o">=</span> <span class="n">get_derivatives</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">xstep</span><span class="p">,</span><span class="n">ystep</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">dr</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">]</span>
+<span class="go">0.241...</span>
+<span class="gp">sage: </span><span class="n">dtheta</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
+<span class="go">5.907...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../gsl/integration.html"
+                                  title="previous chapter">Numerical Integration</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../gsl/interpolation.html"
+                                  title="next chapter">Real Interpolation using GSL</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/calculus/riemann.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../gsl/interpolation.html" title="Real Interpolation using GSL"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../gsl/integration.html" title="Numerical Integration"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Symbolic Calculus</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

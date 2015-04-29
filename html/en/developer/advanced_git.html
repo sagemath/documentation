@@ -1,0 +1,494 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Advanced Git &mdash; Sage Developer&#39;s Guide v6.6</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Sage Developer&#39;s Guide v6.6" href="index.html" />
+    <link rel="next" title="Distributed Development" href="workflows.html" />
+    <link rel="prev" title="Tips and References" href="git_background.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workflows.html" title="Distributed Development"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="git_background.html" title="Tips and References"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Developer&#39;s Guide v6.6</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="advanced-git">
+<span id="chapter-advanced-git"></span><h1>Advanced Git<a class="headerlink" href="#advanced-git" title="Permalink to this headline">¶</a></h1>
+<p>This chapter covers some advanced uses of git that go beyond what is
+required to work with branches. These features can be used in Sage
+development, but are not really necessary to contribute to Sage. If
+you are just getting started with Sage development, you should read
+<a class="reference internal" href="walk_through.html#chapter-walkthrough"><em>Sage Development Process</em></a> instead. If you are new to git, please see
+<a class="reference internal" href="manual_git.html#chapter-manual-git"><em>Git the Hard Way</em></a>.</p>
+<div class="section" id="detached-heads-and-reviewing-tickets">
+<h2>Detached Heads and Reviewing Tickets<a class="headerlink" href="#detached-heads-and-reviewing-tickets" title="Permalink to this headline">¶</a></h2>
+<p>Each commit is a snapshot of the Sage source tree at a certain
+point. So far, we always used commits organized in branches. But
+secretly the branch is just a shortcut for a particular commit, the
+head commit of the branch. But you can just go to a particular commit
+without a branch, this is called &#8220;detached head&#8221;. If you have the
+commit already in your local history, you can directly check it
+out without requiring internet access:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git checkout a63227d0636e29a8212c32eb9ca84e9588bbf80b
+Note: checking out &#39;a63227d0636e29a8212c32eb9ca84e9588bbf80b&#39;.
+
+You are in &#39;detached HEAD&#39; state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
+
+  git checkout -b new_branch_name
+
+HEAD is now at a63227d... Szekeres Snark Graph constructor
+</pre></div>
+</div>
+<p>If it is not stored in your local git repository, you need to download
+it from the trac server first:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git fetch trac a63227d0636e29a8212c32eb9ca84e9588bbf80b
+From ssh://trac/sage
+ * branch            a63227d0636e29a8212c32eb9ca84e9588bbf80b -&gt; FETCH_HEAD
+[user@localhost sage]$ git checkout FETCH_HEAD
+HEAD is now at a63227d... Szekeres Snark Graph constructor
+</pre></div>
+</div>
+<p>Either way, you end up with your current HEAD and working directory
+that is not associated to any local branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git status
+# HEAD detached at a63227d
+nothing to commit, working directory clean
+</pre></div>
+</div>
+<p>This is perfectly fine. You can switch to an existing branch (with the
+usual <tt class="docutils literal"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">my_branch</span></tt>) and back to your detached head.</p>
+<p>Detached heads can be used to your advantage when reviewing
+tickets. Just check out the commit (look at the &#8220;Commit:&#8221; field on the
+trac ticket) that you are reviewing as a detached head. Then you can
+look at the changes and run tests in the detached head. When you are
+finished with the review, you just abandon the detached head. That way
+you never create a new local branch, so you don&#8217;t have to type <tt class="docutils literal"><span class="pre">git</span>
+<span class="pre">branch</span> <span class="pre">-D</span> <span class="pre">my_branch</span></tt> at the end to delete the local branch that you
+created only to review the ticket.</p>
+</div>
+<div class="section" id="reset-and-recovery">
+<span id="section-git-recovery"></span><h2>Reset and Recovery<a class="headerlink" href="#reset-and-recovery" title="Permalink to this headline">¶</a></h2>
+<p>Git makes it very hard to truly mess up. Here is a short way to get
+back onto your feet, no matter what. First, if you just want to go
+back to a working Sage installation you can always abandon your
+working branch by switching to your local copy of the <tt class="docutils literal"><span class="pre">master</span></tt>
+branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git checkout master
+</pre></div>
+</div>
+<p>As long as you did not make any changes to the <tt class="docutils literal"><span class="pre">master</span></tt> branch
+directly, this will give you back a working Sage.</p>
+<p>If you want to keep your branch but go back to a previous commit you
+can use the <em>reset</em> command. For this, look up the commit in the log
+which is some 40-digit hexadecimal number (the SHA1 hash). Then use
+<tt class="docutils literal"><span class="pre">git</span> <span class="pre">reset</span> <span class="pre">--hard</span></tt> to revert your files back to the previous state:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git log
+...
+commit eafaedad5b0ae2013f8ae1091d2f1df58b72bae3
+Author: First Last &lt;user@email.com&gt;
+Date:   Sat Jul 20 21:57:33 2013 -0400
+
+    Commit message
+...
+[user@localhost sage]$ git reset --hard eafae
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Any <em>uncommitted</em> changes will be lost!</p>
+</div>
+<p>You only need to type the first couple of hex digits, git will
+complain if this does not uniquely specify a commit. Also, there is
+the useful abbreviation <tt class="docutils literal"><span class="pre">HEAD~</span></tt> for the previous commit and
+<tt class="docutils literal"><span class="pre">HEAD~n</span></tt>, with some integer <tt class="docutils literal"><span class="pre">n</span></tt>, for the n-th previous commit.</p>
+<p>Finally, perhaps the ultimate human error recovery tool is the
+reflog. This is a chronological history of git operations that you can
+undo if needed. For example, let us assume we messed up the <em>git
+reset</em> command and went back too far (say, 5 commits back). And, on
+top of that, deleted a file and committed that:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git reset --hard HEAD~5
+[user@localhost sage]$ git rm sage
+[user@localhost sage]$ git commit -m &quot;I shot myself into my foot&quot;
+</pre></div>
+</div>
+<p>Now we cannot just checkout the repository from before the reset,
+because it is no longer in the history. However, here is the reflog:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git reflog
+2eca2a2 HEAD@{0}: commit: I shot myself into my foot
+b4d86b9 HEAD@{1}: reset: moving to HEAD~5
+af353bb HEAD@{2}: checkout: moving from some_branch to master
+1142feb HEAD@{3}: checkout: moving from other_branch to some_branch
+...
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">HEAD&#64;{n}</span></tt> revisions are shortcuts for the history of git
+operations. Since we want to rewind to before the erroneous <em>git
+reset</em> command, we just have to reset back into the future:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git reset --hard HEAD@{2}
+</pre></div>
+</div>
+</div>
+<div class="section" id="rewriting-history">
+<span id="section-git-rewriting-history"></span><h2>Rewriting History<a class="headerlink" href="#rewriting-history" title="Permalink to this headline">¶</a></h2>
+<p>Git allows you to rewrite history, but be careful: the SHA1 hash of a
+commit includes the parent&#8217;s hash. This means that the hash really
+depends on the entire content of the working directory; every source
+file is in exactly the same state as when the hash was computed. This
+also means that you can&#8217;t change history without modifying the
+hash. If others branched off your code and then you rewrite history,
+then the others are thoroughly screwed. So, ideally, you would only
+rewrite history on branches that you have not yet pushed to trac.</p>
+<p>As an advanced example, consider three commits A, B, C that were made
+on top of each other. For simplicity, we&#8217;ll assume they just added a
+file named <tt class="docutils literal"><span class="pre">file_A.py</span></tt>, <tt class="docutils literal"><span class="pre">file_B.py</span></tt>, and <tt class="docutils literal"><span class="pre">file_C.py</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git log --oneline
+9621dae added file C
+7873447 added file B
+bf817a5 added file A
+5b5588e base commit
+</pre></div>
+</div>
+<p>Now, let&#8217;s assume that the commit B was really independent and ought
+to be on a separate ticket. So we want to move it to a new branch,
+which we&#8217;ll call <tt class="docutils literal"><span class="pre">second_branch</span></tt>. First, branch off at the base
+commit before we added A:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git checkout 5b5588e
+Note: checking out &#39;5b5588e&#39;.
+
+You are in &#39;detached HEAD&#39; state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
+
+  git checkout -b new_branch_name
+
+HEAD is now at 5b5588e... base commit
+[user@localhost]$ git checkout -b second_branch
+Switched to a new branch &#39;second_branch&#39;
+[user@localhost]$ git branch
+  first_branch
+* second_branch
+[user@localhost]$ git log --oneline
+5b5588e base commit
+</pre></div>
+</div>
+<p>Now, we make a copy of commit B in the current branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git cherry-pick 7873447
+[second_branch 758522b] added file B
+ 1 file changed, 1 insertion(+)
+ create mode 100644 file_B.py
+[user@localhost]$ git log --oneline
+758522b added file B
+5b5588e base commit
+</pre></div>
+</div>
+<p>Note that this changes the SHA1 of the commit B, since its parent
+changed! Also, cherry-picking <em>copies</em> commits, it does not remove
+them from the source branch. So we now have to modify the first branch
+to exclude commit B, otherwise there will be two commits adding
+<tt class="docutils literal"><span class="pre">file_B.py</span></tt> and our two branches would conflict later when they are
+being merged into Sage. Hence, we first reset the first branch back to
+before B was added:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git checkout first_branch
+Switched to branch &#39;first_branch&#39;
+[user@localhost]$ git reset --hard bf817a5
+HEAD is now at bf817a5 added file A
+</pre></div>
+</div>
+<p>Now we still want commit C, so we cherry-pick it again. Note that this
+works even though commit C is, at this point, not included in any
+branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git cherry-pick 9621dae
+[first_branch 5844535] added file C
+ 1 file changed, 1 insertion(+)
+ create mode 100644 file_C.py
+[user@localhost]$ git log --oneline
+5844535 added file C
+bf817a5 added file A
+5b5588e base commit
+</pre></div>
+</div>
+<p>And, again, we note that the SHA1 of commit C changed because its
+parent changed. Voila, now you have two branches where the first
+contains commits A, C and the second contains commit B.</p>
+</div>
+<div class="section" id="interactively-rebasing">
+<span id="section-git-interactive-rebase"></span><h2>Interactively Rebasing<a class="headerlink" href="#interactively-rebasing" title="Permalink to this headline">¶</a></h2>
+<p>An alternative approach to <a class="reference internal" href="#section-git-rewriting-history"><em>Rewriting History</em></a> is to
+use the interactive rebase feature. This will open an editor where you
+can modify the most recent commits. Again, this will naturally modify
+the hash of all changed commits and all of their children.</p>
+<p>Now we start by making an identical branch to the first branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ git log --oneline
+9621dae added file C
+7873447 added file B
+bf817a5 added file A
+5b5588e base commit
+[user@localhost]$ git checkout -b second_branch
+Switched to a new branch &#39;second_branch&#39;
+[user@localhost]$ git rebase -i HEAD~3
+</pre></div>
+</div>
+<p>This will open an editor with the last 3 (corresponding to <tt class="docutils literal"><span class="pre">HEAD~3</span></tt>)
+commits and instuctions for how to modify them:</p>
+<div class="highlight-python"><div class="highlight"><pre>pick bf817a5 added file A
+pick 7873447 added file B
+pick 9621dae added file C
+
+# Rebase 5b5588e..9621dae onto 5b5588e
+#
+# Commands:
+#  p, pick = use commit
+#  r, reword = use commit, but edit the commit message
+#  e, edit = use commit, but stop for amending
+#  s, squash = use commit, but meld into previous commit
+#  f, fixup = like &quot;squash&quot;, but discard this commit&#39;s log message
+#  x, exec = run command (the rest of the line) using shell
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+#
+# Note that empty commits are commented out
+</pre></div>
+</div>
+<p>To only use commit B, we delete the first and third line. Then save
+and quit your editor, and your branch now consists only of the B commit.</p>
+<p>You still have to delete the B commit from the first branch, so you
+would go back (<tt class="docutils literal"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">first_branch</span></tt>) and then run the same
+<tt class="docutils literal"><span class="pre">git</span> <span class="pre">rebase</span> <span class="pre">-i</span></tt> command and delete the B commit.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Advanced Git</a><ul>
+<li><a class="reference internal" href="#detached-heads-and-reviewing-tickets">Detached Heads and Reviewing Tickets</a></li>
+<li><a class="reference internal" href="#reset-and-recovery">Reset and Recovery</a></li>
+<li><a class="reference internal" href="#rewriting-history">Rewriting History</a></li>
+<li><a class="reference internal" href="#interactively-rebasing">Interactively Rebasing</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="git_background.html"
+                                  title="previous chapter">Tips and References</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="workflows.html"
+                                  title="next chapter">Distributed Development</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/advanced_git.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workflows.html" title="Distributed Development"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="git_background.html" title="Tips and References"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Developer&#39;s Guide v6.6</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

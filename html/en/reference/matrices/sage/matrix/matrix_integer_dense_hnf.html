@@ -1,0 +1,992 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Modular algorithm to compute Hermite normal forms of integer matrices. &mdash; Sage Reference Manual v6.6: Matrices and Spaces of Matrices</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Matrices and Spaces of Matrices" href="../../index.html" />
+    <link rel="next" title="Saturation over ZZ" href="matrix_integer_dense_saturation.html" />
+    <link rel="prev" title="Deprecated two by two matrices over the integers." href="matrix_integer_2x2.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="matrix_integer_dense_saturation.html" title="Saturation over ZZ"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="matrix_integer_2x2.html" title="Deprecated two by two matrices over the integers."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Matrices and Spaces of Matrices</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="modular-algorithm-to-compute-hermite-normal-forms-of-integer-matrices">
+<span id="sage-matrix-matrix-integer-dense-hnf"></span><h1>Modular algorithm to compute Hermite normal forms of integer matrices.<a class="headerlink" href="#modular-algorithm-to-compute-hermite-normal-forms-of-integer-matrices" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.matrix.matrix_integer_dense_hnf"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>Clement Pernet and William Stein (2008-02-07): initial version</li>
+</ul>
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.add_column">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">add_column</tt><big>(</big><em>B</em>, <em>H_B</em>, <em>a</em>, <em>proof</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.add_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>The add column procedure.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>B   &#8211; a square matrix (may be singular)</li>
+<li>H_B &#8211; the Hermite normal form of B</li>
+<li>a &#8211; an n x 1 matrix, where B has n rows</li>
+<li>proof &#8211; bool; whether to prove result correct, in case we use fallback method.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>x   &#8211; a vector such that H&#8217; = H_B.augment(x) is the HNF of A = B.augment(a).</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">H_B</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">hnf</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H_B</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="bp">True</span><span class="p">);</span> <span class="n">x</span>
+<span class="go">[18]</span>
+<span class="go">[ 3]</span>
+<span class="go">[23]</span>
+<span class="gp">sage: </span><span class="n">H_B</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">[ 1  0 17 18]</span>
+<span class="go">[ 0  1  3  3]</span>
+<span class="go">[ 0  0 18 23]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">[ 1  0 17 18]</span>
+<span class="go">[ 0  1  3  3]</span>
+<span class="go">[ 0  0 18 23]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.add_column_fallback">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">add_column_fallback</tt><big>(</big><em>B</em>, <em>a</em>, <em>proof</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.add_column_fallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplistic version of add_column, in case the powerful clever one
+fails (e.g., B is singular).</p>
+<p>INPUT:</p>
+<blockquote>
+<div>B &#8211; a square matrix (may be singular)
+a &#8211; an n x 1 matrix, where B has n rows
+proof &#8211; bool; whether to prove result correct</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div>x   &#8211; a vector such that H&#8217; = H_B.augment(x) is the HNF of A = B.augment(a).</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">add_column_fallback</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">[-3]</span>
+<span class="go">[-7]</span>
+<span class="go">[-2]</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">add_column_fallback</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[-3]</span>
+<span class="go">[-7]</span>
+<span class="go">[-2]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">hermite_form</span><span class="p">()</span>
+<span class="go">[ 1  1  1 -3]</span>
+<span class="go">[ 0 11  1 -7]</span>
+<span class="go">[ 0  0  2 -2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.add_row">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">add_row</tt><big>(</big><em>A</em>, <em>b</em>, <em>pivots</em>, <em>include_zero_rows</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.add_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>The add row procedure.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a matrix in Hermite normal form with n column</li>
+<li>b &#8211; an n x 1 row matrix</li>
+<li>pivots &#8211; sorted list of integers; the pivot positions of A.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>H &#8211; the Hermite normal form of A.stack(b).</li>
+<li>new_pivots &#8211; the pivot columns of H.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="o">-</span><span class="mi">7</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">hnf</span><span class="o">.</span><span class="n">add_row</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">pivots</span><span class="p">(),</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[ 1  6 29]</span>
+<span class="go">[ 0  7 28]</span>
+<span class="go">[ 0  0 46], [0, 1, 2]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">[ 1  6 29]</span>
+<span class="go">[ 0  7 28]</span>
+<span class="go">[ 0  0 46]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.benchmark_hnf">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">benchmark_hnf</tt><big>(</big><em>nrange</em>, <em>bits=4</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.benchmark_hnf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run benchmark program.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">hnf</span><span class="o">.</span><span class="n">benchmark_hnf</span><span class="p">([</span><span class="mi">50</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span><span class="mi">32</span><span class="p">)</span>
+<span class="go">(&#39;sage&#39;, 50, 32, ...),</span>
+<span class="go">(&#39;sage&#39;, 100, 32, ...),</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.benchmark_magma_hnf">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">benchmark_magma_hnf</tt><big>(</big><em>nrange</em>, <em>bits=4</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.benchmark_magma_hnf" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">hnf</span><span class="o">.</span><span class="n">benchmark_magma_hnf</span><span class="p">([</span><span class="mi">50</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span><span class="mi">32</span><span class="p">)</span>     <span class="c"># optional - magma</span>
+<span class="go">(&#39;magma&#39;, 50, 32, ...),</span>
+<span class="go">(&#39;magma&#39;, 100, 32, ...),</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.det_from_modp_and_divisor">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">det_from_modp_and_divisor</tt><big>(</big><em>A</em>, <em>d</em>, <em>p</em>, <em>z_mod</em>, <em>moduli</em>, <em>z_so_far=1</em>, <em>N_so_far=1</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.det_from_modp_and_divisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is used for internal purposes for computing determinants
+quickly (with the hybrid p-adic / multimodular algorithm).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a square matrix</li>
+<li>d &#8211; a divisor of the determinant of A</li>
+<li>p &#8211; a prime</li>
+<li>z_mod &#8211; values of det/d (mod ...)</li>
+<li>moduli &#8211; the moduli so far</li>
+<li>z_so_far &#8211; for a modulus p in the list moduli,
+(z_so_far mod p) is the determinant of A modulo p.</li>
+<li>N_so_far &#8211; N_so_far is the product over the primes in the list moduli.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A triple (det bound, new z_so_far, new N_so_far).</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">56</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">factor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">det</span><span class="p">())</span>
+<span class="go">-1 * 13 * 29</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_from_modp_and_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[])</span>
+<span class="go">(-377, -29, 97)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
+<span class="go">-377</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.det_given_divisor">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">det_given_divisor</tt><big>(</big><em>A</em>, <em>d</em>, <em>proof=True</em>, <em>stabilize=2</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.det_given_divisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a divisor d of the determinant of A, compute the
+determinant of A.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">A</span></tt> &#8211; a square integer matrix</li>
+<li><tt class="docutils literal"><span class="pre">d</span></tt> &#8211; a nonzero integer that is assumed to divide the determinant of A</li>
+<li><tt class="docutils literal"><span class="pre">proof</span></tt> &#8211; bool (default: True) compute det modulo enough primes
+so that the determinant is computed provably correctly (via the
+Hadamard bound).  It would be VERY hard for <tt class="docutils literal"><span class="pre">det()</span></tt> to fail even
+with proof=False.</li>
+<li><tt class="docutils literal"><span class="pre">stabilize</span></tt> &#8211; int (default: 2) if proof = False, then compute
+the determinant modulo <span class="math">\(p\)</span> until <tt class="docutils literal"><span class="pre">stabilize</span></tt> successive modulo
+determinant computations stabilize.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>integer &#8211; determinant</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">-30</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">-30</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stabilize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">-30</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
+<span class="go">-30</span>
+</pre></div>
+</div>
+<p>Here we illustrate proof=False giving a wrong answer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">max_det_prime</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">previous_prime</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">q</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">*</span> <span class="n">q</span>
+<span class="go">70368442188091</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stabilize</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>This still works, because we don&#8217;t work modulo primes that divide
+the determinant bound, which is found using a p-adic algorithm:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stabilize</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">70368442188091</span>
+</pre></div>
+</div>
+<p>3 primes is enough:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stabilize</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">70368442188091</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stabilize</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">70368442188091</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">det_given_divisor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">70368442188091</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">diagonal_matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mi">66</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
+<span class="go">73786976294838206464</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.det_padic">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">det_padic</tt><big>(</big><em>A</em>, <em>proof=True</em>, <em>stabilize=2</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.det_padic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the determinant of A, computed using a p-adic/multimodular
+algorithm.</p>
+<p>INPUTS:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">A</span></tt> &#8211; a square matrix</li>
+<li><tt class="docutils literal"><span class="pre">proof</span></tt> &#8211; boolean</li>
+<li><tt class="docutils literal"><span class="pre">stabilize</span></tt> (default: 2) &#8211; if proof False, number of successive primes so that
+CRT det must stabilize.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">h</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">9</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">det_padic</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">192</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">18</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">det_padic</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">-3669</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">determinant</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;ntl&#39;</span><span class="p">)</span>
+<span class="go">-3669</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.double_det">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">double_det</tt><big>(</big><em>A</em>, <em>b</em>, <em>c</em>, <em>proof</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.double_det" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the determinants of the stacked integer matrices
+A.stack(b) and A.stack(c).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; an (n-1) x n matrix</li>
+<li>b &#8211; an 1 x n matrix</li>
+<li>c &#8211; an 1 x n matrix</li>
+<li>proof &#8211; whether or not to compute the det modulo enough times to
+provably compute the determinant.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a pair of two integers.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">import</span> <span class="n">double_det</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
+<span class="go">-48</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
+<span class="go">42</span>
+<span class="gp">sage: </span><span class="n">double_det</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">(-48, 42)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.extract_ones_data">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">extract_ones_data</tt><big>(</big><em>H</em>, <em>pivots</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.extract_ones_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute ones data and corresponding submatrices of H.  This is
+used to optimized the add_row function.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>H &#8211; a matrix in HNF</li>
+<li>pivots &#8211; list of all pivot column positions of H</li>
+</ul>
+<p>OUTPUT:</p>
+<p>C, D, E, onecol, onerow, non_onecol, non_onerow
+where onecol, onerow, non_onecol, non_onerow are as for
+the ones function, and C, D, E are matrices:</p>
+<ul class="simple">
+<li>C &#8211; submatrix of all non-onecol columns and onecol rows</li>
+<li>D &#8211; all non-onecol columns and other rows</li>
+<li>E &#8211; inverse of D</li>
+</ul>
+<p>If D isn&#8217;t invertible or there are 0 or more than 2 non onecols,
+then C, D, and E are set to None.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">extract_ones_data</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">(</span>
+<span class="go">[0]</span>
+<span class="go">[5], [6], [1/6], [0, 1], [0, 1], [2], [2]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Here we get None&#8217;s since the (2,2) position submatrix is not invertible.</dt>
+<dd>sage: H = matrix(ZZ, 3, 5, [1, 0, 0, 45, -36, 0, 1, 0, 131, -107, 0, 0, 0, 178, -145]); H
+[   1    0    0   45  -36]
+[   0    1    0  131 -107]
+[   0    0    0  178 -145]
+sage: import sage.matrix.matrix_integer_dense_hnf as matrix_integer_dense_hnf
+sage: matrix_integer_dense_hnf.extract_ones_data(H, [0,1,3])
+(None, None, None, [0, 1], [0, 1], [2], [2])</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.hnf">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">hnf</tt><big>(</big><em>A</em>, <em>include_zero_rows=True</em>, <em>proof=True</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.hnf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Hermite Normal Form of a general integer matrix A,
+along with the pivot columns.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; an n x m matrix A over the integers.</li>
+<li>include_zero_rows &#8211; bool (default: True) whether or not to include zero
+rows in the output matrix</li>
+<li>proof &#8211; whether or not to prove the result correct.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>matrix &#8211; the Hermite normal form of A</li>
+<li>pivots &#8211; the pivot column positions of A</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">hnf</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[   2    0   26  -75  -10]</span>
+<span class="go">[   0    1   27  -73   -9]</span>
+<span class="go">[   0    0   37 -106  -13], [0, 1, 2]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">hnf</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+<span class="go">(</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1]</span>
+<span class="go">[0 0 0]</span>
+<span class="go">[0 0 0], [0, 1, 2]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">hnf</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">include_zero_rows</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1], [0, 1, 2]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.hnf_square">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">hnf_square</tt><big>(</big><em>A</em>, <em>proof</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.hnf_square" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li>a nonsingular n x n matrix A over the integers.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the Hermite normal form of A.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">hnf</span><span class="o">.</span><span class="n">hnf_square</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">[ 1  6 29]</span>
+<span class="go">[ 0  7 28]</span>
+<span class="go">[ 0  0 46]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">[ 1  6 29]</span>
+<span class="go">[ 0  7 28]</span>
+<span class="go">[ 0  0 46]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.hnf_with_transformation">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">hnf_with_transformation</tt><big>(</big><em>A</em>, <em>proof=True</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.hnf_with_transformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the HNF H of A along with a transformation matrix U
+such that U*A = H.  Also return the pivots of H.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; an n x m matrix A over the integers.</li>
+<li>proof &#8211; whether or not to prove the result correct.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>matrix &#8211; the Hermite normal form H of A</li>
+<li>U &#8211; a unimodular matrix such that U * A = H</li>
+<li>pivots &#8211; the pivot column positions of A</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">197</span><span class="p">]);</span> <span class="n">A</span>
+<span class="go">[  1  -5 -10]</span>
+<span class="go">[  1   3 197]</span>
+<span class="gp">sage: </span><span class="n">H</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">pivots</span> <span class="o">=</span> <span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">hnf_with_transformation</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">H</span>
+<span class="go">[  1   3 197]</span>
+<span class="go">[  0   8 207]</span>
+<span class="gp">sage: </span><span class="n">U</span>
+<span class="go">[ 0  1]</span>
+<span class="go">[-1  1]</span>
+<span class="gp">sage: </span><span class="n">U</span><span class="o">*</span><span class="n">A</span>
+<span class="go">[  1   3 197]</span>
+<span class="go">[  0   8 207]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.hnf_with_transformation_tests">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">hnf_with_transformation_tests</tt><big>(</big><em>n=10</em>, <em>m=5</em>, <em>trials=10</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.hnf_with_transformation_tests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this to randomly test that hnf with transformation matrix
+is working.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">import</span> <span class="n">hnf_with_transformation_tests</span>
+<span class="gp">sage: </span><span class="n">hnf_with_transformation_tests</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span><span class="n">m</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">0 1 2 3 4 5 6 7 8 9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.interleave_matrices">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">interleave_matrices</tt><big>(</big><em>A</em>, <em>B</em>, <em>cols1</em>, <em>cols2</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.interleave_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li>A, B &#8211; matrices with the same number of rows</li>
+<li>cols1, cols2 &#8211; disjoint lists of integers</li>
+</ul>
+<p>OUTPUT:</p>
+<p>construct a new matrix C by sticking the columns
+of A at the positions specified by cols1 and the
+columns of B at the positions specified by cols2.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]);</span> <span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span>
+<span class="go">[1 2]</span>
+<span class="go">[3 4]</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[-1  5]</span>
+<span class="go">[ 2  3]</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">hnf</span>
+<span class="gp">sage: </span><span class="n">hnf</span><span class="o">.</span><span class="n">interleave_matrices</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">[-1  1  5  2]</span>
+<span class="go">[ 2  3  3  4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.is_in_hnf_form">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">is_in_hnf_form</tt><big>(</big><em>H</em>, <em>pivots</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.is_in_hnf_form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True precisely if the matrix H is in Hermite normal form
+with given pivot columns.</p>
+<p>INPUT:</p>
+<blockquote>
+<div>H &#8211; matrix
+pivots &#8211; sorted list of integers</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div>bool &#8211; True or False</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">17</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">is_in_hnf_form</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">hermite_form</span><span class="p">();</span> <span class="n">p</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">pivots</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">is_in_hnf_form</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.max_det_prime">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">max_det_prime</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.max_det_prime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the largest prime so that it is reasonably efficienct to
+compute modulo that prime with n x n matrices in LinBox.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; a positive integer</li>
+</ul>
+<p>OUTPUT:</p>
+<p>a prime number</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">import</span> <span class="n">max_det_prime</span>
+<span class="gp">sage: </span><span class="n">max_det_prime</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<span class="go">8388593</span>
+<span class="gp">sage: </span><span class="n">max_det_prime</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="go">8388593</span>
+<span class="gp">sage: </span><span class="n">max_det_prime</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">8388593</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.ones">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">ones</tt><big>(</big><em>H</em>, <em>pivots</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.ones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all 1 pivot columns of the matrix H in Hermite form, along
+with the corresponding rows, and also the non 1 pivot columns and
+non-pivot rows.  Here a 1 pivot column is a pivot column so that
+the leading bottom entry is 1.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>H &#8211; matrix in Hermite form</li>
+<li>pivots &#8211; list of integers (all pivot positions of H).</li>
+</ul>
+<p>OUTPUT:</p>
+<p>4-tuple of integer lists: onecol, onerow, non_oneol, non_onerow</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="o">-</span><span class="mi">36</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">131</span><span class="p">,</span> <span class="o">-</span><span class="mi">107</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">178</span><span class="p">,</span> <span class="o">-</span><span class="mi">145</span><span class="p">]);</span> <span class="n">H</span>
+<span class="go">[   1    0    0   45  -36]</span>
+<span class="go">[   0    1    0  131 -107]</span>
+<span class="go">[   0    0    0  178 -145]</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">([0, 1], [0, 1], [2], [2])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.pad_zeros">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">pad_zeros</tt><big>(</big><em>A</em>, <em>nrows</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.pad_zeros" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add zeros to the bottom of A so that the
+resulting matrix has nrows.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a matrix</li>
+<li>nrows &#8211; an integer that is at least as big as the number of rows of A.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>a matrix with nrows rows.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">pad_zeros</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">[1 0 0 7]</span>
+<span class="go">[0 1 5 2]</span>
+<span class="go">[0 0 0 0]</span>
+<span class="go">[0 0 0 0]</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">pad_zeros</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">[1 0 0 7]</span>
+<span class="go">[0 1 5 2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.pivots_of_hnf_matrix">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">pivots_of_hnf_matrix</tt><big>(</big><em>H</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.pivots_of_hnf_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the pivot columns of a matrix H assumed to be in HNF.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>H &#8211; a matrix that must be HNF</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>list &#8211; list of pivots</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="o">-</span><span class="mi">36</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">131</span><span class="p">,</span> <span class="o">-</span><span class="mi">107</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">178</span><span class="p">,</span> <span class="o">-</span><span class="mi">145</span><span class="p">]);</span> <span class="n">H</span>
+<span class="go">[   1    0    0   45  -36]</span>
+<span class="go">[   0    1    0  131 -107]</span>
+<span class="go">[   0    0    0  178 -145]</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">pivots_of_hnf_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">[0, 1, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.probable_hnf">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">probable_hnf</tt><big>(</big><em>A</em>, <em>include_zero_rows</em>, <em>proof</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.probable_hnf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the HNF of A or raise an exception if something involving
+the randomized nature of the algorithm goes wrong along the way.
+Calling this function again a few times should result it in it
+working, at least if proof=True.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a matrix</li>
+<li>include_zero_rows &#8211; bool</li>
+<li>proof &#8211; bool</li>
+</ul>
+<p>OUTPUT:</p>
+<p>the Hermite normal form of A.
+cols &#8211; pivot columns</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">probable_hnf</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1]</span>
+<span class="go">[0 0 0], [0, 1, 2]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">probable_hnf</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1], [0, 1, 2]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">probable_hnf</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="go">(</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1], [0, 1, 2]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.probable_pivot_columns">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">probable_pivot_columns</tt><big>(</big><em>A</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.probable_pivot_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a matrix</li>
+</ul>
+<p>OUTPUT:</p>
+<p>a tuple of integers</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">[  0  -1  -1]</span>
+<span class="go">[  0 -20   1]</span>
+<span class="go">[  0   1   2]</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">probable_pivot_columns</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(1, 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.probable_pivot_rows">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">probable_pivot_rows</tt><big>(</big><em>A</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.probable_pivot_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return rows of A that are very likely to be pivots.</p>
+<p>This really finds the pivots of A modulo a random prime.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>A &#8211; a matrix</li>
+</ul>
+<p>OUTPUT:</p>
+<p>a tuple of integers</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">[  0  -1  -1]</span>
+<span class="go">[  0 -20   1]</span>
+<span class="go">[  0   1   2]</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">probable_pivot_rows</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">(0, 1)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.sanity_checks">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">sanity_checks</tt><big>(</big><em>times=50</em>, <em>n=8</em>, <em>m=5</em>, <em>proof=True</em>, <em>stabilize=2</em>, <em>check_using_magma=True</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.sanity_checks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run random sanity checks on the modular p-adic HNF with tall and wide matrices
+both dense and sparse.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>times &#8211; number of times to randomly try matrices with each shape</li>
+<li>n &#8211; number of rows</li>
+<li>m &#8211; number of columns</li>
+<li>proof &#8211; test with proof true</li>
+<li>stabilize &#8211; parameter to pass to hnf algorithm when proof is False</li>
+<li>check_using_magma &#8211; if True use Magma instead of PARI to check
+correctness of computed HNF&#8217;s. Since PARI&#8217;s HNF is buggy and slow (as of
+2008-02-16 non-pivot entries sometimes aren&#8217;t normalized to be
+nonnegative) the default is Magma.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">as</span> <span class="nn">matrix_integer_dense_hnf</span>
+<span class="gp">sage: </span><span class="n">matrix_integer_dense_hnf</span><span class="o">.</span><span class="n">sanity_checks</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">check_using_magma</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">small 8 x 5</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">big 8 x 5</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">small 5 x 8</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">big 5 x 8</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">sparse 8 x 5</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">sparse 5 x 8</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">ill conditioned -- 1000*A -- 8 x 5</span>
+<span class="go">0 1 2 3 4  (done)</span>
+<span class="go">ill conditioned -- 1000*A but one row -- 8 x 5</span>
+<span class="go">0 1 2 3 4  (done)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.matrix.matrix_integer_dense_hnf.solve_system_with_difficult_last_row">
+<tt class="descclassname">sage.matrix.matrix_integer_dense_hnf.</tt><tt class="descname">solve_system_with_difficult_last_row</tt><big>(</big><em>B</em>, <em>a</em><big>)</big><a class="headerlink" href="#sage.matrix.matrix_integer_dense_hnf.solve_system_with_difficult_last_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve B*x = a when the last row of <span class="math">\(B\)</span> contains huge entries using
+a clever trick that reduces the problem to solve C*x = a where <span class="math">\(C\)</span>
+is <span class="math">\(B\)</span> but with the last row replaced by something small, along
+with one easy null space computation.  The latter are both solved
+<span class="math">\(p\)</span>-adically.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>B &#8211; a square n x n nonsingular matrix with painful big bottom row.</li>
+<li>a &#8211; an n x 1 column matrix</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the unique solution to B*x = a.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.matrix.matrix_integer_dense_hnf</span> <span class="kn">import</span> <span class="n">solve_system_with_difficult_last_row</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span> <span class="mi">939082</span><span class="p">,</span><span class="mi">2930982</span><span class="p">,</span><span class="mi">132902384098234</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">z</span> <span class="o">=</span> <span class="n">solve_system_with_difficult_last_row</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">z</span>
+<span class="go">[ 106321906985474/132902379815497]</span>
+<span class="go">[132902385037291/1329023798154970]</span>
+<span class="go">[        -5221794/664511899077485]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">*</span><span class="n">z</span>
+<span class="go">[1]</span>
+<span class="go">[2]</span>
+<span class="go">[5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="matrix_integer_2x2.html"
+                                  title="previous chapter">Deprecated two by two matrices over the integers.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="matrix_integer_dense_saturation.html"
+                                  title="next chapter">Saturation over ZZ</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/matrix/matrix_integer_dense_hnf.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="matrix_integer_dense_saturation.html" title="Saturation over ZZ"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="matrix_integer_2x2.html" title="Deprecated two by two matrices over the integers."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Matrices and Spaces of Matrices</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

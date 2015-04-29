@@ -1,0 +1,1003 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Normal Form games with N players. &mdash; Sage Reference Manual v6.6: Game Theory</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Game Theory" href="../../index.html" />
+    <link rel="next" title="Using Gambit as a standalone package" href="gambit_docs.html" />
+    <link rel="prev" title="Co-operative Games With Finite Players" href="cooperative_game.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gambit_docs.html" title="Using Gambit as a standalone package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cooperative_game.html" title="Co-operative Games With Finite Players"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Game Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="normal-form-games-with-n-players">
+<span id="sage-game-theory-normal-form-game"></span><h1>Normal Form games with N players.<a class="headerlink" href="#normal-form-games-with-n-players" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.game_theory.normal_form_game"></span><p>This module implements a class for normal form games (strategic form games)
+<a class="reference internal" href="#nn2007" id="id1">[NN2007]</a>. At present 3 algorithms are implemented to compute equilibria
+of these games (<tt class="docutils literal"><span class="pre">'lrs'</span></tt> - interfaced with the &#8216;lrs&#8217; library, <tt class="docutils literal"><span class="pre">'LCP'</span></tt> interfaced
+with the &#8216;gambit&#8217; library and support enumeration built in Sage). The architecture
+for the class is based on the gambit architecture to ensure an easy transition
+between gambit and Sage.  At present the algorithms for the computation of equilibria
+only solve 2 player games.</p>
+<p>A very simple and well known example of normal form game is referred
+to as the &#8216;Battle of the Sexes&#8217; in which two players Amy and Bob
+are modeled.  Amy prefers to play video games and Bob prefers to
+watch a movie.  They both however want to spend their evening together.
+This can be modeled using the following two matrices:</p>
+<div class="math">
+\[\begin{split}A = \begin{pmatrix}
+    3&amp;1\\
+    0&amp;2\\
+    \end{pmatrix}\end{split}\]\[\begin{split}
+B = \begin{pmatrix}
+    2&amp;1\\
+    0&amp;3\\
+    \end{pmatrix}\end{split}\]</div>
+<p>Matrix <span class="math">\(A\)</span> represents the utilities of Amy and matrix <span class="math">\(B\)</span> represents the
+utility of Bob. The choices of Amy correspond to the rows of the matrices:</p>
+<ul class="simple">
+<li>The first row corresponds to video games.</li>
+<li>The second row corresponds to movies.</li>
+</ul>
+<p>Similarly Bob&#8217;s choices are represented by the columns:</p>
+<ul class="simple">
+<li>The first column corresponds to video games.</li>
+<li>The second column corresponds to movies.</li>
+</ul>
+<p>Thus, if both Amy and Bob choose to play video games: Amy receives a
+utility of 3 and Bob a utility of 2. If Amy is indeed going to stick
+with video games Bob has no incentive to deviate (and vice versa).</p>
+<p>This situation repeats itself if both Amy and Bob choose to watch a movie:
+neither has an incentive to deviate.</p>
+<p>This loosely described situation is referred to as a Nash Equilibrium.
+We can use Sage to find them, and more importantly, see if there is any
+other situation where Amy and Bob have no reason to change their choice
+of action:</p>
+<p>Here is how we create the game in Sage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">battle_of_the_sexes</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">battle_of_the_sexes</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [1, 1], (1, 0): [0, 0], (0, 0): [3, 2], (1, 1): [2, 3]}</span>
+</pre></div>
+</div>
+<p>To obtain the Nash equilibria we run the <tt class="docutils literal"><span class="pre">obtain_nash()</span></tt> method. In the
+first few examples, we will use the &#8216;support enumeration&#8217; algorithm.
+A discussion about the different algorithms will be given later:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">battle_of_the_sexes</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 1), (0, 1)], [(3/4, 1/4), (1/4, 3/4)], [(1, 0), (1, 0)]]</span>
+</pre></div>
+</div>
+<p>If we look a bit closer at our output we see that a list of three
+pairs of tuples have been returned. Each of these correspond to a
+Nash Equilibrium, represented as a probability distribution over the
+available strategies:</p>
+<ul class="simple">
+<li><span class="math">\([(1, 0), (1, 0)]\)</span> corresponds to the first player only
+playing their first strategy and the second player also only playing
+their first strategy. In other words Amy and Bob both play video games.</li>
+<li><span class="math">\([(0, 1), (0, 1)]\)</span> corresponds to the first player only
+playing their second strategy and the second player also only playing
+their second strategy. In other words Amy and Bob both watch movies.</li>
+<li><span class="math">\([(3/4, 1/4), (1/4, 3/4)]\)</span> corresponds to players <span class="math">\(mixing\)</span> their
+strategies. Amy plays video games 75% of the time and Bob watches
+movies 75% of the time. At this equilibrium point Amy and Bob will
+only ever do the same activity <span class="math">\(3/8\)</span> of the time.</li>
+</ul>
+<p>We can use Sage to compute the expected utility for any mixed strategy
+pair <span class="math">\((\sigma_1, \sigma_2)\)</span>. The payoff to player 1 is given by the
+vector/matrix multiplication:</p>
+<div class="math">
+\[\sigma_1 A \sigma_2\]</div>
+<p>The payoff to player 2 is given by:</p>
+<div class="math">
+\[\sigma_1 B \sigma_2\]</div>
+<p>To compute this in Sage we have:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">for</span> <span class="n">ne</span> <span class="ow">in</span> <span class="n">battle_of_the_sexes</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">):</span>
+<span class="go">....:     print &quot;Utility for {}: &quot;.format(ne)</span>
+<span class="go">....:     print vector(ne[0]) * A * vector(ne[1]), vector(ne[0]) * B * vector(ne[1])</span>
+<span class="go">Utility for [(0, 1), (0, 1)]:</span>
+<span class="go">2 3</span>
+<span class="go">Utility for [(3/4, 1/4), (1/4, 3/4)]:</span>
+<span class="go">3/2 3/2</span>
+<span class="go">Utility for [(1, 0), (1, 0)]:</span>
+<span class="go">3 2</span>
+</pre></div>
+</div>
+<p>Allowing players to play mixed strategies ensures that there will always
+be a Nash Equilibrium for a normal form game. This result is called Nash&#8217;s
+Theorem (<a class="reference internal" href="#n1950" id="id2">[N1950]</a>).</p>
+<p>Let us consider the game called &#8216;matching pennies&#8217; where two players each
+present a coin with either HEADS or TAILS showing. If the coins show the
+same side then player 1 wins, otherwise player 2 wins:</p>
+<div class="math">
+\[\begin{split}A = \begin{pmatrix}
+    1&amp;-1\\
+    -1&amp;1\\
+    \end{pmatrix}\end{split}\]\[\begin{split}
+B = \begin{pmatrix}
+    -1&amp;1\\
+    1&amp;-1\\
+    \end{pmatrix}\end{split}\]</div>
+<p>It should be relatively straightforward to observe, that there is no
+situation, where both players always do the same thing, and have no
+incentive to deviate.</p>
+<p>We can plot the utility of player 1 when player 2 is playing a mixed
+strategy <span class="math">\(\sigma_2=(y,1-y)\)</span> (so that the utility to player 1 for
+playing strategy number <span class="math">\(i\)</span> is given by the matrix/vector multiplication
+<span class="math">\((Ay)_i\)</span>, ie element in position <span class="math">\(i\)</span> of the matrix/vector multiplication
+<span class="math">\(Ay\)</span>)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">y</span> <span class="o">=</span> <span class="n">var</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">plot</span><span class="p">((</span><span class="n">A</span> <span class="o">*</span> <span class="n">vector</span><span class="p">([</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">y</span><span class="p">]))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;blue&#39;</span><span class="p">,</span> <span class="n">legend_label</span><span class="o">=</span><span class="s">&#39;$u_1(r_1, (y, 1-y))$&#39;</span><span class="p">,</span> <span class="n">axes_labels</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;$y$&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">+=</span> <span class="n">plot</span><span class="p">((</span><span class="n">A</span> <span class="o">*</span> <span class="n">vector</span><span class="p">([</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">y</span><span class="p">]))[</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="n">legend_label</span><span class="o">=</span><span class="s">&#39;$u_1(r_2, (y, 1-y))$&#39;</span><span class="p">);</span> <span class="n">p</span>
+<span class="go">Graphics object consisting of 2 graphics primitives</span>
+</pre></div>
+</div>
+<p>We see that the only point at which player 1 is indifferent amongst
+the available strategies is when <span class="math">\(y=1/2\)</span>.</p>
+<p>If we compute the Nash equilibria we see that this corresponds to a point
+at which both players are indifferent:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">matching_pennies</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">matching_pennies</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(1/2, 1/2), (1/2, 1/2)]]</span>
+</pre></div>
+</div>
+<p>The utilities to both players at this Nash equilibrium
+is easily computed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">[</span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">M</span> <span class="ow">in</span> <span class="n">matching_pennies</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()]</span>
+<span class="go">[0, 0]</span>
+</pre></div>
+</div>
+<p>Note that the above uses the <tt class="docutils literal"><span class="pre">payoff_matrices</span></tt> method
+which returns the payoff matrices for a 2 player game:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">matching_pennies</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[ 1 -1]  [-1  1]</span>
+<span class="go">[-1  1], [ 1 -1]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>One can also input a single matrix and then a zero sum game is constructed.
+Here is an instance of <a class="reference external" href="http://www.samkass.com/theories/RPSSL.html">Rock-Paper-Scissors-Lizard-Spock</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+<span class="go">....:             [1, 0, -1, -1, 1],</span>
+<span class="go">....:             [-1, 1, 0, 1 , -1],</span>
+<span class="go">....:             [-1, 1, -1, 0, 1],</span>
+<span class="go">....:             [1, -1, 1, -1, 0]])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(1/5, 1/5, 1/5, 1/5, 1/5), (1/5, 1/5, 1/5, 1/5, 1/5)]]</span>
+</pre></div>
+</div>
+<p>We can also study games where players aim to minimize their utility.
+Here is the Prisoner&#8217;s Dilemma (where players are aiming to reduce
+time spent in prison):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">prisoners_dilemma</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">prisoners_dilemma</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">,</span> <span class="n">maximization</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">[[(0, 1), (0, 1)]]</span>
+</pre></div>
+</div>
+<p>When obtaining Nash equilibrium there are 3 algorithms currently available:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">'lrs'</span></tt>: Reverse search vertex enumeration for 2 player games. This
+algorithm uses the optional &#8216;lrs&#8217; package. To install it type <tt class="docutils literal"><span class="pre">sage</span> <span class="pre">-i</span>
+<span class="pre">lrs</span></tt> at the command line. For more information see <a class="reference internal" href="#a2000" id="id3">[A2000]</a>.</li>
+<li><tt class="docutils literal"><span class="pre">'LCP'</span></tt>: Linear complementarity program algorithm for 2 player games.
+This algorithm uses the open source game theory package:
+<a class="reference external" href="http://gambit.sourceforge.net/">Gambit</a> <a class="reference internal" href="#mmat2014" id="id4">[MMAT2014]</a>. At present this is
+the only gambit algorithm available in sage but further development will
+hope to implement more algorithms
+(in particular for games with more than 2 players). To install it
+type <tt class="docutils literal"><span class="pre">sage</span> <span class="pre">-i</span> <span class="pre">gambit</span></tt> at the command line.</li>
+<li><tt class="docutils literal"><span class="pre">'enumeration'</span></tt>: Support enumeration for 2 player games. This
+algorithm is hard coded in Sage and checks through all potential
+supports of a strategy. Supports of a given size with a conditionally
+dominated strategy are ignored. Note: this is not the preferred
+algorithm. The algorithm implemented is a combination of a basic
+algorithm described in <a class="reference internal" href="#nn2007" id="id5">[NN2007]</a> and a pruning component described
+in <a class="reference internal" href="#slb2008" id="id6">[SLB2008]</a>.</li>
+</ul>
+<p>Below we show how the three algorithms are called:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">matching_pennies</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span>  <span class="c"># optional - lrs</span>
+<span class="go">[[(1/2, 1/2), (1/2, 1/2)]]</span>
+<span class="gp">sage: </span><span class="n">matching_pennies</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="go">[[(0.5, 0.5), (0.5, 0.5)]]</span>
+<span class="gp">sage: </span><span class="n">matching_pennies</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(1/2, 1/2), (1/2, 1/2)]]</span>
+</pre></div>
+</div>
+<p>Note that if no algorithm argument is passed then the default will be
+selected according to the following order (if the corresponding package is
+installed):</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">'lrs'</span></tt> (requires &#8216;lrs&#8217;)</li>
+<li><tt class="docutils literal"><span class="pre">'enumeration'</span></tt></li>
+</ol>
+</div></blockquote>
+<p>Here is a game being constructed using gambit syntax (note that a
+<tt class="docutils literal"><span class="pre">NormalFormGame</span></tt> object acts like a dictionary with pure strategy tuples as
+keys and payoffs as their values):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding first player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding second player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [2, 3], (1, 0): [3, 1], (0, 0): [1, 3], (1, 1): [4, 4]}</span>
+</pre></div>
+</div>
+<p>Once this game is constructed we can view the payoff matrices and solve the
+game:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1 2]  [3 3]</span>
+<span class="go">[3 4], [1 4]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 1), (0, 1)]]</span>
+</pre></div>
+</div>
+<p>We can add an extra strategy to the first player:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">add_strategy</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [2, 3], (0, 0): [1, 3], (2, 1): [False, False], (2, 0): [False, False], (1, 0): [3, 1], (1, 1): [4, 4]}</span>
+</pre></div>
+</div>
+<p>If we do this and try and obtain the Nash equilibrium or view the payoff
+matrices(without specifying the utilities), an error is returned:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">utilities have not been populated</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">utilities have not been populated</span>
+</pre></div>
+</div>
+<p>Here we populate the missing utilities:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1 2]  [3 3]</span>
+<span class="go">[3 4]  [1 4]</span>
+<span class="go">[2 5], [1 3]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">()</span>
+<span class="go">[[(0, 0, 1), (0, 1)]]</span>
+</pre></div>
+</div>
+<p>We can use the same syntax as above to create games with
+more than 2 players:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">threegame</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding first player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding second player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding third player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">threegame</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1, 1): [3, 5, 8], (1, 1, 0): [8, 4, 6], (1, 0, 0): [9, 7, 9], (0, 0, 1): [1, 5, 9], (1, 0, 1): [3, 2, 3], (0, 0, 0): [3, 1, 4], (0, 1, 0): [2, 6, 5], (1, 1, 1): [2, 6, 4]}</span>
+</pre></div>
+</div>
+<p>The above requires a lot of input that could be simplified if there is
+another data structure with our utilities and/or a structure to the
+utilities.  The following example creates a game with a relatively strange
+utility function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">utility</span><span class="p">(</span><span class="n">strategy_triplet</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
+<span class="go">....:     return sum(strategy_triplet) * player</span>
+<span class="gp">sage: </span><span class="n">threegame</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding first player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding second player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding third player with 2 strategies</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]]:</span>
+<span class="go">....:     for p in range(3):</span>
+<span class="go">....:          threegame[i, j, k][p] = utility([i, j, k], p)</span>
+<span class="gp">sage: </span><span class="n">threegame</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1, 1): [0, 2, 4], (1, 1, 0): [0, 2, 4], (1, 0, 0): [0, 1, 2], (0, 0, 1): [0, 1, 2], (1, 0, 1): [0, 2, 4], (0, 0, 0): [0, 0, 0], (0, 1, 0): [0, 1, 2], (1, 1, 1): [0, 3, 6]}</span>
+</pre></div>
+</div>
+<p>At present no algorithm has been implemented in Sage for games with
+more than 2 players:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">threegame</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">NotImplementedError</span>: <span class="n-Identifier">Nash equilibrium for games with more than 2 players have not been implemented yet. Please see the gambit website (http://gambit.sourceforge.net/) that has a variety of available algorithms</span>
+</pre></div>
+</div>
+<p>There are however a variety of such algorithms available in gambit,
+further compatibility between Sage and gambit is actively being developed:
+<a class="reference external" href="https://github.com/tturocy/gambit/tree/sage_integration">https://github.com/tturocy/gambit/tree/sage_integration</a>.</p>
+<p>Note that the Gambit implementation of <tt class="docutils literal"><span class="pre">LCP</span></tt> can only handle integer
+payoffs. If a non integer payoff is used an error will be raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">The Gambit implementation of LCP only allows for integer valued payoffs. Please scale your payoff matrices.</span>
+</pre></div>
+</div>
+<p>Other algorithms can handle these payoffs:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(1/5, 4/5), (3/5, 2/5)]]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(1/5, 4/5), (3/5, 2/5)]]</span>
+</pre></div>
+</div>
+<p>It can be shown that linear scaling of the payoff matrices conserves the
+equilibrium values:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="go">[[(0.2, 0.8), (0.6, 0.4)]]</span>
+</pre></div>
+</div>
+<p>It is also possible to generate a Normal Form Game from a gambit Game:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">gambit</span> <span class="kn">import</span> <span class="n">Game</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="o">=</span> <span class="n">Game</span><span class="o">.</span><span class="n">new_table</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">gambitgame</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">(</span><span class="n">gambitgame</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="n">g</span>  <span class="c"># optional - gambit</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [2.0, 10.0], (1, 0): [10.0, 2.0], (0, 0): [8.0, 8.0], (1, 1): [5.0, 5.0]}</span>
+</pre></div>
+</div>
+<p>For more information on using Gambit in Sage see: <a class="reference internal" href="gambit_docs.html#module-sage.game_theory.gambit_docs" title="sage.game_theory.gambit_docs"><tt class="xref py py-mod docutils literal"><span class="pre">Using</span> <span class="pre">Gambit</span> <span class="pre">in</span>
+<span class="pre">Sage</span></tt></a>. This includes how to access Gambit
+directly using the version of iPython shipped with Sage and an explanation
+as to why the <tt class="docutils literal"><span class="pre">int</span></tt> calls are needed to handle the Sage preparser.</p>
+<p>Here is a slightly longer game that would take too long to solve with
+<tt class="docutils literal"><span class="pre">'enumeration'</span></tt>. Consider the following:</p>
+<p>An airline loses two suitcases belonging to two different travelers. Both
+suitcases happen to be identical and contain identical antiques. An
+airline manager tasked to settle the claims of both travelers explains
+that the airline is liable for a maximum of 10 per suitcase, and in order
+to determine an honest appraised value of the antiques the manager
+separates both travelers so they can&#8217;t confer, and asks them to write down
+the amount of their value at no less than 2 and no larger than 100. He
+also tells them that if both write down the same number, he will treat
+that number as the true dollar value of both suitcases and reimburse both
+travelers that amount.</p>
+<p>However, if one writes down a smaller number than the other, this smaller
+number will be taken as the true dollar value, and both travelers will
+receive that amount along with a bonus/malus: 2 extra will be paid to the
+traveler who wrote down the lower value and a 2 deduction will be taken
+from the person who wrote down the higher amount. The challenge is: what
+strategy should both travelers follow to decide the value they should
+write down?</p>
+<p>In the following we create the game (with a max value of 10) and solve it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c"># Modifying this value lets us play with games of any size</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sign</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">)</span>  <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">+</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">sign</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">)</span>  <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">+</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(1, 0, 0, 0, 0, 0, 0, 0, 0), (1, 0, 0, 0, 0, 0, 0, 0, 0)]]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span> <span class="c"># optional - gambit</span>
+<span class="go">[[(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)]]</span>
+</pre></div>
+</div>
+<p>The output is a pair of vectors (as before) showing the Nash equilibrium.
+In particular it here shows that out of the 10 possible strategies both
+players should choose the first. Recall that the above considers a reduced
+version of the game where individuals can claim integer values between 2
+and 10.  The equilibrium strategy is thus for both players to state that
+the value of their suitcase is 2.</p>
+<p>Note that degenerate games can cause problems for most algorithms.
+The following example in fact has an infinite quantity of equilibria which
+is evidenced by the various algorithms returning different solutions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">degenerate_game</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">degenerate_game</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(0, 1/3, 2/3), (1/3, 2/3)], [(1, 0, 0), (2/3, 1/3)], [(1, 0, 0), (1, 0)]]</span>
+<span class="gp">sage: </span><span class="n">degenerate_game</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span> <span class="c"># optional - gambit</span>
+<span class="go">[[(0.0, 0.3333333333, 0.6666666667), (0.3333333333, 0.6666666667)],</span>
+<span class="go"> [(1.0, -0.0, 0.0), (0.6666666667, 0.3333333333)],</span>
+<span class="go"> [(1.0, 0.0, 0.0), (1.0, 0.0)]]</span>
+<span class="gp">sage: </span><span class="n">degenerate_game</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 1/3, 2/3), (1/3, 2/3)], [(1, 0, 0), (1, 0)]]</span>
+</pre></div>
+</div>
+<p>Note the &#8216;negative&#8217; <span class="math">\(-0.0\)</span> output by gambit. This is due to the numerical
+nature of the algorithm used.</p>
+<p>Here is an example with the trivial game where all payoffs are 0:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c"># Adding first player with 3 strategies</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c"># Adding second player with 3 strategies</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+<span class="go">....:     g[key] = [0, 0]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[0 0 0]  [0 0 0]</span>
+<span class="go">[0 0 0]  [0 0 0]</span>
+<span class="go">[0 0 0], [0 0 0]</span>
+<span class="go">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 0, 1), (0, 0, 1)], [(0, 0, 1), (0, 1, 0)], [(0, 0, 1), (1, 0, 0)], [(0, 1, 0), (0, 0, 1)], [(0, 1, 0), (0, 1, 0)], [(0, 1, 0), (1, 0, 0)], [(1, 0, 0), (0, 0, 1)], [(1, 0, 0), (0, 1, 0)], [(1, 0, 0), (1, 0, 0)]]</span>
+</pre></div>
+</div>
+<p>A good description of degenerate games can be found in <a class="reference internal" href="#nn2007" id="id7">[NN2007]</a>.</p>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="n1950" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[N1950]</a></td><td>John Nash.
+<em>Equilibrium points in n-person games.</em>
+Proceedings of the National Academy of Sciences 36.1 (1950): 48-49.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="nn2007" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[NN2007]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id5">2</a>, <a class="fn-backref" href="#id7">3</a>)</em> Nisan, Noam, et al., eds.
+<em>Algorithmic game theory.</em>
+Cambridge University Press, 2007.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="a2000" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[A2000]</a></td><td>Avis, David.
+<em>A revised implementation of the reverse search vertex enumeration algorithm.</em>
+Polytopes-combinatorics and computation
+Birkhauser Basel, 2000.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="mmat2014" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[MMAT2014]</a></td><td>McKelvey, Richard D., McLennan, Andrew M., and Turocy, Theodore L.
+<em>Gambit: Software Tools for Game Theory, Version 13.1.2.</em>
+<a class="reference external" href="http://www.gambit-project.org">http://www.gambit-project.org</a> (2014).</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="slb2008" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[SLB2008]</a></td><td>Shoham, Yoav, and Kevin Leyton-Brown.
+<em>Multiagent systems: Algorithmic, game-theoretic, and logical foundations.</em>
+Cambridge University Press, 2008.</td></tr>
+</tbody>
+</table>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>James Campbell and Vince Knight (06-2014): Original version</li>
+</ul>
+<dl class="class">
+<dt id="sage.game_theory.normal_form_game.NormalFormGame">
+<em class="property">class </em><tt class="descclassname">sage.game_theory.normal_form_game.</tt><tt class="descname">NormalFormGame</tt><big>(</big><em>generator=None</em><big>)</big><a class="headerlink" href="#sage.game_theory.normal_form_game.NormalFormGame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">_abcoll.MutableMapping</span></tt></p>
+<p>An object representing a Normal Form Game. Primarily used to compute the
+Nash Equilibria.</p>
+<p>INPUT:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">generator</span></tt> - Can be a list of 2 matrices, a single matrix or left</dt>
+<dd><p class="first last">blank.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="method">
+<dt id="sage.game_theory.normal_form_game.NormalFormGame.add_player">
+<tt class="descname">add_player</tt><big>(</big><em>num_strategies</em><big>)</big><a class="headerlink" href="#sage.game_theory.normal_form_game.NormalFormGame.add_player" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a player to a NormalFormGame.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">num_strategies</span></tt> - the number of strategies the player should have.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding first player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># Adding second player with 1 strategy</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># Adding third player with 1 strategy</span>
+<span class="gp">sage: </span><span class="n">g</span>
+<span class="go">Normal Form Game with the following utilities: {(1, 0, 0): [False, False, False], (0, 0, 0): [False, False, False]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.game_theory.normal_form_game.NormalFormGame.add_strategy">
+<tt class="descname">add_strategy</tt><big>(</big><em>player</em><big>)</big><a class="headerlink" href="#sage.game_theory.normal_form_game.NormalFormGame.add_strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a strategy to a player, will not affect already completed
+strategy profiles.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">player</span></tt> - the index of the player.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>A simple example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">example</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">example</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [0, 2], (1, 0): [-2, -1], (0, 0): [1, 3], (1, 1): [3, 0]}</span>
+<span class="gp">sage: </span><span class="n">example</span><span class="o">.</span><span class="n">add_strategy</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">example</span>
+<span class="go">Normal Form Game with the following utilities: {(0, 1): [0, 2], (0, 0): [1, 3], (2, 1): [False, False], (2, 0): [False, False], (1, 0): [-2, -1], (1, 1): [3, 0]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.game_theory.normal_form_game.NormalFormGame.obtain_nash">
+<tt class="descname">obtain_nash</tt><big>(</big><em>algorithm=False</em>, <em>maximization=True</em><big>)</big><a class="headerlink" href="#sage.game_theory.normal_form_game.NormalFormGame.obtain_nash" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to return the Nash equilibrium for the game.
+Optional arguments can be used to specify the algorithm used.
+If no algorithm is passed then an attempt is made to use the most
+appropriate algorithm.</p>
+<p>INPUT:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">algorithm</span></tt> - the following algorithms should be available through</dt>
+<dd><p class="first last">this function:</p>
+</dd>
+</dl>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'lrs'</span></tt> - This algorithm is only suited for 2 player games.
+See the lrs web site (<a class="reference external" href="http://cgm.cs.mcgill.ca/~avis/C/lrs.html">http://cgm.cs.mcgill.ca/~avis/C/lrs.html</a>).</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'LCP'</span></tt> - This algorithm is only suited for 2 player games.
+See the gambit web site (<a class="reference external" href="http://gambit.sourceforge.net/">http://gambit.sourceforge.net/</a>). Note
+that the output differs from the other algorithms: floats are
+returned.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">'enumeration'</span></tt> - This is a very inefficient
+algorithm (in essence a brute force approach).</p>
+<ol class="arabic simple">
+<li>For each k in 1...min(size of strategy sets)</li>
+<li>For each I,J supports of size k</li>
+<li>Prune: check if supports are dominated</li>
+<li>Solve indifference conditions and check that have Nash Equilibrium.</li>
+</ol>
+<p>Solving the indifference conditions is done by building the
+corresponding linear system.  If  <span class="math">\(\rho_1, \rho_2\)</span> are the
+supports player 1 and 2 respectively.  Then, indifference implies:</p>
+<div class="math">
+\[u_1(s_1,\rho_2) = u_2(s_2, \rho_2)\]</div>
+<p>for all <span class="math">\(s_1, s_2\)</span> in the support of <span class="math">\(\rho_1\)</span>. This corresponds to:</p>
+<div class="math">
+\[\sum_{j\in S(\rho_2)}A_{s_1,j}{\rho_2}_j = \sum_{j\in S(\rho_2)}A_{s_2,j}{\rho_2}_j\]</div>
+<p>for all <span class="math">\(s_1, s_2\)</span> in the support of <span class="math">\(\rho_1\)</span> where <span class="math">\(A\)</span> is the payoff
+matrix of player 1. Equivalently we can consider consecutive rows of
+<span class="math">\(A\)</span> (instead of all pairs of strategies). Thus the corresponding
+linear system can be written as:</p>
+<div class="math">
+\[\left(\sum_{j \in S(\rho_2)}A_{i,j} - A_{i+1,j}\right){\rho_2}_j\]</div>
+<p>for all <span class="math">\(1\leq i \leq |S(\rho_1)|\)</span> (where <span class="math">\(A\)</span> has been modified to only
+contain the rows corresponding to <span class="math">\(S(\rho_1)\)</span>). We also require all
+elements of <span class="math">\(\rho_2\)</span> to sum to 1:</p>
+<div class="math">
+\[\sum_{j\in S(\rho_1)}{\rho_2}_j = 1\]</div>
+</li>
+</ul>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">maximization</span></tt> - Whether a player is trying to maximize their</dt>
+<dd><p class="first last">utility or minimize it.</p>
+</dd>
+</dl>
+<ul class="simple">
+<li>When set to <tt class="docutils literal"><span class="pre">True</span></tt> (default) it is assumed that players
+aim to maximise their utility.</li>
+<li>When set to <tt class="docutils literal"><span class="pre">False</span></tt> it is assumed that players aim to
+minimise their utility.</li>
+</ul>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>A game with 1 equilibrium when <tt class="docutils literal"><span class="pre">maximization</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt> and 3 when
+<tt class="docutils literal"><span class="pre">maximization</span></tt> is <tt class="docutils literal"><span class="pre">False</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">44</span><span class="p">],</span>
+<span class="go">....:       [15, 10, 105],</span>
+<span class="go">....:       [19, 204, 55],</span>
+<span class="go">....:       [20, 200, 590]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="go">....:             [0, 5, 6],</span>
+<span class="go">....:             [3, 4, 1],</span>
+<span class="go">....:             [4, 1, 20]])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(0, 0, 0, 1), (0, 0, 1)]]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">,</span> <span class="n">maximization</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(2/3, 1/12, 1/4, 0), (6333/8045, 247/8045, 293/1609)], [(3/4, 0, 1/4, 0), (0, 11/307, 296/307)], [(5/6, 1/6, 0, 0), (98/99, 1/99, 0)]]</span>
+</pre></div>
+</div>
+<p>This particular game has 3 Nash equilibria:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+<span class="go">....:             [2,5],</span>
+<span class="go">....:             [0,6]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+<span class="go">....:             [2,6],</span>
+<span class="go">....:             [3,1]])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 1/3, 2/3), (1/3, 2/3)], [(4/5, 1/5, 0), (2/3, 1/3)], [(1, 0, 0), (1, 0)]]</span>
+</pre></div>
+</div>
+<p>Here is a slightly larger game:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">160</span><span class="p">,</span> <span class="mi">205</span><span class="p">,</span> <span class="mi">44</span><span class="p">],</span>
+<span class="go">....:             [175, 180, 45],</span>
+<span class="go">....:             [201, 204, 50],</span>
+<span class="go">....:             [120, 207, 49]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="go">....:             [1, 0, 0],</span>
+<span class="go">....:             [3, 4, 1],</span>
+<span class="go">....:             [4, 1, 2]])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 0, 3/4, 1/4), (1/28, 27/28, 0)]]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span>  <span class="c"># optional - lrs</span>
+<span class="go">[[(0, 0, 3/4, 1/4), (1/28, 27/28, 0)]]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="go">[[(0.0, 0.0, 0.75, 0.25), (0.0357142857, 0.9642857143, 0.0)]]</span>
+</pre></div>
+</div>
+<p>2 random matrices:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">player1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="go">....:                   [1, 1, 2, 1, 80],</span>
+<span class="go">....:                   [0, 2, 15, 0, -12],</span>
+<span class="go">....:                   [-2, -2, 1, -20, -1],</span>
+<span class="go">....:                   [1, -2, -1, -2, 1]])</span>
+<span class="gp">sage: </span><span class="n">player2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+<span class="go">....:                   [6, 14, -5, 1, 0],</span>
+<span class="go">....:                   [0, -2, -1, 8, -1],</span>
+<span class="go">....:                   [1, -1, 3, -3, 2],</span>
+<span class="go">....:                   [8, -4, 1, 1, -17]])</span>
+<span class="gp">sage: </span><span class="n">fivegame</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">player1</span><span class="p">,</span> <span class="n">player2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">fivegame</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(1, 0, 0, 0, 0), (0, 1, 0, 0, 0)]]</span>
+<span class="gp">sage: </span><span class="n">fivegame</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span> <span class="c"># optional - lrs</span>
+<span class="go">[[(1, 0, 0, 0, 0), (0, 1, 0, 0, 0)]]</span>
+<span class="gp">sage: </span><span class="n">fivegame</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span> <span class="c"># optional - gambit</span>
+<span class="go">[[(1.0, 0.0, 0.0, 0.0, 0.0), (0.0, 1.0, 0.0, 0.0, 0.0)]]</span>
+</pre></div>
+</div>
+<p>Here is an example of a 3 by 2 game with 3 Nash equilibrium:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+<span class="go">....:             [2,5],</span>
+<span class="go">....:             [0,6]])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+<span class="go">....:             [2,6],</span>
+<span class="go">....:             [3,1]])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="go">[[(0, 1/3, 2/3), (1/3, 2/3)], [(4/5, 1/5, 0), (2/3, 1/3)], [(1, 0, 0), (1, 0)]]</span>
+</pre></div>
+</div>
+<p>Note that outputs for all algorithms are as lists of lists of
+tuples and the equilibria have been sorted so that all algorithms give
+a comparable output (although <tt class="docutils literal"><span class="pre">'LCP'</span></tt> returns floats):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">enumeration_eqs</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;enumeration&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[[</span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">eq</span><span class="p">]</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="n">enumeration_eqs</span><span class="p">]</span>
+<span class="go">[[&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;]]</span>
+<span class="gp">sage: </span><span class="n">lrs_eqs</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;lrs&#39;</span><span class="p">)</span>  <span class="c"># optional - lrs</span>
+<span class="gp">sage: </span><span class="p">[[</span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">eq</span><span class="p">]</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="n">lrs_eqs</span><span class="p">]</span>  <span class="c"># optional - lrs</span>
+<span class="go">[[&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;]]</span>
+<span class="gp">sage: </span><span class="n">LCP_eqs</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">obtain_nash</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;LCP&#39;</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="gp">sage: </span><span class="p">[[</span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">eq</span><span class="p">]</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="n">LCP_eqs</span><span class="p">]</span>  <span class="c"># optional - gambit</span>
+<span class="go">[[&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;], [&lt;type &#39;tuple&#39;&gt;, &lt;type &#39;tuple&#39;&gt;]]</span>
+<span class="gp">sage: </span><span class="n">enumeration_eqs</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">enumeration_eqs</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">lrs_eqs</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">lrs_eqs</span><span class="p">)</span>  <span class="c"># optional - lrs</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">LCP_eqs</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">LCP_eqs</span><span class="p">)</span>  <span class="c"># optional - gambit</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">lrs_eqs</span> <span class="o">==</span> <span class="n">enumeration_eqs</span>  <span class="c"># optional - lrs</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">enumeration_eqs</span> <span class="o">==</span> <span class="n">LCP_eqs</span>  <span class="c"># optional - gambit</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="p">[[[</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">]</span> <span class="k">for</span> <span class="nb">str</span> <span class="ow">in</span> <span class="n">eq</span><span class="p">]</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="n">enumeration_eqs</span><span class="p">]</span> <span class="o">==</span> <span class="p">[[[</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">]</span> <span class="k">for</span> <span class="nb">str</span> <span class="ow">in</span> <span class="n">eq</span><span class="p">]</span> <span class="k">for</span> <span class="n">eq</span> <span class="ow">in</span> <span class="n">LCP_eqs</span><span class="p">]</span>  <span class="c"># optional - gambit</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.game_theory.normal_form_game.NormalFormGame.payoff_matrices">
+<tt class="descname">payoff_matrices</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.game_theory.normal_form_game.NormalFormGame.payoff_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns 2 matrices representing the payoffs for each player.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">([</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1 2]  [3 3]</span>
+<span class="go">[3 4], [1 4]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>If we create a game with 3 players we will not be able to
+obtain payoff matrices:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding first player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding second player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># Adding third player with 2 strategies</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">Only available for 2 player games</span>
+</pre></div>
+</div>
+<p>If we do create a two player game but it is not complete
+then an error is also raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">NormalFormGame</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># Adding first player with 1 strategy</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># Adding second player with 1 strategy</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">utilities have not been populated</span>
+</pre></div>
+</div>
+<p>The above creates a 2 player game where each player has
+a single strategy. Here we populate the strategies and
+can then view the payoff matrices:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">payoff_matrices</span><span class="p">()</span>
+<span class="go">([1], [2])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="cooperative_game.html"
+                                  title="previous chapter">Co-operative Games With Finite Players</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="gambit_docs.html"
+                                  title="next chapter">Using Gambit as a standalone package</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/game_theory/normal_form_game.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gambit_docs.html" title="Using Gambit as a standalone package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cooperative_game.html" title="Co-operative Games With Finite Players"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Game Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

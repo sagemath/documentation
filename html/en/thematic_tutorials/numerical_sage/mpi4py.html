@@ -1,0 +1,416 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mpi4py &mdash; Thematic Tutorials v6.6</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.6" href="../index.html" />
+    <link rel="up" title="Parallel Computation" href="parallel_computation.html" />
+    <link rel="next" title="Parallel Laplace Solver" href="parallel_laplace_solver.html" />
+    <link rel="prev" title="Parallel Computation" href="parallel_computation.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="parallel_laplace_solver.html" title="Parallel Laplace Solver"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="parallel_computation.html" title="Parallel Computation"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="parallel_computation.html" accesskey="U">Parallel Computation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mpi4py">
+<h1>mpi4py<a class="headerlink" href="#mpi4py" title="Permalink to this headline">¶</a></h1>
+<p>MPI which stands for message passing interface is a common library
+for parallel programming. There is a package mpi4py that builds on
+the top of mpi, and lets arbitrary python objects be passed between
+different processes. These packages are not part of the default
+sage install. To install them do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">optional_packages</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Find the package name openmpi-* and mpi4py-*and do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">install_package</span><span class="p">(</span><span class="s">&#39;openmpi-*&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">install_package</span><span class="p">(</span><span class="s">&#39;mpi4py-*&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that openmpi takes a while to compile (15-20 minutes or so).
+Openmpi can be run on a cluster, however this requires some set up
+so that processes on different machines can communicate (though if
+you are on a cluster this is probably already set up). The simplest
+case is if you are on a shared memory or multicore system where
+openmpi will just work with no configuration from you. To be
+honest, I have never tried to run mpi4py on a cluster, though there
+is much information about these topics online.</p>
+<p>Now, the way that mpi works is you start a group of mpi processes,
+all of the processes run the same code. Each process has a rank,
+that is a number that identifies it. The following pseudocode
+indicates the general format of MPI programs.</p>
+<div class="highlight-python"><div class="highlight"><pre>   ....
+
+if my rank is n:
+   do some somputation ...
+   send some stuff to the process of rank j
+   receive some data from the process of rank k
+
+else if my rank is n+1:
+   ....
+</pre></div>
+</div>
+<p>Each processes looks for what it&#8217;s supposed to do (specified by its
+rank) and processes can send data and receive data. Lets give an
+example. Create a script with the following code in a file mpi_1.py</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;hello world&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;my rank is: </span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To run it you can do (from the command line in your sage
+directory)</p>
+<div class="highlight-python"><div class="highlight"><pre>./local/bin/mpirun -np 5 ./sage -python mpi_1.py
+</pre></div>
+</div>
+<p>The command mpirun -np 5 starts 5 copies of a program under mpi. In
+this case we have 5 copies of sage in pure python mode run the
+script mpi_1.py. The result should be 5 &#8220;hello worlds&#8221; plus 5 distinct ranks.
+The two most important mpi operations are sending and receiving.
+Consider the following example which you should put in a script mpi_2.py</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="n">rank</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
+<span class="n">size</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span>
+<span class="n">v</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rank</span><span class="p">]</span><span class="o">*</span><span class="mi">5</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">comm</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">dest</span><span class="o">=</span><span class="p">(</span><span class="n">rank</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">size</span><span class="p">)</span>
+<span class="n">data</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="p">(</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">size</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;my rank is </span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">rank</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;I received this:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The same command as above with mpi_1.py replaced by mpi_2.py will
+produce 5 outputs and you will see each process creates an array and
+then passes it to the next guy (where the last guy passes to the
+first.) Note that MPI.size is the total number of mpi
+processes. MPI.COMM WORLD is the communication world.</p>
+<p>There are some subtleties regarding MPI to be aware of. Small sends
+are buffered. This means if a process sends a small object it will
+be stored by openmpi and that process will continue its execution
+and the object it sent will be received whenever the destination
+executes a receive. However, if an object is large a process will
+hang until its destination executes a corresponding receive. In
+fact the above code will hang if [rank]*5 is replaced by
+[rank]*500. It would be better to do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="n">rank</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
+<span class="n">size</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span>
+<span class="n">v</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rank</span><span class="p">]</span><span class="o">*</span><span class="mi">500</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+   <span class="n">comm</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">dest</span><span class="o">=</span><span class="p">(</span><span class="n">rank</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">size</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="p">(</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">comm</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">dest</span><span class="o">=</span><span class="p">(</span><span class="n">rank</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">size</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;my rank is </span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">rank</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;I received this:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now the first process initiates a send, and then process 1 will be
+ready to receive and then he will send and process 2 will be
+waiting to receive, etc. This will not lock regardless of how large
+of an array we pass.</p>
+<p>A common idiom is to have one process, usually the one with rank 0
+act as a leader. That processes sends data out to the other
+processes and processes the results and decides how further
+computation should proceed. Consider the following code</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">sendbuf</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">m</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">sendbuf</span><span class="o">=</span><span class="n">m</span>
+
+<span class="n">v</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;I got this array:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The scatter command takes a list and evenly divides it amongst all
+the processes. Here the root process creates a matrix (which is
+viewed as a list of rows) and then scatters it to everybody (roots
+sendbuf is divided equally amongst the processes). Each process
+prints the row it got. Note that the scatter command is executed by
+everyone, but when root executes it, it acts as a send and a
+receive (root gets one row from itself), while for everyone else it
+is just a receive.</p>
+<p>There is a complementary gather command that collects results from
+all the processes into a list. The next example uses scatter and
+gather together. Now the root process scatters the rows of a
+matrix, each process then squares the elements of the row it gets.
+Then the rows are all gathered up again by the root process who
+collects them into a new matrix.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+<span class="n">sendbuf</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">m</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="o">*</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">sendbuf</span><span class="o">=</span><span class="n">m</span>
+
+<span class="n">v</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;I got this array:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="o">*</span><span class="n">v</span>
+<span class="n">recvbuf</span><span class="o">=</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There is also a broadcast command that sends a single object to
+every process. Consider the following small extension. This is the
+same as before, but now at the end the root process sends everyone
+the string &#8220;done&#8221;, which is printed out.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">v</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">&quot;I got this array:&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="o">*</span><span class="n">v</span>
+<span class="n">recvbuf</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+    <span class="n">sendbuf</span><span class="o">=</span><span class="s">&quot;done&quot;</span>
+<span class="n">recvbuf</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span><span class="n">root</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">recvbuf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>MPI programming is difficult. It is &#8220;schizophrenic programming&#8221; in
+that you are writing a single programming with multiple threads of
+execution &#8220;many voices in one head&#8221;.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="parallel_computation.html"
+                                  title="previous chapter">Parallel Computation</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="parallel_laplace_solver.html"
+                                  title="next chapter">Parallel Laplace Solver</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/numerical_sage/mpi4py.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="parallel_laplace_solver.html" title="Parallel Laplace Solver"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="parallel_computation.html" title="Parallel Computation"
+             >previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="parallel_computation.html" >Parallel Computation</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

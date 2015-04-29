@@ -1,0 +1,373 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Weave &mdash; Thematic Tutorials v6.6</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.6" href="../index.html" />
+    <link rel="up" title="Using Compiled Code Interactively" href="using_compiled_code_iteractively.html" />
+    <link rel="next" title="Ctypes" href="ctypes.html" />
+    <link rel="prev" title="More Interesting Examples with f2py" href="f2py_examples.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ctypes.html" title="Ctypes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="f2py_examples.html" title="More Interesting Examples with f2py"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" accesskey="U">Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="weave">
+<h1>Weave<a class="headerlink" href="#weave" title="Permalink to this headline">¶</a></h1>
+<p>Weave is a tool that does for C/C++ what f2py does for fortran
+(though we should note it is also possible to wrap C code using
+f2py). Suppose we have some data stored in numpy arrays and we want
+to write some C/C++ code to do something with that data that needs
+to be fast. For a trivial example, let us write a function that
+sums the contents of a numpy array</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">weave</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">scipy.weave</span> <span class="kn">import</span> <span class="n">converters</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">my_sum</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">code</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    int i;</span>
+<span class="s">    long int counter;</span>
+<span class="s">    counter =0;</span>
+<span class="s">    for(i=0;i&lt;n;i++)</span>
+<span class="s">    {</span>
+<span class="s">        counter=counter+a(i);</span>
+<span class="s">    }</span>
+<span class="s">    return_val=counter;</span>
+<span class="s">    &quot;&quot;&quot;</span>
+
+    <span class="n">err</span><span class="o">=</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">code</span><span class="p">,[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;n&#39;</span><span class="p">],</span><span class="n">type_converters</span><span class="o">=</span><span class="n">converters</span><span class="o">.</span><span class="n">blitz</span><span class="p">,</span><span class="n">compiler</span><span class="o">=</span><span class="s">&#39;gcc&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">err</span>
+</pre></div>
+</div>
+<p>To call this function do</p>
+<div class="highlight-python"><div class="highlight"><pre>import numpy
+a = numpy.array(range(60000))
+time my_sum(a)
+time sum(range(60000))
+</pre></div>
+</div>
+<p>The first time the weave code executes the code is compiled, from
+then on, the execution is immediate. You should find that python&#8217;s
+built-in sum function is comparable in speed to what we just wrote.
+Let us explain some things about this example. As you can see, to
+use weave you create a string containing pure C/C++ code. Then you
+call weave.inline on it. You pass to weave the string with the
+code, as well as a list of python object that it is to
+automatically convert to C variables. So in our case we can refer
+to the python objects <span class="math">\(a\)</span> and <span class="math">\(n\)</span> inside of weave.
+Numpy arrays are accessed by <span class="math">\(a(i)\)</span> if they are
+one-dimensional or <span class="math">\(a(i,j)\)</span> if they are two dimensional. Of
+course we cannot use just any python object, currently weave knows
+about all python numerical data types such as ints and floats, as
+well as numpy arrays. Note that numpy arrays do not become pointers
+in the C code (which is why they are accessed by ( ) and not [ ].
+If you need a pointer you should copy the data into a pointer. Next
+is a more complicated example that calls lapack to solve a linear
+system ax=b.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">weave_solve</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">n</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">support_code</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    #include &lt;stdio.h&gt;</span>
+<span class="s">    extern &quot;C&quot; {</span>
+<span class="s">    void dgesv_(int *size, int *flag,double* data,int*size,</span>
+<span class="s">                int*perm,double*vec,int*size,int*ok);</span>
+<span class="s">    }</span>
+<span class="s">    &quot;&quot;&quot;</span>
+
+    <span class="n">code</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">        int i,j;</span>
+<span class="s">        double* a_c;</span>
+<span class="s">        double* b_c;</span>
+<span class="s">        int size;</span>
+<span class="s">        int flag;</span>
+<span class="s">        int* p;</span>
+<span class="s">        int ok;</span>
+<span class="s">        size=n;</span>
+<span class="s">        flag=1;</span>
+<span class="s">        a_c= (double *)malloc(sizeof(double)*n*n);</span>
+<span class="s">        b_c= (double *)malloc(sizeof(double)*n);</span>
+<span class="s">        p = (int*)malloc(sizeof(int)*n);</span>
+<span class="s">        for(i=0;i&lt;n;i++)</span>
+<span class="s">           {</span>
+<span class="s">           b_c[i]=b(i);</span>
+<span class="s">           for(j=0;j&lt;n;j++)</span>
+<span class="s">             a_c[i*n+j]=a(i,j);</span>
+<span class="s">           }</span>
+<span class="s">        dgesv_(&amp;size,&amp;flag,a_c,&amp;size,p,b_c,&amp;size,&amp;ok);</span>
+<span class="s">        for(i=0;i&lt;n;i++)</span>
+<span class="s">           x(i)=b_c[i];</span>
+<span class="s">        free(a_c);</span>
+<span class="s">        free(b_c);</span>
+<span class="s">        free(p);</span>
+<span class="s">    &quot;&quot;&quot;</span>
+
+    <span class="n">libs</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;lapack&#39;</span><span class="p">,</span><span class="s">&#39;blas&#39;</span><span class="p">,</span><span class="s">&#39;g2c&#39;</span><span class="p">]</span>
+    <span class="n">dirs</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;/media/sdb1/sage-2.6.linux32bit-i686-Linux&#39;</span><span class="p">]</span>
+    <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;n&#39;</span><span class="p">]</span>
+    <span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">code</span><span class="p">,</span><span class="nb">vars</span><span class="p">,</span><span class="n">support_code</span><span class="o">=</span><span class="n">support_code</span><span class="p">,</span><span class="n">libraries</span><span class="o">=</span><span class="n">libs</span><span class="p">,</span><span class="n">library_dirs</span><span class="o">=</span><span class="n">dirs</span><span class="p">,</span>  \
+    <span class="n">type_converters</span><span class="o">=</span><span class="n">converters</span><span class="o">.</span><span class="n">blitz</span><span class="p">,</span><span class="n">compiler</span><span class="o">=</span><span class="s">&#39;gcc&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>Note that we have used the support_code argument which is additional C code you can
+use to include headers and declare functions. Note that inline also can take all distutils
+compiler options which we used here to link in lapack.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">weaveTimeStep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes a time step using inlined C code -- this version uses</span>
+<span class="sd">    blitz arrays.&quot;&quot;&quot;</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">dx2</span><span class="p">,</span> <span class="n">dy2</span> <span class="o">=</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">dnr_inv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="n">dx2</span> <span class="o">+</span> <span class="n">dy2</span><span class="p">)</span>
+
+    <span class="n">code</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">           double tmp, err, diff,dnr_inv_;</span>
+<span class="s">           dnr_inv_=dnr_inv;</span>
+<span class="s">           err = 0.0;</span>
+<span class="s">           for (int i=1; i&lt;nx-1; ++i) {</span>
+<span class="s">               for (int j=1; j&lt;ny-1; ++j) {</span>
+<span class="s">                   tmp = u(i,j);</span>
+<span class="s">                   u(i,j) = ((u(i-1,j) + u(i+1,j))*dy2 +</span>
+<span class="s">                             (u(i,j-1) + u(i,j+1))*dx2)*dnr_inv_;</span>
+<span class="s">                   diff = u(i,j) - tmp;</span>
+<span class="s">                   err += diff*diff;</span>
+<span class="s">               }</span>
+<span class="s">           }</span>
+<span class="s">           return_val = sqrt(err);</span>
+<span class="s">           &quot;&quot;&quot;</span>
+    <span class="c"># compiler keyword only needed on windows with MSVC installed</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;u&#39;</span><span class="p">,</span> <span class="s">&#39;dx2&#39;</span><span class="p">,</span> <span class="s">&#39;dy2&#39;</span><span class="p">,</span> <span class="s">&#39;dnr_inv&#39;</span><span class="p">,</span> <span class="s">&#39;nx&#39;</span><span class="p">,</span><span class="s">&#39;ny&#39;</span><span class="p">],</span>
+                       <span class="n">type_converters</span> <span class="o">=</span> <span class="n">converters</span><span class="o">.</span><span class="n">blitz</span><span class="p">,</span>
+                       <span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span><span class="n">err</span>
+</pre></div>
+</div>
+<p>Using our previous driver you should find that this version takes about the
+same amount of time as the f2py version around .2 seconds to do 2750
+iterations.</p>
+<p>For more about weave see
+<a class="reference external" href="http://www.scipy.org/Weave">http://www.scipy.org/Weave</a></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="f2py_examples.html"
+                                  title="previous chapter">More Interesting Examples with f2py</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="ctypes.html"
+                                  title="next chapter">Ctypes</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/numerical_sage/weave.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ctypes.html" title="Ctypes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="f2py_examples.html" title="More Interesting Examples with f2py"
+             >previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" >Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

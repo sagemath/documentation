@@ -1,0 +1,727 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Hidden Markov Models &mdash; Sage Reference Manual v6.6: Statistics</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Statistics" href="../../../index.html" />
+    <link rel="next" title="Continuous Emission Hidden Markov Models" href="chmm.html" />
+    <link rel="prev" title="C Int Lists" href="../intlist.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chmm.html" title="Continuous Emission Hidden Markov Models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../intlist.html" title="C Int Lists"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Statistics</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="hidden-markov-models">
+<span id="sage-stats-hmm-hmm"></span><h1>Hidden Markov Models<a class="headerlink" href="#hidden-markov-models" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.stats.hmm.hmm"></span><p>This is a complete pure-Cython optimized implementation of Hidden
+Markov Models.  It fully supports Discrete, Gaussian, and Mixed
+Gaussian emissions.</p>
+<p>The best references for the basic HMM algorithms implemented here are:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">Tapas Kanungo&#8217;s &#8220;Hidden Markov Models&#8221;</p>
+</li>
+<li><dl class="first docutils">
+<dt>Jackson&#8217;s HMM tutorial:</dt>
+<dd><p class="first last"><a class="reference external" href="http://personal.ee.surrey.ac.uk/Personal/P.Jackson/tutorial/">http://personal.ee.surrey.ac.uk/Personal/P.Jackson/tutorial/</a></p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>LICENSE: Some of the code in this file is based on reading Kanungo&#8217;s
+GPLv2+ implementation of discrete HMM&#8217;s, hence the present code must
+be licensed with a GPLv2+ compatible license.</p>
+<p>AUTHOR:</p>
+<blockquote>
+<div><ul class="simple">
+<li>William Stein, 2010-03</li>
+</ul>
+</div></blockquote>
+<dl class="class">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel">
+<em class="property">class </em><tt class="descclassname">sage.stats.hmm.hmm.</tt><tt class="descname">DiscreteHiddenMarkovModel</tt><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.stats.hmm.hmm.HiddenMarkovModel" title="sage.stats.hmm.hmm.HiddenMarkovModel"><tt class="xref py py-class docutils literal"><span class="pre">sage.stats.hmm.hmm.HiddenMarkovModel</span></tt></a></p>
+<p>A discrete Hidden Markov model implemented using double precision
+floating point arithmetic.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">A</span></tt> &#8211; a list of lists or a square N x N matrix, whose
+(i,j) entry gives the probability of transitioning from
+state i to state j.</li>
+<li><tt class="docutils literal"><span class="pre">B</span></tt> &#8211; a list of N lists or a matrix with N rows, such that
+B[i,k] gives the probability of emitting symbol k while
+in state i.</li>
+<li><tt class="docutils literal"><span class="pre">pi</span></tt> &#8211; the probabilities of starting in each initial
+state, i.e,. pi[i] is the probability of starting in
+state i.</li>
+<li><tt class="docutils literal"><span class="pre">emission_symbols</span></tt> &#8211; None or list (default: None); if
+None, the emission_symbols are the ints [0..N-1], where N
+is the number of states.  Otherwise, they are the entries
+of the list emissions_symbols, which must all be hashable.</li>
+<li><tt class="docutils literal"><span class="pre">normalize</span></tt> &#8211;bool (default: True); if given, input is
+normalized to define valid probability distributions,
+e.g., the entries of A are made nonnegative and the rows
+sum to 1, and the probabilities in pi are normalized.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">]);</span> <span class="n">m</span>
+<span class="go">Discrete Hidden Markov Model with 2 States and 2 Emissions</span>
+<span class="go">Transition matrix:</span>
+<span class="go">[0.4 0.6]</span>
+<span class="go">[0.1 0.9]</span>
+<span class="go">Emission matrix:</span>
+<span class="go">[0.1 0.9]</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">Initial probabilities: [0.5000, 0.5000]</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">-4.66693474691329...</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">viterbi</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">([1, 1, 1, 1, 1, 1], -5.378832842208748)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">baum_welch</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">(0.0, 22)</span>
+<span class="gp">sage: </span><span class="n">m</span>  <span class="c"># rel tol 1e-10</span>
+<span class="go">Discrete Hidden Markov Model with 2 States and 2 Emissions</span>
+<span class="go">Transition matrix:</span>
+<span class="go">[1.0134345614745788e-70                    1.0]</span>
+<span class="go">[                   1.0 3.9974352713558623e-19]</span>
+<span class="go">Emission matrix:</span>
+<span class="go">[ 7.380221566254936e-54                    1.0]</span>
+<span class="go">[                   1.0 3.9974352626002193e-19]</span>
+<span class="go">Initial probabilities: [0.0000, 1.0000]</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">[0, 1, 0, 1, 0, 1, 0, 1, 0, 1]</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">graph</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 6 graphics primitives</span>
+</pre></div>
+</div>
+<p>A 3-state model that happens to always outputs &#8216;b&#8217;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="s">&#39;c&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">[&#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;, &#39;b&#39;]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.baum_welch">
+<tt class="descname">baum_welch</tt><big>(</big><em>obs</em>, <em>max_iter=100</em>, <em>log_likelihood_cutoff=0.0001</em>, <em>fix_emissions=False</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.baum_welch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an observation sequence obs, improve this HMM using the
+Baum-Welch algorithm to increase the probability of observing obs.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obs</span></tt> &#8211; list of emissions</li>
+<li><tt class="docutils literal"><span class="pre">max_iter</span></tt> &#8211; integer (default: 100) maximum number
+of Baum-Welch steps to take</li>
+<li><tt class="docutils literal"><span class="pre">log_likelihood_cutoff</span></tt> &#8211; positive float (default: 1e-4);
+the minimal improvement in likelihood with respect to
+the last iteration required to continue. Relative value
+to log likelihood.</li>
+<li><tt class="docutils literal"><span class="pre">fix_emissions</span></tt> &#8211; bool (default: False); if True, do not
+change emissions when updating</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>changes the model in places, and returns the log
+likelihood and number of iterations.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">]],</span> <span class="p">[[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">baum_welch</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">20</span><span class="p">,</span> <span class="n">log_likelihood_cutoff</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(0.0, 4)</span>
+<span class="gp">sage: </span><span class="n">m</span>  <span class="c"># rel tol 1e-14</span>
+<span class="go">Discrete Hidden Markov Model with 2 States and 2 Emissions</span>
+<span class="go">Transition matrix:</span>
+<span class="go">[1.3515269707707603e-51                    1.0]</span>
+<span class="go">[                   1.0                    0.0]</span>
+<span class="go">Emission matrix:</span>
+<span class="go">[                  1.0 6.462537138850569e-52]</span>
+<span class="go">[                  0.0                   1.0]</span>
+<span class="go">Initial probabilities: [0.0000, 1.0000]</span>
+</pre></div>
+</div>
+<p>The following illustrates how Baum-Welch is only a local
+optimizer, i.e., the above model is far more likely to produce
+the sequence [1,0]*20 than the one we get below:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">],[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">baum_welch</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">20</span><span class="p">,</span> <span class="n">log_likelihood_cutoff</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(-27.725887222397784, 1)</span>
+<span class="gp">sage: </span><span class="n">m</span>
+<span class="go">Discrete Hidden Markov Model with 2 States and 2 Emissions</span>
+<span class="go">Transition matrix:</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">Emission matrix:</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">Initial probabilities: [0.5000, 0.5000]</span>
+</pre></div>
+</div>
+<p>We illustrate fixing emissions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">]],</span> <span class="p">[[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">],[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">v</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">baum_welch</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">fix_emissions</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">(-66.98630856918774, 100)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">()</span>
+<span class="go">[0.5 0.5]</span>
+<span class="go">[0.2 0.8]</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">]],</span> <span class="p">[[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">],[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">baum_welch</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="go">(-66.782360659293..., 100)</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">()</span>  <span class="c"># rel tol 1e-14</span>
+<span class="go">[ 0.5303085748626447 0.46969142513735535]</span>
+<span class="go">[ 0.2909775550173978  0.7090224449826023]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.emission_matrix">
+<tt class="descname">emission_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.emission_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the matrix whose i-th row specifies the emission
+probability distribution for the i-th state.  More precisely,
+the i,j entry of the matrix is the probability of the Markov
+model outputing the j-th symbol when it is in the i-th state.</p>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>a Sage matrix with real double precision (RDF) entries.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">();</span> <span class="n">E</span>
+<span class="go">[0.1 0.9]</span>
+<span class="go">[0.5 0.5]</span>
+</pre></div>
+</div>
+<p>The returned matrix is mutable, but changing it does not
+change the transition matrix for the model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">E</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">()</span>
+<span class="go">[0.1 0.9]</span>
+<span class="go">[0.5 0.5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.generate_sequence">
+<tt class="descname">generate_sequence</tt><big>(</big><em>length</em>, <em>starting_state=None</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.generate_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a sample of the given length from this HMM.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">length</span></tt> &#8211; positive integer</li>
+<li><tt class="docutils literal"><span class="pre">starting_state</span></tt> &#8211; int (or None); if specified then generate
+a sequence using this model starting with the given state
+instead of the initial probabilities to determine the
+starting state.</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>an IntList or list of emission symbols</li>
+<li>IntList of the actual states the model was in when
+emitting the corresponding symbols</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<p>In this example, the emission symbols are not set:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">generate_sequence</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">([1, 0, 1, 1, 1], [1, 0, 1, 1, 1])</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">generate_sequence</span><span class="p">(</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">90</span>
+</pre></div>
+</div>
+<p>Here the emission symbols are set:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;up&#39;</span><span class="p">,</span> <span class="s">&#39;down&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">generate_sequence</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">([&#39;down&#39;, &#39;up&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;], [1, 0, 1, 1, 1])</span>
+</pre></div>
+</div>
+<p>Specify the starting state:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">a</span><span class="o">.</span><span class="n">generate_sequence</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">starting_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">([&#39;up&#39;, &#39;up&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;], [0, 0, 1, 1, 1])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.log_likelihood">
+<tt class="descname">log_likelihood</tt><big>(</big><em>obs</em>, <em>scale=True</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.log_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the logarithm of the probability that this model produced the given
+observation sequence.  Thus the output is a non-positive number.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obs</span></tt> &#8211; sequence of observations</li>
+<li><tt class="docutils literal"><span class="pre">scale</span></tt> &#8211; boolean (default: True); if True, use rescaling
+to overoid loss of precision due to the very limited
+dynamic range of floats.  You should leave this as True
+unless the obs sequence is very small.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">-7.3301308009370825</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">-7.330130800937082</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([])</span>
+<span class="go">0.0</span>
+
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;happy&#39;</span><span class="p">,</span><span class="s">&#39;sad&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="s">&#39;happy&#39;</span><span class="p">,</span><span class="s">&#39;happy&#39;</span><span class="p">])</span>
+<span class="go">-1.6565295199679506</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="s">&#39;happy&#39;</span><span class="p">,</span><span class="s">&#39;sad&#39;</span><span class="p">])</span>
+<span class="go">-1.4731602941415523</span>
+</pre></div>
+</div>
+<p>Overflow from not using the scale option:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">-1433.820666652728</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">-inf</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.viterbi">
+<tt class="descname">viterbi</tt><big>(</big><em>obs</em>, <em>log_scale=True</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.DiscreteHiddenMarkovModel.viterbi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine &#8220;the&#8221; hidden sequence of states that is most likely
+to produce the given sequence seq of observations, along with
+the probability that this hidden sequence actually produced
+the observation.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">seq</span></tt> &#8211; sequence of emitted ints or symbols</li>
+<li><tt class="docutils literal"><span class="pre">log_scale</span></tt> &#8211; bool (default: True) whether to scale the
+sequence in order to avoid numerical overflow.</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">list</span></tt> &#8211; &#8220;the&#8221; most probable sequence of hidden states, i.e.,
+the Viterbi path.</li>
+<li><tt class="docutils literal"><span class="pre">float</span></tt> &#8211; log of probability that the observed sequence
+was produced by the Viterbi sequence of states.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">viterbi</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">([1, 0, 0, 1, ..., 0, 1, 1], -11.06245322477221...)</span>
+</pre></div>
+</div>
+<p>We predict the state sequence when the emissions are 3/4 and &#8216;abc&#8217;.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Note that state 0 is common below, despite the model trying hard to
+switch to state 1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">viterbi</span><span class="p">([</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">,</span> <span class="s">&#39;abc&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">([0, 1, 1, 0, 0 ... 0, 0, 0, 0, 0], -25.299405845367794)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.stats.hmm.hmm.HiddenMarkovModel">
+<em class="property">class </em><tt class="descclassname">sage.stats.hmm.hmm.</tt><tt class="descname">HiddenMarkovModel</tt><a class="headerlink" href="#sage.stats.hmm.hmm.HiddenMarkovModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Abstract base class for all Hidden Markov Models.</p>
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.HiddenMarkovModel.graph">
+<tt class="descname">graph</tt><big>(</big><em>eps=0.001</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.HiddenMarkovModel.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a weighted directed graph from the transition matrix,
+not including any edge with a probability less than eps.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>eps &#8211; nonnegative real number</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>a digraph</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="o">.</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">.</span><span class="mi">7</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">2</span><span class="p">]]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">graph</span><span class="p">();</span> <span class="n">G</span>
+<span class="go">Looped digraph on 3 vertices</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">[(0, 0, 0.3), (0, 2, 0.7), (1, 2, 1.0), (2, 0, 0.5), (2, 1, 0.5)]</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 11 graphics primitives</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.HiddenMarkovModel.initial_probabilities">
+<tt class="descname">initial_probabilities</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.HiddenMarkovModel.initial_probabilities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the initial probabilities, which as a TimeSeries of
+length N, where N is the number of states of the Markov model.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span><span class="o">.</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">pi</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">initial_probabilities</span><span class="p">();</span> <span class="n">pi</span>
+<span class="go">[0.2000, 0.8000]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.finance.time_series.TimeSeries&#39;&gt;</span>
+</pre></div>
+</div>
+<p>The returned time series is a copy, so changing it does not
+change the model.</p>
+<blockquote>
+<div>sage: pi[0] = .1; pi[1] = .9
+sage: m.initial_probabilities()
+[0.2000, 0.8000]</div></blockquote>
+<p>Some other models:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">hmm</span><span class="o">.</span><span class="n">GaussianHiddenMarkovModel</span><span class="p">([[</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">],[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)],</span> <span class="p">[</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">])</span><span class="o">.</span><span class="n">initial_probabilities</span><span class="p">()</span>
+<span class="go">[0.1000, 0.9000]</span>
+<span class="gp">sage: </span><span class="n">hmm</span><span class="o">.</span><span class="n">GaussianMixtureHiddenMarkovModel</span><span class="p">([[</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">],[</span><span class="o">.</span><span class="mi">4</span><span class="p">,</span><span class="o">.</span><span class="mi">6</span><span class="p">]],</span> <span class="p">[[(</span><span class="o">.</span><span class="mi">4</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="p">(</span><span class="o">.</span><span class="mi">6</span><span class="p">,(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">))],[(</span><span class="mi">1</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">7</span><span class="p">,</span><span class="o">.</span><span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">initial_probabilities</span><span class="p">()</span>
+<span class="go">[0.7000, 0.3000]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.HiddenMarkovModel.sample">
+<tt class="descname">sample</tt><big>(</big><em>length</em>, <em>number=None</em>, <em>starting_state=None</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.HiddenMarkovModel.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return number samples from this HMM of given length.</p>
+<p>INPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">length</span></tt> &#8211; positive integer</li>
+<li><tt class="docutils literal"><span class="pre">number</span></tt> &#8211; (default: None) if given, compute list of this many sample sequences</li>
+<li><tt class="docutils literal"><span class="pre">starting_state</span></tt> &#8211; int (or None); if specified then generate
+a sequence using this model starting with the given state
+instead of the initial probabilities to determine the
+starting state.</li>
+</ul>
+</div></blockquote>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>if number is not given, return a single TimeSeries.</li>
+<li>if number is given, return a list of TimeSeries.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">[[1, 0, 1, 1, 1, 1, 0, 1, 1, 1], [1, 1, 0, 0, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 0, 1, 0, 1, 1, 1]]</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">[1, 1, 1, 1, 0 ... 1, 1, 1, 1, 1]</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">[[1, 1, 1]]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">88</span>
+</pre></div>
+</div>
+<p>If the emission symbols are set:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;up&#39;</span><span class="p">,</span> <span class="s">&#39;down&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">[&#39;down&#39;, &#39;up&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;, &#39;up&#39;, &#39;up&#39;, &#39;up&#39;, &#39;up&#39;]</span>
+</pre></div>
+</div>
+<p>Force a starting state:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">set_random_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">a</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">starting_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">[&#39;up&#39;, &#39;up&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;, &#39;down&#39;, &#39;up&#39;, &#39;up&#39;, &#39;up&#39;, &#39;up&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.stats.hmm.hmm.HiddenMarkovModel.transition_matrix">
+<tt class="descname">transition_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.HiddenMarkovModel.transition_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the state transition matrix.</p>
+<p>OUTPUT:</p>
+<blockquote>
+<div><ul class="simple">
+<li>a Sage matrix with real double precision (RDF) entries.</li>
+</ul>
+</div></blockquote>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.3</span><span class="p">],[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.1</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">],[</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">]],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.7</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">();</span> <span class="n">T</span>
+<span class="go">[0.7 0.3]</span>
+<span class="go">[0.9 0.1]</span>
+</pre></div>
+</div>
+<p>The returned matrix is mutable, but changing it does not
+change the transition matrix for the model:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">.</span><span class="mi">1</span><span class="p">;</span> <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">.</span><span class="mi">9</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">()</span>
+<span class="go">[0.7 0.3]</span>
+<span class="go">[0.9 0.1]</span>
+</pre></div>
+</div>
+<p>Transition matrices for other types of models:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">hmm</span><span class="o">.</span><span class="n">GaussianHiddenMarkovModel</span><span class="p">([[</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">],[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">]],</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)],</span> <span class="p">[</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">()</span>
+<span class="go">[0.1 0.9]</span>
+<span class="go">[0.5 0.5]</span>
+<span class="gp">sage: </span><span class="n">hmm</span><span class="o">.</span><span class="n">GaussianMixtureHiddenMarkovModel</span><span class="p">([[</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">],[</span><span class="o">.</span><span class="mi">4</span><span class="p">,</span><span class="o">.</span><span class="mi">6</span><span class="p">]],</span> <span class="p">[[(</span><span class="o">.</span><span class="mi">4</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="p">(</span><span class="o">.</span><span class="mi">6</span><span class="p">,(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">))],[(</span><span class="mi">1</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))]],</span> <span class="p">[</span><span class="o">.</span><span class="mi">7</span><span class="p">,</span><span class="o">.</span><span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">()</span>
+<span class="go">[0.9 0.1]</span>
+<span class="go">[0.4 0.6]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.stats.hmm.hmm.unpickle_discrete_hmm_v0">
+<tt class="descclassname">sage.stats.hmm.hmm.</tt><tt class="descname">unpickle_discrete_hmm_v0</tt><big>(</big><em>A</em>, <em>B</em>, <em>pi</em>, <em>emission_symbols</em>, <em>name</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.unpickle_discrete_hmm_v0" title="Permalink to this definition">¶</a></dt>
+<dd><p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">hmm</span><span class="o">.</span><span class="n">hmm</span><span class="o">.</span><span class="n">unpickle_discrete_hmm_v0</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">transition_matrix</span><span class="p">(),</span> <span class="n">m</span><span class="o">.</span><span class="n">emission_matrix</span><span class="p">(),</span> <span class="n">m</span><span class="o">.</span><span class="n">initial_probabilities</span><span class="p">(),</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">],</span> <span class="s">&#39;test model&#39;</span><span class="p">)</span>
+<span class="go">Discrete Hidden Markov Model with 2 States and 2 Emissions...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.stats.hmm.hmm.unpickle_discrete_hmm_v1">
+<tt class="descclassname">sage.stats.hmm.hmm.</tt><tt class="descname">unpickle_discrete_hmm_v1</tt><big>(</big><em>A</em>, <em>B</em>, <em>pi</em>, <em>n_out</em>, <em>emission_symbols</em>, <em>emission_symbols_dict</em><big>)</big><a class="headerlink" href="#sage.stats.hmm.hmm.unpickle_discrete_hmm_v1" title="Permalink to this definition">¶</a></dt>
+<dd><p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">DiscreteHiddenMarkovModel</span><span class="p">([[</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.6</span><span class="p">],[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">]],</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="o">==</span> <span class="n">m</span>   <span class="c"># indirect test</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../intlist.html"
+                                  title="previous chapter">C Int Lists</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="chmm.html"
+                                  title="next chapter">Continuous Emission Hidden Markov Models</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/stats/hmm/hmm.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chmm.html" title="Continuous Emission Hidden Markov Models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../intlist.html" title="C Int Lists"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Statistics</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

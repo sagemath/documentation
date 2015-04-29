@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Context Managers for LibGAP &mdash; Sage Reference Manual v6.6: C/C++ Library Interfaces</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: C/C++ Library Interfaces" href="../../../index.html" />
+    <link rel="next" title="Gap functions" href="gap_functions.html" />
+    <link rel="prev" title="Readline" href="../readline.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gap_functions.html" title="Gap functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../readline.html" title="Readline"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="context-managers-for-libgap">
+<span id="sage-libs-gap-context-managers"></span><h1>Context Managers for LibGAP<a class="headerlink" href="#context-managers-for-libgap" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.libs.gap.context_managers"></span><p>This module implements a context manager for global variables. This is
+useful since the behavior of GAP is sometimes controlled by global
+variables, which you might want to switch to a different value for a
+computation. Here is an example how you are suppose to use it from
+your code. First, let us set a dummy global variable for our example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then, if you want to switch the value momentarily you can write:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">libgap</span><span class="o">.</span><span class="n">global_context</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="s">&#39;test&#39;</span><span class="p">):</span>
+<span class="go">....:     print libgap.get_global(&#39;FooBar&#39;)</span>
+<span class="go">&quot;test&quot;</span>
+</pre></div>
+</div>
+<p>Afterward, the global variable reverts to the previous value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">123</span>
+</pre></div>
+</div>
+<p>The value is reset even if exceptions occur:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">libgap</span><span class="o">.</span><span class="n">global_context</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="s">&#39;test&#39;</span><span class="p">):</span>
+<span class="go">....:     print libgap.get_global(&#39;FooBar&#39;)</span>
+<span class="go">....:     raise ValueError(libgap.get_global(&#39;FooBar&#39;))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">&quot;test&quot;</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">123</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.libs.gap.context_managers.GlobalVariableContext">
+<em class="property">class </em><tt class="descclassname">sage.libs.gap.context_managers.</tt><tt class="descname">GlobalVariableContext</tt><big>(</big><em>variable</em>, <em>value</em><big>)</big><a class="headerlink" href="#sage.libs.gap.context_managers.GlobalVariableContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for GAP global variables.</p>
+<p>It is recommended that you use the
+<a class="reference internal" href="libgap.html#sage.libs.gap.libgap.Gap.global_context" title="sage.libs.gap.libgap.Gap.global_context"><tt class="xref py py-meth docutils literal"><span class="pre">sage.libs.gap.libgap.Gap.global_context()</span></tt></a> method and not
+construct objects of this class manually.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">variable</span></tt> &#8211; string. The variable name.</li>
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; anything that defines a GAP object.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">libgap</span><span class="o">.</span><span class="n">global_context</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<span class="go">....:     print libgap.get_global(&#39;FooBar&#39;)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">get_global</span><span class="p">(</span><span class="s">&#39;FooBar&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../readline.html"
+                                  title="previous chapter">Readline</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="gap_functions.html"
+                                  title="next chapter">Gap functions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/libs/gap/context_managers.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gap_functions.html" title="Gap functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../readline.html" title="Readline"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">C/C++ Library Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

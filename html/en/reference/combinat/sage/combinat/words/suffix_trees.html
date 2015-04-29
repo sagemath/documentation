@@ -1,0 +1,999 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Suffix Tries and Suffix Trees &mdash; Sage Reference Manual v6.6: Combinatorics</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Combinatorics" href="../../../index.html" />
+    <link rel="up" title="Comprehensive Module list" href="../../../module_list.html" />
+    <link rel="next" title="Word classes" href="word.html" />
+    <link rel="prev" title="Shuffle product of words" href="shuffle_product.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="word.html" title="Word classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="shuffle_product.html" title="Shuffle product of words"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Combinatorics</a> &raquo;</li>
+
+          <li><a href="../../../module_list.html" accesskey="U">Comprehensive Module list</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="suffix-tries-and-suffix-trees">
+<span id="sage-combinat-words-suffix-trees"></span><h1>Suffix Tries and Suffix Trees<a class="headerlink" href="#suffix-tries-and-suffix-trees" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.combinat.words.suffix_trees"></span><dl class="class">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree">
+<em class="property">class </em><tt class="descclassname">sage.combinat.words.suffix_trees.</tt><tt class="descname">ImplicitSuffixTree</tt><big>(</big><em>word</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>Construct the implicit suffix tree of a word w.</p>
+<p>The suffix tree of a word w is a compactification of the suffix
+trie for w. The compactification removes all nodes that have
+exactly one incoming edge and exactly one outgoing edge. It
+consists of two components: a tree and a word. Thus, instead of
+labelling the edges by factors of w, we can labelled them by
+indices of the occurrence of the factors in w.</p>
+<p>The following is a straightforward implementation of Ukkonen&#8217;s
+on-line algorithm for constructing the implicit suffix tree [1].
+It constructs the suffix tree for w[:i] from that of w[:i-1].</p>
+<p>GENERAL IDEA. The suffix tree of w[:i+1] can be obtained from that
+of w[:i] by visiting each node corresponding to a suffix of w[:i]
+and modifying the tree by applying one of two rules (either append
+a new node to the tree, or split an edge into two). The &#8220;active
+state&#8221; is the node where the algorithm begins and the &#8220;suffix link&#8221;
+carries us to the next node that needs to be dealt with.</p>
+<p>TREE. The tree is modelled as an automaton, which is stored as a
+dictionary of dictionaries: it is keyed by the nodes of the tree,
+and the corresponding dictionary is keyed by pairs <span class="math">\((i,j)\)</span> of
+integers representing the word w[i-1:j]. This makes it faster to
+look up a particular transition beginning at a specific node.</p>
+<p>STATES/NODES. The states will always be -1, 0, 1, ..., n. The state
+-1 is special and is only used for the purposes of the algorithm.
+All transitions map -1 to 0, so this information is not explicitly
+stored in the transition function.</p>
+<p>EXPLICIT/IMPLICIT NODES. By definition, some of the nodes will not
+be states, but merely locations along an edge; these are called
+implicit nodes. A node r (implicit or explicit) is referenced as a
+pair (s,(k,p)) where s is an ancestor of r and w[k-1:p] is the word
+read by transitioning from s to r in the suffix trie. A reference
+pair is canonical if s is the closest ancestor of r.</p>
+<p>SUFFIX LINK. The algorithm makes use of a map from (some) nodes to
+other nodes, called the suffix link. This is stored as a
+dictionary.</p>
+<p>ACTIVE STATE. We store as ._active_state the active state of the
+tree, the state where the algorithm will begin when processing the
+next letter.</p>
+<p>RUNNING TIME. The running time and storage space of the algorithm
+is linear in the length of the word w (whereas for a suffix tree it
+is quadratic).</p>
+<p>REFERENCES:</p>
+<ul class="simple">
+<li>[1] E. Ukkonen, &#8220;On-line construction of suffix trees&#8221;,
+Algorithmica, 1995, volume 14, number 3, pages 249&#8211;260.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;aco&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">w</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Implicit Suffix Tree of the word: cacao</span>
+<span class="gp">sage: </span><span class="n">ababb</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">ababb</span><span class="p">);</span> <span class="n">s</span>
+<span class="go">Implicit Suffix Tree of the word: 01011</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="go">Implicit Suffix Tree of the word: cacao</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.active_state">
+<tt class="descname">active_state</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.active_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the active state of the suffix tree.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">active_state</span><span class="p">()</span>
+<span class="go">(0, (6, 6))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.edge_iterator">
+<tt class="descname">edge_iterator</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.edge_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an iterator over the edges of the suffix tree. The
+edge from <span class="math">\(u\)</span> to <span class="math">\(v\)</span> labelled by <span class="math">\((i,j)\)</span> is returned as the tuple
+<span class="math">\((u,v,(i,j))\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;aaaaa&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">edge_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(0, 1, (0, None))]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">edge_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(0, 1, (0, None)), (0, 2, (1, None))]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">())</span><span class="o">.</span><span class="n">edge_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.factor_iterator">
+<tt class="descname">factor_iterator</tt><big>(</big><em>n=None</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.factor_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate distinct factors of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> - an integer, or <tt class="docutils literal"><span class="pre">None</span></tt>.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">n</span></tt> is an integer, returns an iterator over all distinct
+factors of length <tt class="docutils literal"><span class="pre">n</span></tt>. If <tt class="docutils literal"><span class="pre">n</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, returns an iterator
+generating all distinct factors.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[word: , word: a, word: ac, word: aca, word: acao, word: ao, word: c, word: ca, word: cac, word: caca, word: cacao, word: cao, word: o]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">[word: a, word: c, word: o]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">[word: ac, word: ao, word: ca]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[word: , word: 0, word: 00, word: 000]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">[word: 00]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">[word: ]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">())</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[word: ]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">())</span><span class="o">.</span><span class="n">factor_iterator</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.number_of_factors">
+<tt class="descname">number_of_factors</tt><big>(</big><em>n=None</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.number_of_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count the number of distinct factors of <tt class="docutils literal"><span class="pre">self.word()</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> - an integer, or <tt class="docutils literal"><span class="pre">None</span></tt>.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">n</span></tt> is an integer, returns the number of distinct factors
+of length <tt class="docutils literal"><span class="pre">n</span></tt>. If <tt class="docutils literal"><span class="pre">n</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, returns the total number of
+distinct factors.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">()</span>
+<span class="go">22</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">()</span>
+<span class="go">13</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="go">[1, 3, 3, 3, 2, 1, 0, 0, 0, 0]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;c&quot;</span><span class="o">*</span><span class="mi">1000</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">()</span>
+<span class="go">1001</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">())</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">blueberry</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;blueberry&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">blueberry</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">()</span>
+<span class="go">43</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="n">blueberry</span><span class="o">.</span><span class="n">number_of_factors</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="go">[1, 6, 8, 7, 6, 5, 4, 3, 2, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.plot">
+<tt class="descname">plot</tt><big>(</big><em>word_labels=False</em>, <em>layout='tree'</em>, <em>tree_root=0</em>, <em>tree_orientation='up'</em>, <em>vertex_colors=None</em>, <em>edge_labels=True</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Graphics object corresponding to the transition graph of
+the suffix tree.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">word_labels</span></tt> - boolean (defaut: <tt class="docutils literal"><span class="pre">False</span></tt>) if <tt class="docutils literal"><span class="pre">False</span></tt>, labels
+the edges by pairs <span class="math">\((i, j)\)</span>; if <tt class="docutils literal"><span class="pre">True</span></tt>, labels the edges by
+<tt class="docutils literal"><span class="pre">word[i:j]</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">layout</span></tt> - (defaut: <tt class="docutils literal"><span class="pre">'tree'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">tree_root</span></tt> - (defaut: 0)</li>
+<li><tt class="docutils literal"><span class="pre">tree_orientation</span></tt> - (defaut: <tt class="docutils literal"><span class="pre">'up'</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">vertex_colors</span></tt> - (defaut: <tt class="docutils literal"><span class="pre">None</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">edge_labels</span></tt> - (defaut: <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&#39;cacao&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 23 graphics primitives</span>
+<span class="gp">sage: </span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&#39;cacao&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 23 graphics primitives</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&#39;cacao&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="go">&lt;class &#39;sage.plot.graphics.Graphics&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&#39;cacao&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">False</span><span class="p">))</span>
+<span class="go">&lt;class &#39;sage.plot.graphics.Graphics&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.process_letter">
+<tt class="descname">process_letter</tt><big>(</big><em>letter</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.process_letter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the current implicit suffix tree producing the implicit
+suffix tree for <tt class="docutils literal"><span class="pre">self.word()</span> <span class="pre">+</span> <span class="pre">letter</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;aco&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">w</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]);</span> <span class="n">t</span>
+<span class="go">Implicit Suffix Tree of the word: caca</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]);</span> <span class="n">t</span>
+<span class="go">Implicit Suffix Tree of the word: cacao</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]));</span> <span class="n">s</span>
+<span class="go">Implicit Suffix Tree of the word: 0101</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]);</span> <span class="n">s</span>
+<span class="go">Implicit Suffix Tree of the word: 01011</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.show">
+<tt class="descname">show</tt><big>(</big><em>word_labels=None</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the output of <tt class="docutils literal"><span class="pre">self.plot()</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">word_labels</span></tt> - (default: <tt class="docutils literal"><span class="pre">None</span></tt>) if <tt class="docutils literal"><span class="pre">False</span></tt>, labels the
+edges by pairs <span class="math">\((i, j)\)</span>; if <tt class="docutils literal"><span class="pre">True</span></tt>, labels the edges by
+<tt class="docutils literal"><span class="pre">word[i:j]</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">word_labels</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.states">
+<tt class="descname">states</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the states (explicit nodes) of the suffix tree.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">states</span><span class="p">()</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.suffix_link">
+<tt class="descname">suffix_link</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.suffix_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the suffix link map of the implicit suffix tree on <tt class="docutils literal"><span class="pre">state</span></tt>.
+Note that the suffix link is not defined for all states.</p>
+<p>The suffix link of a state <span class="math">\(x'\)</span> that corresponds to the suffix <span class="math">\(x\)</span> is
+defined to be -1 is <span class="math">\(x'\)</span> is the root (0) and <span class="math">\(y'\)</span> otherwise, where <span class="math">\(y'\)</span>
+is the state corresponding to the suffix <tt class="docutils literal"><span class="pre">x[1:]</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> - a state</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">-1</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+    <span class="o">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">there is no suffix link from -1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.to_digraph">
+<tt class="descname">to_digraph</tt><big>(</big><em>word_labels=False</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.to_digraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="docutils literal"><span class="pre">DiGraph</span></tt> object of the transition graph of the suffix tree.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">word_labels</span></tt> - boolean (defaut: <tt class="docutils literal"><span class="pre">False</span></tt>) if <tt class="docutils literal"><span class="pre">False</span></tt>, labels
+the edges by pairs <span class="math">\((i, j)\)</span>; if <tt class="docutils literal"><span class="pre">True</span></tt>, labels the edges by
+<tt class="docutils literal"><span class="pre">word[i:j]</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">to_digraph</span><span class="p">()</span>
+<span class="go">Digraph on 8 vertices</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.to_explicit_suffix_tree">
+<tt class="descname">to_explicit_suffix_tree</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.to_explicit_suffix_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts self to an explicit suffix tree. It is obtained by
+processing an end of string letter as if it were a regular
+letter, except that no new leaf nodes are created (thus, the only
+thing that happens is that some implicit nodes become explicit).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;aco&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">to_explicit_suffix_tree</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">to_explicit_suffix_tree</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.transition_function">
+<tt class="descname">transition_function</tt><big>(</big><em>word</em>, <em>node=0</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.transition_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the node obtained by starting from <tt class="docutils literal"><span class="pre">node</span></tt> and following the
+edges labelled by the letters of <tt class="docutils literal"><span class="pre">word</span></tt>. Returns <tt class="docutils literal"><span class="pre">(&quot;explicit&quot;,</span>
+<span class="pre">end_node)</span></tt> if we end at <tt class="docutils literal"><span class="pre">end_node</span></tt>, or <tt class="docutils literal"><span class="pre">(&quot;implicit&quot;,</span> <span class="pre">(edge,</span> <span class="pre">d))</span></tt>
+if we end <span class="math">\(d\)</span> spots along an edge.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">word</span></tt> - a word</li>
+<li><tt class="docutils literal"><span class="pre">node</span></tt> - (default: 0) starting node</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="go">(&#39;implicit&#39;, (3, 1), 1)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+<span class="go">(&#39;explicit&#39;, 4)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]),</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">(&#39;explicit&#39;, 2)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">(&#39;implicit&#39;, (5, 2), 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.transition_function_dictionary">
+<tt class="descname">transition_function_dictionary</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.transition_function_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the transition function as a dictionary of dictionaries.
+The format is consistent with the input format for <tt class="docutils literal"><span class="pre">DiGraph</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;aco&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">(</span><span class="s">&quot;cac&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function_dictionary</span><span class="p">()</span>
+<span class="go">{0: {1: (0, None), 2: (1, None)}}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">transition_function_dictionary</span><span class="p">()</span>
+<span class="go">{0: {1: (0, None), 2: (1, None)}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.trie_type_dict">
+<tt class="descname">trie_type_dict</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.trie_type_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary in a format compatible with that of the suffix
+trie transition function.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span><span class="p">,</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;ab&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">W</span><span class="p">(</span><span class="s">&quot;aba&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">trie_type_dict</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">d</span>                     <span class="c"># random</span>
+<span class="go">{(4, word: b): 5, (0, word: a): 4, (0, word: b): 3, (5, word: a): 1, (3, word: a): 2}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.uncompactify">
+<tt class="descname">uncompactify</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.uncompactify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tree obtained from self by splitting edges so that they
+are labelled by exactly one letter. The resulting tree is
+isomorphic to the suffix trie.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span><span class="p">,</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">abbab</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;ab&quot;</span><span class="p">)(</span><span class="s">&quot;abbab&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">abbab</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">abbab</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">uncompactify</span><span class="p">()</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">to_digraph</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.ImplicitSuffixTree.word">
+<tt class="descname">word</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.ImplicitSuffixTree.word" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the word whose implicit suffix tree this is.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">ImplicitSuffixTree</span>
+<span class="gp">sage: </span><span class="n">ImplicitSuffixTree</span><span class="p">(</span><span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">word</span><span class="p">()</span> <span class="o">==</span> <span class="n">Word</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie">
+<em class="property">class </em><tt class="descclassname">sage.combinat.words.suffix_trees.</tt><tt class="descname">SuffixTrie</tt><big>(</big><em>word</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>Construct the suffix trie of the word w.</p>
+<p>The suffix trie of a finite word w is a data structure representing
+the factors of w. It is a tree whose edges are labelled with
+letters of w, and whose leafs correspond to suffixes of w.</p>
+<p>This is a straightforward implementation of Algorithm 1 from [1].
+It constructs the suffix trie of w[:i] from that of w[:i-1].</p>
+<p>A suffix trie is modelled as a deterministic finite-state automaton
+together with the suffix_link map. The set of states corresponds to
+factors of the word (below we write x&#8217; for the state corresponding
+to x); these are always 0, 1, .... The state 0 is the initial
+state, and it corresponds to the empty word.  For the purposes of
+the algorithm, there is also an auxiliary state -1. The transition
+function t is defined as:</p>
+<div class="highlight-python"><div class="highlight"><pre>t(-1,a) = 0 for all letters a; and
+t(x&#39;,a) = y&#39; for all x&#39;,y&#39; \in Q such that y = xa,
+</pre></div>
+</div>
+<p>and the suffix link function is defined as:</p>
+<div class="highlight-python"><div class="highlight"><pre>suffix_link(0) = -1;
+suffix_link(x&#39;) = y&#39;, if x = ay for some letter a.
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<ul class="simple">
+<li>[1] E. Ukkonen, &#8220;On-line construction of suffix trees&#8221;,
+Algorithmica, 1995, volume 14, number 3, pages 249&#8211;260.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: cacao</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;ab&quot;</span><span class="p">)()</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">e</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word:</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: a</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: ab</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: aba</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="go">Suffix Trie of the word: cacao</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.active_state">
+<tt class="descname">active_state</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.active_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the active state of the suffix trie. This is the state
+corresponding to the word as a suffix of itself.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">active_state</span><span class="p">()</span>
+<span class="go">8</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">u</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">active_state</span><span class="p">()</span>
+<span class="go">22</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.final_states">
+<tt class="descname">final_states</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.final_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the set of final states of the suffix trie. These are the
+states corresponding to the suffixes of <tt class="docutils literal"><span class="pre">self.word()</span></tt>. They are
+obtained be repeatedly following the suffix link from the active
+state until we reach 0.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">final_states</span><span class="p">()</span> <span class="o">==</span> <span class="n">Set</span><span class="p">([</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.has_suffix">
+<tt class="descname">has_suffix</tt><big>(</big><em>word</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.has_suffix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> if and only if <tt class="docutils literal"><span class="pre">word</span></tt> is a suffix of <tt class="docutils literal"><span class="pre">self.word()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">has_suffix</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">:])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">length</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+<span class="go">[True, True, True, True, True, True]</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">has_suffix</span><span class="p">(</span><span class="n">w</span><span class="p">[:</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">length</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+<span class="go">[True, False, False, False, False, True]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.node_to_word">
+<tt class="descname">node_to_word</tt><big>(</big><em>state=0</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.node_to_word" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the word obtained by reading the edge labels from 0 to
+<tt class="docutils literal"><span class="pre">state</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> - (default: 0) a state</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;abc&quot;</span><span class="p">)(</span><span class="s">&quot;abcba&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">node_to_word</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">word: abcba</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">node_to_word</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">word: abcb</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.plot">
+<tt class="descname">plot</tt><big>(</big><em>layout='tree'</em>, <em>tree_root=0</em>, <em>tree_orientation='up'</em>, <em>vertex_colors=None</em>, <em>edge_labels=True</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Graphics object corresponding to the transition graph of
+the suffix trie.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">SuffixTrie</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="go">Graphics object consisting of 38 graphics primitives</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">SuffixTrie</span><span class="p">(</span><span class="n">Word</span><span class="p">(</span><span class="s">&quot;cacao&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">plot</span><span class="p">())</span>
+<span class="go">&lt;class &#39;sage.plot.graphics.Graphics&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.process_letter">
+<tt class="descname">process_letter</tt><big>(</big><em>letter</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.process_letter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modify <tt class="docutils literal"><span class="pre">self</span></tt> to produce the suffix trie for <tt class="docutils literal"><span class="pre">self.word()</span> <span class="pre">+</span>
+<span class="pre">letter</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="docutils literal"><span class="pre">letter</span></tt> must occur within the alphabet of the word.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;ab&quot;</span><span class="p">)(</span><span class="s">&quot;ababba&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: ababba</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: ababbaa</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">);</span> <span class="n">t</span>
+<span class="go">Suffix Trie of the word: cacao</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">process_letter</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">d not in alphabet!</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.show">
+<tt class="descname">show</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the output of <tt class="docutils literal"><span class="pre">self.plot()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cac&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.states">
+<tt class="descname">states</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the states of the automaton defined by the suffix trie.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">states</span><span class="p">()</span>
+<span class="go">[0, 1, 2, 3, 4]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">u</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;aco&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">states</span><span class="p">()</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.suffix_link">
+<tt class="descname">suffix_link</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.suffix_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the suffix link map of the suffix trie on <tt class="docutils literal"><span class="pre">state</span></tt>.
+Note that the suffix link map is not defined on -1.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> - a state</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">))</span>
+<span class="go">[-1, 0, 3, 0, 5, 1, 7, 2, 9, 10, 11, 12, 0]</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cacao&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">[1] is not an integer</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">suffix link is not defined for -1</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">suffix_link</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">17 is not a state</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.to_digraph">
+<tt class="descname">to_digraph</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.to_digraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="docutils literal"><span class="pre">DiGraph</span></tt> object of the transition graph of the suffix
+trie.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;cao&quot;</span><span class="p">)(</span><span class="s">&quot;cac&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">to_digraph</span><span class="p">();</span> <span class="n">d</span>
+<span class="go">Digraph on 6 vertices</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">()</span>
+<span class="go">[0 1 0 1 0 0]</span>
+<span class="go">[0 0 1 0 0 0]</span>
+<span class="go">[0 0 0 0 1 0]</span>
+<span class="go">[0 0 0 0 0 1]</span>
+<span class="go">[0 0 0 0 0 0]</span>
+<span class="go">[0 0 0 0 0 0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.transition_function">
+<tt class="descname">transition_function</tt><big>(</big><em>node</em>, <em>word</em><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.transition_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the state reached by beginning at <tt class="docutils literal"><span class="pre">node</span></tt> and following the
+arrows in the transition graph labelled by the letters of <tt class="docutils literal"><span class="pre">word</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">node</span></tt> - a node</li>
+<li><tt class="docutils literal"><span class="pre">word</span></tt> - a word</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">transition_function</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">letter</span><span class="p">)</span> <span class="o">==</span> <span class="n">v</span> \
+<span class="go">        for ((u,letter),v) in t._transition_function.iteritems()] \</span>
+<span class="go">        == [True] * len(t._transition_function)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.combinat.words.suffix_trees.SuffixTrie.word">
+<tt class="descname">word</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.combinat.words.suffix_trees.SuffixTrie.word" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the word whose suffix tree this is.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.combinat.words.suffix_trees</span> <span class="kn">import</span> <span class="n">SuffixTrie</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Words</span><span class="p">(</span><span class="s">&quot;abc&quot;</span><span class="p">)(</span><span class="s">&quot;abcba&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">SuffixTrie</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">word</span><span class="p">()</span>
+<span class="go">word: abcba</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">word</span><span class="p">()</span> <span class="o">==</span> <span class="n">w</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="shuffle_product.html"
+                                  title="previous chapter">Shuffle product of words</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="word.html"
+                                  title="next chapter">Word classes</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/combinat/words/suffix_trees.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="word.html" title="Word classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="shuffle_product.html" title="Shuffle product of words"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Combinatorics</a> &raquo;</li>
+
+          <li><a href="../../../module_list.html" >Comprehensive Module list</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

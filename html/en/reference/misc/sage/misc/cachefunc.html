@@ -1,0 +1,1891 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cached Functions and Methods &mdash; Sage Reference Manual v6.6: Miscellaneous</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Miscellaneous" href="../../index.html" />
+    <link rel="next" title="Fast and safe weak value dictionary" href="weak_dict.html" />
+    <link rel="prev" title="Bindable classes" href="bindable_class.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="weak_dict.html" title="Fast and safe weak value dictionary"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bindable_class.html" title="Bindable classes"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cached-functions-and-methods">
+<span id="sage-misc-cachefunc"></span><h1>Cached Functions and Methods<a class="headerlink" href="#cached-functions-and-methods" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.cachefunc"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein: initial version, (inspired by conversation with Justin Walker)</li>
+<li>Mike Hansen: added doctests and made it work with class methods.</li>
+<li>Willem Jan Palenstijn: add CachedMethodCaller for binding cached methods to
+instances.</li>
+<li>Tom Boothby: added DiskCachedFunction.</li>
+<li>Simon King: improved performance, more doctests, cython version,
+CachedMethodCallerNoArgs, weak cached function, cached special methods.</li>
+<li>Julian Rueth (2014-03-19, 2014-05-09): added <tt class="docutils literal"><span class="pre">key</span></tt> parameter, allow caching
+for unhashable elements</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>By <a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>, cached functions and methods are now also
+available in Cython code. The following examples cover various ways
+of usage.</p>
+<p>Python functions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def test_pfunc(x):</span>
+<span class="go">....:     &#39;&#39;&#39;</span>
+<span class="go">....:     Some documentation</span>
+<span class="go">....:     &#39;&#39;&#39;</span>
+<span class="go">....:     return -x</span>
+<span class="gp">sage: </span><span class="n">test_pfunc</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="ow">is</span> <span class="n">test_pfunc</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>In some cases, one would only want to keep the result in cache as long
+as there is any other reference to the result. By <a class="reference external" href="http://trac.sagemath.org/12215">trac ticket #12215</a>, this is
+enabled for <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">UniqueRepresentation</span></tt></a>,
+which is used to create unique parents: If an algebraic structure, such
+as a finite field, is only temporarily used, then it will not stay in
+cache forever. That behaviour is implemented using <tt class="docutils literal"><span class="pre">weak_cached_function</span></tt>,
+that behaves the same as <tt class="docutils literal"><span class="pre">cached_function</span></tt>, except that it uses a
+<a class="reference internal" href="weak_dict.html#sage.misc.weak_dict.WeakValueDictionary" title="sage.misc.weak_dict.WeakValueDictionary"><tt class="xref py py-class docutils literal"><span class="pre">WeakValueDictionary</span></tt></a> for storing the results.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f():</span>
+<span class="go">....:     print &quot;doing a computation&quot;</span>
+<span class="go">....:     return A()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The result is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, if there are no strong references left, the result
+may be garbage collected, and thus a new computation would
+take place:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>Cython cdef functions do not allow arbitrary decorators.
+However, one can wrap a Cython function and turn it into
+a cached function, by <a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>. We need to provide
+the name that the wrapped method or function should have,
+since otherwise the name of the original function would
+be used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;&#39;&#39;cpdef test_funct(x): return -x&#39;&#39;&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">wrapped_funct</span> <span class="o">=</span> <span class="n">cached_function</span><span class="p">(</span><span class="n">test_funct</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;wrapped_funct&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">wrapped_funct</span>
+<span class="go">Cached version of &lt;built-in function test_funct&gt;</span>
+<span class="gp">sage: </span><span class="n">wrapped_funct</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;wrapped_funct&#39;</span>
+<span class="gp">sage: </span><span class="n">wrapped_funct</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">-5</span>
+<span class="gp">sage: </span><span class="n">wrapped_funct</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="ow">is</span> <span class="n">wrapped_funct</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can proceed similarly for cached methods of Cython classes,
+provided that they allow attribute assignment or have a public
+attribute <tt class="docutils literal"><span class="pre">__cached_methods</span></tt> of type <tt class="docutils literal"><span class="pre">&lt;dict&gt;</span></tt>. Since
+<a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>, this is the case for all classes inheriting from
+<a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Parent</span></tt></a>. See below for a more explicit
+example. By <a class="reference external" href="http://trac.sagemath.org/12951">trac ticket #12951</a>, cached methods of extension classes can
+be defined by simply using the decorater. However, an indirect
+approach is still needed for cpdef methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;cpdef test_meth(self,x):&#39;</span><span class="p">,</span>
+<span class="go">....: &#39;    &quot;some doc for a wrapped cython method&quot;&#39;,</span>
+<span class="go">....: &#39;    return -x&#39;,</span>
+<span class="go">....: &#39;from sage.all import cached_method&#39;,</span>
+<span class="go">....: &#39;from sage.structure.parent cimport Parent&#39;,</span>
+<span class="go">....: &#39;cdef class MyClass(Parent):&#39;,</span>
+<span class="go">....: &#39;    @cached_method&#39;,</span>
+<span class="go">....: &#39;    def direct_method(self, x):&#39;,</span>
+<span class="go">....: &#39;        &quot;Some doc for direct method&quot;&#39;,</span>
+<span class="go">....: &#39;        return 2*x&#39;,</span>
+<span class="go">....: &#39;    wrapped_method = cached_method(test_meth,name=&quot;wrapped_method&quot;)&#39;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">O</span> <span class="o">=</span> <span class="n">MyClass</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">direct_method</span>
+<span class="go">Cached version of &lt;method &#39;direct_method&#39; of &#39;...MyClass&#39; objects&gt;</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span>
+<span class="go">Cached version of &lt;built-in function test_meth&gt;</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="o">.</span><span class="n">__name__</span>
+<span class="go">&#39;wrapped_method&#39;</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">-5</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="ow">is</span> <span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">direct_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">10</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">direct_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="ow">is</span> <span class="n">O</span><span class="o">.</span><span class="n">direct_method</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>In some cases, one would only want to keep the result in cache as long
+as there is any other reference to the result. By <a class="reference external" href="http://trac.sagemath.org/12215">trac ticket #12215</a>, this is
+enabled for <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">UniqueRepresentation</span></tt></a>,
+which is used to create unique parents: If an algebraic structure, such
+as a finite field, is only temporarily used, then it will not stay in
+cache forever. That behaviour is implemented using <tt class="docutils literal"><span class="pre">weak_cached_function</span></tt>,
+that behaves the same as <tt class="docutils literal"><span class="pre">cached_function</span></tt>, except that it uses a
+<a class="reference internal" href="weak_dict.html#sage.misc.weak_dict.WeakValueDictionary" title="sage.misc.weak_dict.WeakValueDictionary"><tt class="xref py py-class docutils literal"><span class="pre">WeakValueDictionary</span></tt></a> for storing the results.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f():</span>
+<span class="go">....:     print &quot;doing a computation&quot;</span>
+<span class="go">....:     return A()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The result is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, if there are no strong references left, the result
+may be garbage collected, and thus a new computation would
+take place:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>By <a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>, even if a parent does not allow attribute
+assignment, it can inherit a cached method from the parent class of a
+category (previously, the cache would have been broken):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;from sage.all import cached_method, cached_in_parent_method, Category, Objects&quot;</span><span class="p">,</span>
+<span class="go">....: &quot;class MyCategory(Category):&quot;,</span>
+<span class="go">....: &quot;    @cached_method&quot;,</span>
+<span class="go">....: &quot;    def super_categories(self):&quot;,</span>
+<span class="go">....: &quot;        return [Objects()]&quot;,</span>
+<span class="go">....: &quot;    class ElementMethods:&quot;,</span>
+<span class="go">....: &quot;        @cached_method&quot;,</span>
+<span class="go">....: &quot;        def element_cache_test(self):&quot;,</span>
+<span class="go">....: &quot;            return -self&quot;,</span>
+<span class="go">....: &quot;        @cached_in_parent_method&quot;,</span>
+<span class="go">....: &quot;        def element_via_parent_test(self):&quot;,</span>
+<span class="go">....: &quot;            return -self&quot;,</span>
+<span class="go">....: &quot;    class ParentMethods:&quot;,</span>
+<span class="go">....: &quot;        @cached_method&quot;,</span>
+<span class="go">....: &quot;        def one(self):&quot;,</span>
+<span class="go">....: &quot;            return self.element_class(self,1)&quot;,</span>
+<span class="go">....: &quot;        @cached_method&quot;,</span>
+<span class="go">....: &quot;        def invert(self, x):&quot;,</span>
+<span class="go">....: &quot;            return -x&quot;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">MyCategory</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In order to keep the memory footprint of elements small, it was
+decided to not support the same freedom of using cached methods
+for elements: If an instance of a class derived from
+<a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Element" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> does not allow attribute
+assignment, then a cached method inherited from the category of
+its parent will break, as in the class <tt class="docutils literal"><span class="pre">MyBrokenElement</span></tt> below.</p>
+<p>However, there is a class <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.ElementWithCachedMethod" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">ElementWithCachedMethod</span></tt></a>
+that has generally a slower attribute access, but fully supports
+cached methods. We remark, however, that cached methods are
+<em>much</em> faster if attribute access works. So, we expect that
+<a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.ElementWithCachedMethod" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">ElementWithCachedMethod</span></tt></a> will
+hardly by used.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;from sage.structure.element cimport Element, ElementWithCachedMethod&quot;</span><span class="p">,</span>
+<span class="go">....: &quot;cdef class MyBrokenElement(Element):&quot;,</span>
+<span class="go">....: &quot;    cdef public object x&quot;,</span>
+<span class="go">....: &quot;    def __init__(self,P,x):&quot;,</span>
+<span class="go">....: &quot;        self.x=x&quot;,</span>
+<span class="go">....: &quot;        Element.__init__(self,P)&quot;,</span>
+<span class="go">....: &quot;    def __neg__(self):&quot;,</span>
+<span class="go">....: &quot;        return MyBrokenElement(self.parent(),-self.x)&quot;,</span>
+<span class="go">....: &quot;    def _repr_(self):&quot;,</span>
+<span class="go">....: &quot;        return &#39;&lt;%s&gt;&#39;%self.x&quot;,</span>
+<span class="go">....: &quot;    def __hash__(self):&quot;,</span>
+<span class="go">....: &quot;        return hash(self.x)&quot;,</span>
+<span class="go">....: &quot;    def __cmp__(left, right):&quot;,</span>
+<span class="go">....: &quot;        return (&lt;Element&gt;left)._cmp(right)&quot;,</span>
+<span class="go">....: &quot;    def __richcmp__(left, right, op):&quot;,</span>
+<span class="go">....: &quot;        return (&lt;Element&gt;left)._richcmp(right,op)&quot;,</span>
+<span class="go">....: &quot;    cdef int _cmp_c_impl(left, Element right) except -2:&quot;,</span>
+<span class="go">....: &quot;        return cmp(left.x,right.x)&quot;,</span>
+<span class="go">....: &quot;    def raw_test(self):&quot;,</span>
+<span class="go">....: &quot;        return -self&quot;,</span>
+<span class="go">....: &quot;cdef class MyElement(ElementWithCachedMethod):&quot;,</span>
+<span class="go">....: &quot;    cdef public object x&quot;,</span>
+<span class="go">....: &quot;    def __init__(self,P,x):&quot;,</span>
+<span class="go">....: &quot;        self.x=x&quot;,</span>
+<span class="go">....: &quot;        ElementWithCachedMethod.__init__(self,P)&quot;,</span>
+<span class="go">....: &quot;    def __neg__(self):&quot;,</span>
+<span class="go">....: &quot;        return MyElement(self.parent(),-self.x)&quot;,</span>
+<span class="go">....: &quot;    def _repr_(self):&quot;,</span>
+<span class="go">....: &quot;        return &#39;&lt;%s&gt;&#39;%self.x&quot;,</span>
+<span class="go">....: &quot;    def __hash__(self):&quot;,</span>
+<span class="go">....: &quot;        return hash(self.x)&quot;,</span>
+<span class="go">....: &quot;    def __cmp__(left, right):&quot;,</span>
+<span class="go">....: &quot;        return (&lt;Element&gt;left)._cmp(right)&quot;,</span>
+<span class="go">....: &quot;    def __richcmp__(left, right, op):&quot;,</span>
+<span class="go">....: &quot;        return (&lt;Element&gt;left)._richcmp(right,op)&quot;,</span>
+<span class="go">....: &quot;    cdef int _cmp_c_impl(left, Element right) except -2:&quot;,</span>
+<span class="go">....: &quot;        return cmp(left.x,right.x)&quot;,</span>
+<span class="go">....: &quot;    def raw_test(self):&quot;,</span>
+<span class="go">....: &quot;        return -self&quot;,</span>
+<span class="go">....: &quot;from sage.structure.parent cimport Parent&quot;,</span>
+<span class="go">....: &quot;cdef class MyParent(Parent):&quot;,</span>
+<span class="go">....: &quot;    Element = MyElement&quot;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">MyParent</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">C</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ebroken</span> <span class="o">=</span> <span class="n">MyBrokenElement</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The cached methods inherited by the parent works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+<span class="go">&lt;1&gt;</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="p">()</span> <span class="ow">is</span> <span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="go">&lt;-5&gt;</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="ow">is</span> <span class="n">P</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The cached methods inherited by <tt class="docutils literal"><span class="pre">MyElement</span></tt> works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span>
+<span class="go">&lt;-5&gt;</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span> <span class="ow">is</span> <span class="n">e</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span>
+<span class="go">&lt;-5&gt;</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span> <span class="ow">is</span> <span class="n">e</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The other element class can only inherit a <tt class="docutils literal"><span class="pre">cached_in_parent_method</span></tt>, since
+the cache is stored in the parent. In fact, equal elements share the cache,
+even if they are of different types:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span> <span class="o">==</span> <span class="n">ebroken</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">ebroken</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">ebroken</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span> <span class="ow">is</span> <span class="n">e</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, the cache of the other inherited method breaks, although the method
+as such works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ebroken</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span>
+<span class="go">&lt;-5&gt;</span>
+<span class="gp">sage: </span><span class="n">ebroken</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span> <span class="ow">is</span> <span class="n">ebroken</span><span class="o">.</span><span class="n">element_cache_test</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>The cache can be emptied:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">test_pfunc</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_pfunc</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">test_pfunc</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">P</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Since <tt class="docutils literal"><span class="pre">e</span></tt> and <tt class="docutils literal"><span class="pre">ebroken</span></tt> share the cache, when we empty it for one element
+it is empty for the other as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">ebroken</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="ow">is</span> <span class="n">ebroken</span><span class="o">.</span><span class="n">element_via_parent_test</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Introspection works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.edit_module</span> <span class="kn">import</span> <span class="n">file_and_line</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.sageinspect</span> <span class="kn">import</span> <span class="n">sage_getdoc</span><span class="p">,</span> <span class="n">sage_getfile</span><span class="p">,</span> <span class="n">sage_getsource</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage_getdoc</span><span class="p">(</span><span class="n">test_pfunc</span><span class="p">)</span>
+<span class="go">   Some documentation</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage_getdoc</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="p">)</span>
+<span class="go">some doc for a wrapped cython method</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage_getdoc</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">direct_method</span><span class="p">)</span>
+<span class="go">Some doc for direct method</span>
+
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage_getsource</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">wrapped_method</span><span class="p">)</span>
+<span class="go">cpdef test_meth(self,x):</span>
+<span class="go">    &quot;some doc for a wrapped cython method&quot;</span>
+<span class="go">    return -x</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage_getsource</span><span class="p">(</span><span class="n">O</span><span class="o">.</span><span class="n">direct_method</span><span class="p">)</span>
+<span class="go">def direct_method(self, x):</span>
+<span class="go">    &quot;Some doc for direct method&quot;</span>
+<span class="go">    return 2*x</span>
+</pre></div>
+</div>
+<p>It is a very common special case to cache a method that has no
+arguments. In that special case, the time needed to access the cache
+can be drastically reduced by using a special implementation. The
+cached method decorator automatically determines which implementation
+ought to be chosen. A typical example is
+<a class="reference external" href="../../../polynomial_rings/sage/rings/polynomial/multi_polynomial_ideal.html#sage.rings.polynomial.multi_polynomial_ideal.MPolynomialIdeal.gens" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.polynomial.multi_polynomial_ideal.MPolynomialIdeal.gens()</span></tt></a>
+(no arguments) versus
+<a class="reference external" href="../../../polynomial_rings/sage/rings/polynomial/multi_polynomial_ideal.html#sage.rings.polynomial.multi_polynomial_ideal.MPolynomialIdeal.groebner_basis" title="(in Sage Reference Manual: Polynomial Rings v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.polynomial.multi_polynomial_ideal.MPolynomialIdeal.groebner_basis()</span></tt></a>
+(several arguments):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span> <span class="ow">is</span> <span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span> <span class="ow">is</span> <span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCaller&#39;&gt;</span>
+</pre></div>
+</div>
+<p>By <a class="reference external" href="http://trac.sagemath.org/12951">trac ticket #12951</a>, the cached_method decorator is also supported on non-c(p)def
+methods of extension classes, as long as they either support attribute assignment
+or have a public attribute of type <tt class="docutils literal"><span class="pre">&lt;dict&gt;</span></tt> called <tt class="docutils literal"><span class="pre">__cached_methods</span></tt>. The
+latter is easy:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span>
+<span class="go">....: &quot;from sage.misc.cachefunc import cached_method&quot;,</span>
+<span class="go">....: &quot;cdef class MyClass:&quot;,</span>
+<span class="go">....: &quot;    cdef public dict __cached_methods&quot;,</span>
+<span class="go">....: &quot;    @cached_method&quot;,</span>
+<span class="go">....: &quot;    def f(self, a,b):&quot;,</span>
+<span class="go">....: &quot;        return a*b&quot;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">MyClass</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">6</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="ow">is</span> <span class="n">P</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Providing attribute access is a bit more tricky, since it is needed that
+an attribute inherited by the instance from its class can be overridden
+on the instance. That is why providing a <tt class="docutils literal"><span class="pre">__getattr__</span></tt> would not be
+enough in the following example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython_code</span> <span class="o">=</span> <span class="p">[</span>
+<span class="go">....: &quot;from sage.misc.cachefunc import cached_method&quot;,</span>
+<span class="go">....: &quot;cdef class MyOtherClass:&quot;,</span>
+<span class="go">....: &quot;    cdef dict D&quot;,</span>
+<span class="go">....: &quot;    def __init__(self):&quot;,</span>
+<span class="go">....: &quot;        self.D = {}&quot;,</span>
+<span class="go">....: &quot;    def __setattr__(self, n,v):&quot;,</span>
+<span class="go">....: &quot;        self.D[n] = v&quot;,</span>
+<span class="go">....: &quot;    def __getattribute__(self, n):&quot;,</span>
+<span class="go">....: &quot;        try:&quot;,</span>
+<span class="go">....: &quot;            return self.D[n]&quot;,</span>
+<span class="go">....: &quot;        except KeyError:&quot;,</span>
+<span class="go">....: &quot;            pass&quot;,</span>
+<span class="go">....: &quot;        return getattr(type(self),n).__get__(self)&quot;,</span>
+<span class="go">....: &quot;    @cached_method&quot;,</span>
+<span class="go">....: &quot;    def f(self, a,b):&quot;,</span>
+<span class="go">....: &quot;        return a+b&quot;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cython_code</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">Q</span> <span class="o">=</span> <span class="n">MyOtherClass</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Q</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that supporting attribute access is somehow faster than the
+easier method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">timeit</span><span class="p">(</span><span class="s">&quot;a = P.f(2,3)&quot;</span><span class="p">)</span>   <span class="c"># random</span>
+<span class="go">625 loops, best of 3: 1.3 µs per loop</span>
+<span class="gp">sage: </span><span class="n">timeit</span><span class="p">(</span><span class="s">&quot;a = Q.f(2,3)&quot;</span><span class="p">)</span>   <span class="c"># random</span>
+<span class="go">625 loops, best of 3: 931 ns per loop</span>
+</pre></div>
+</div>
+<p>Some immutable objects (such as <span class="math">\(p\)</span>-adic numbers) cannot implement a
+reasonable hash function because their <tt class="docutils literal"><span class="pre">==</span></tt> operator has been
+modified to return <tt class="docutils literal"><span class="pre">True</span></tt> for objects which might behave differently
+in some computations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">add_bigoh</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">b</span>
+<span class="go">a + O(3)</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">a + 3 + O(3^20)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">==</span> <span class="n">c</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">==</span> <span class="n">a</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">==</span> <span class="n">a</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>If such objects defined a non-trivial hash function, this would break
+caching in many places. However, such objects should still be usable
+in caches. This can be achieved by defining an appropriate method
+<tt class="docutils literal"><span class="pre">_cache_key</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: unhashable type</span>: <span class="n-Identifier">&#39;sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement&#39;</span>
+<span class="gp">sage: </span><span class="nd">@cached_method</span>
+<span class="go">....: def f(x): return x == a</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="c"># if b and c were hashable, this would return True</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">()</span>
+<span class="go">(..., ((0, 1),), 0, 1)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">()</span>
+<span class="go">(..., ((0, 1), (1,)), 0, 20)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This attribute will only be accessed if the object itself
+is not hashable.</p>
+</div>
+<p>An implementation must make sure that for elements <tt class="docutils literal"><span class="pre">a</span></tt> and <tt class="docutils literal"><span class="pre">b</span></tt>,
+if <tt class="docutils literal"><span class="pre">a</span> <span class="pre">!=</span> <span class="pre">b</span></tt>, then also <tt class="docutils literal"><span class="pre">a._cache_key()</span> <span class="pre">!=</span> <span class="pre">b._cache_key()</span></tt>.
+In practice this means that the <tt class="docutils literal"><span class="pre">_cache_key</span></tt> should always include
+the parent as its first argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">add_bigoh</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">()</span> <span class="o">==</span> <span class="n">d</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">()</span> <span class="c"># this would be True if the parents were not included</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedFunction">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedFunction</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Create a cached version of a function, which only recomputes
+values it hasn&#8217;t already computed. Synonyme: <tt class="docutils literal"><span class="pre">cached_function</span></tt></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> &#8211; a function</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; (optional string) name that the cached version
+of <tt class="docutils literal"><span class="pre">f</span></tt> should be provided with</li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; (optional callable) takes the input and returns a
+key for the cache, typically one would use this to normalize input</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">f</span></tt> is a function, do either <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">CachedFunction(f)</span></tt>
+or <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">cached_function(f)</span></tt> to make a cached version of <tt class="docutils literal"><span class="pre">f</span></tt>,
+or put <tt class="docutils literal"><span class="pre">&#64;cached_function</span></tt> right before the definition of <tt class="docutils literal"><span class="pre">f</span></tt>
+(i.e., use Python decorators):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@cached_function</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">....</span>
+</pre></div>
+</div>
+<p>The inputs to the function must be hashable or they must define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def mul(x, y=2):</span>
+<span class="go">....:     return x*y</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">6</span>
+</pre></div>
+</div>
+<p>We demonstrate that the result is cached, and that, moreover,
+the cache takes into account the various ways of providing
+default arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The user can clear the cache:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">mul</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>It is also possible to explicitly override the cache with
+a different value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mul</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+</pre></div>
+</div>
+<p>The parameter <tt class="docutils literal"><span class="pre">key</span></tt> can be used to ignore parameters for
+caching. In this example we ignore the parameter <tt class="docutils literal"><span class="pre">algorithm</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">algorithm</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span>
+<span class="go">....: def mul(x, y, algorithm=&quot;default&quot;):</span>
+<span class="go">....:     return x*y</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;algorithm&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.misc.cachefunc.CachedFunction.cache">
+<tt class="descname">cache</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.clear_cache">
+<tt class="descname">clear_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the cache dictionary.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">CachedFunction</span><span class="p">(</span><span class="n">number_of_partitions</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">{((5, &#39;default&#39;), ()): 7}</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">{}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.misc.cachefunc.CachedFunction.f">
+<tt class="descname">f</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.f" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.get_cache">
+<tt class="descname">get_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.get_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the cache dictionary.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">CachedFunction</span><span class="p">(</span><span class="n">number_of_partitions</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">{((5, &#39;default&#39;), ()): 7}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.get_key">
+<tt class="descname">get_key</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.get_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the key in the cache to be used when <tt class="docutils literal"><span class="pre">args</span></tt>
+and <tt class="docutils literal"><span class="pre">kwds</span></tt> are passed in as parameters.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def foo(x):</span>
+<span class="go">....:     return x^2</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">((2,), ())</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">((3,), ())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.is_in_cache">
+<tt class="descname">is_in_cache</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.is_in_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the argument list is in the cache.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+<span class="go">....:     def __init__(self, x):</span>
+<span class="go">....:         self._x = x</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def f(self, z, y=0):</span>
+<span class="go">....:         return self._x*z+y</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">6</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/16316">trac ticket #16316</a> has been fixed, i.e., caching works for
+immutable unhashable objects which define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def f(x): return x</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">u</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">K</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="n">x</span>
+<span class="go">1 + O(2)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">1 + O(2)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.precompute">
+<tt class="descname">precompute</tt><big>(</big><em>arglist</em>, <em>num_processes=1</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cache values for a number of inputs.  Do the computation
+in parallel, and only bother to compute values that we
+haven&#8217;t already cached.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">arglist</span></tt> &#8211; list (or iterables) of arguments for which
+the method shall be precomputed.</li>
+<li><tt class="docutils literal"><span class="pre">num_processes</span></tt> &#8211; number of processes used by
+<a class="reference external" href="../../../parallel/sage/parallel/decorate.html#sage.parallel.decorate.parallel" title="(in Sage Reference Manual: Parallel Computing v6.6)"><tt class="xref py py-func docutils literal"><span class="pre">parallel()</span></tt></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def oddprime_factors(n):</span>
+<span class="go">....:     l = [p for p,e in factor(n) if p != 2]</span>
+<span class="go">....:     return len(l)</span>
+<span class="gp">sage: </span><span class="n">oddprime_factors</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">oddprime_factors</span><span class="o">.</span><span class="n">cache</span><span class="p">[(</span><span class="mi">25</span><span class="p">,),()]</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedFunction.set_cache">
+<tt class="descname">set_cache</tt><big>(</big><em>value</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedFunction.set_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value for those args and keyword args
+Mind the unintuitive syntax (value first).
+Any idea on how to improve that welcome!</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">CachedFunction</span><span class="p">(</span><span class="n">number_of_partitions</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">{((5, &#39;default&#39;), ()): 7}</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">{((5, &#39;default&#39;), ()): 17}</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">17</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/16316">trac ticket #16316</a> has been fixed, i.e., caching works for
+immutable unhashable objects which define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def f(x): return x</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">u</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">K</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="n">x</span>
+<span class="go">1 + O(2)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>DEVELOPER NOTE:</p>
+<p>Is there a way to use the following intuitive syntax?</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">=</span> <span class="mi">19</span>    <span class="c"># todo: not implemented</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>         <span class="c"># todo: not implemented</span>
+<span class="go">19</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedInParentMethod">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedInParentMethod</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedInParentMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedMethod</span></tt></a></p>
+<p>A decorator that creates a cached version of an instance
+method of a class.</p>
+<p>In contrast to <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a>,
+the cache dictionary is an attribute of the parent of
+the instance to which the method belongs.</p>
+<p>ASSUMPTION:</p>
+<p>This way of caching works only if</p>
+<ul class="simple">
+<li>the instances <em>have</em> a parent, and</li>
+<li>the instances are hashable (they are part of the cache key) or they
+define <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a></li>
+</ul>
+<p>NOTE:</p>
+<p>For proper behavior, the method must be a pure function (no side effects).
+If this decorator is used on a method, it will have identical output on
+equal elements. This is since the element is part of the hash key.
+Arguments to the method must be hashable or define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>.  The instance it
+is assigned to must be hashable.</p>
+<p>Examples can be found at <a class="reference internal" href="#module-sage.misc.cachefunc" title="sage.misc.cachefunc"><tt class="xref py py-mod docutils literal"><span class="pre">cachefunc</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedMethod">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedMethod</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>A decorator that creates a cached version of an instance
+method of a class.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For proper behavior, the method must be a pure function (no side
+effects). Arguments to the method must be hashable or transformed into
+something hashable using <tt class="docutils literal"><span class="pre">key</span></tt> or they must define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def f(self, t, x=2):</span>
+<span class="go">....:         print &#39;computing&#39;</span>
+<span class="go">....:         return t**x</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The example shows that the actual computation
+takes place only once, and that the result is
+identical for equivalent input:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">res</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span> <span class="n">res</span>
+<span class="go">computing</span>
+<span class="go">9</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">t</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">is</span> <span class="n">res</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="ow">is</span> <span class="n">res</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note, however, that the <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a> is replaced by a
+<a class="reference internal" href="#sage.misc.cachefunc.CachedMethodCaller" title="sage.misc.cachefunc.CachedMethodCaller"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethodCaller</span></tt></a> or <a class="reference internal" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs" title="sage.misc.cachefunc.CachedMethodCallerNoArgs"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethodCallerNoArgs</span></tt></a>
+as soon as it is bound to an instance or class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">gens</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+</pre></div>
+</div>
+<p>So, you would hardly ever see an instance of this class alive.</p>
+<p>The parameter <tt class="docutils literal"><span class="pre">key</span></tt> can be used to pass a function which creates a
+custom cache key for inputs. In the following example, this parameter is
+used to ignore the <tt class="docutils literal"><span class="pre">algorithm</span></tt> keyword for caching:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def _f_normalize(self, x, algorithm): return x</span>
+<span class="go">....:     @cached_method(key=_f_normalize)</span>
+<span class="go">....:     def f(self, x, algorithm=&#39;default&#39;): return x</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;algorithm&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedMethodCaller">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedMethodCaller</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCaller" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedFunction</span></tt></a></p>
+<p>Utility class that is used by <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a> to bind a
+cached method to an instance.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since <a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>, there is a special implementation
+<a class="reference internal" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs" title="sage.misc.cachefunc.CachedMethodCallerNoArgs"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethodCallerNoArgs</span></tt></a> for methods that do not take
+arguments.</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="go">....:    @cached_method</span>
+<span class="go">....:    def bar(self,x):</span>
+<span class="go">....:        return x^2</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">bar</span>
+<span class="go">Cached version of &lt;function bar at 0x...&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCaller&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">is</span> <span class="n">a</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedMethodCaller.get_key">
+<tt class="descname">get_key</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCaller.get_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert arguments to the key for this instance&#8217;s cache.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+<span class="go">....:     def __init__(self, x):</span>
+<span class="go">....:         self._x = x</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def f(self, y, z=0):</span>
+<span class="go">....:         return self._x * y + z</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">z</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">37</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">37</span><span class="p">);</span> <span class="n">k</span>
+<span class="go">((37, 0), ())</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="n">z</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that the method does not test whether there are
+too many arguments, or wrong argument names:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">z</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">((1, 2, 3), ((&#39;x&#39;, 4), (&#39;y&#39;, 5), (&#39;z&#39;, 6)))</span>
+</pre></div>
+</div>
+<p>It does, however, take into account the different
+ways of providing named arguments, possibly with a
+default value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">((5, 0), ())</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">((5, 0), ())</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">((5, 0), ())</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">((5, 0), ())</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get_key</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">((5, 0), ())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedMethodCaller.precompute">
+<tt class="descname">precompute</tt><big>(</big><em>arglist</em>, <em>num_processes=1</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCaller.precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cache values for a number of inputs.  Do the computation
+in parallel, and only bother to compute values that we
+haven&#8217;t already cached.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">arglist</span></tt> &#8211; list (or iterables) of arguments for which
+the method shall be precomputed.</li>
+<li><tt class="docutils literal"><span class="pre">num_processes</span></tt> &#8211; number of processes used by
+<a class="reference external" href="../../../parallel/sage/parallel/decorate.html#sage.parallel.decorate.parallel" title="(in Sage Reference Manual: Parallel Computing v6.6)"><tt class="xref py py-func docutils literal"><span class="pre">parallel()</span></tt></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def f(self, i):</span>
+<span class="go">....:         return i^2</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">9</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">precompute</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">cache</span>
+<span class="go">{((0,), ()): 0, ((1,), ()): 1, ((3,), ()): 9}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedMethodCallerNoArgs">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedMethodCallerNoArgs</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedFunction</span></tt></a></p>
+<p>Utility class that is used by <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a> to bind a
+cached method to an instance, in the case of a method that does
+not accept any arguments except <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The return value <tt class="docutils literal"><span class="pre">None</span></tt> would not be cached. So, if you have
+a method that does not accept arguments and may return <tt class="docutils literal"><span class="pre">None</span></tt>
+after a lengthy computation, then <tt class="docutils literal"><span class="pre">&#64;cached_method</span></tt> should not
+be used.</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span>
+<span class="go">Cached version of &lt;function gens at 0x...&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span> <span class="ow">is</span> <span class="n">I</span><span class="o">.</span><span class="n">gens</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span> <span class="ow">is</span> <span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Simon King (2011-04)</li>
+</ul>
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedMethodCallerNoArgs.clear_cache">
+<tt class="descname">clear_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the cache dictionary.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;bar&#39;</span>
+</pre></div>
+</div>
+<p>The cache can be emptied and thus the original value will
+be reconstructed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedMethodCallerNoArgs.is_in_cache">
+<tt class="descname">is_in_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs.is_in_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Answers whether the return value is already in the cache.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Recall that a cached method without arguments can not cache
+the return value <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[x, y]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.CachedMethodCallerNoArgs.set_cache">
+<tt class="descname">set_cache</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodCallerNoArgs.set_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the cache with a specific value.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="docutils literal"><span class="pre">None</span></tt> is not suitable for a cached value. It would be
+interpreted as an empty cache, forcing a new computation.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;bar&#39;</span>
+</pre></div>
+</div>
+<p>The cache can be emptied and thus the original value will
+be reconstructed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+</pre></div>
+</div>
+<p>The attempt to assign <tt class="docutils literal"><span class="pre">None</span></tt> to the cache fails:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedMethodPickle">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedMethodPickle</tt><big>(</big><em>inst</em>, <em>name</em>, <em>cache=None</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.CachedMethodPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class helps to unpickle cached methods.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since <a class="reference external" href="http://trac.sagemath.org/8611">trac ticket #8611</a>, a cached method is an attribute
+of the instance (provided that it has a <tt class="docutils literal"><span class="pre">__dict__</span></tt>).
+Hence, when pickling the instance, it would be attempted
+to pickle that attribute as well, but this is a problem,
+since functions can not be pickled, currently. Therefore,
+we replace the actual cached method by a place holder,
+that kills itself as soon as any attribute is requested.
+Then, the original cached attribute is reinstated. But the
+cached values are in fact saved.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">R</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">3</span><span class="p">,</span><span class="n">x</span><span class="o">^</span><span class="mi">4</span><span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[y^5*z^3 - 1/4*x^2*z^6 + 1/2*x*y*z^6 + 1/4*y^2*z^6,</span>
+<span class="go"> x^2*y*z^3 - x*y^2*z^3 + 2*y^3*z^3 + z^6,</span>
+<span class="go"> x*y^3 + y^4 + x*z^3, x^3 + y^3 + z^3]</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span>
+<span class="go">Cached version of &lt;function groebner_basis at 0x...&gt;</span>
+</pre></div>
+</div>
+<p>We now pickle and unpickle the ideal. The cached method
+<tt class="docutils literal"><span class="pre">groebner_basis</span></tt> is replaced by a placeholder:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">J</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">I</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span>
+<span class="go">Pickle of the cached method &quot;groebner_basis&quot;</span>
+</pre></div>
+</div>
+<p>But as soon as any other attribute is requested from the
+placeholder, it replaces itself by the cached method, and
+the entries of the cache are actually preserved:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span>
+<span class="go">Cached version of &lt;function groebner_basis at 0x...&gt;</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span> <span class="o">==</span> <span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Since <a class="reference external" href="http://trac.sagemath.org/11115">trac ticket #11115</a>, there is a special implementation for
+cached methods that don&#8217;t take arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCaller&#39;&gt;</span>
+</pre></div>
+</div>
+<p>We demonstrate that both implementations can be pickled and
+preserve the cache. For that purpose, we assign nonsense to the
+cache. Of course, it is a very bad idea to override the cache in
+that way.  So, please don&#8217;t try this at home:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;bar&#39;</span>
+<span class="gp">sage: </span><span class="n">J</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">I</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;bar&#39;</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+</pre></div>
+</div>
+<p>Anyway, the cache will be automatically reconstructed after
+clearing it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">[a, b]</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Simon King (2011-01)</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.CachedSpecialMethod">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">CachedSpecialMethod</tt><a class="headerlink" href="#sage.misc.cachefunc.CachedSpecialMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedMethod</span></tt></a></p>
+<p>Cached version of <em>special</em> python methods.</p>
+<p>IMPLEMENTATION:</p>
+<p>For new style classes <tt class="docutils literal"><span class="pre">C</span></tt>, it is not possible to override a special
+method, such as <tt class="docutils literal"><span class="pre">__hash__</span></tt>, in the <tt class="docutils literal"><span class="pre">__dict__</span></tt> of an instance <tt class="docutils literal"><span class="pre">c</span></tt> of
+<tt class="docutils literal"><span class="pre">C</span></tt>, because Python will for efficiency reasons always use what is
+provided by the class, not by the instance.</p>
+<p>By consequence, if <tt class="docutils literal"><span class="pre">__hash__</span></tt> would be wrapped by using
+<a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a>, then <tt class="docutils literal"><span class="pre">hash(c)</span></tt> will access <tt class="docutils literal"><span class="pre">C.__hash__</span></tt> and bind
+it to <tt class="docutils literal"><span class="pre">c</span></tt>, which means that the <tt class="docutils literal"><span class="pre">__get__</span></tt> method of
+<a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a> will be called. But there, we assume that Python has
+already inspected <tt class="docutils literal"><span class="pre">__dict__</span></tt>, and thus a <a class="reference internal" href="#sage.misc.cachefunc.CachedMethodCaller" title="sage.misc.cachefunc.CachedMethodCaller"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethodCaller</span></tt></a>
+will be created over and over again.</p>
+<p>Here, the <tt class="docutils literal"><span class="pre">__get__</span></tt> method will explicitly access the <tt class="docutils literal"><span class="pre">__dict__</span></tt>, so that
+<tt class="docutils literal"><span class="pre">hash(c)</span></tt> will rely on a single <a class="reference internal" href="#sage.misc.cachefunc.CachedMethodCaller" title="sage.misc.cachefunc.CachedMethodCaller"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethodCaller</span></tt></a> stored in
+the <tt class="docutils literal"><span class="pre">__dict__</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def __hash__(self):</span>
+<span class="go">....:         print &quot;compute hash&quot;</span>
+<span class="go">....:         return int(5)</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">__hash__</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+</pre></div>
+</div>
+<p>The hash is computed only once, subsequent calls will use the value from
+the cache. This was implemented in <a class="reference external" href="http://trac.sagemath.org/12601">trac ticket #12601</a>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>       <span class="c"># indirect doctest</span>
+<span class="go">compute hash</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.ClearCacheOnPickle">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">ClearCacheOnPickle</tt><a class="headerlink" href="#sage.misc.cachefunc.ClearCacheOnPickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class implements an appropriate <tt class="docutils literal"><span class="pre">__getstate__</span></tt> method that
+clears the cache of the methods (see &#64;cached_method) before
+passing them on to the caller, typically the pickle and copy modules.</p>
+<p>The implemented <tt class="docutils literal"><span class="pre">__getstate__</span></tt> method calls the <tt class="docutils literal"><span class="pre">__getstate__</span></tt>
+methods of classes later in the method resolution
+order. Therefore, classes which want this behaviour should inherit
+first from this one.</p>
+<p>EXAMPLE:</p>
+<p>In the following example, we create a Python class that inherits
+from multivariate polynomial ideals, but does not pickle cached
+values.  We provide the definition in Cython, however, since
+interactive Cython definitions provide introspection by
+<a class="reference external" href="http://trac.sagemath.org/9976">trac ticket #9976</a>, whereas Python definitions don&#8217;t.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">classdef</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;from sage.misc.cachefunc import ClearCacheOnPickle&#39;</span><span class="p">,</span>
+<span class="go">....:    &#39;from sage.all import QQ&#39;,</span>
+<span class="go">....:    &#39;P = QQ[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;,&quot;d&quot;]; I = P*[P.gen(0),P.gen(1)]&#39;,</span>
+<span class="go">....:    &#39;class MyClass(ClearCacheOnPickle,I.__class__):&#39;,</span>
+<span class="go">....:    &#39;    def __init__(self,ring,gens):&#39;,</span>
+<span class="go">....:    &#39;        I.__class__.__init__(self,ring,gens)&#39;,</span>
+<span class="go">....:    &#39;    def __getnewargs__(self):&#39;,</span>
+<span class="go">....:    &#39;        return (self._Ideal_generic__ring,self._Ideal_generic__gens)&#39;]</span>
+<span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classdef</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We destroy the cache of two methods of <tt class="docutils literal"><span class="pre">I</span></tt> on purpose
+(demonstrating that the two different implementations of cached
+methods are correctly dealt with).  Pickling <tt class="docutils literal"><span class="pre">I</span></tt> preserves the
+cache:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">J</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">I</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;bar&#39;</span>
+<span class="gp">sage: </span><span class="n">J</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+</pre></div>
+</div>
+<p>However, if we have an ideal that additionally descends from
+<a class="reference internal" href="#sage.misc.cachefunc.ClearCacheOnPickle" title="sage.misc.cachefunc.ClearCacheOnPickle"><tt class="xref py py-class docutils literal"><span class="pre">ClearCacheOnPickle</span></tt></a>, the carefully corrupted cache is not
+pickled:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">MyClass</span><span class="p">(</span><span class="n">P</span><span class="p">,[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span>
+<span class="go">Ideal (a, b) of Multivariate Polynomial Ring in a, b, c, d over Rational Field</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">groebner_basis</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;bar&#39;</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;foo&#39;</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">&#39;bar&#39;</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">A</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;singular&#39;</span><span class="p">)</span>
+<span class="go">[a, b]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">&#39;foo&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.DiskCachedFunction">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">DiskCachedFunction</tt><big>(</big><em>f</em>, <em>dir</em>, <em>memory_cache=False</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.DiskCachedFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedFunction</span></tt></a></p>
+<p>Works similar to CachedFunction, but instead, we keep the
+cache on disk (optionally, we keep it in memory too).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">DiskCachedFunction</span>
+<span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">factor</span> <span class="o">=</span> <span class="n">DiskCachedFunction</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">memory_cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">factor</span><span class="p">(</span><span class="mi">2775</span><span class="p">);</span> <span class="n">f</span>
+<span class="go">3 * 5^2 * 37</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="ow">is</span> <span class="n">factor</span><span class="p">(</span><span class="mi">2775</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.FileCache">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">FileCache</tt><big>(</big><em>dir</em>, <em>prefix=''</em>, <em>memory_cache=False</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.FileCache" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#sage.misc.cachefunc.FileCache" title="sage.misc.cachefunc.FileCache"><tt class="xref py py-class docutils literal"><span class="pre">FileCache</span></tt></a> is a dictionary-like class which stores keys
+and values on disk.  The keys take the form of a tuple <tt class="docutils literal"><span class="pre">(A,K)</span></tt></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">A</span></tt> is a tuple of objects <tt class="docutils literal"><span class="pre">t</span></tt> where each <tt class="docutils literal"><span class="pre">t</span></tt> is an
+exact object which is uniquely identified by a short string.</li>
+<li><tt class="docutils literal"><span class="pre">K</span></tt> is a tuple of tuples <tt class="docutils literal"><span class="pre">(s,v)</span></tt> where <tt class="docutils literal"><span class="pre">s</span></tt> is a valid
+variable name and <tt class="docutils literal"><span class="pre">v</span></tt> is an exact object which is uniquely
+identified by a short string with letters [a-zA-Z0-9-._]</li>
+</ul>
+<p>The primary use case is the <a class="reference internal" href="#sage.misc.cachefunc.DiskCachedFunction" title="sage.misc.cachefunc.DiskCachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">DiskCachedFunction</span></tt></a>.  If
+<tt class="docutils literal"><span class="pre">memory_cache</span> <span class="pre">==</span> <span class="pre">True</span></tt>, we maintain a cache of objects seen
+during this session in memory &#8211; but we don&#8217;t load them from
+disk until necessary.  The keys and values are stored in a
+pair of files:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">prefix-argstring.key.sobj</span></tt> contains the <tt class="docutils literal"><span class="pre">key</span></tt> only,</li>
+<li><tt class="docutils literal"><span class="pre">prefix-argstring.sobj</span></tt> contains the tuple <tt class="docutils literal"><span class="pre">(key,val)</span></tt></li>
+</ul>
+<p>where <tt class="docutils literal"><span class="pre">self[key]</span> <span class="pre">==</span> <span class="pre">val</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We assume that each <a class="reference internal" href="#sage.misc.cachefunc.FileCache" title="sage.misc.cachefunc.FileCache"><tt class="xref py py-class docutils literal"><span class="pre">FileCache</span></tt></a> lives in its own directory.
+Use <strong>extreme</strong> caution if you wish to break that assumption.</p>
+</div>
+<dl class="method">
+<dt id="sage.misc.cachefunc.FileCache.file_list">
+<tt class="descname">file_list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.FileCache.file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of files corresponding to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">FileCache</span>
+<span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FC</span> <span class="o">=</span> <span class="n">FileCache</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">memory_cache</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;t&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((),())]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),())]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,),((</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">),))]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">FC</span><span class="o">.</span><span class="n">file_list</span><span class="p">()):</span> <span class="k">print</span> <span class="n">f</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="nb">dir</span><span class="p">):]</span>
+<span class="go">t-.key.sobj</span>
+<span class="go">t-.sobj</span>
+<span class="go">t-1_2.key.sobj</span>
+<span class="go">t-1_2.sobj</span>
+<span class="go">t-a-1.1.key.sobj</span>
+<span class="go">t-a-1.1.sobj</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.FileCache.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.FileCache.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of tuples <tt class="docutils literal"><span class="pre">(k,v)</span></tt> where <tt class="docutils literal"><span class="pre">self[k]</span> <span class="pre">=</span> <span class="pre">v</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">FileCache</span>
+<span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FC</span> <span class="o">=</span> <span class="n">FileCache</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">memory_cache</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((),())]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),())]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,),((</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">),))]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">FC</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">sort</span><span class="p">();</span> <span class="k">print</span> <span class="n">I</span>
+<span class="go">[(((), ()), 1), (((1,), ((&#39;a&#39;, 1),)), 3), (((1, 2), ()), 2)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.FileCache.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.FileCache.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of keys <tt class="docutils literal"><span class="pre">k</span></tt> where <tt class="docutils literal"><span class="pre">self[k]</span></tt> is defined.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">FileCache</span>
+<span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FC</span> <span class="o">=</span> <span class="n">FileCache</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">memory_cache</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((),())]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),())]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,),((</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">),))]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">FC</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.</span><span class="n">sort</span><span class="p">();</span> <span class="k">print</span> <span class="n">K</span>
+<span class="go">[((), ()), ((1,), ((&#39;a&#39;, 1),)), ((1, 2), ())]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.FileCache.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.FileCache.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of values that are stored in <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">FileCache</span>
+<span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FC</span> <span class="o">=</span> <span class="n">FileCache</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">memory_cache</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((),())]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),())]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((</span><span class="mi">1</span><span class="p">,),((</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">),))]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">FC</span><span class="p">[((),((</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">),))]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">FC</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">sort</span><span class="p">();</span> <span class="k">print</span> <span class="n">v</span>
+<span class="go">[1, 2, 3, 4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.WeakCachedFunction">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">WeakCachedFunction</tt><a class="headerlink" href="#sage.misc.cachefunc.WeakCachedFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">sage.misc.cachefunc.CachedFunction</span></tt></a></p>
+<p>A version of <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">CachedFunction</span></tt></a> using weak references on the values.</p>
+<p>If <tt class="docutils literal"><span class="pre">f</span></tt> is a function, do either <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">weak_cached_function(f)</span></tt> to make
+a cached version of <tt class="docutils literal"><span class="pre">f</span></tt>, or put <tt class="docutils literal"><span class="pre">&#64;weak_cached_function</span></tt> right before
+the definition of <tt class="docutils literal"><span class="pre">f</span></tt> (i.e., use Python decorators):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@weak_cached_function</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f():</span>
+<span class="go">....:     print &quot;doing a computation&quot;</span>
+<span class="go">....:     return A()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The result is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, if there are no strong references left, the result
+may be garbage collected, and thus a new computation would
+take place:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The parameter <tt class="docutils literal"><span class="pre">key</span></tt> can be used to ignore parameters for
+caching. In this example we ignore the parameter <tt class="docutils literal"><span class="pre">algorithm</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@weak_cached_function</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">algorithm</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+<span class="go">....: def mod_ring(x, algorithm=&quot;default&quot;):</span>
+<span class="go">....:     return IntegerModRing(x)</span>
+<span class="gp">sage: </span><span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;algorithm&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.misc.cachefunc.WeakCachedFunction.is_in_cache">
+<tt class="descname">is_in_cache</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.WeakCachedFunction.is_in_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the argument list is in the cache.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="go">....:     def __init__(self, x):</span>
+<span class="go">....:         self.x = x</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f(n):</span>
+<span class="go">....:    return A(n)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The key 5 is in the cache, as long as there is a strong
+reference to the corresponding value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, if there are no strong references left, the cached
+item is removed from cache after garbage collection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/16316">trac ticket #16316</a> has been fixed, i.e., caching works for
+immutable unhashable objects which define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f(x): return x</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">u</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">K</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">(1 + O(2^20))*t</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.misc.cachefunc.WeakCachedFunction.set_cache">
+<tt class="descname">set_cache</tt><big>(</big><em>value</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.WeakCachedFunction.set_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value for those args and keyword args
+Mind the unintuitive syntax (value first).
+Any idea on how to improve that welcome!</p>
+<p>It is required that the given value is weak
+referenceable. The item will be removed from
+cache if the value is garbage collected.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f(n):</span>
+<span class="go">....:     raise RuntimeError</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">Integer Ring</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/16316">trac ticket #16316</a> has been fixed, i.e., caching works for
+immutable unhashable objects which define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f(x): return x</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">u</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Qq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">K</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_in_cache</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.cachefunc.cached_function">
+<tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">cached_function</tt><big>(</big><em>self</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.cached_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a cached version of a function, which only recomputes
+values it hasn&#8217;t already computed. Synonyme: <tt class="docutils literal"><span class="pre">cached_function</span></tt></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> &#8211; a function</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; (optional string) name that the cached version
+of <tt class="docutils literal"><span class="pre">f</span></tt> should be provided with</li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; (optional callable) takes the input and returns a
+key for the cache, typically one would use this to normalize input</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">f</span></tt> is a function, do either <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">CachedFunction(f)</span></tt>
+or <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">cached_function(f)</span></tt> to make a cached version of <tt class="docutils literal"><span class="pre">f</span></tt>,
+or put <tt class="docutils literal"><span class="pre">&#64;cached_function</span></tt> right before the definition of <tt class="docutils literal"><span class="pre">f</span></tt>
+(i.e., use Python decorators):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@cached_function</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">....</span>
+</pre></div>
+</div>
+<p>The inputs to the function must be hashable or they must define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span>
+<span class="go">....: def mul(x, y=2):</span>
+<span class="go">....:     return x*y</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">6</span>
+</pre></div>
+</div>
+<p>We demonstrate that the result is cached, and that, moreover,
+the cache takes into account the various ways of providing
+default arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The user can clear the cache:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">mul</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>It is also possible to explicitly override the cache with
+a different value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mul</span><span class="o">.</span><span class="n">set_cache</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+</pre></div>
+</div>
+<p>The parameter <tt class="docutils literal"><span class="pre">key</span></tt> can be used to ignore parameters for
+caching. In this example we ignore the parameter <tt class="docutils literal"><span class="pre">algorithm</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@cached_function</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">algorithm</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span>
+<span class="go">....: def mul(x, y, algorithm=&quot;default&quot;):</span>
+<span class="go">....:     return x*y</span>
+<span class="gp">sage: </span><span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;algorithm&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mul</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.cachefunc.cached_in_parent_method">
+<tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">cached_in_parent_method</tt><big>(</big><em>self</em>, <em>inst</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.cached_in_parent_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>A decorator that creates a cached version of an instance
+method of a class.</p>
+<p>In contrast to <a class="reference internal" href="#sage.misc.cachefunc.CachedMethod" title="sage.misc.cachefunc.CachedMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedMethod</span></tt></a>,
+the cache dictionary is an attribute of the parent of
+the instance to which the method belongs.</p>
+<p>ASSUMPTION:</p>
+<p>This way of caching works only if</p>
+<ul class="simple">
+<li>the instances <em>have</em> a parent, and</li>
+<li>the instances are hashable (they are part of the cache key) or they
+define <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a></li>
+</ul>
+<p>NOTE:</p>
+<p>For proper behavior, the method must be a pure function (no side effects).
+If this decorator is used on a method, it will have identical output on
+equal elements. This is since the element is part of the hash key.
+Arguments to the method must be hashable or define
+<a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject._cache_key" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.structure.sage_object.SageObject._cache_key()</span></tt></a>.  The instance it
+is assigned to must be hashable.</p>
+<p>Examples can be found at <a class="reference internal" href="#module-sage.misc.cachefunc" title="sage.misc.cachefunc"><tt class="xref py py-mod docutils literal"><span class="pre">cachefunc</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.cachefunc.cached_method">
+<tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">cached_method</tt><big>(</big><em>f</em>, <em>name=None</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.cached_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>A decorator for cached methods.</p>
+<p>EXAMPLES:</p>
+<p>In the following examples, one can see how a cached method works
+in application. Below, we demonstrate what is done behind the scenes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def __hash__(self):</span>
+<span class="go">....:         print &quot;compute hash&quot;</span>
+<span class="go">....:         return int(5)</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def f(self, x):</span>
+<span class="go">....:         print &quot;computing cached method&quot;</span>
+<span class="go">....:         return x*2</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">C</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">__hash__</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.misc.cachefunc.CachedMethodCallerNoArgs&#39;&gt;</span>
+<span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">compute hash</span>
+<span class="go">5</span>
+</pre></div>
+</div>
+<p>When calling a cached method for the second time with the same arguments,
+the value is gotten from the cache, so that a new computation is not
+needed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">computing cached method</span>
+<span class="go">8</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">is</span> <span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Different instances have distinct caches:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">C</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="ow">is</span> <span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">computing cached method</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">8</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">computing cached method</span>
+<span class="go">8</span>
+</pre></div>
+</div>
+<p>Using cached methods for the hash and other special methods was
+implemented in <a class="reference external" href="http://trac.sagemath.org/12601">trac ticket #12601</a>, by means of <a class="reference internal" href="#sage.misc.cachefunc.CachedSpecialMethod" title="sage.misc.cachefunc.CachedSpecialMethod"><tt class="xref py py-class docutils literal"><span class="pre">CachedSpecialMethod</span></tt></a>. We
+show that it is used behind the scenes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cached_method</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">__hash__</span><span class="p">)</span>
+<span class="go">&lt;sage.misc.cachefunc.CachedSpecialMethod object at ...&gt;</span>
+<span class="gp">sage: </span><span class="n">cached_method</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">f</span><span class="p">)</span>
+<span class="go">&lt;sage.misc.cachefunc.CachedMethod object at ...&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.misc.cachefunc.disk_cached_function">
+<em class="property">class </em><tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">disk_cached_function</tt><big>(</big><em>dir</em>, <em>memory_cache=False</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.disk_cached_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator for <a class="reference internal" href="#sage.misc.cachefunc.DiskCachedFunction" title="sage.misc.cachefunc.DiskCachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">DiskCachedFunction</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">dir</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nd">@disk_cached_function</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+<span class="go">....: def foo(x): return next_prime(2^x)%x</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">foo</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span><span class="n">x</span>
+<span class="go">11</span>
+<span class="gp">sage: </span><span class="nd">@disk_cached_function</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+<span class="go">....: def foo(x): return 1/x</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+<span class="go">11</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+<span class="go">1/200</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.cachefunc.weak_cached_function">
+<tt class="descclassname">sage.misc.cachefunc.</tt><tt class="descname">weak_cached_function</tt><big>(</big><em>self</em>, <em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.misc.cachefunc.weak_cached_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>A version of <a class="reference internal" href="#sage.misc.cachefunc.CachedFunction" title="sage.misc.cachefunc.CachedFunction"><tt class="xref py py-class docutils literal"><span class="pre">CachedFunction</span></tt></a> using weak references on the values.</p>
+<p>If <tt class="docutils literal"><span class="pre">f</span></tt> is a function, do either <tt class="docutils literal"><span class="pre">g</span> <span class="pre">=</span> <span class="pre">weak_cached_function(f)</span></tt> to make
+a cached version of <tt class="docutils literal"><span class="pre">f</span></tt>, or put <tt class="docutils literal"><span class="pre">&#64;weak_cached_function</span></tt> right before
+the definition of <tt class="docutils literal"><span class="pre">f</span></tt> (i.e., use Python decorators):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@weak_cached_function</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.cachefunc</span> <span class="kn">import</span> <span class="n">weak_cached_function</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="nd">@weak_cached_function</span>
+<span class="go">....: def f():</span>
+<span class="go">....:     print &quot;doing a computation&quot;</span>
+<span class="go">....:     return A()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The result is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, if there are no strong references left, the result
+may be garbage collected, and thus a new computation would
+take place:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="p">()</span>
+<span class="go">doing a computation</span>
+</pre></div>
+</div>
+<p>The parameter <tt class="docutils literal"><span class="pre">key</span></tt> can be used to ignore parameters for
+caching. In this example we ignore the parameter <tt class="docutils literal"><span class="pre">algorithm</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nd">@weak_cached_function</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">algorithm</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+<span class="go">....: def mod_ring(x, algorithm=&quot;default&quot;):</span>
+<span class="go">....:     return IntegerModRing(x)</span>
+<span class="gp">sage: </span><span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;algorithm&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="n">mod_ring</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="bindable_class.html"
+                                  title="previous chapter">Bindable classes</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="weak_dict.html"
+                                  title="next chapter">Fast and safe weak value dictionary</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/cachefunc.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="weak_dict.html" title="Fast and safe weak value dictionary"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bindable_class.html" title="Bindable classes"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

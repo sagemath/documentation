@@ -1,0 +1,617 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Knapsack Problems &mdash; Sage Reference Manual v6.6: Numerical Optimization</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Numerical Optimization" href="../../index.html" />
+    <link rel="next" title="Mixed Integer Linear Programming" href="mip.html" />
+    <link rel="prev" title="Numerical Optimization" href="../../index.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mip.html" title="Mixed Integer Linear Programming"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Numerical Optimization"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Numerical Optimization</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="knapsack-problems">
+<span id="sage-numerical-knapsack"></span><h1>Knapsack Problems<a class="headerlink" href="#knapsack-problems" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.numerical.knapsack"></span><p>This module implements a number of solutions to various knapsack problems,
+otherwise known as linear integer programming problems. Solutions to the
+following knapsack problems are implemented:</p>
+<ul class="simple">
+<li>Solving the subset sum problem for super-increasing sequences.</li>
+<li>General case using Linear Programming</li>
+</ul>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Minh Van Nguyen (2009-04): initial version</li>
+<li>Nathann Cohen (2009-08): Linear Programming version</li>
+</ul>
+<div class="section" id="definition-of-knapsack-problems">
+<h2>Definition of Knapsack problems<a class="headerlink" href="#definition-of-knapsack-problems" title="Permalink to this headline">¶</a></h2>
+<p>You have already had a knapsack problem, so you should know, but in case you do
+not, a knapsack problem is what happens when you have hundred of items to put
+into a bag which is too small, and you want to pack the most useful of them.</p>
+<p>When you formally write it, here is your problem:</p>
+<ul class="simple">
+<li>Your bag can contain a weight of at most <span class="math">\(W\)</span>.</li>
+<li>Each item <span class="math">\(i\)</span> has a weight <span class="math">\(w_i\)</span>.</li>
+<li>Each item <span class="math">\(i\)</span> has a usefulness <span class="math">\(u_i\)</span>.</li>
+</ul>
+<p>You then want to maximize the total usefulness of the items you will store into
+your bag, while keeping sure the weight of the bag will not go over <span class="math">\(W\)</span>.</p>
+<p>As a linear program, this problem can be represented this way (if you define
+<span class="math">\(b_i\)</span> as the binary variable indicating whether the item <span class="math">\(i\)</span> is to be included
+in your bag):</p>
+<div class="math">
+\[\begin{split}\mbox{Maximize: }\sum_i b_i u_i \\
+\mbox{Such that: }
+\sum_i b_i w_i \leq W \\
+\forall i, b_i \mbox{ binary variable} \\\end{split}\]</div>
+<p>(For more information, see the <a class="reference external" href="http://en.wikipedia.org/wiki/Knapsack_problem">Wikipedia article Knapsack_problem</a>)</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>If your knapsack problem is composed of three items (weight, value)
+defined by (1,2), (1.5,1), (0.5,3), and a bag of maximum weight 2,
+you can easily solve it this way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">knapsack</span>
+<span class="gp">sage: </span><span class="n">knapsack</span><span class="p">(</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">3</span><span class="p">)],</span> <span class="nb">max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[5.0, [(1, 2), (0.500000000000000, 3)]]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="super-increasing-sequences">
+<h2>Super-increasing sequences<a class="headerlink" href="#super-increasing-sequences" title="Permalink to this headline">¶</a></h2>
+<p>We can test for whether or not a sequence is super-increasing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">seq</span>
+<span class="go">Super-increasing sequence of length 8</span>
+<span class="gp">sage: </span><span class="n">seq</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">])</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Solving the subset sum problem for a super-increasing sequence
+and target sum:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">subset_sum</span><span class="p">(</span><span class="mi">98</span><span class="p">)</span>
+<span class="go">[69, 21, 5, 2, 1]</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.numerical.knapsack.Superincreasing">
+<em class="property">class </em><tt class="descclassname">sage.numerical.knapsack.</tt><tt class="descname">Superincreasing</tt><big>(</big><em>seq=None</em><big>)</big><a class="headerlink" href="#sage.numerical.knapsack.Superincreasing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>A class for super-increasing sequences.</p>
+<p>Let <span class="math">\(L = (a_1, a_2, a_3, \dots, a_n)\)</span> be a non-empty sequence of
+non-negative integers. Then <span class="math">\(L\)</span> is said to be super-increasing if
+each <span class="math">\(a_i\)</span> is strictly greater than the sum of all previous values.
+That is, for each <span class="math">\(a_i \in L\)</span> the sequence <span class="math">\(L\)</span> must satisfy the property</p>
+<div class="math">
+\[\begin{split}a_i &gt; \sum_{k=1}^{i-1} a_k\end{split}\]</div>
+<p>in order to be called a super-increasing sequence, where <span class="math">\(|L| \geq 2\)</span>.
+If <span class="math">\(L\)</span> has only one element, it is also defined to be a
+super-increasing sequence.</p>
+<p>If <tt class="docutils literal"><span class="pre">seq</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, then construct an empty sequence. By
+definition, this empty sequence is not super-increasing.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">seq</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">None</span></tt>) a non-empty sequence.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">])</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="n">Superincreasing</span><span class="p">();</span> <span class="n">seq</span>
+<span class="go">An empty sequence.</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="n">Superincreasing</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">]);</span> <span class="n">seq</span>
+<span class="go">Super-increasing sequence of length 3</span>
+<span class="gp">sage: </span><span class="n">seq</span> <span class="o">=</span> <span class="n">Superincreasing</span><span class="p">(</span><span class="nb">list</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]));</span> <span class="n">seq</span>
+<span class="go">Super-increasing sequence of length 8</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.numerical.knapsack.Superincreasing.is_superincreasing">
+<tt class="descname">is_superincreasing</tt><big>(</big><em>seq=None</em><big>)</big><a class="headerlink" href="#sage.numerical.knapsack.Superincreasing.is_superincreasing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine whether or not <tt class="docutils literal"><span class="pre">seq</span></tt> is super-increasing.</p>
+<p>If <tt class="docutils literal"><span class="pre">seq=None</span></tt> then determine whether or not <tt class="docutils literal"><span class="pre">self</span></tt> is
+super-increasing.</p>
+<p>Let <span class="math">\(L = (a_1, a_2, a_3, \dots, a_n)\)</span> be a non-empty sequence of
+non-negative integers. Then <span class="math">\(L\)</span> is said to be super-increasing if
+each <span class="math">\(a_i\)</span> is strictly greater than the sum of all previous values.
+That is, for each <span class="math">\(a_i \in L\)</span> the sequence <span class="math">\(L\)</span> must satisfy the
+property</p>
+<div class="math">
+\[\begin{split}a_i &gt; \sum_{k=1}^{i-1} a_k\end{split}\]</div>
+<p>in order to be called a super-increasing sequence, where <span class="math">\(|L| \geq 2\)</span>.
+If <span class="math">\(L\)</span> has exactly one element, then it is also defined to be a
+super-increasing sequence.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">seq</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">None</span></tt>) a sequence to test</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">seq</span></tt> is <tt class="docutils literal"><span class="pre">None</span></tt>, then test <tt class="docutils literal"><span class="pre">self</span></tt> to determine whether or
+not it is super-increasing. In that case, return <tt class="docutils literal"><span class="pre">True</span></tt> if
+<tt class="docutils literal"><span class="pre">self</span></tt> is super-increasing; <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</li>
+<li>If <tt class="docutils literal"><span class="pre">seq</span></tt> is not <tt class="docutils literal"><span class="pre">None</span></tt>, then test <tt class="docutils literal"><span class="pre">seq</span></tt> to determine whether
+or not it is super-increasing. Return <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">seq</span></tt> is
+super-increasing; <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>By definition, an empty sequence is not super-increasing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">([])</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">(</span><span class="nb">tuple</span><span class="p">())</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">()</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">(())</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>But here is an example of a super-increasing sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>A super-increasing sequence can have zero as one of its elements:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>A super-increasing sequence can be of length 1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">([</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)])</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>The sequence must contain only integers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">Element e (= 1.00000000000000) of seq must be a non-negative integer.</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">is_superincreasing</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">Element e (= 2.10000000000000) of seq must be a non-negative integer.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.knapsack.Superincreasing.largest_less_than">
+<tt class="descname">largest_less_than</tt><big>(</big><em>N</em><big>)</big><a class="headerlink" href="#sage.numerical.knapsack.Superincreasing.largest_less_than" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the largest integer in the sequence <tt class="docutils literal"><span class="pre">self</span></tt> that is less than
+or equal to <tt class="docutils literal"><span class="pre">N</span></tt>.</p>
+<p>This function narrows down the candidate solution using a binary trim,
+similar to the way binary search halves the sequence at each iteration.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">N</span></tt> &#8211; integer; the target value to search for.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The largest integer in <tt class="docutils literal"><span class="pre">self</span></tt> that is less than or equal to <tt class="docutils literal"><span class="pre">N</span></tt>. If
+no solution exists, then return <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p>EXAMPLES:</p>
+<p>When a solution is found, return it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">356</span><span class="p">,</span> <span class="mi">819</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="mi">207</span><span class="p">)</span>
+<span class="go">179</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">356</span><span class="p">,</span> <span class="mi">819</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>But if no solution exists, return <tt class="docutils literal"><span class="pre">None</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">356</span><span class="p">,</span> <span class="mi">819</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>The target <tt class="docutils literal"><span class="pre">N</span></tt> must be an integer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">356</span><span class="p">,</span> <span class="mi">819</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="mf">2.30</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">N (= 2.30000000000000) must be an integer.</span>
+</pre></div>
+</div>
+<p>The sequence that <tt class="docutils literal"><span class="pre">self</span></tt> represents must also be non-empty:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">([])</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">seq must be a super-increasing sequence</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="nb">list</span><span class="p">())</span><span class="o">.</span><span class="n">largest_less_than</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">seq must be a super-increasing sequence</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.knapsack.Superincreasing.subset_sum">
+<tt class="descname">subset_sum</tt><big>(</big><em>N</em><big>)</big><a class="headerlink" href="#sage.numerical.knapsack.Superincreasing.subset_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solving the subset sum problem for a super-increasing sequence.</p>
+<p>Let <span class="math">\(S = (s_1, s_2, s_3, \dots, s_n)\)</span> be a non-empty sequence of
+non-negative integers, and let <span class="math">\(N \in \ZZ\)</span> be non-negative. The
+subset sum problem asks for a  subset <span class="math">\(A \subseteq S\)</span> all of whose
+elements sum to <span class="math">\(N\)</span>. This method specializes the subset sum problem
+to the case of super-increasing sequences. If a solution exists, then
+it is also a super-increasing sequence.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method only solves the subset sum problem for
+super-increasing sequences. In general, solving the subset sum
+problem for an arbitrary sequence is known to be computationally
+hard.</p>
+</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">N</span></tt> &#8211; a non-negative integer.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A non-empty subset of <tt class="docutils literal"><span class="pre">self</span></tt> whose elements sum to <tt class="docutils literal"><span class="pre">N</span></tt>. This
+subset is also a super-increasing sequence. If no such subset
+exists, then return the empty list.</li>
+</ul>
+<p>ALGORITHMS:</p>
+<p>The algorithm used is adapted from page 355 of <a class="reference internal" href="#hps08" id="id1">[HPS08]</a>.</p>
+<p>EXAMPLES:</p>
+<p>Solving the subset sum problem for a super-increasing sequence
+and target sum:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">189</span><span class="p">,</span> <span class="mi">376</span><span class="p">,</span> <span class="mi">919</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">subset_sum</span><span class="p">(</span><span class="mi">98</span><span class="p">)</span>
+<span class="go">[69, 21, 5, 2, 1]</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>The target <tt class="docutils literal"><span class="pre">N</span></tt> must be a non-negative integer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">Superincreasing</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">subset_sum</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">N (= -6) must be a non-negative integer.</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">subset_sum</span><span class="p">(</span><span class="o">-</span><span class="mf">6.2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">N (= -6.20000000000000) must be a non-negative integer.</span>
+</pre></div>
+</div>
+<p>The sequence that <tt class="docutils literal"><span class="pre">self</span></tt> represents must only contain non-negative
+integers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">9</span><span class="p">,</span> <span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Superincreasing</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="o">.</span><span class="n">subset_sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">Element e (= -10) of seq must be a non-negative integer.</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="hps08" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[HPS08]</a></td><td>J. Hoffstein, J. Pipher, and J.H. Silverman. <em>An
+Introduction to Mathematical Cryptography</em>. Springer, 2008.</td></tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.numerical.knapsack.knapsack">
+<tt class="descclassname">sage.numerical.knapsack.</tt><tt class="descname">knapsack</tt><big>(</big><em>seq</em>, <em>binary=True</em>, <em>max=1</em>, <em>value_only=False</em>, <em>solver=None</em>, <em>verbose=0</em><big>)</big><a class="headerlink" href="#sage.numerical.knapsack.knapsack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the knapsack problem</p>
+<p>For more information on the knapsack problem, see the documentation of the
+<a class="reference internal" href="#module-sage.numerical.knapsack" title="sage.numerical.knapsack"><tt class="xref py py-mod docutils literal"><span class="pre">knapsack</span> <span class="pre">module</span></tt></a> or the
+<a class="reference external" href="http://en.wikipedia.org/wiki/Knapsack_problem">Wikipedia article Knapsack_problem</a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">seq</span></tt> &#8211; Two different possible types:<ul>
+<li>A sequence of tuples <tt class="docutils literal"><span class="pre">(weight,</span> <span class="pre">value,</span> <span class="pre">something1,</span> <span class="pre">something2,</span>
+<span class="pre">...)</span></tt>. Note that only the first two coordinates (<tt class="docutils literal"><span class="pre">weight</span></tt> and
+<tt class="docutils literal"><span class="pre">values</span></tt>) will be taken into account. The rest (if any) will be
+ignored. This can be useful if you need to attach some information to
+the items.</li>
+<li>A sequence of reals (a value of 1 is assumed).</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">binary</span></tt> &#8211; When set to <tt class="docutils literal"><span class="pre">True</span></tt>, an item can be taken 0 or 1 time.
+When set to <tt class="docutils literal"><span class="pre">False</span></tt>, an item can be taken any amount of times (while
+staying integer and positive).</li>
+<li><tt class="docutils literal"><span class="pre">max</span></tt> &#8211; Maximum admissible weight.</li>
+<li><tt class="docutils literal"><span class="pre">value_only</span></tt> &#8211; When set to <tt class="docutils literal"><span class="pre">True</span></tt>, only the maximum useful value is
+returned. When set to <tt class="docutils literal"><span class="pre">False</span></tt>, both the maximum useful value and an
+assignment are returned.</li>
+<li><tt class="docutils literal"><span class="pre">solver</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">None</span></tt>) Specify a Linear Program (LP) solver to
+be used. If set to <tt class="docutils literal"><span class="pre">None</span></tt>, the default one is used. For more information
+on LP solvers and which default solver is used, see the documentation of
+class <a class="reference internal" href="mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="sage.numerical.mip.MixedIntegerLinearProgram"><tt class="xref py py-class docutils literal"><span class="pre">MixedIntegerLinearProgram</span></tt></a>.</li>
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">0</span></tt>). Sets the level of verbosity. Set
+to 0 by default, which means quiet.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>If <tt class="docutils literal"><span class="pre">value_only</span></tt> is set to <tt class="docutils literal"><span class="pre">True</span></tt>, only the maximum useful value is
+returned. Else (the default), the function returns a pair <tt class="docutils literal"><span class="pre">[value,list]</span></tt>,
+where <tt class="docutils literal"><span class="pre">list</span></tt> can be of two types according to the type of <tt class="docutils literal"><span class="pre">seq</span></tt>:</p>
+<ul class="simple">
+<li>The list of tuples <span class="math">\((w_i, u_i, ...)\)</span> occurring in the solution.</li>
+<li>A list of reals where each real is repeated the number of times it is
+taken into the solution.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>If your knapsack problem is composed of three items <tt class="docutils literal"><span class="pre">(weight,</span> <span class="pre">value)</span></tt>
+defined by <tt class="docutils literal"><span class="pre">(1,2),</span> <span class="pre">(1.5,1),</span> <span class="pre">(0.5,3)</span></tt>, and a bag of maximum weight <span class="math">\(2\)</span>, you
+can easily solve it this way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">knapsack</span>
+<span class="gp">sage: </span><span class="n">knapsack</span><span class="p">(</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">3</span><span class="p">)],</span> <span class="nb">max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[5.0, [(1, 2), (0.500000000000000, 3)]]</span>
+
+<span class="gp">sage: </span><span class="n">knapsack</span><span class="p">(</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">3</span><span class="p">)],</span> <span class="nb">max</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">5.0</span>
+</pre></div>
+</div>
+<p>Besides weight and value, you may attach any data to the items:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">knapsack</span>
+<span class="gp">sage: </span><span class="n">knapsack</span><span class="p">(</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;spam&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;lot&#39;</span><span class="p">)])</span>
+<span class="go">[3.0, [(0.500000000000000, 3, &#39;a&#39;, &#39;lot&#39;)]]</span>
+</pre></div>
+</div>
+<p>In the case where all the values (usefulness) of the items are equal to one,
+you do not need embarrass yourself with the second values, and you can just
+type for items <span class="math">\((1,1), (1.5,1), (0.5,1)\)</span> the command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.knapsack</span> <span class="kn">import</span> <span class="n">knapsack</span>
+<span class="gp">sage: </span><span class="n">knapsack</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],</span> <span class="nb">max</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">2.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Knapsack Problems</a><ul>
+<li><a class="reference internal" href="#definition-of-knapsack-problems">Definition of Knapsack problems</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#super-increasing-sequences">Super-increasing sequences</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../../index.html"
+                                  title="previous chapter">Numerical Optimization</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="mip.html"
+                                  title="next chapter">Mixed Integer Linear Programming</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/numerical/knapsack.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mip.html" title="Mixed Integer Linear Programming"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Numerical Optimization"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Numerical Optimization</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

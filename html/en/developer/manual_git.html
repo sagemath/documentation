@@ -1,0 +1,533 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Git the Hard Way &mdash; Sage Developer&#39;s Guide v6.6</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Sage Developer&#39;s Guide v6.6" href="index.html" />
+    <link rel="next" title="Tips and References" href="git_background.html" />
+    <link rel="prev" title="Collaborative Development with Git-Trac" href="git_trac.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="git_background.html" title="Tips and References"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="git_trac.html" title="Collaborative Development with Git-Trac"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Developer&#39;s Guide v6.6</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="git-the-hard-way">
+<span id="chapter-manual-git"></span><h1>Git the Hard Way<a class="headerlink" href="#git-the-hard-way" title="Permalink to this headline">¶</a></h1>
+<p>If you have no git experience, we recommend you to read the
+<a class="reference internal" href="git_trac.html#chapter-git-trac"><em>Collaborative Development with Git-Trac</em></a> chapter instead. The <tt class="docutils literal"><span class="pre">git-trac</span></tt> simplifies the
+interaction with our git and trac servers.</p>
+<p>If you want to contribute using git only, you are at the right place. This
+chapter will tell you how to do so, assuming some basic familiarity with git. In
+particular, you should have read <a class="reference internal" href="walk_through.html#chapter-walkthrough"><em>Sage Development Process</em></a> first.</p>
+<p>We assume that you have a copy of the Sage git repository, for example
+by running:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost ~]$ git clone git://github.com/sagemath/sage.git
+[user@localhost ~]$ cd sage
+[user@localhost sage]$ make
+</pre></div>
+</div>
+<div class="section" id="the-trac-server">
+<span id="section-git-trac"></span><h2>The Trac Server<a class="headerlink" href="#the-trac-server" title="Permalink to this headline">¶</a></h2>
+<p>The Sage trac server also holds a copy of the Sage repository, it is
+served via the ssh and git protocols. To add it as a remote repository
+to your local git repository, use these commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git remote add trac git://trac.sagemath.org/sage.git -t master
+[user@localhost sage]$ git remote set-url --push trac git@trac.sagemath.org:sage.git
+[user@localhost sage]$ git remote -v
+origin      git://github.com/sagemath/sage.git (fetch)
+origin      git://github.com/sagemath/sage.git (push)
+trac        git://trac.sagemath.org/sage.git (fetch)
+trac        git@trac.sagemath.org:sage.git (push)
+</pre></div>
+</div>
+<p>Instead of <tt class="docutils literal"><span class="pre">trac</span></tt> you can use any local name you want, of course. It
+is perfectly fine to have multiple remote repositories for git, think
+of them as bookmarks. You can then use <tt class="docutils literal"><span class="pre">git</span> <span class="pre">pull</span></tt> to get changes and
+<tt class="docutils literal"><span class="pre">git</span> <span class="pre">push</span></tt> to upload your local changes using:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git &lt;push|pull&gt; trac [ARGS]
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In the command above we set up the remote to only track the
+<tt class="docutils literal"><span class="pre">master</span></tt> branch on the trac server (the <tt class="docutils literal"><span class="pre">-t</span> <span class="pre">master</span></tt>
+option). This avoids clutter by not automatically downloading all
+branches ever created. But it also means that you will not fetch
+everything that is on trac by default, and you need to explicitly
+tell git which branch you want to get from trac. See the
+<a class="reference internal" href="#section-git-checkout"><em>Checking Out Tickets</em></a> section for examples.</p>
+</div>
+<p>We set up the remote here to perform read-only operations (fetch)
+using the git protocol and write operations (push) using the ssh
+protocol (specified by the <tt class="docutils literal"><span class="pre">git&#64;</span></tt> part). To use the ssh protocol you
+need to have a trac account and to set up your ssh public key as
+described in <a class="reference internal" href="trac.html#section-trac-ssh-key"><em>Manually Linking your Public Key to your Trac Account</em></a>. Authentication is necessary
+if you want to upload anything to ensure that it really is from you.</p>
+<p>If you want to use ssh only, use these commands:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git remote add trac git@trac.sagemath.org:sage.git -t master
+[user@localhost sage]$ git remote -v
+origin      git://github.com/sagemath/sage.git (fetch)
+origin      git://github.com/sagemath/sage.git (push)
+trac        git@trac.sagemath.org:sage.git (fetch)
+trac        git@trac.sagemath.org:sage.git (push)
+</pre></div>
+</div>
+<div class="section" id="checking-out-tickets">
+<span id="section-git-checkout"></span><h3>Checking Out Tickets<a class="headerlink" href="#checking-out-tickets" title="Permalink to this headline">¶</a></h3>
+<p>Trac tickets that are finished or in the process of being worked on
+can have a git branch attached to them. This is the &#8220;Branch:&#8221; field in
+the ticket description. The branch name is generally of the form
+<tt class="docutils literal"><span class="pre">u/user/description</span></tt>, where <tt class="docutils literal"><span class="pre">user</span></tt> is the name of the user who
+made the branch and <tt class="docutils literal"><span class="pre">description</span></tt> is some free-form short
+description (and can include further slashes).</p>
+<p>If you want to work with the changes in that remote branch, you must
+make a local copy. In particular, git has no concept of directly
+working with the remote branch, the remotes are only bookmarks for
+things that you can get from/to the remote server. Hence, the first
+thing you should do is to get everything from the trac server&#8217;s branch
+into your local repository. This is achieved by:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git fetch trac u/user/description
+remote: Counting objects: 62, done.
+remote: Compressing objects: 100% (48/48), done.
+remote: Total 48 (delta 42), reused 0 (delta 0)
+Unpacking objects: 100% (48/48), done.
+From trac.sagemath.org:sage
+* [new branch]      u/user/description -&gt; FETCH_HEAD
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">u/user/description</span></tt> branch is now temporarily (until you fetch
+something else) stored in your local git database under the alias
+<tt class="docutils literal"><span class="pre">FETCH_HEAD</span></tt>. In the second step, we make it available as a new
+local branch and switch to it. Your local branch can have a different
+name, for example:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git checkout -b my_branch FETCH_HEAD
+Switched to a new branch &#39;my_branch&#39;
+</pre></div>
+</div>
+<p>creates a new branch in your local git repository named <tt class="docutils literal"><span class="pre">my_branch</span></tt>
+and modifies your local Sage filesystem tree to the state of the files
+in that ticket. You can now edit files and commit changes to your
+local branch.</p>
+</div>
+<div class="section" id="pushing-your-changes-to-a-ticket">
+<span id="section-git-push"></span><h3>Pushing Your Changes to a Ticket<a class="headerlink" href="#pushing-your-changes-to-a-ticket" title="Permalink to this headline">¶</a></h3>
+<p>To add your local branch to a trac ticket, you should first decide on
+a name on the Sage trac repository.</p>
+<p>For read/write permissions on git branches, see
+<a class="reference internal" href="git_trac.html#section-git-trac-branch-names"><em>Note on Branch Names</em></a></p>
+<p>In order to avoid name clashes, you can use
+<tt class="docutils literal"><span class="pre">u/your_username/a_description_of_your_branch</span></tt> (the description can contain
+slashes, but no spaces). Then:</p>
+<ul>
+<li><p class="first"><strong>Fill</strong> the <tt class="docutils literal"><span class="pre">Branch</span></tt> field of the trac ticket with that name.</p>
+</li>
+<li><p class="first"><strong>Push</strong> your branch to trac with either:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git push --set-upstream trac HEAD:u/user/description
+</pre></div>
+</div>
+<p>if you started the branch yourself and do not follow any other branch,
+or use:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git push trac HEAD:u/user/description
+</pre></div>
+</div>
+<p>if your branch already has an upstream branch.</p>
+</li>
+</ul>
+<p>Here, <tt class="docutils literal"><span class="pre">HEAD</span></tt> means that you are pushing the most recent commit (and, by
+extension, all of its parent commits) of the current local branch to the remote
+branch.</p>
+<p>The <tt class="docutils literal"><span class="pre">Branch</span></tt> field on the trac ticket can appear in red/green. See
+<a class="reference internal" href="trac.html#section-trac-fields"><em>The Ticket Fields</em></a> to learn what it means.</p>
+</div>
+<div class="section" id="getting-changes">
+<span id="section-git-pull"></span><h3>Getting Changes<a class="headerlink" href="#getting-changes" title="Permalink to this headline">¶</a></h3>
+<p>A common task during development is to synchronize your local copy of
+the branch with the branch on trac. In particular, assume you
+downloaded somebody else&#8217;s branch made some suggestions for
+improvements on the trac ticket. Now the original author incorporated
+your suggestions into his branch, and you want to get the added
+changesets to complete your review. Assuming that you originally got
+your local branch as in <a class="reference internal" href="#section-git-checkout"><em>Checking Out Tickets</em></a>, you can just
+issue:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git pull trac u/user/description
+From trac.sagemath.org:sage
+ * branch            u/user/description -&gt; FETCH_HEAD
+Updating 8237337..07152d8
+Fast-forward
+ src/sage/tests/cmdline.py      | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletions(-)
+</pre></div>
+</div>
+<p>where now <tt class="docutils literal"><span class="pre">user</span></tt> is the other developer&#8217;s trac username and
+<tt class="docutils literal"><span class="pre">description</span></tt> is some description that he chose. This command will
+download the changes from the originally-used remote branch and merge
+them into your local branch. If you haven&#8217;t published your local
+commits yet then you can also rebase them via:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git pull -r trac u/user/description
+From trac.sagemath.org:sage
+ * branch            u/user/description -&gt; FETCH_HEAD
+First, rewinding head to replay your work on top of it...
+Applying: my local commit
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#section-git-merge"><em>Merging and Rebasing</em></a> section for an in-depth explanation of
+merge vs. rebase.</p>
+<p>So far, we assumed that there are no conflicts. It is unavoidable in
+distributed development that, sometimes, the same location in a source
+source file is changed by more than one person. Reconciling these
+conflicting edits is explained in the <a class="reference internal" href="git_trac.html#section-git-trac-conflict"><em>Conflict Resolution</em></a>
+section.</p>
+</div>
+<div class="section" id="updating-master">
+<span id="section-git-pull-master"></span><h3>Updating Master<a class="headerlink" href="#updating-master" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">master</span></tt> branch can be updated just like any other branch. However, your
+local copy of the master branch should stay <strong>identical</strong> to the trac master
+branch.</p>
+<p>If you accidentally added commits to your local copy of <tt class="docutils literal"><span class="pre">master</span></tt>, you must
+delete them before updating the branch.</p>
+<p>One way to ensure that you are notified of potential problems is to use <tt class="docutils literal"><span class="pre">git</span>
+<span class="pre">pull</span> <span class="pre">--ff-only</span></tt>, which will raise an error if a non-trivial merge would be
+required:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git checkout master
+[user@localhost sage]$ git pull --ff-only trac master
+</pre></div>
+</div>
+<p>If this pull fails, then something is wrong with the local copy of the
+master branch. To switch to the correct Sage master branch, use:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost sage]$ git checkout master
+[user@localhost sage]$ git reset --hard trac/master
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="merging-and-rebasing">
+<span id="section-git-merge"></span><h2>Merging and Rebasing<a class="headerlink" href="#merging-and-rebasing" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes, a new version of Sage is released while you work on a git branch.</p>
+<p>Let us assume you started <tt class="docutils literal"><span class="pre">my_branch</span></tt> at commit <tt class="docutils literal"><span class="pre">B</span></tt>. After a while, your
+branch has advanced to commit <tt class="docutils literal"><span class="pre">Z</span></tt>, but you updated <tt class="docutils literal"><span class="pre">master</span></tt> (see
+<a class="reference internal" href="#section-git-pull-master"><em>Updating Master</em></a>) and now your git history looks like this (see
+<a class="reference internal" href="walk_through.html#section-walkthrough-logs"><em>The History</em></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>      X---Y---Z my_branch
+     /
+A---B---C---D master
+</pre></div>
+</div>
+<p>How should you deal with such changes? In principle, there are two ways:</p>
+<ul>
+<li><p class="first"><strong>Rebase:</strong> The first solution is to <strong>replay</strong> commits <tt class="docutils literal"><span class="pre">X,Y,Z</span></tt> atop of the
+new <tt class="docutils literal"><span class="pre">master</span></tt>. This is called <strong>rebase</strong>, and it rewrites your current
+branch:</p>
+<div class="highlight-python"><div class="highlight"><pre>git checkout my_branch
+git rebase -i master
+</pre></div>
+</div>
+<p>In terms of the commit graph, this results in:</p>
+<div class="highlight-python"><div class="highlight"><pre>              X&#39;--Y&#39;--Z&#39; my_branch
+             /
+A---B---C---D master
+</pre></div>
+</div>
+<p>Note that this operation rewrites the history of <tt class="docutils literal"><span class="pre">my_branch</span></tt> (see
+<a class="reference internal" href="advanced_git.html#section-git-rewriting-history"><em>Rewriting History</em></a>). This can lead to problems if somebody
+began to write code atop of your commits <tt class="docutils literal"><span class="pre">X,Y,Z</span></tt>. It is safe otherwise.</p>
+<p><strong>Alternatively</strong>, you can rebase <tt class="docutils literal"><span class="pre">my_branch</span></tt> while updating master at the
+same time (see <a class="reference internal" href="#section-git-pull"><em>Getting Changes</em></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>git checkout my_branch
+git pull -r master
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>Merging</strong> your branch with <tt class="docutils literal"><span class="pre">master</span></tt> will create a new commit above the two
+of them:</p>
+<div class="highlight-python"><div class="highlight"><pre>git checkout my_branch
+git merge master
+</pre></div>
+</div>
+<p>The result is the following commit graph:</p>
+<div class="highlight-python"><div class="highlight"><pre>      X---Y---Z---W my_branch
+     /           /
+A---B---C-------D master
+</pre></div>
+</div>
+<ul class="simple">
+<li><strong>Pros:</strong> you did not rewrite history (see
+<a class="reference internal" href="advanced_git.html#section-git-rewriting-history"><em>Rewriting History</em></a>).The additional commit is then easily
+pushed to the git repository and distributed to your collaborators.</li>
+<li><strong>Cons:</strong> it introduced an extra merge commit that would
+not be there had you used rebase.</li>
+</ul>
+<p><strong>Alternatively</strong>, you can merge <tt class="docutils literal"><span class="pre">my_branch</span></tt> while updating master at the
+same time (see <a class="reference internal" href="#section-git-pull"><em>Getting Changes</em></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>git checkout my_branch
+git pull master
+</pre></div>
+</div>
+</li>
+</ul>
+<p><strong>In case of doubt</strong> use merge rather than rebase. There is less risk involved,
+and rebase in this case is only useful for branches with a very long history.</p>
+<p>Finally, <strong>do nothing unless necessary:</strong> it is perfectly fine for your branch
+to be behind <tt class="docutils literal"><span class="pre">master</span></tt>. You can always merge/rebase if/when your branch&#8217;s name
+appears in red on its trac page (see <a class="reference internal" href="trac.html#section-trac-fields"><em>The Ticket Fields</em></a>), or when you
+will really need a feature that is only available in the current master.</p>
+</div>
+<div class="section" id="merge-tools">
+<span id="section-git-mergetool"></span><h2>Merge Tools<a class="headerlink" href="#merge-tools" title="Permalink to this headline">¶</a></h2>
+<p>Simple conflicts can be easily solved with git only (see <a class="reference internal" href="git_trac.html#section-git-trac-conflict"><em>Conflict Resolution</em></a>)</p>
+<p>For more complicated ones, a range of specialized programs are
+available. Because the conflict marker includes the hash of the most recent
+common parent, you can use a three-way diff:</p>
+<div class="highlight-python"><div class="highlight"><pre>[alice@laptop]$ git mergetool
+
+This message is displayed because &#39;merge.tool&#39; is not configured.
+See &#39;git mergetool --tool-help&#39; or &#39;git help config&#39; for more details.
+&#39;git mergetool&#39; will now attempt to use one of the following tools:
+meld opendiff kdiff3 [...] merge araxis bc3 codecompare emerge vimdiff
+Merging:
+fibonacci.py
+
+Normal merge conflict for &#39;fibonacci.py&#39;:
+  {local}: modified file
+  {remote}: modified file
+Hit return to start merge resolution tool (meld):
+</pre></div>
+</div>
+<p>If you don&#8217;t have a favourite merge tool we suggest you try <a class="reference external" href="http://meldmerge.org/">meld</a> (cross-platform). The result looks like the following
+screenshot.</p>
+<img alt="_images/meld-screenshot.png" src="_images/meld-screenshot.png" />
+<p>The middle file is the most recent common parent; on the right is
+Bob&#8217;s version and on the left is Alice&#8217;s conflicting version. Clicking
+on the arrow moves the marked change to the file in the adjacent
+pane.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Git the Hard Way</a><ul>
+<li><a class="reference internal" href="#the-trac-server">The Trac Server</a><ul>
+<li><a class="reference internal" href="#checking-out-tickets">Checking Out Tickets</a></li>
+<li><a class="reference internal" href="#pushing-your-changes-to-a-ticket">Pushing Your Changes to a Ticket</a></li>
+<li><a class="reference internal" href="#getting-changes">Getting Changes</a></li>
+<li><a class="reference internal" href="#updating-master">Updating Master</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#merging-and-rebasing">Merging and Rebasing</a></li>
+<li><a class="reference internal" href="#merge-tools">Merge Tools</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="git_trac.html"
+                                  title="previous chapter">Collaborative Development with Git-Trac</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="git_background.html"
+                                  title="next chapter">Tips and References</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/manual_git.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="git_background.html" title="Tips and References"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="git_trac.html" title="Collaborative Development with Git-Trac"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Developer&#39;s Guide v6.6</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

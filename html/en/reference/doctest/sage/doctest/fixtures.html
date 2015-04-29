@@ -1,0 +1,500 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Fixtures to help testing functionality &mdash; Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework" href="../../index.html" />
+    <link rel="prev" title="Utility functions" href="util.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="util.html" title="Utility functions"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="fixtures-to-help-testing-functionality">
+<span id="sage-doctest-fixtures"></span><h1>Fixtures to help testing functionality<a class="headerlink" href="#fixtures-to-help-testing-functionality" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.doctest.fixtures"></span><p>Utilities which modify or replace code to help with doctesting functionality.
+Wrappers, proxies and mockups are typical examples of fixtures.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Martin von Gagern (2014-12-15): AttributeAccessTracerProxy and trace_method</li>
+<li>Martin von Gagern (2015-01-02): Factor out TracerHelper and reproducible_repr</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>You can use <a class="reference internal" href="#sage.doctest.fixtures.trace_method" title="sage.doctest.fixtures.trace_method"><tt class="xref py py-func docutils literal"><span class="pre">trace_method()</span></tt></a> to see how a method
+communicates with its surroundings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self):</span>
+<span class="go">....:         self.y = self.g(self.x)</span>
+<span class="go">....:     def g(self, arg):</span>
+<span class="go">....:         return arg + 1</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">trace_method</span>
+<span class="gp">sage: </span><span class="n">trace_method</span><span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;f&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="p">()</span>
+<span class="go">enter f()</span>
+<span class="go">  read x = 3</span>
+<span class="go">  call g(3) -&gt; 4</span>
+<span class="go">  write y = 4</span>
+<span class="go">exit f -&gt; None</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerHelper">
+<em class="property">class </em><tt class="descclassname">sage.doctest.fixtures.</tt><tt class="descname">AttributeAccessTracerHelper</tt><big>(</big><em>delegate</em>, <em>prefix='  '</em>, <em>reads=True</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerHelper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Helper to print proxied access to attributes.</p>
+<p>This class does the actual printing of access traces
+for objects proxied by <a class="reference internal" href="#sage.doctest.fixtures.AttributeAccessTracerProxy" title="sage.doctest.fixtures.AttributeAccessTracerProxy"><tt class="xref py py-class docutils literal"><span class="pre">AttributeAccessTracerProxy</span></tt></a>.
+The fact that it&#8217;s not a proxy at the same time
+helps avoiding complicated attribute access syntax.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">delegate</span></tt> &#8211; the actual object to be proxied.</li>
+<li><tt class="docutils literal"><span class="pre">prefix</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;</span>&nbsp; <span class="pre">&quot;</span></tt>)
+string to prepend to each printed output.</li>
+<li><tt class="docutils literal"><span class="pre">reads</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">True</span></tt>)
+whether to trace read access as well.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self, *args):</span>
+<span class="go">....:         return self.x*self.x</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerHelper</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerHelper</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">  write x = 2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">)</span>
+<span class="go">  read x = 2</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;f&quot;</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">  call f(3) -&gt; 4</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerHelper.get">
+<tt class="descname">get</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerHelper.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an attribute from the wrapped delegate object.</p>
+<p>If that value is a method (i.e. a callable object which is not
+contained in the dictionary of the object itself but instead
+inherited from some class) then it is replaced by a wrapper
+function to report arguments and return value.
+Otherwise an attribute read access is reported.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self, *args):</span>
+<span class="go">....:         return self.x*self.x</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerHelper</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerHelper</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">)</span>
+<span class="go">  read x = 2</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;f&quot;</span><span class="p">)(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">  call f(3) -&gt; 4</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerHelper.set">
+<tt class="descname">set</tt><big>(</big><em>name</em>, <em>val</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerHelper.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an attribute to the wrapped delegate object.</p>
+<p>The name and new value are also reported in the output.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     pass</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerHelper</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerHelper</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">  write x = 2</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerProxy">
+<em class="property">class </em><tt class="descclassname">sage.doctest.fixtures.</tt><tt class="descname">AttributeAccessTracerProxy</tt><big>(</big><em>delegate</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Proxy object which prints all attribute and method access to an object.</p>
+<p>The implementation is kept lean since all access to attributes of
+the proxy itself requires complicated syntax.
+For this reason, the actual handling of attribute access
+is delegated to a <a class="reference internal" href="#sage.doctest.fixtures.AttributeAccessTracerHelper" title="sage.doctest.fixtures.AttributeAccessTracerHelper"><tt class="xref py py-class docutils literal"><span class="pre">AttributeAccessTracerHelper</span></tt></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">delegate</span></tt> &#8211; the actual object to be proxied.</li>
+<li><tt class="docutils literal"><span class="pre">prefix</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;</span>&nbsp; <span class="pre">&quot;</span></tt>)
+string to prepend to each printed output.</li>
+<li><tt class="docutils literal"><span class="pre">reads</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">True</span></tt>)
+whether to trace read access as well.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self, *args):</span>
+<span class="go">....:         return self.x*self.x</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerProxy</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerProxy</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="go">  write x = 2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">x</span>
+<span class="go">  read x = 2</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">  call f(3) -&gt; 4</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerProxy.__getattribute__">
+<tt class="descname">__getattribute__</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerProxy.__getattribute__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an attribute from the wrapped delegate object.</p>
+<p>If that value is a method (i.e. a callable object which is not
+contained in the dictionary of the object itself but instead
+inherited from some class) then it is replaced by a wrapper
+function to report arguments and return value.
+Otherwise an attribute read access is reported.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self, *args):</span>
+<span class="go">....:         return self.x*self.x</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerProxy</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerProxy</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">x</span>
+<span class="go">  read x = 2</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">  call f(3) -&gt; 4</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.fixtures.AttributeAccessTracerProxy.__setattr__">
+<tt class="descname">__setattr__</tt><big>(</big><em>name</em>, <em>val</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.AttributeAccessTracerProxy.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an attribute to the wrapped delegate object.</p>
+<p>The name and new value are also reported in the output.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     pass</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">AttributeAccessTracerProxy</span>
+<span class="gp">sage: </span><span class="n">pat</span> <span class="o">=</span> <span class="n">AttributeAccessTracerProxy</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pat</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="go">  write x = 2</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.fixtures.reproducible_repr">
+<tt class="descclassname">sage.doctest.fixtures.</tt><tt class="descname">reproducible_repr</tt><big>(</big><em>val</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.reproducible_repr" title="Permalink to this definition">¶</a></dt>
+<dd><p>String representation of an object in a reproducible way.</p>
+<p>This tries to ensure that the returned string does not depend on
+factors outside the control of the doctest.
+One example is the order of elements in a hash-based structure.
+For most objects, this is simply the <tt class="docutils literal"><span class="pre">repr</span></tt> of the object.</p>
+<p>All types for which special handling had been implemented are
+covered by the examples below. If a doctest requires special
+handling for additional types, this function may be extended
+apropriately. It is an error if an argument to this function has
+a non-reproducible <tt class="docutils literal"><span class="pre">repr</span></tt> implementation and is not explicitely
+mentioned in an example case below.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">val</span></tt> &#8211; an object to be represented</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A string representation of that object, similar to what <tt class="docutils literal"><span class="pre">repr</span></tt>
+returns but for certain cases with more guarantees to ensure
+exactly the same result for semantically equivalent objects.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">reproducible_repr</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">reproducible_repr</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;c&quot;</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="s">&quot;d&quot;</span><span class="p">])))</span>
+<span class="go">set([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;])</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">reproducible_repr</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">([</span><span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;c&quot;</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="s">&quot;d&quot;</span><span class="p">])))</span>
+<span class="go">frozenset([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;])</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">reproducible_repr</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">(</span><span class="s">&quot;cab&quot;</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">]))</span>
+<span class="go">[1, frozenset([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]), set([&#39;a&#39;, &#39;b&#39;, &#39;r&#39;]), 0]</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">reproducible_repr</span><span class="p">({</span><span class="mf">3.0</span><span class="p">:</span><span class="s">&quot;three&quot;</span><span class="p">,</span><span class="s">&quot;2&quot;</span><span class="p">:</span><span class="s">&quot;two&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">:</span><span class="s">&quot;one&quot;</span><span class="p">}))</span>
+<span class="go">{&#39;2&#39;: &#39;two&#39;, 1: &#39;one&#39;, 3.00000000000000: &#39;three&#39;}</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">reproducible_repr</span><span class="p">(</span><span class="s">&quot;foo</span><span class="se">\n</span><span class="s">bar&quot;</span><span class="p">))</span> <span class="c"># demonstrate default case</span>
+<span class="go">&#39;foo\nbar&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.fixtures.trace_method">
+<tt class="descclassname">sage.doctest.fixtures.</tt><tt class="descname">trace_method</tt><big>(</big><em>obj</em>, <em>meth</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.doctest.fixtures.trace_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trace the doings of a given method.
+It prints method entry with arguments,
+access to members and other methods during method execution
+as well as method exit with return value.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obj</span></tt> &#8211; the object containing the method.</li>
+<li><tt class="docutils literal"><span class="pre">meth</span></tt> &#8211; the name of the method to be traced.</li>
+<li><tt class="docutils literal"><span class="pre">prefix</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;</span>&nbsp; <span class="pre">&quot;</span></tt>)
+string to prepend to each printed output.</li>
+<li><tt class="docutils literal"><span class="pre">reads</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">True</span></tt>)
+whether to trace read access as well.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="go">....:     def f(self, arg=None):</span>
+<span class="go">....:         self.y = self.g(self.x)</span>
+<span class="go">....:         if arg: return arg*arg</span>
+<span class="go">....:     def g(self, arg):</span>
+<span class="go">....:         return arg + 1</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.fixtures</span> <span class="kn">import</span> <span class="n">trace_method</span>
+<span class="gp">sage: </span><span class="n">trace_method</span><span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="s">&quot;f&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="p">()</span>
+<span class="go">enter f()</span>
+<span class="go">  read x = 3</span>
+<span class="go">  call g(3) -&gt; 4</span>
+<span class="go">  write y = 4</span>
+<span class="go">exit f -&gt; None</span>
+<span class="gp">sage: </span><span class="n">foo</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">enter f(3)</span>
+<span class="go">  read x = 3</span>
+<span class="go">  call g(3) -&gt; 4</span>
+<span class="go">  write y = 4</span>
+<span class="go">exit f -&gt; 9</span>
+<span class="go">9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="util.html"
+                                  title="previous chapter">Utility functions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/doctest/fixtures.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="util.html" title="Utility functions"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Educational version of the \(d\)-Groebner Basis Algorithm over PIDs. &mdash; Sage Reference Manual v6.6: Polynomial Rings</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Polynomial Rings" href="../../../index.html" />
+    <link rel="up" title="Educational Versions of Groebner Basis and Related Algorithms" href="../../../polynomial_rings_toy_implementations.html" />
+    <link rel="next" title="Generic Convolution" href="convolution.html" />
+    <link rel="prev" title="Educational Versions of Groebner Basis Algorithms: Triangular Factorization." href="toy_variety.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="convolution.html" title="Generic Convolution"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="toy_variety.html" title="Educational Versions of Groebner Basis Algorithms: Triangular Factorization."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_toy_implementations.html" accesskey="U">Educational Versions of Groebner Basis and Related Algorithms</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="educational-version-of-the-groebner-basis-algorithm-over-pids">
+<span id="sage-rings-polynomial-toy-d-basis"></span><h1>Educational version of the <span class="math">\(d\)</span>-Groebner Basis Algorithm over PIDs.<a class="headerlink" href="#educational-version-of-the-groebner-basis-algorithm-over-pids" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.polynomial.toy_d_basis"></span><p>No attempt was made to optimize this algorithm as the emphasis of this
+implementation is a clean and easy presentation.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The notion of &#8216;term&#8217; and &#8216;monomial&#8217; in <a class="reference internal" href="toy_buchberger.html#bw93" id="id1">[BW93]</a> is swapped from the
+notion of those words in Sage (or the other way around, however you
+prefer it). In Sage a term is a monomial multiplied by a
+coefficient, while in <a class="reference internal" href="toy_buchberger.html#bw93" id="id2">[BW93]</a> a monomial is a term multiplied by a
+coefficient. Also, what is called LM (the leading monomial) in
+Sage is called HT (the head term) in <a class="reference internal" href="toy_buchberger.html#bw93" id="id3">[BW93]</a>.</p>
+</div>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">d_basis</span>
+</pre></div>
+</div>
+<p>First, consider an example from arithmetic geometry:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.&lt;</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">Rationals</span><span class="p">(),</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">fx</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fy</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">ideal</span><span class="p">([</span><span class="n">B</span><span class="p">(</span><span class="n">f</span><span class="p">),</span><span class="n">B</span><span class="p">(</span><span class="n">fx</span><span class="p">),</span><span class="n">B</span><span class="p">(</span><span class="n">fy</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[1]</span>
+</pre></div>
+</div>
+<p>Since the output is 1, we know that there are no generic
+singularities.</p>
+<p>To look at the singularities of the arithmetic surface, we need to do
+the corresponding computation over <span class="math">\(\ZZ\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">ideal</span><span class="p">([</span><span class="n">f</span><span class="p">,</span><span class="n">fx</span><span class="p">,</span><span class="n">fy</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">gb</span> <span class="o">=</span> <span class="n">d_basis</span><span class="p">(</span><span class="n">I</span><span class="p">);</span> <span class="n">gb</span>
+<span class="go">[x - 2020, y - 11313, 22627]</span>
+
+<span class="gp">sage: </span><span class="n">gb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+<span class="go">11^3 * 17</span>
+</pre></div>
+</div>
+<p>This Groebner Basis gives a lot of information.  First, the only
+fibers (over <span class="math">\(\ZZ\)</span>) that are not smooth are at 11 = 0, and 17 = 0.
+Examining the Groebner Basis, we see that we have a simple node in
+both the fiber at 11 and at 17.  From the factorization, we see that
+the node at 17 is regular on the surface (an <span class="math">\(I_1\)</span> node), but the node
+at 11 is not.  After blowing up this non-regular point, we find that
+it is an <span class="math">\(I_3\)</span> node.</p>
+<p>Another example. This one is from the Magma Handbook:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">IntegerRing</span><span class="p">(),</span> <span class="mi">3</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s">&#39;lex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">ideal</span><span class="p">(</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">Ideal</span><span class="p">(</span><span class="n">d_basis</span><span class="p">(</span><span class="n">I</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+<span class="go">y*z</span>
+</pre></div>
+</div>
+<p>To compute modulo 4, we can add the generator 4 to our basis.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">ideal</span><span class="p">(</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">z</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gb</span> <span class="o">=</span> <span class="n">d_basis</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span><span class="n">IntegerModRing</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">gb</span> <span class="o">=</span> <span class="p">[</span><span class="n">R</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">gb</span> <span class="k">if</span> <span class="n">R</span><span class="p">(</span><span class="n">f</span><span class="p">)];</span> <span class="n">gb</span>
+<span class="go">[x^2 - 1, x*z + 2*y, 2*x - y*z, y^2 - 1, z^2, 2*z]</span>
+</pre></div>
+</div>
+<p>A third example is also from the Magma Handbook.</p>
+<p>This example shows how one can use Groebner bases over the integers to
+find the primes modulo which a system of equations has a solution,
+when the system has no solutions over the rationals.</p>
+<p>We first form a certain ideal <span class="math">\(I\)</span> in <span class="math">\(\ZZ[x, y, z]\)</span>, and note that the
+Groebner basis of <span class="math">\(I\)</span> over <span class="math">\(\QQ\)</span> contains 1, so there are no solutions
+over <span class="math">\(\QQ\)</span> or an algebraic closure of it (this is not surprising as
+there are 4 equations in 3 unknowns).:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">IntegerRing</span><span class="p">(),</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">ideal</span><span class="p">(</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="n">y</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">RationalField</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[1]</span>
+</pre></div>
+</div>
+<p>However, when we compute the Groebner basis of I (defined over <span class="math">\(\ZZ\)</span>), we
+note that there is a certain integer in the ideal which is not 1.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">d_basis</span><span class="p">(</span><span class="n">I</span><span class="p">)</span> <span class="c"># random -- waiting on upstream singular fixes at #6051</span>
+<span class="go">[x + 170269749119, y + 2149906854, z + ..., 282687803443]</span>
+</pre></div>
+</div>
+<p>Now for each prime <span class="math">\(p\)</span> dividing this integer 282687803443, the Groebner
+basis of I modulo <span class="math">\(p\)</span> will be non-trivial and will thus give a solution
+of the original system modulo <span class="math">\(p\)</span>.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">factor</span><span class="p">(</span><span class="mi">282687803443</span><span class="p">)</span>
+<span class="go">101 * 103 * 27173681</span>
+
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">GF</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[x + 19, y + 48, z - 33]</span>
+
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">GF</span><span class="p">(</span><span class="mi">103</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[x + 39, y + 8, z - 18]</span>
+
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">GF</span><span class="p">(</span><span class="mi">27173681</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[x - 536027, y + 3186055, z + 10380032]</span>
+</pre></div>
+</div>
+<p>Of course, modulo any other prime the Groebner basis is trivial so
+there are no other solutions. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">P</span><span class="o">.</span><span class="n">change_ring</span><span class="p">(</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">groebner_basis</span><span class="p">()</span>
+<span class="go">[1]</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Martin Albrecht (2008-08): initial version</li>
+</ul>
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.LC">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">LC</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.LC" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.LM">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">LM</tt><big>(</big><em>f</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.LM" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.d_basis">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">d_basis</tt><big>(</big><em>F</em>, <em>strat=True</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.d_basis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <span class="math">\(d\)</span>-basis for the Ideal <tt class="docutils literal"><span class="pre">F</span></tt> as defined in <a class="reference internal" href="toy_buchberger.html#bw93" id="id4">[BW93]</a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">F</span></tt> - an ideal</li>
+<li><tt class="docutils literal"><span class="pre">strat</span></tt> - use update strategy (default: <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">d_basis</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">fx</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fy</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">ideal</span><span class="p">([</span><span class="n">f</span><span class="p">,</span><span class="n">fx</span><span class="p">,</span><span class="n">fy</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">gb</span> <span class="o">=</span> <span class="n">d_basis</span><span class="p">(</span><span class="n">I</span><span class="p">);</span> <span class="n">gb</span>
+<span class="go">[x - 2020, y - 11313, 22627]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.gpol">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">gpol</tt><big>(</big><em>g1</em>, <em>g2</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.gpol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return G-Polynomial of <tt class="docutils literal"><span class="pre">g_1</span></tt> and <tt class="docutils literal"><span class="pre">g_2</span></tt>.</p>
+<p>Let <span class="math">\(a_i t_i\)</span> be <span class="math">\(LT(g_i)\)</span>, <span class="math">\(a = a_i*c_i + a_j*c_j\)</span> with <span class="math">\(a =
+GCD(a_i,a_j)\)</span>, and <span class="math">\(s_i = t/t_i\)</span> with <span class="math">\(t = LCM(t_i,t_j)\)</span>. Then the
+G-Polynomial is defined as: <span class="math">\(c_1s_1g_1 - c_2s_2g_2\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">g1</span></tt> - polynomial</li>
+<li><tt class="docutils literal"><span class="pre">g2</span></tt> - polynomial</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">gpol</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">IntegerRing</span><span class="p">(),</span> <span class="mi">3</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s">&#39;lex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">z</span>
+<span class="gp">sage: </span><span class="n">gpol</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">g</span><span class="p">)</span>
+<span class="go">x^2*y - y</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.select">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">select</tt><big>(</big><em>P</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.select" title="Permalink to this definition">¶</a></dt>
+<dd><p>The normal selection strategy.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">P</span></tt> - a list of critical pairs</li>
+</ul>
+<dl class="docutils">
+<dt>OUTPUT:</dt>
+<dd>an element of P</dd>
+</dl>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">select</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">fx</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fy</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">derivative</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="n">fx</span><span class="p">,</span> <span class="n">fy</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">):</span> <span class="n">x</span><span class="o">!=</span><span class="n">y</span><span class="p">,</span> <span class="p">[(</span><span class="n">f1</span><span class="p">,</span><span class="n">f2</span><span class="p">)</span> <span class="k">for</span> <span class="n">f1</span> <span class="ow">in</span> <span class="n">G</span> <span class="k">for</span> <span class="n">f2</span> <span class="ow">in</span> <span class="n">G</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">select</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="go">(-2*y - 1, 3*x^2 + 7)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.spol">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">spol</tt><big>(</big><em>g1</em>, <em>g2</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.spol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return S-Polynomial of <tt class="docutils literal"><span class="pre">g_1</span></tt> and <tt class="docutils literal"><span class="pre">g_2</span></tt>.</p>
+<p>Let <span class="math">\(a_i t_i\)</span> be <span class="math">\(LT(g_i)\)</span>, <span class="math">\(b_i = a/a_i\)</span> with <span class="math">\(a = LCM(a_i,a_j)\)</span>,
+and <span class="math">\(s_i = t/t_i\)</span> with <span class="math">\(t = LCM(t_i,t_j)\)</span>. Then the S-Polynomial
+is defined as: <span class="math">\(b_1s_1g_1 - b_2s_2g_2\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">g1</span></tt> - polynomial</li>
+<li><tt class="docutils literal"><span class="pre">g2</span></tt> - polynomial</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">spol</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">IntegerRing</span><span class="p">(),</span> <span class="mi">3</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s">&#39;lex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">z</span>
+<span class="gp">sage: </span><span class="n">spol</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">g</span><span class="p">)</span>
+<span class="go">x*z - 2*y</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.polynomial.toy_d_basis.update">
+<tt class="descclassname">sage.rings.polynomial.toy_d_basis.</tt><tt class="descname">update</tt><big>(</big><em>G</em>, <em>B</em>, <em>h</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.toy_d_basis.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update <tt class="docutils literal"><span class="pre">G</span></tt> using the list of critical pairs <tt class="docutils literal"><span class="pre">B</span></tt> and the
+polynomial <tt class="docutils literal"><span class="pre">h</span></tt> as presented in <a class="reference internal" href="toy_buchberger.html#bw93" id="id5">[BW93]</a>, page 230. For this,
+Buchberger&#8217;s first and second criterion are tested.</p>
+<p>This function uses the Gebauer-Moeller Installation.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">G</span></tt> - an intermediate Groebner basis</li>
+<li><tt class="docutils literal"><span class="pre">B</span></tt> - a list of critical pairs</li>
+<li><tt class="docutils literal"><span class="pre">h</span></tt> - a polynomial</li>
+</ul>
+<dl class="docutils">
+<dt>OUTPUT:</dt>
+<dd><tt class="docutils literal"><span class="pre">G,B</span></tt> where <tt class="docutils literal"><span class="pre">G</span></tt> and <tt class="docutils literal"><span class="pre">B</span></tt> are updated</dd>
+</dl>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.toy_d_basis</span> <span class="kn">import</span> <span class="n">update</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">update</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">h</span><span class="p">)</span>
+<span class="go">({2*y + 1, 3*x^2 + 7, x^2*y - x^2 + y - 3, x^3 - y^2 + 7*x - y + 1},</span>
+<span class="go"> {(x^2*y - x^2 + y - 3, 2*y + 1),</span>
+<span class="go">  (x^2*y - x^2 + y - 3, 3*x^2 + 7),</span>
+<span class="go">  (x^2*y - x^2 + y - 3, x^3 - y^2 + 7*x - y + 1)})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="toy_variety.html"
+                                  title="previous chapter">Educational Versions of Groebner Basis Algorithms: Triangular Factorization.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="convolution.html"
+                                  title="next chapter">Generic Convolution</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/rings/polynomial/toy_d_basis.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="convolution.html" title="Generic Convolution"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="toy_variety.html" title="Educational Versions of Groebner Basis Algorithms: Triangular Factorization."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_toy_implementations.html" >Educational Versions of Groebner Basis and Related Algorithms</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

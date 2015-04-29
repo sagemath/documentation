@@ -1,0 +1,1369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Triangulations of a point configuration &mdash; Sage Reference Manual v6.6: Geometry</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Geometry" href="../../../index.html" />
+    <link rel="next" title="Base classes for triangulations" href="base.html" />
+    <link rel="prev" title="Pseudolines" href="../pseudolines.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="base.html" title="Base classes for triangulations"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../pseudolines.html" title="Pseudolines"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Geometry</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="triangulations-of-a-point-configuration">
+<span id="sage-geometry-triangulation-point-configuration"></span><h1>Triangulations of a point configuration<a class="headerlink" href="#triangulations-of-a-point-configuration" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.geometry.triangulation.point_configuration"></span><p>A point configuration is a finite set of points in Euclidean space or,
+more generally, in projective space. A triangulation is a simplicial
+decomposition of the convex hull of a given point configuration such
+that all vertices of the simplices end up lying on points of the
+configuration. That is, there are no new vertices apart from the
+initial points.</p>
+<p>Note that points that are not vertices of the convex hull need not be
+used in the triangulation. A triangulation that does make use of all
+points of the configuration is called fine, and you can restrict
+yourself to such triangulations if you want. See
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> and
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_fine_triangulations" title="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_fine_triangulations"><tt class="xref py py-meth docutils literal"><span class="pre">restrict_to_fine_triangulations()</span></tt></a> for
+more details.</p>
+<p>Finding a single triangulation and listing all connected
+triangulations is implemented natively in this package. However, for
+more advanced options <a class="reference internal" href="#topcom" id="id1">[TOPCOM]</a> needs to be installed. It is available
+as an optional package for Sage, and you can install it with the
+command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">install_package</span><span class="p">(</span><span class="s">&#39;TOPCOM&#39;</span><span class="p">)</span>     <span class="c"># not tested</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">TOPCOM and the internal algorithms tend to enumerate
+triangulations in a different order. This is why we always
+explicitly specify the engine as <tt class="docutils literal"><span class="pre">engine='TOPCOM'</span></tt> or
+<tt class="docutils literal"><span class="pre">engine='internal'</span></tt> in the doctests. In your own applications,
+you do not need to specify the engine. By default, TOPCOM is used
+if it is available and the internal algorithms are used otherwise.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>First, we select the internal implementation for enumerating
+triangulations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">PointConfiguration</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;internal&#39;</span><span class="p">)</span>   <span class="c"># to make doctests independent of TOPCOM</span>
+</pre></div>
+</div>
+<p>A 2-dimensional point configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>  <span class="c"># a single triangulation</span>
+<span class="gp">sage: </span><span class="n">t</span>
+<span class="go">(&lt;1,3,4&gt;, &lt;2,3,4&gt;)</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">(1, 3, 4)</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">(2, 3, 4)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">[(1, 3, 4), (2, 3, 4)]</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 12 graphics primitives</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulations</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(&lt;1,3,4&gt;, &lt;2,3,4&gt;),</span>
+<span class="go"> (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;),</span>
+<span class="go"> (&lt;1,2,3&gt;, &lt;1,2,4&gt;),</span>
+<span class="go"> (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)]</span>
+<span class="gp">sage: </span><span class="n">p_fine</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_fine_triangulations</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p_fine</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span> <span class="n">p_fine</span><span class="o">.</span><span class="n">triangulations</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;),</span>
+<span class="go"> (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)]</span>
+</pre></div>
+</div>
+<p>A 3-dimensional point configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">triang</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">triang</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics3d Object</span>
+</pre></div>
+</div>
+<p>The standard example of a non-regular triangulation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">5</span><span class="o">/</span><span class="mi">9</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="o">/</span><span class="mi">9</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">5</span><span class="o">/</span><span class="mi">9</span><span class="p">],[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="o">/</span><span class="mi">9</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="o">/</span><span class="mi">9</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="o">/</span><span class="mi">9</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">regular</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_regular_triangulations</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>      <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="n">nonregular</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_regular_triangulations</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>  <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">regular</span><span class="p">)</span>     <span class="c"># optional - TOPCOM</span>
+<span class="go">16</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">nonregular</span><span class="p">)</span>  <span class="c"># optional - TOPCOM</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">nonregular</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">aspect_ratio</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>   <span class="c"># optional - TOPCOM</span>
+</pre></div>
+</div>
+<p>Note that the points need not be in general position. That is, the
+points may lie in a hyperplane and the linear dependencies will be
+removed before passing the data to TOPCOM which cannot handle it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span> <span class="n">p</span><span class="o">+</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span> <span class="p">]</span>
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">ambient_dim</span><span class="p">()</span>
+<span class="go">7</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>
+<span class="go">(&lt;0,1,2,6&gt;, &lt;0,1,3,6&gt;, &lt;0,2,3,6&gt;, &lt;1,2,4,6&gt;, &lt;1,3,4,6&gt;, &lt;2,3,5,6&gt;, &lt;2,4,5,6&gt;)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">triangulations</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span> <span class="n">pc</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">26</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<blockquote>
+<div><table class="docutils citation" frame="void" id="topcom" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[TOPCOM]</a></td><td>J. Rambau,
+TOPCOM &lt;<a class="reference external" href="http://www.rambau.wm.uni-bayreuth.de/TOPCOM/">http://www.rambau.wm.uni-bayreuth.de/TOPCOM/</a>&gt;.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="gkz" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[GKZ]</td><td><em>(<a class="fn-backref" href="#id4">1</a>, <a class="fn-backref" href="#id5">2</a>)</em> Gel&#8217;fand, I. M.; Kapranov, M. M.; and Zelevinsky, A. V.
+&#8220;Discriminants, Resultants and Multidimensional Determinants&#8221; Birkhauser 1994.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="puntos" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[PUNTOS]</a></td><td>Jesus A. De Loera
+<a class="reference external" href="http://www.math.ucdavis.edu/~deloera/RECENT_WORK/puntos2000">http://www.math.ucdavis.edu/~deloera/RECENT_WORK/puntos2000</a></td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>AUTHORS:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Volker Braun: initial version, 2010</li>
+<li>Josh Whitney: added functionality for computing
+volumes and secondary polytopes of PointConfigurations</li>
+<li>Marshall Hampton: improved documentation and doctest coverage</li>
+<li>Volker Braun: rewrite using Parent/Element and catgories. Added
+a Point class. More doctests. Less zombies.</li>
+<li>Volker Braun: Cythonized parts of it, added a C++ implementation
+of the bistellar flip algorithm to enumerate all connected
+triangulations.</li>
+<li>Volker Braun 2011: switched the triangulate() method to the
+placing triangulation (faster).</li>
+</ul>
+</div></blockquote>
+<dl class="class">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration">
+<em class="property">class </em><tt class="descclassname">sage.geometry.triangulation.point_configuration.</tt><tt class="descname">PointConfiguration</tt><big>(</big><em>points</em>, <em>connected</em>, <em>fine</em>, <em>regular</em>, <em>star</em>, <em>defined_affine</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.unique_representation.UniqueRepresentation</span></tt></a>, <a class="reference internal" href="base.html#sage.geometry.triangulation.base.PointConfiguration_base" title="sage.geometry.triangulation.base.PointConfiguration_base"><tt class="xref py py-class docutils literal"><span class="pre">sage.geometry.triangulation.base.PointConfiguration_base</span></tt></a></p>
+<p>A collection of points in Euclidean (or projective) space.</p>
+<p>This is the parent class for the triangulations of the point
+configuration. There are a few options to specifically select what
+kind of triangulations are admissible.</p>
+<p>INPUT:</p>
+<p>The constructor accepts the following arguments:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">points</span></tt> &#8211; the points. Technically, any iterable of iterables
+will do. In particular, a <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> can be passed.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">projective</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>). Whether the
+point coordinates should be interpreted as projective (<tt class="docutils literal"><span class="pre">True</span></tt>)
+or affine (<tt class="docutils literal"><span class="pre">False</span></tt>) coordinates. If necessary, points are
+projectivized by setting the last homogeneous coordinate to one
+and/or affine patches are chosen internally.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">connected</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">True</span></tt>). Whether the
+triangulations should be connected to the regular triangulations
+via bistellar flips. These are much easier to compute than all
+triangulations.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">fine</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>). Whether the
+triangulations must be fine, that is, make use of all points of
+the configuration.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">regular</span></tt> &#8211; boolean or <tt class="docutils literal"><span class="pre">None</span></tt> (default: <tt class="docutils literal"><span class="pre">None</span></tt>). Whether
+the triangulations must be regular. A regular triangulation is
+one that is induced by a piecewise-linear convex support
+function. In other words, the shadows of the faces of a
+polyhedron in one higher dimension.</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">True</span></tt>: Only regular triangulations.</li>
+<li><tt class="docutils literal"><span class="pre">False</span></tt>: Only non-regular triangulations.</li>
+<li><tt class="docutils literal"><span class="pre">None</span></tt> (default): Both kinds of triangulation.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">star</span></tt> &#8211; either <tt class="docutils literal"><span class="pre">None</span></tt> or a point. Whether the
+triangulations must be star. A triangulation is star if all
+maximal simplices contain a common point. The central point can
+be specified by its index (an integer) in the given points or by
+its coordinates (anything iterable.)</p>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>  <span class="c"># a single triangulation</span>
+<span class="go">(&lt;1,3,4&gt;, &lt;2,3,4&gt;)</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.Element">
+<tt class="descname">Element</tt><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.Gale_transform">
+<tt class="descname">Gale_transform</tt><big>(</big><em>points=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.Gale_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Gale transform of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">points</span></tt> &#8211; a tuple of points or point indices or <tt class="docutils literal"><span class="pre">None</span></tt>
+(default). A subset of points for which to compute the Gale
+transform. By default, all points are used.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A matrix over <tt class="xref py py-meth docutils literal"><span class="pre">base_ring()</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">Gale_transform</span><span class="p">()</span>
+<span class="go">[ 1 -1  0  1 -1]</span>
+<span class="go">[ 0  0  1 -2  1]</span>
+
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">Gale_transform</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="go">[ 1 -1  1 -1]</span>
+
+<span class="gp">sage: </span><span class="n">points</span> <span class="o">=</span> <span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">Gale_transform</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="go">[ 1 -1  1 -1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.an_element">
+<tt class="descname">an_element</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.an_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synonymous for <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.triangulate" title="sage.geometry.triangulation.point_configuration.PointConfiguration.triangulate"><tt class="xref py py-meth docutils literal"><span class="pre">triangulate()</span></tt></a>.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
+<span class="go">(&lt;0,1,3&gt;, &lt;1,2,3&gt;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.bistellar_flips">
+<tt class="descname">bistellar_flips</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.bistellar_flips" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bistellar flips.</p>
+<p>OUTPUT:</p>
+<p>The bistellar flips as a tuple. Each flip is a pair
+<span class="math">\((T_+,T_-)\)</span> where <span class="math">\(T_+\)</span> and <span class="math">\(T_-\)</span> are partial triangulations
+of the point configuration.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">bistellar_flips</span><span class="p">()</span>
+<span class="go">(((&lt;0,1,3&gt;, &lt;0,2,3&gt;), (&lt;0,1,2&gt;, &lt;1,2,3&gt;)),)</span>
+<span class="gp">sage: </span><span class="n">Tpos</span><span class="p">,</span> <span class="n">Tneg</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">bistellar_flips</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Tpos</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 11 graphics primitives</span>
+<span class="gp">sage: </span><span class="n">Tneg</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics object consisting of 11 graphics primitives</span>
+</pre></div>
+</div>
+<p>The 3d analog:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">bistellar_flips</span><span class="p">()</span>
+<span class="go">(((&lt;0,1,2,3&gt;, &lt;0,1,2,4&gt;), (&lt;0,1,3,4&gt;, &lt;0,2,3,4&gt;, &lt;1,2,3,4&gt;)),)</span>
+</pre></div>
+</div>
+<p>A 2d flip on the base of the pyramid over a square:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">bistellar_flips</span><span class="p">()</span>
+<span class="go">(((&lt;0,1,3&gt;, &lt;0,2,3&gt;), (&lt;0,1,2&gt;, &lt;1,2,3&gt;)),)</span>
+<span class="gp">sage: </span><span class="n">Tpos</span><span class="p">,</span> <span class="n">Tneg</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">bistellar_flips</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">Tpos</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">Graphics3d Object</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.circuits">
+<tt class="descname">circuits</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.circuits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the circuits of the point configuration.</p>
+<p>Roughly, a circuit is a minimal linearly dependent subset of
+the points. That is, a circuit is a partition</p>
+<div class="math">
+\[\{ 0, 1, \dots, n-1 \} = C_+ \cup C_0 \cup C_-\]</div>
+<p>such that there is an (unique up to an overall normalization) affine
+relation</p>
+<div class="math">
+\[\sum_{i\in C_+}  \alpha_i \vec{p}_i =
+\sum_{j\in C_-}  \alpha_j \vec{p}_j\]</div>
+<p>with all positive (or all negative) coefficients, where
+<span class="math">\(\vec{p}_i=(p_1,\dots,p_k,1)\)</span> are the projective coordinates
+of the <span class="math">\(i\)</span>-th point.</p>
+<p>OUTPUT:</p>
+<p>The list of (unsigned) circuits as triples <span class="math">\((C_+, C_0,
+C_-)\)</span>. The swapped circuit <span class="math">\((C_-, C_0, C_+)\)</span> is not returned
+separately.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">+</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">circuits</span><span class="p">()</span>
+<span class="go">(((0,), (1, 2), (3, 4)), ((0,), (3, 4), (1, 2)), ((1, 2), (0,), (3, 4)))</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">U</span><span class="o">=</span><span class="n">matrix</span><span class="p">([</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>  <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">columns</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">circuits</span><span class="p">()</span> <span class="p">)</span>    <span class="c"># long time</span>
+<span class="go">218</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.circuits_support">
+<tt class="descname">circuits_support</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.circuits_support" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator for the supports of the circuits of the point configuration.</p>
+<p>See <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.circuits" title="sage.geometry.triangulation.point_configuration.PointConfiguration.circuits"><tt class="xref py py-meth docutils literal"><span class="pre">circuits()</span></tt></a> for details.</p>
+<p>OUTPUT:</p>
+<p>A generator for the supports <span class="math">\(C_-\cup C_+\)</span> (returned as a
+Python tuple) for all circuits of the point configuration.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">+</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">circuits_support</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(0, 3, 4), (0, 1, 2), (1, 2, 3, 4)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.contained_simplex">
+<tt class="descname">contained_simplex</tt><big>(</big><em>large=True</em>, <em>initial_point=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.contained_simplex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a simplex contained in the point configuration.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">large</span></tt> &#8211; boolean. Whether to attempt to return a large
+simplex.</li>
+<li><tt class="docutils literal"><span class="pre">initial_point</span></tt> &#8211; a
+<a class="reference internal" href="base.html#sage.geometry.triangulation.base.Point" title="sage.geometry.triangulation.base.Point"><tt class="xref py py-class docutils literal"><span class="pre">Point</span></tt></a> or <tt class="docutils literal"><span class="pre">None</span></tt>
+(default). A specific point to start with when picking the
+simplex vertices.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A tuple of points that span a simplex of dimension
+<tt class="xref py py-meth docutils literal"><span class="pre">dim()</span></tt>. If <tt class="docutils literal"><span class="pre">large==True</span></tt>, the simplex is constructed by
+sucessively picking the farthest point. This will ensure that
+the simplex is not unneccessarily small, but will in general
+not return a maximal simplex.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">(P(0, 1), P(2, 1), P(1, 0))</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">(</span><span class="n">large</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">(P(0, 1), P(1, 1), P(1, 0))</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">(</span><span class="n">initial_point</span><span class="o">=</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">(P(0, 0), P(1, 1), P(1, 0))</span>
+
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">(P(-1, -1), P(1, 1), P(0, 1))</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">(P(1, 0), P(0, 1), P(0, 0))</span>
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">(P(0, 1), P(0, 0))</span>
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">(P(0, 0),)</span>
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">contained_simplex</span><span class="p">()</span>
+<span class="go">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.convex_hull">
+<tt class="descname">convex_hull</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.convex_hull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the convex hull of the point configuration.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">convex_hull</span><span class="p">()</span>
+<span class="go">A 2-dimensional polyhedron in ZZ^2 defined as the convex hull of 4 vertices</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.distance">
+<tt class="descname">distance</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the distance between two points.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">y</span></tt> &#8211; two points of the point configuration.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The distance between <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>, measured either with
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.distance_affine" title="sage.geometry.triangulation.point_configuration.PointConfiguration.distance_affine"><tt class="xref py py-meth docutils literal"><span class="pre">distance_affine()</span></tt></a> or <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.distance_FS" title="sage.geometry.triangulation.point_configuration.PointConfiguration.distance_FS"><tt class="xref py py-meth docutils literal"><span class="pre">distance_FS()</span></tt></a> depending on
+whether the point configuration is defined by affine or
+projective points. These are related, but not equal to the
+usual flat and Fubini-Study distance.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">pc</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">points</span><span class="p">()</span> <span class="p">]</span>
+<span class="go">[0, 1, 5, 5, 1]</span>
+
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)],</span> <span class="n">projective</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">pc</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">points</span><span class="p">()</span> <span class="p">]</span>
+<span class="go">[0, 1/2, 5/6, 5/6, 1/2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.distance_FS">
+<tt class="descname">distance_FS</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.distance_FS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the distance between two points.</p>
+<p>The distance function used in this method is <span class="math">\(1-\cos
+d_{FS}(x,y)^2\)</span>, where <span class="math">\(d_{FS}\)</span> is the Fubini-Study distance of
+projective points. Recall the Fubini-Studi distance function</p>
+<div class="math">
+\[d_{FS}(x,y) = \arccos \sqrt{ \frac{(x\cdot y)^2}{|x|^2 |y|^2} }\]</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">y</span></tt> &#8211; two points of the point configuration.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The distance <span class="math">\(1-\cos d_{FS}(x,y)^2\)</span>. Note that this distance
+lies in the same field as the entries of <tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">y</span></tt>. That
+is, the distance of rational points will be rational and so
+on.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">pc</span><span class="o">.</span><span class="n">distance_FS</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">points</span><span class="p">()</span> <span class="p">]</span>
+<span class="go">[0, 1/2, 5/6, 5/6, 1/2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.distance_affine">
+<tt class="descname">distance_affine</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.distance_affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the distance between two points.</p>
+<p>The distance function used in this method is <span class="math">\(d_{aff}(x,y)^2\)</span>,
+the square of the usual affine distance function</p>
+<div class="math">
+\[d_{aff}(x,y) = |x-y|\]</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">y</span></tt> &#8211; two points of the point configuration.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The metric distance-square <span class="math">\(d_{aff}(x,y)^2\)</span>. Note that this
+distance lies in the same field as the entries of <tt class="docutils literal"><span class="pre">x</span></tt>,
+<tt class="docutils literal"><span class="pre">y</span></tt>. That is, the distance of rational points will be
+rational and so on.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">pc</span><span class="o">.</span><span class="n">distance_affine</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">points</span><span class="p">()</span> <span class="p">]</span>
+<span class="go">[0, 1, 5, 5, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.exclude_points">
+<tt class="descname">exclude_points</tt><big>(</big><em>point_idx_list</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.exclude_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new point configuration with the given points
+removed.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">point_idx_list</span></tt> &#8211; a list of integers. The indices of
+points to exclude.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> with the given points
+removed.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]]);</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">[P(-1, 0), P(0, 0), P(1, -1), P(1, 0), P(1, 1)]</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">exclude_points</span><span class="p">([</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="go">[P(-1, 0), P(0, 0), P(1, -1), P(1, 1)]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">exclude_points</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">face_interior</span><span class="p">(</span><span class="n">codim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">points</span><span class="p">()</span>
+<span class="go">(P(-1, 0), P(0, 0), P(1, -1), P(1, 1))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.face_codimension">
+<tt class="descname">face_codimension</tt><big>(</big><em>point</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.face_codimension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the smallest <span class="math">\(d\in\mathbb{Z}\)</span> such that <tt class="docutils literal"><span class="pre">point</span></tt> is
+contained in the interior of a codimension-<span class="math">\(d\)</span> face.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">triangle</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]]);</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">P(1, 0)</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">face_codimension</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">face_codimension</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>This also works for degenerate cases like the tip of the
+pyramid over a square (which saturates four inequalities):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pyramid</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pyramid</span><span class="o">.</span><span class="n">face_codimension</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.face_interior">
+<tt class="descname">face_interior</tt><big>(</big><em>dim=None</em>, <em>codim=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.face_interior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return points by the codimension of the containing face in the convex hull.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">triangle</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]]);</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">face_interior</span><span class="p">()</span>
+<span class="go">((1,), (3,), (0, 2, 4))</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">face_interior</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>    <span class="c"># the vertices of the convex hull</span>
+<span class="go">(0, 2, 4)</span>
+<span class="gp">sage: </span><span class="n">triangle</span><span class="o">.</span><span class="n">face_interior</span><span class="p">(</span><span class="n">codim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># interior of facets</span>
+<span class="go">(3,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.farthest_point">
+<tt class="descname">farthest_point</tt><big>(</big><em>points</em>, <em>among=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.farthest_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the point with the most distance from <tt class="docutils literal"><span class="pre">points</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">points</span></tt> &#8211; a list of points.</li>
+<li><tt class="docutils literal"><span class="pre">among</span></tt> &#8211; a list of points or <tt class="docutils literal"><span class="pre">None</span></tt> (default). The set
+of points from which to pick the farthest one. By default,
+all points of the configuration are considered.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="base.html#sage.geometry.triangulation.base.Point" title="sage.geometry.triangulation.base.Point"><tt class="xref py py-class docutils literal"><span class="pre">Point</span></tt></a> with
+largest minimal distance from all given <tt class="docutils literal"><span class="pre">points</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">farthest_point</span><span class="p">([</span> <span class="n">pc</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">])</span>
+<span class="go">P(1, 1)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.lexicographic_triangulation">
+<tt class="descname">lexicographic_triangulation</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.lexicographic_triangulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the lexicographic triangulation.</p>
+<p>The algorithm was taken from <a class="reference internal" href="#puntos" id="id2">[PUNTOS]</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">+</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">lexicographic_triangulation</span><span class="p">()</span>
+<span class="go">(&lt;1,3,4&gt;, &lt;2,3,4&gt;)</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">U</span><span class="o">=</span><span class="n">matrix</span><span class="p">([</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>  <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">columns</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">lexicographic_triangulation</span><span class="p">()</span>
+<span class="go">(&lt;1,3,4,7,10,13&gt;, &lt;1,3,4,8,10,13&gt;, &lt;1,3,6,7,10,13&gt;, &lt;1,3,6,8,10,13&gt;,</span>
+<span class="go"> &lt;1,4,6,7,10,13&gt;, &lt;1,4,6,8,10,13&gt;, &lt;2,3,4,6,7,12&gt;, &lt;2,3,4,7,12,13&gt;,</span>
+<span class="go"> &lt;2,3,6,7,12,13&gt;, &lt;2,4,6,7,12,13&gt;, &lt;3,4,5,6,9,12&gt;, &lt;3,4,5,8,9,12&gt;,</span>
+<span class="go"> &lt;3,4,6,7,11,12&gt;, &lt;3,4,6,9,11,12&gt;, &lt;3,4,7,10,11,13&gt;, &lt;3,4,7,11,12,13&gt;,</span>
+<span class="go"> &lt;3,4,8,9,10,12&gt;, &lt;3,4,8,10,12,13&gt;, &lt;3,4,9,10,11,12&gt;, &lt;3,4,10,11,12,13&gt;,</span>
+<span class="go"> &lt;3,5,6,8,9,12&gt;, &lt;3,6,7,10,11,13&gt;, &lt;3,6,7,11,12,13&gt;, &lt;3,6,8,9,10,12&gt;,</span>
+<span class="go"> &lt;3,6,8,10,12,13&gt;, &lt;3,6,9,10,11,12&gt;, &lt;3,6,10,11,12,13&gt;, &lt;4,5,6,8,9,12&gt;,</span>
+<span class="go"> &lt;4,6,7,10,11,13&gt;, &lt;4,6,7,11,12,13&gt;, &lt;4,6,8,9,10,12&gt;, &lt;4,6,8,10,12,13&gt;,</span>
+<span class="go"> &lt;4,6,9,10,11,12&gt;, &lt;4,6,10,11,12,13&gt;)</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="go">34</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.placing_triangulation">
+<tt class="descname">placing_triangulation</tt><big>(</big><em>point_order=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.placing_triangulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the placing (pushing) triangulation.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">point_order</span></tt> &#8211; list of points or integers. The order in
+which the points are to be placed.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">placing_triangulation</span><span class="p">()</span>
+<span class="go">(&lt;0,1,2&gt;, &lt;0,2,4&gt;, &lt;2,3,4&gt;)</span>
+
+<span class="gp">sage: </span><span class="n">U</span><span class="o">=</span><span class="n">matrix</span><span class="p">([</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>  <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">columns</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">triangulation</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">placing_triangulation</span><span class="p">();</span>  <span class="n">triangulation</span>
+<span class="go">(&lt;0,2,3,4,6,7&gt;, &lt;0,2,3,4,6,12&gt;, &lt;0,2,3,4,7,13&gt;, &lt;0,2,3,4,12,13&gt;,</span>
+<span class="go"> &lt;0,2,3,6,7,13&gt;, &lt;0,2,3,6,12,13&gt;, &lt;0,2,4,6,7,13&gt;, &lt;0,2,4,6,12,13&gt;,</span>
+<span class="go"> &lt;0,3,4,6,7,12&gt;, &lt;0,3,4,7,12,13&gt;, &lt;0,3,6,7,12,13&gt;, &lt;0,4,6,7,12,13&gt;,</span>
+<span class="go"> &lt;1,3,4,5,6,12&gt;, &lt;1,3,4,6,11,12&gt;, &lt;1,3,4,7,11,13&gt;, &lt;1,3,4,11,12,13&gt;,</span>
+<span class="go"> &lt;1,3,6,7,11,13&gt;, &lt;1,3,6,11,12,13&gt;, &lt;1,4,6,7,11,13&gt;, &lt;1,4,6,11,12,13&gt;,</span>
+<span class="go"> &lt;3,4,6,7,11,12&gt;, &lt;3,4,7,11,12,13&gt;, &lt;3,6,7,11,12,13&gt;, &lt;4,6,7,11,12,13&gt;)</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">volume</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">triangulation</span><span class="p">)</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.positive_circuits">
+<tt class="descname">positive_circuits</tt><big>(</big><em>*negative</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.positive_circuits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the positive part of circuits with fixed negative part.</p>
+<p>A circuit is a pair <span class="math">\((C_+, C_-)\)</span>, each consisting of a subset
+(actually, an ordered tuple) of point indices.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">*negative</span></tt> &#8211; integer. The indices of points.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A tuple of all circuits with <span class="math">\(C_-\)</span> = <tt class="docutils literal"><span class="pre">negative</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">positive_circuits</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">((0, 7), (0, 1, 4), (0, 2, 3), (0, 5, 6), (0, 1, 2, 5), (0, 3, 4, 6))</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">positive_circuits</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">((8,),)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.pushing_triangulation">
+<tt class="descname">pushing_triangulation</tt><big>(</big><em>point_order=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.pushing_triangulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the placing (pushing) triangulation.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">point_order</span></tt> &#8211; list of points or integers. The order in
+which the points are to be placed.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">placing_triangulation</span><span class="p">()</span>
+<span class="go">(&lt;0,1,2&gt;, &lt;0,2,4&gt;, &lt;2,3,4&gt;)</span>
+
+<span class="gp">sage: </span><span class="n">U</span><span class="o">=</span><span class="n">matrix</span><span class="p">([</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>  <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">columns</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">triangulation</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">placing_triangulation</span><span class="p">();</span>  <span class="n">triangulation</span>
+<span class="go">(&lt;0,2,3,4,6,7&gt;, &lt;0,2,3,4,6,12&gt;, &lt;0,2,3,4,7,13&gt;, &lt;0,2,3,4,12,13&gt;,</span>
+<span class="go"> &lt;0,2,3,6,7,13&gt;, &lt;0,2,3,6,12,13&gt;, &lt;0,2,4,6,7,13&gt;, &lt;0,2,4,6,12,13&gt;,</span>
+<span class="go"> &lt;0,3,4,6,7,12&gt;, &lt;0,3,4,7,12,13&gt;, &lt;0,3,6,7,12,13&gt;, &lt;0,4,6,7,12,13&gt;,</span>
+<span class="go"> &lt;1,3,4,5,6,12&gt;, &lt;1,3,4,6,11,12&gt;, &lt;1,3,4,7,11,13&gt;, &lt;1,3,4,11,12,13&gt;,</span>
+<span class="go"> &lt;1,3,6,7,11,13&gt;, &lt;1,3,6,11,12,13&gt;, &lt;1,4,6,7,11,13&gt;, &lt;1,4,6,11,12,13&gt;,</span>
+<span class="go"> &lt;3,4,6,7,11,12&gt;, &lt;3,4,7,11,12,13&gt;, &lt;3,6,7,11,12,13&gt;, &lt;4,6,7,11,12,13&gt;)</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">volume</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">triangulation</span><span class="p">)</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_connected_triangulations">
+<tt class="descname">restrict_to_connected_triangulations</tt><big>(</big><em>connected=True</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_connected_triangulations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to connected triangulations.</p>
+<p>NOTE:</p>
+<p>Finding non-connected triangulations requires the optional
+TOPCOM package.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">connected</span></tt> &#8211; boolean. Whether to restrict to
+triangulations that are connected by bistellar flips to the
+regular triangulations.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> with the same points, but
+whose triangulations will all be in the connected
+component. See <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> for details.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p_all</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_connected_triangulations</span><span class="p">(</span><span class="n">connected</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p_all</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>                                 <span class="c"># optional - TOPCOM</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">==</span> <span class="n">p_all</span><span class="o">.</span><span class="n">restrict_to_connected_triangulations</span><span class="p">(</span><span class="n">connected</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>  <span class="c"># optional - TOPCOM</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_fine_triangulations">
+<tt class="descname">restrict_to_fine_triangulations</tt><big>(</big><em>fine=True</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_fine_triangulations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to fine triangulations.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">fine</span></tt> &#8211; boolean. Whether to restrict to fine triangulations.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> with the same points, but
+whose triangulations will all be fine. See
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> for details.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p_fine</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_fine_triangulations</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">==</span> <span class="n">p_fine</span><span class="o">.</span><span class="n">restrict_to_fine_triangulations</span><span class="p">(</span><span class="n">fine</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_regular_triangulations">
+<tt class="descname">restrict_to_regular_triangulations</tt><big>(</big><em>regular=True</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_regular_triangulations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to regular triangulations.</p>
+<p>NOTE:</p>
+<p>Regularity testing requires the optional TOPCOM package.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">regular</span></tt> &#8211; <tt class="docutils literal"><span class="pre">True</span></tt>, <tt class="docutils literal"><span class="pre">False</span></tt>, or <tt class="docutils literal"><span class="pre">None</span></tt>. Whether to
+restrict to regular triangulations, irregular
+triangulations, or lift any restrictions on regularity.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> with the same points, but
+whose triangulations will all be regular as specified. See
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> for details.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">A point configuration in QQ^2 consisting of 5 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to</span>
+<span class="go">be connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p_regular</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_regular_triangulations</span><span class="p">()</span> <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">p_regular</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">())</span>               <span class="c"># optional - TOPCOM</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">==</span> <span class="n">p_regular</span><span class="o">.</span><span class="n">restrict_to_regular_triangulations</span><span class="p">(</span><span class="n">regular</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="c"># optional - TOPCOM</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_star_triangulations">
+<tt class="descname">restrict_to_star_triangulations</tt><big>(</big><em>star</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_star_triangulations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to star triangulations with the given point as the
+center.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">origin</span></tt> &#8211; <tt class="docutils literal"><span class="pre">None</span></tt> or an integer or the coordinates of a
+point. An integer denotes the index of the central point. If
+<tt class="docutils literal"><span class="pre">None</span></tt> is passed, any restriction on the starshape will be
+removed.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new <a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> with the same points, but
+whose triangulations will all be star. See
+<a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration" title="sage.geometry.triangulation.point_configuration.PointConfiguration"><tt class="xref py py-class docutils literal"><span class="pre">PointConfiguration</span></tt></a> for details.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulations</span><span class="p">()</span> <span class="p">))</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">p_star</span> <span class="o">=</span>  <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_star_triangulations</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p_star</span> <span class="ow">is</span> <span class="n">p</span><span class="o">.</span><span class="n">restrict_to_star_triangulations</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p_star</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>
+<span class="go">[(&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;)]</span>
+<span class="gp">sage: </span><span class="n">p_newstar</span> <span class="o">=</span> <span class="n">p_star</span><span class="o">.</span><span class="n">restrict_to_star_triangulations</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># pick different origin</span>
+<span class="gp">sage: </span><span class="n">p_newstar</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>
+<span class="go">[(&lt;1,2,3&gt;, &lt;1,2,4&gt;)]</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">==</span> <span class="n">p_star</span><span class="o">.</span><span class="n">restrict_to_star_triangulations</span><span class="p">(</span><span class="n">star</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.restricted_automorphism_group">
+<tt class="descname">restricted_automorphism_group</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restricted_automorphism_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the restricted automorphism group.</p>
+<p>First, let the linear automorphism group be the subgroup of
+the Euclidean group <span class="math">\(E(d) = GL(d,\RR) \ltimes \RR^d\)</span>
+preserving the <span class="math">\(d\)</span>-dimensional point configuration. The
+Euclidean group acts in the usual way <span class="math">\(\vec{x}\mapsto
+A\vec{x}+b\)</span> on the ambient space.</p>
+<p>The restricted automorphism group is the subgroup of the
+linear automorphism group generated by permutations of
+points. See <a class="reference internal" href="../polyhedron/base.html#bss" id="id3">[BSS]</a> for more details and a description of the
+algorithm.</p>
+<p>OUTPUT:</p>
+<p>A
+<a class="reference external" href="../../../../groups/sage/groups/perm_gps/permgroup.html#sage.groups.perm_gps.permgroup.PermutationGroup_generic" title="(in Sage Reference Manual: Groups v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">PermutationGroup</span></tt></a>
+that is isomorphic to the restricted automorphism group is
+returned.</p>
+<p>Note that in Sage, permutation groups always act on positive
+integers while lists etc. are indexed by nonnegative
+integers. The indexing of the permutation group is chosen to
+be shifted by <tt class="docutils literal"><span class="pre">+1</span></tt>. That is, the transposition <tt class="docutils literal"><span class="pre">(i,j)</span></tt> in
+the permutation group corresponds to exchange of <tt class="docutils literal"><span class="pre">self[i-1]</span></tt>
+and <tt class="docutils literal"><span class="pre">self[j-1]</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pyramid</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">pyramid</span><span class="o">.</span><span class="n">restricted_automorphism_group</span><span class="p">()</span>
+<span class="go">Permutation Group with generators [(3,5), (2,3)(4,5), (2,4)]</span>
+<span class="gp">sage: </span><span class="n">DihedralGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The square with an off-center point in the middle. Note thath
+the middle point breaks the restricted automorphism group
+<span class="math">\(D_4\)</span> of the convex hull:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">square</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">square</span><span class="o">.</span><span class="n">restricted_automorphism_group</span><span class="p">()</span>
+<span class="go">Permutation Group with generators [(3,5)]</span>
+<span class="gp">sage: </span><span class="n">DihedralGroup</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.secondary_polytope">
+<tt class="descname">secondary_polytope</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.secondary_polytope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the secondary polytope of the point configuration.</p>
+<p>For a definition of the secondary polytope, see <a class="reference internal" href="#gkz" id="id4">[GKZ]</a> page 220
+Definition 1.6.</p>
+<p>Note that if you restricted the admissible triangulations of
+the point configuration then the output will be the
+corresponding face of the whole secondary polytope.</p>
+<p>OUTPUT:</p>
+<p>The secondary polytope of the point configuration as an
+instance of
+<a class="reference internal" href="../polyhedron/base.html#sage.geometry.polyhedron.base.Polyhedron_base" title="sage.geometry.polyhedron.base.Polyhedron_base"><tt class="xref py py-class docutils literal"><span class="pre">Polyhedron_base</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">secondary_polytope</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">poly</span><span class="o">.</span><span class="n">vertices_matrix</span><span class="p">()</span>
+<span class="go">[1 1 3 3 5]</span>
+<span class="go">[3 5 1 4 1]</span>
+<span class="go">[4 2 5 2 4]</span>
+<span class="go">[2 4 2 5 4]</span>
+<span class="go">[5 3 4 1 1]</span>
+<span class="gp">sage: </span><span class="n">poly</span><span class="o">.</span><span class="n">Vrepresentation</span><span class="p">()</span>
+<span class="go">(A vertex at (1, 3, 4, 2, 5),</span>
+<span class="go"> A vertex at (1, 5, 2, 4, 3),</span>
+<span class="go"> A vertex at (3, 1, 5, 2, 4),</span>
+<span class="go"> A vertex at (3, 4, 2, 5, 1),</span>
+<span class="go"> A vertex at (5, 1, 4, 4, 1))</span>
+<span class="gp">sage: </span><span class="n">poly</span><span class="o">.</span><span class="n">Hrepresentation</span><span class="p">()</span>
+<span class="go">(An equation (0, 0, 1, 2, 1) x - 13 == 0,</span>
+<span class="go"> An equation (1, 0, 0, 2, 2) x - 15 == 0,</span>
+<span class="go"> An equation (0, 1, 0, -3, -2) x + 13 == 0,</span>
+<span class="go"> An inequality (0, 0, 0, -1, -1) x + 7 &gt;= 0,</span>
+<span class="go"> An inequality (0, 0, 0, 1, 0) x - 2 &gt;= 0,</span>
+<span class="go"> An inequality (0, 0, 0, -2, -1) x + 11 &gt;= 0,</span>
+<span class="go"> An inequality (0, 0, 0, 0, 1) x - 1 &gt;= 0,</span>
+<span class="go"> An inequality (0, 0, 0, 3, 2) x - 14 &gt;= 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.set_engine">
+<em class="property">classmethod </em><tt class="descname">set_engine</tt><big>(</big><em>engine='auto'</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.set_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the engine used to compute triangulations.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">engine</span></tt> &#8211; either &#8216;auto&#8217; (default), &#8216;internal&#8217;, or
+&#8216;TOPCOM&#8217;. The latter two instruct this package to always use
+its own triangulation algorithms or TOPCOM&#8217;s algorithms,
+respectively. By default (&#8216;auto&#8217;), TOPCOM is used if it is
+available and internal routines otherwise.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;internal&#39;</span><span class="p">)</span>   <span class="c"># to make doctests independent of TOPCOM</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>
+<span class="go">(&lt;1,3,4&gt;, &lt;2,3,4&gt;)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;TOPCOM&#39;</span><span class="p">)</span>   <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>          <span class="c"># optional - TOPCOM</span>
+<span class="go">(&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;internal&#39;</span><span class="p">)</span> <span class="c"># optional - TOPCOM</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.star_center">
+<tt class="descname">star_center</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.star_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the center used for star triangulations.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_star_triangulations" title="sage.geometry.triangulation.point_configuration.PointConfiguration.restrict_to_star_triangulations"><tt class="xref py py-meth docutils literal"><span class="pre">restrict_to_star_triangulations()</span></tt></a>.</p>
+</div>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="base.html#sage.geometry.triangulation.base.Point" title="sage.geometry.triangulation.base.Point"><tt class="xref py py-class docutils literal"><span class="pre">Point</span></tt></a> if a
+distinguished star central point has been fixed.
+<tt class="docutils literal"><span class="pre">ValueError</span></tt> exception is raised otherwise.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">pc</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)],</span> <span class="n">star</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">));</span> <span class="n">pc</span>
+<span class="go">A point configuration in QQ^2 consisting of 4 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to be</span>
+<span class="go">connected, not necessarily fine, not necessarily regular, and</span>
+<span class="go">star with center P(0, 1).</span>
+<span class="gp">sage: </span><span class="n">pc</span><span class="o">.</span><span class="n">star_center</span><span class="p">()</span>
+<span class="go">P(0, 1)</span>
+
+<span class="gp">sage: </span><span class="n">pc_nostar</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">restrict_to_star_triangulations</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">pc_nostar</span>
+<span class="go">A point configuration in QQ^2 consisting of 4 points. The</span>
+<span class="go">triangulations of this point configuration are assumed to be</span>
+<span class="go">connected, not necessarily fine, not necessarily regular.</span>
+<span class="gp">sage: </span><span class="n">pc_nostar</span><span class="o">.</span><span class="n">star_center</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">The point configuration has no star center defined.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.triangulate">
+<tt class="descname">triangulate</tt><big>(</big><em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.triangulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return one (in no particular order) triangulation.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; boolean. Whether to print out the TOPCOM
+interaction, if any.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="element.html#sage.geometry.triangulation.element.Triangulation" title="sage.geometry.triangulation.element.Triangulation"><tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt></a>
+satisfying all restrictions imposed. Raises a <tt class="docutils literal"><span class="pre">ValueError</span></tt>
+if no such triangulation exists.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>
+<span class="go">(&lt;1,3,4&gt;, &lt;2,3,4&gt;)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[(1, 3, 4), (2, 3, 4)]</span>
+</pre></div>
+</div>
+<p>Using TOPCOM yields a different, but equally good, triangulation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;TOPCOM&#39;</span><span class="p">)</span>           <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span>                  <span class="c"># optional - TOPCOM</span>
+<span class="go">(&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()</span> <span class="p">)</span>          <span class="c"># optional - TOPCOM</span>
+<span class="go">[(0, 1, 2), (0, 1, 4), (0, 2, 4), (1, 2, 3)]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;internal&#39;</span><span class="p">)</span>         <span class="c"># optional - TOPCOM</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.triangulations">
+<tt class="descname">triangulations</tt><big>(</big><em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.triangulations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all triangulations.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; boolean (default: <tt class="docutils literal"><span class="pre">False</span></tt>). Whether to
+print out the TOPCOM interaction, if any.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A generator for the triangulations satisfying all the
+restrictions imposed. Each triangulation is returned as a
+<a class="reference internal" href="element.html#sage.geometry.triangulation.element.Triangulation" title="sage.geometry.triangulation.element.Triangulation"><tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt></a> object.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre>   sage: p = PointConfiguration([[0,0],[0,1],[1,0],[1,1],[-1,-1]])
+   sage: iter = p.triangulations()
+   sage: next(iter)
+   (&lt;1,3,4&gt;, &lt;2,3,4&gt;)
+   sage: next(iter)
+   (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;)
+   sage: next(iter)
+   (&lt;1,2,3&gt;, &lt;1,2,4&gt;)
+   sage: next(iter)
+   (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)
+   sage: p.triangulations_list()
+   [(&lt;1,3,4&gt;, &lt;2,3,4&gt;),
+    (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;),
+    (&lt;1,2,3&gt;, &lt;1,2,4&gt;),
+    (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)]
+   sage: p_fine = p.restrict_to_fine_triangulations()
+   sage: p_fine.triangulations_list()
+   [(&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;),
+    (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)]
+
+Note that we explicitly asked the internal algorithm to
+compute the triangulations. Using TOPCOM, we obtain the same
+triangulations but in a different order::
+
+   sage: p.set_engine(&#39;TOPCOM&#39;)                       # optional - TOPCOM
+   sage: iter = p.triangulations()                    # optional - TOPCOM
+   sage: next(iter)                                   # optional - TOPCOM
+   (&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;)
+   sage: next(iter)                                   # optional - TOPCOM
+   (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;)
+   sage: next(iter)                                   # optional - TOPCOM
+   (&lt;1,2,3&gt;, &lt;1,2,4&gt;)
+   sage: next(iter)                                   # optional - TOPCOM
+   (&lt;1,3,4&gt;, &lt;2,3,4&gt;)
+   sage: p.triangulations_list()                      # optional - TOPCOM
+   [(&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;),
+    (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;),
+    (&lt;1,2,3&gt;, &lt;1,2,4&gt;),
+    (&lt;1,3,4&gt;, &lt;2,3,4&gt;)]
+   sage: p_fine = p.restrict_to_fine_triangulations() # optional - TOPCOM
+   sage: p_fine.set_engine(&#39;TOPCOM&#39;)                  # optional - TOPCOM
+   sage: p_fine.triangulations_list()                 # optional - TOPCOM
+   [(&lt;0,1,2&gt;, &lt;0,1,4&gt;, &lt;0,2,4&gt;, &lt;1,2,3&gt;),
+    (&lt;0,1,3&gt;, &lt;0,1,4&gt;, &lt;0,2,3&gt;, &lt;0,2,4&gt;)]
+   sage: p.set_engine(&#39;internal&#39;)                     # optional - TOPCOM
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.triangulations_list">
+<tt class="descname">triangulations_list</tt><big>(</big><em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.triangulations_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all triangulations.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; boolean. Whether to print out the TOPCOM
+interaction, if any.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A list of triangulations (see
+<a class="reference internal" href="element.html#sage.geometry.triangulation.element.Triangulation" title="sage.geometry.triangulation.element.Triangulation"><tt class="xref py py-class docutils literal"><span class="pre">Triangulation</span></tt></a>)
+satisfying all restrictions imposed previously.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>
+<span class="go">[(&lt;0,1,2&gt;, &lt;1,2,3&gt;), (&lt;0,1,3&gt;, &lt;0,2,3&gt;)]</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span> <span class="p">)</span>
+<span class="go">[[(0, 1, 2), (1, 2, 3)], [(0, 1, 3), (0, 2, 3)]]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;TOPCOM&#39;</span><span class="p">)</span>       <span class="c"># optional - TOPCOM</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">triangulations_list</span><span class="p">()</span>      <span class="c"># optional - TOPCOM</span>
+<span class="go">[(&lt;0,1,2&gt;, &lt;1,2,3&gt;), (&lt;0,1,3&gt;, &lt;0,2,3&gt;)]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_engine</span><span class="p">(</span><span class="s">&#39;internal&#39;</span><span class="p">)</span>     <span class="c"># optional - TOPCOM</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.triangulation.point_configuration.PointConfiguration.volume">
+<tt class="descname">volume</tt><big>(</big><em>simplex=None</em><big>)</big><a class="headerlink" href="#sage.geometry.triangulation.point_configuration.PointConfiguration.volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find n! times the n-volume of a simplex of dimension n.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">simplex</span></tt> (optional argument) &#8211; a simplex from a
+triangulation T specified as a list of point indices.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>If a simplex was passed as an argument: n!*(volume of <tt class="docutils literal"><span class="pre">simplex</span></tt>).</li>
+<li>Without argument: n!*(the total volume of the convex hull).</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>The volume of the standard simplex should always be 1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">PointConfiguration</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">volume</span><span class="p">(</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">simplex</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">triangulate</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>  <span class="c"># first simplex of triangulation</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">volume</span><span class="p">(</span><span class="n">simplex</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>The square can be triangulated into two minimal simplices, so
+in the &#8220;integral&#8221; normalization its volume equals two:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We return n!*(metric volume of the simplex) to ensure that
+the volume is an integer.  Essentially, this normalizes
+things so that the volume of the standard n-simplex is 1.
+See <a class="reference internal" href="#gkz" id="id5">[GKZ]</a> page 182.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../pseudolines.html"
+                                  title="previous chapter">Pseudolines</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="base.html"
+                                  title="next chapter">Base classes for triangulations</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/geometry/triangulation/point_configuration.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="base.html" title="Base classes for triangulations"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../pseudolines.html" title="Pseudolines"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Geometry</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

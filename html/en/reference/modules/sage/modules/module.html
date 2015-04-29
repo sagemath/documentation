@@ -1,0 +1,394 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Abstract base class for modules &mdash; Sage Reference Manual v6.6: Modules</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Modules" href="../../index.html" />
+    <link rel="next" title="Free modules" href="free_module.html" />
+    <link rel="prev" title="Modules" href="../../index.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="free_module.html" title="Free modules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Modules"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Modules</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="abstract-base-class-for-modules">
+<span id="sage-modules-module"></span><h1>Abstract base class for modules<a class="headerlink" href="#abstract-base-class-for-modules" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.modules.module"></span><p>Two classes for modules are defined here: <a class="reference internal" href="#sage.modules.module.Module_old" title="sage.modules.module.Module_old"><tt class="xref py py-class docutils literal"><span class="pre">Module_old</span></tt></a> and
+<a class="reference internal" href="#sage.modules.module.Module" title="sage.modules.module.Module"><tt class="xref py py-class docutils literal"><span class="pre">Module</span></tt></a>. The former is a legacy class which should not be used for new
+code anymore as it does not conform to the coercion model. Eventually all
+occurences shall be ported to <a class="reference internal" href="#sage.modules.module.Module" title="sage.modules.module.Module"><tt class="xref py py-class docutils literal"><span class="pre">Module</span></tt></a>.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein: initial version</li>
+<li>Julian Rueth (2014-05-10): category parameter for Module, doc cleanup</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>A minimal example of a module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">ModuleElement</span><span class="p">):</span>
+<span class="go">....:     def __init__(self, parent, x):</span>
+<span class="go">....:         self.x = x</span>
+<span class="go">....:         sage.structure.element.ModuleElement.__init__(self, parent=parent)</span>
+<span class="go">....:     def _rmul_(self, c):</span>
+<span class="go">....:         return self.parent()(c*self.x)</span>
+<span class="go">....:     def _add_(self, other):</span>
+<span class="go">....:         return self.parent()(self.x + other.x)</span>
+<span class="go">....:     def __cmp__(self, other):</span>
+<span class="go">....:         return cmp(self.x, other.x)</span>
+<span class="go">....:     def __hash__(self):</span>
+<span class="go">....:         return hash(self.x)</span>
+<span class="go">....:     def _repr_(self):</span>
+<span class="go">....:         return repr(self.x)</span>
+
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyModule</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="go">....:     Element = MyElement</span>
+<span class="go">....:     def _element_constructor_(self, x):</span>
+<span class="go">....:         if isinstance(x, MyElement): x = x.x</span>
+<span class="go">....:         return self.element_class(self, self.base_ring()(x))</span>
+<span class="go">....:     def __cmp__(self, other):</span>
+<span class="go">....:         if not isinstance(other, MyModule): return cmp(type(other),MyModule)</span>
+<span class="go">....:         return cmp(self.base_ring(),other.base_ring())</span>
+
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">MyModule</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">__main__</span>
+<span class="gp">sage: </span><span class="n">__main__</span><span class="o">.</span><span class="n">MyModule</span> <span class="o">=</span> <span class="n">MyModule</span>
+<span class="gp">sage: </span><span class="n">__main__</span><span class="o">.</span><span class="n">MyElement</span> <span class="o">=</span> <span class="n">MyElement</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.modules.module.Module">
+<em class="property">class </em><tt class="descclassname">sage.modules.module.</tt><tt class="descname">Module</tt><a class="headerlink" href="#sage.modules.module.Module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.parent.Parent</span></tt></a></p>
+<p>Generic module class.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">base</span></tt> &#8211; a ring. The base ring of the module.</li>
+<li><tt class="docutils literal"><span class="pre">category</span></tt> &#8211; a category (default: <tt class="docutils literal"><span class="pre">None</span></tt>), the category for this
+module. If <tt class="docutils literal"><span class="pre">None</span></tt>, then this is set to the category of modules/vector
+spaces over <tt class="docutils literal"><span class="pre">base</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.modules.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Module</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of modules over Integer Ring</span>
+</pre></div>
+</div>
+<p>Normally the category is set to the category of modules over <tt class="docutils literal"><span class="pre">base</span></tt>. If
+<tt class="docutils literal"><span class="pre">base</span></tt> is a field, then the category is the category of vector spaces
+over <tt class="docutils literal"><span class="pre">base</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M_QQ</span> <span class="o">=</span> <span class="n">Module</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M_QQ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of vector spaces over Rational Field</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">category</span></tt> parameter can be used to set a more specific category:</p>
+<div class="highlight-python"><div class="highlight"><pre>   sage: N = Module(ZZ, category=FiniteDimensionalModulesWithBasis(ZZ))
+   sage: N.category()
+   Category of finite dimensional modules with basis over Integer Ring
+
+TESTS:
+
+We check that :trac:`8119` has been resolved::
+
+   sage: M = ZZ^3
+   sage: h = M.__hash__()
+   sage: M.rename(&#39;toto&#39;)
+   sage: h == M.__hash__()
+   True
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.modules.module.Module.endomorphism_ring">
+<tt class="descname">endomorphism_ring</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.modules.module.Module.endomorphism_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the endomorphism ring of this module in its category.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.modules.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Module</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">endomorphism_ring</span><span class="p">()</span>
+<span class="go">Set of Morphisms from &lt;type &#39;sage.modules.module.Module&#39;&gt; to &lt;type &#39;sage.modules.module.Module&#39;&gt; in Category of modules over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.modules.module.Module_old">
+<em class="property">class </em><tt class="descclassname">sage.modules.module.</tt><tt class="descname">Module_old</tt><a class="headerlink" href="#sage.modules.module.Module_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/parent_gens.html#sage.structure.parent_gens.ParentWithAdditiveAbelianGens" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.parent_gens.ParentWithAdditiveAbelianGens</span></tt></a></p>
+<p>Generic module class.</p>
+<dl class="method">
+<dt id="sage.modules.module.Module_old.category">
+<tt class="descname">category</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.modules.module.Module_old.category" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the category to which this module belongs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.modules.module.Module_old.endomorphism_ring">
+<tt class="descname">endomorphism_ring</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.modules.module.Module_old.endomorphism_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the endomorphism ring of this module in its category.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.modules.module.is_Module">
+<tt class="descclassname">sage.modules.module.</tt><tt class="descname">is_Module</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.modules.module.is_Module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">x</span></tt> is a module, <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt> &#8211; anything.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.modules.module</span> <span class="kn">import</span> <span class="n">is_Module</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">FreeModule</span><span class="p">(</span><span class="n">RationalField</span><span class="p">(),</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">is_Module</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_Module</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.modules.module.is_VectorSpace">
+<tt class="descclassname">sage.modules.module.</tt><tt class="descname">is_VectorSpace</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.modules.module.is_VectorSpace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">x</span></tt> is a vector space, <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt> &#8211; anything.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.modules.module</span> <span class="kn">import</span> <span class="n">is_Module</span><span class="p">,</span> <span class="n">is_VectorSpace</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">FreeModule</span><span class="p">(</span><span class="n">RationalField</span><span class="p">(),</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">is_VectorSpace</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">FreeModule</span><span class="p">(</span><span class="n">IntegerRing</span><span class="p">(),</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">is_Module</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_VectorSpace</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../../index.html"
+                                  title="previous chapter">Modules</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="free_module.html"
+                                  title="next chapter">Free modules</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/modules/module.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="free_module.html" title="Free modules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Modules"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Modules</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

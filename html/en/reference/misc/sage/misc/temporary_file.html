@@ -1,0 +1,487 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Temporary file handling &mdash; Sage Reference Manual v6.6: Miscellaneous</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Miscellaneous" href="../../index.html" />
+    <link rel="next" title="Constant functions" href="constant_function.html" />
+    <link rel="prev" title="Miscellaneous functions" href="misc.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constant_function.html" title="Constant functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="misc.html" title="Miscellaneous functions"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="temporary-file-handling">
+<span id="sage-misc-temporary-file"></span><h1>Temporary file handling<a class="headerlink" href="#temporary-file-handling" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.temporary_file"></span><p>AUTHORS:</p>
+<ul class="simple">
+<li>Volker Braun, Jeroen Demeyer (2012-10-18): move these functions here
+from sage/misc/misc.py and make them secure, see <a class="reference external" href="http://trac.sagemath.org/13579">trac ticket #13579</a>.</li>
+<li>Jeroen Demeyer (2013-03-17): add class:<span class="math">\(atomic_write\)</span>,
+see <a class="reference external" href="http://trac.sagemath.org/14292">trac ticket #14292</a>.</li>
+</ul>
+<dl class="class">
+<dt id="sage.misc.temporary_file.atomic_write">
+<em class="property">class </em><tt class="descclassname">sage.misc.temporary_file.</tt><tt class="descname">atomic_write</tt><big>(</big><em>target_filename</em>, <em>append=False</em>, <em>mode=438</em><big>)</big><a class="headerlink" href="#sage.misc.temporary_file.atomic_write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write to a given file using a temporary file and then rename it
+to the target file. This renaming should be atomic on modern
+operating systems. Therefore, this class can be used to avoid race
+conditions when a file might be read while it is being written.
+It also avoids having partially written files due to exceptions
+or crashes.</p>
+<p>This is to be used in a <tt class="docutils literal"><span class="pre">with</span></tt> statement, where a temporary file
+is created when entering the <tt class="docutils literal"><span class="pre">with</span></tt> and is moved in place of the
+target file when exiting the <tt class="docutils literal"><span class="pre">with</span></tt> (if no exceptions occured).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">target_filename</span></tt> &#8211; the name of the file to be written.
+Normally, the contents of this file will be overwritten.</li>
+<li><tt class="docutils literal"><span class="pre">append</span></tt> &#8211; (boolean, default: False) if True and
+<tt class="docutils literal"><span class="pre">target_filename</span></tt> is an existing file, then copy the current
+contents of <tt class="docutils literal"><span class="pre">target_filename</span></tt> to the temporary file when
+entering the <tt class="docutils literal"><span class="pre">with</span></tt> statement. Otherwise, the temporary file is
+initially empty.</li>
+<li><tt class="docutils literal"><span class="pre">mode</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">0o666</span></tt>) mode bits for the file. The
+temporary file is created with mode <tt class="docutils literal"><span class="pre">mode</span> <span class="pre">&amp;</span> <span class="pre">~umask</span></tt> and the
+resulting file will also have these permissions (unless the
+mode bits of the file were changed manually).</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.temporary_file</span> <span class="kn">import</span> <span class="n">atomic_write</span>
+<span class="gp">sage: </span><span class="n">target_file</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;Old contents&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot;New contents&quot;)</span>
+<span class="go">....:     f.flush()</span>
+<span class="go">....:     open(target_file, &quot;r&quot;).read()</span>
+<span class="go">&#39;Old contents&#39;</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;New contents&#39;</span>
+</pre></div>
+</div>
+<p>The name of the temporary file can be accessed using <tt class="docutils literal"><span class="pre">f.name</span></tt>.
+It is not a problem to close and re-open the temporary file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.temporary_file</span> <span class="kn">import</span> <span class="n">atomic_write</span>
+<span class="gp">sage: </span><span class="n">target_file</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;Old contents&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.close()</span>
+<span class="go">....:     open(f.name, &quot;w&quot;).write(&quot;Newer contents&quot;)</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;Newer contents&#39;</span>
+</pre></div>
+</div>
+<p>If an exception occurs while writing the file, the target file is
+not touched:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot;Newest contents&quot;)</span>
+<span class="go">....:     raise RuntimeError</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;Newer contents&#39;</span>
+</pre></div>
+</div>
+<p>Some examples of using the <tt class="docutils literal"><span class="pre">append</span></tt> option. Note that the file
+is never opened in &#8220;append&#8221; mode, it is possible to overwrite
+existing data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">target_file</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot;Hello&quot;)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot; World&quot;)</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;Hello World&#39;</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.seek(0)</span>
+<span class="go">....:     f.write(&quot;HELLO&quot;)</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;HELLO World&#39;</span>
+</pre></div>
+</div>
+<p>If the target file is a symbolic link, the link is kept and the
+target of the link is written to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">link_to_target</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">(),</span> <span class="s">&quot;templink&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">link_to_target</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">link_to_target</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot;Newest contents&quot;)</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;Newest contents&#39;</span>
+</pre></div>
+</div>
+<p>We check the permission bits of the new file. Note that the old
+permissions do not matter:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="mi">0</span><span class="n">o600</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="n">o022</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     pass</span>
+<span class="gp">sage: </span><span class="nb">oct</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span> <span class="o">&amp;</span> <span class="mi">0</span><span class="n">o777</span><span class="p">)</span>
+<span class="go">&#39;644&#39;</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">umask</span><span class="p">(</span><span class="mi">0</span><span class="n">o077</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="n">o777</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">....:     pass</span>
+<span class="gp">sage: </span><span class="nb">oct</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span> <span class="o">&amp;</span> <span class="mi">0</span><span class="n">o777</span><span class="p">)</span>
+<span class="go">&#39;700&#39;</span>
+</pre></div>
+</div>
+<p>Test writing twice to the same target file. The outermost <tt class="docutils literal"><span class="pre">with</span></tt>
+&#8220;wins&#8221;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;&gt;&gt;&gt; &quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">with</span> <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">,</span>         <span class="o">....</span><span class="p">:</span>          <span class="n">atomic_write</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">g</span><span class="p">:</span>
+<span class="go">....:     f.write(&quot;AAA&quot;); f.close()</span>
+<span class="go">....:     g.write(&quot;BBB&quot;); g.close()</span>
+<span class="gp">sage: </span><span class="nb">open</span><span class="p">(</span><span class="n">target_file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;&gt;&gt;&gt; AAA&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.temporary_file.delete_tmpfiles">
+<tt class="descclassname">sage.misc.temporary_file.</tt><tt class="descname">delete_tmpfiles</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.misc.temporary_file.delete_tmpfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the directory <tt class="docutils literal"><span class="pre">SAGE_TMP</span></tt>.</p>
+<p>TESTS:</p>
+<p>This is automatically run when Sage exits, test this by running a
+separate session of Sage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.tests.cmdline</span> <span class="kn">import</span> <span class="n">test_executable</span>
+<span class="gp">sage: </span><span class="n">child_SAGE_TMP</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">test_executable</span><span class="p">([</span><span class="s">&quot;sage&quot;</span><span class="p">,</span> <span class="s">&quot;-c&quot;</span><span class="p">,</span> <span class="s">&quot;print SAGE_TMP&quot;</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">err</span><span class="p">,</span> <span class="n">ret</span>
+<span class="go">(&#39;&#39;, 0)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">child_SAGE_TMP</span><span class="p">)</span>  <span class="c"># indirect doctest</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>The parent directory should exist:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">parent_SAGE_TMP</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">child_SAGE_TMP</span> <span class="o">+</span> <span class="s">&#39;/..&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">parent_SAGE_TMP</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.temporary_file.graphics_filename">
+<tt class="descclassname">sage.misc.temporary_file.</tt><tt class="descname">graphics_filename</tt><big>(</big><em>ext='.png'</em><big>)</big><a class="headerlink" href="#sage.misc.temporary_file.graphics_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated SageNB graphics filename</p>
+<p>You should just use <a class="reference internal" href="#sage.misc.temporary_file.tmp_filename" title="sage.misc.temporary_file.tmp_filename"><tt class="xref py py-meth docutils literal"><span class="pre">tmp_filename()</span></tt></a>.</p>
+<p>When run from the Sage notebook, return the next available canonical
+filename for a plot/graphics file in the current working directory.
+Otherwise, return a temporary file inside <tt class="docutils literal"><span class="pre">SAGE_TMP</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ext</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;.png&quot;</span></tt>) A file extension (including the dot)
+for the filename.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The path of the temporary file created. In the notebook, this is
+a filename without path in the current directory. Otherwise, this
+an absolute path.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.temporary_file</span> <span class="kn">import</span> <span class="n">graphics_filename</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">graphics_filename</span><span class="p">()</span>  <span class="c"># random, typical filename for sagenb</span>
+<span class="go">sage0.png</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>When doctesting, this returns instead a random temporary file.
+We check that it&#8217;s a file inside <tt class="docutils literal"><span class="pre">SAGE_TMP</span></tt> and that the extension
+is correct:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">graphics_filename</span><span class="p">(</span><span class="n">ext</span><span class="o">=</span><span class="s">&quot;.jpeg&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">SAGE_TMP</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.jpeg&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Historically, it was also possible to omit the dot. This has been
+changed in <a class="reference external" href="http://trac.sagemath.org/16640">trac ticket #16640</a> but it will still work for now:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">graphics_filename</span><span class="p">(</span><span class="s">&quot;jpeg&quot;</span><span class="p">)</span>
+<span class="go">doctest:...: DeprecationWarning: extension must now include the dot</span>
+<span class="go">See http://trac.sagemath.org/16640 for details.</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.jpeg&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.temporary_file.tmp_dir">
+<tt class="descclassname">sage.misc.temporary_file.</tt><tt class="descname">tmp_dir</tt><big>(</big><em>name='dir_'</em>, <em>ext=''</em><big>)</big><a class="headerlink" href="#sage.misc.temporary_file.tmp_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and return a temporary directory in
+<tt class="docutils literal"><span class="pre">$HOME/.sage/temp/hostname/pid/</span></tt></p>
+<p>The temporary directory is deleted automatically when Sage exits.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;dir_&quot;</span></tt>) A prefix for the directory name.</li>
+<li><tt class="docutils literal"><span class="pre">ext</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;&quot;</span></tt>) A suffix for the directory name.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The absolute path of the temporary directory created, with a
+trailing slash (or whatever the path separator is on your OS).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">(</span><span class="s">&#39;dir_testing_&#39;</span><span class="p">,</span> <span class="s">&#39;.extension&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span>   <span class="c"># random output</span>
+<span class="go">&#39;/home/username/.sage/temp/hostname/7961/dir_testing_XgRu4p.extension/&#39;</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;file_inside_d&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Temporary directories are unaccessible by other users:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span> <span class="o">&amp;</span> <span class="mi">0</span><span class="n">o077</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.temporary_file.tmp_filename">
+<tt class="descclassname">sage.misc.temporary_file.</tt><tt class="descname">tmp_filename</tt><big>(</big><em>name='tmp_'</em>, <em>ext=''</em><big>)</big><a class="headerlink" href="#sage.misc.temporary_file.tmp_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and return a temporary file in
+<tt class="docutils literal"><span class="pre">$HOME/.sage/temp/hostname/pid/</span></tt></p>
+<p>The temporary file is deleted automatically when Sage exits.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If you need a particular file extension always use
+<tt class="docutils literal"><span class="pre">tmp_filename(ext=&quot;.foo&quot;)</span></tt>, this will ensure that the file
+does not yet exist. If you were to use
+<tt class="docutils literal"><span class="pre">tmp_filename()+&quot;.foo&quot;</span></tt>, then you might overwrite an
+existing file!</p>
+</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;tmp_&quot;</span></tt>) A prefix for the file name.</li>
+<li><tt class="docutils literal"><span class="pre">ext</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">&quot;&quot;</span></tt>) A suffix for the file name. If you
+want a filename extension in the usual sense, this should start
+with a dot.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The absolute path of the temporary file created.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">(</span><span class="s">&#39;just_for_testing_&#39;</span><span class="p">,</span> <span class="s">&#39;.extension&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">fn</span>  <span class="c"># random</span>
+<span class="go">&#39;/home/username/.sage/temp/hostname/8044/just_for_testing_tVVHsn.extension&#39;</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Temporary files are unaccessible by other users:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span> <span class="o">&amp;</span> <span class="mi">0</span><span class="n">o077</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="misc.html"
+                                  title="previous chapter">Miscellaneous functions</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="constant_function.html"
+                                  title="next chapter">Constant functions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/temporary_file.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constant_function.html" title="Constant functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="misc.html" title="Miscellaneous functions"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Miscellaneous</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

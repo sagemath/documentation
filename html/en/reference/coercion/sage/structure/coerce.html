@@ -1,0 +1,1090 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Coercion Model &mdash; Sage Reference Manual v6.6: Coercion</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Coercion" href="../../index.html" />
+    <link rel="next" title="Coerce actions" href="coerce_actions.html" />
+    <link rel="prev" title="Coercion" href="../../index.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coerce_actions.html" title="Coerce actions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Coercion"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Coercion</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-coercion-model">
+<span id="sage-structure-coerce"></span><h1>The Coercion Model<a class="headerlink" href="#the-coercion-model" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.structure.coerce"></span><p>The coercion model manages how elements of one parent get related to elements
+of another. For example, the integer 2 can canonically be viewed as an element
+of the rational numbers. (The Parent of a non-element is its Python type.)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ZZ</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">QQ</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+</pre></div>
+</div>
+<p>The most prominent role of the coercion model is to make sense of binary
+operations between elements that have distinct parents. It does this by
+finding a parent where both elements make sense, and doing the operation
+there. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">;</span> <span class="n">a</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gen</span><span class="p">();</span> <span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">+</span><span class="n">b</span>
+<span class="go">x + 1/2</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<p>If there is a coercion (see below) from one of the parents to the other,
+the operation is always performed in the codomain of that coercion. Otherwise
+a reasonable attempt to create a new parent with coercion maps from both
+original parents is made. The results of these discoveries are cached.
+On failure, a TypeError is always raised.</p>
+<p>Some arithmetic operations (such as multiplication) can indicate an action
+rather than arithmetic in a common parent. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;37a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">E</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="mi">5</span><span class="o">*</span><span class="n">P</span>
+<span class="go">(1/4 : -5/8 : 1)</span>
+</pre></div>
+</div>
+<p>where there is action of <span class="math">\(\ZZ\)</span> on the points of <span class="math">\(E\)</span> given by the additive
+group law. Parents can specify how they act on or are acted upon by other
+parents.</p>
+<p>There are two kinds of ways to get from one parent to another, coercions and
+conversions.</p>
+<p>Coercions are canonical (possibly modulo a finite number of
+deterministic choices) morphisms, and the set of all coercions between
+all parents forms a commuting diagram (modulo possibly rounding
+issues). <span class="math">\(\ZZ \rightarrow \QQ\)</span> is an example of a
+coercion. These are invoked implicitly by the coercion model.</p>
+<p>Conversions try to construct an element out of their input if at all possible.
+Examples include sections of coercions, creating an element from a string or
+list, etc. and may fail on some inputs of a given type while succeeding on
+others (i.e. they may not be defined on the whole domain). Conversions are
+always explicitly invoked, and never used by the coercion model to resolve
+binary operations.</p>
+<p>For more information on how to specify coercions, conversions, and actions,
+see the documentation for Parent.</p>
+<dl class="class">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps">
+<em class="property">class </em><tt class="descclassname">sage.structure.coerce.</tt><tt class="descname">CoercionModel_cache_maps</tt><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.CoercionModel" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.CoercionModel</span></tt></a></p>
+<p>See also sage.categories.pushout</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="n">CyclotomicField</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span><span class="o">.</span><span class="n">gen</span><span class="p">();</span> <span class="n">f</span>
+<span class="go">t + x + (zeta13)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Multivariate Polynomial Ring in t, x over Cyclotomic Field of order 13 and degree 12</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="o">~</span><span class="n">Frac</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="mi">0</span>
+<span class="go">(x*y + 1)/y</span>
+<span class="gp">sage: </span><span class="n">MatrixSpace</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="o">~</span><span class="n">Frac</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span><span class="o">.</span><span class="mi">0</span>
+<span class="go">[(2*x + 1)/x           0]</span>
+<span class="go">[          0 (2*x + 1)/x]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x,y,z&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;w,x,z,a&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span><span class="p">;</span> <span class="n">f</span>
+<span class="go">w + x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Multivariate Polynomial Ring in w, x, y, z, a over Rational Field</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x,y,z&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;w,x,z,a&#39;</span><span class="p">]</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">2*x</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Robert Bradshaw</li>
+</ul>
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.analyse">
+<tt class="descname">analyse</tt><big>(</big><em>xp</em>, <em>yp</em>, <em>op='mul'</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.analyse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Emulate the process of doing arithmetic between xp and yp, returning
+a list of steps and the parent that the result will live in. The
+<tt class="docutils literal"><span class="pre">explain</span></tt> function is easier to use, but if one wants access to
+the actual morphism and action objects (rather than their string
+representations) then this is the function to use.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">steps</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">analyse</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">steps</span>
+<span class="go">[&#39;Coercion on right operand via&#39;, Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Finite Field of size 7, &#39;Arithmetic performed after coercions.&#39;]</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">res</span>
+<span class="go">Finite Field of size 7</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">steps</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="nb">type</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.finite_rings.integer_mod.Integer_to_IntegerMod&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.bin_op">
+<tt class="descname">bin_op</tt><big>(</big><em>x</em>, <em>y</em>, <em>op</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.bin_op" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute the operation op on x and y. It first looks for an action
+corresponding to op, and failing that, it tries to coerces x and y
+into a common parent and calls op on them.</p>
+<p>If it cannot make sense of the operation, a TypeError is raised.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">x</span></tt>  - the left operand</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">y</span></tt>  - the right operand</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">op</span></tt> - a python function taking 2 arguments</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">op is often an arithmetic operation, but need not be so.</p>
+</div>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">bin_op</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">5/2</span>
+</pre></div>
+</div>
+<p>The operator can be any callable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">bin_op</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">gcd</span><span class="p">)</span>
+<span class="go">x + 1</span>
+</pre></div>
+</div>
+<p>Actions are detected and performed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">V</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">bin_op</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">(7, 31)</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+<span class="gp">... </span>     <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">):</span>
+<span class="gp">... </span>         <span class="k">return</span> <span class="s">&#39;hello&#39;</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">H</span>
+<span class="go">hello</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">Integer</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">H</span>
+<span class="go">hello</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">H</span><span class="o">*</span><span class="mi">3</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: unsupported operand parent(s) for &#39;*&#39;</span>: <span class="n-Identifier">&#39;&lt;type &#39;instance&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">Nonsense</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">s</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="n">Nonsense</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">x</span><span class="o">%</span><span class="mi">256</span><span class="p">))</span>
+<span class="gp">... </span>      <span class="n">__add__</span> <span class="o">=</span> <span class="n">__mul__</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="n">Nonsense</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">x</span><span class="o">%</span><span class="mi">256</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+<span class="gp">... </span>      <span class="n">__radd__</span> <span class="o">=</span> <span class="n">__rmul__</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Nonsense</span><span class="p">(</span><span class="s">&#39;blahblah&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">*</span><span class="mi">80</span>
+<span class="go">blahblahP</span>
+<span class="gp">sage: </span><span class="mi">80</span><span class="o">*</span><span class="n">a</span>
+<span class="go">Pblahblah</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">+</span><span class="mi">80</span>
+<span class="go">blahblahP</span>
+<span class="gp">sage: </span><span class="mi">80</span><span class="o">+</span><span class="n">a</span>
+<span class="go">Pblahblah</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.canonical_coercion">
+<tt class="descname">canonical_coercion</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.canonical_coercion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given two elements x and y, with parents S and R respectively,
+find a common parent Z such that there are coercions
+<span class="math">\(f: S \mapsto Z\)</span> and <span class="math">\(g: R \mapsto Z\)</span> and return <span class="math">\(f(x), g(y)\)</span>
+which will have the same parent.</p>
+<p>Raises a type error if no such Z can be found.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">canonical_coercion</span><span class="p">(</span><span class="n">mod</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="mi">17</span><span class="p">)</span>
+<span class="go">(2, 7)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">canonical_coercion</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<span class="gp">sage: </span><span class="n">x</span>
+<span class="go">[1/2   0]</span>
+<span class="go">[  0 1/2]</span>
+<span class="gp">sage: </span><span class="n">y</span>
+<span class="go">[0 1]</span>
+<span class="go">[2 3]</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="n">parent</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>There is some support for non-Sage datatypes as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">canonical_coercion</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">(&lt;type &#39;sage.rings.integer.Integer&#39;&gt;, &lt;type &#39;sage.rings.integer.Integer&#39;&gt;)</span>
+
+
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">canonical_coercion</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="nb">complex</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">(&lt;type &#39;complex&#39;&gt;, &lt;type &#39;complex&#39;&gt;)</span>
+
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
+<span class="gp">... </span>      <span class="k">def</span> <span class="nf">_sage_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>          <span class="k">return</span> <span class="mi">13</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">canonical_coercion</span><span class="p">(</span><span class="n">MyClass</span><span class="p">(),</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+<span class="go">(13, 1/3)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.rational.Rational&#39;&gt;</span>
+</pre></div>
+</div>
+<p>We also make an exception for 0, even if <span class="math">\(\ZZ\)</span> does not map in:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">canonical_coercion</span><span class="p">(</span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">((1, 2, 3), (0, 0, 0))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.coercion_maps">
+<tt class="descname">coercion_maps</tt><big>(</big><em>R</em>, <em>S</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.coercion_maps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Give two parents <span class="math">\(R\)</span> and <span class="math">\(S\)</span>, return a pair of coercion maps
+<span class="math">\(f: R \rightarrow Z\)</span> and <span class="math">\(g: S \rightarrow Z\)</span> , if such a <span class="math">\(Z\)</span>
+can be found.</p>
+<p>In the (common) case that <span class="math">\(R=Z\)</span> or <span class="math">\(S=Z\)</span> then <tt class="docutils literal"><span class="pre">None</span></tt> is returned
+for <span class="math">\(f\)</span> or <span class="math">\(g\)</span> respectively rather than constructing (and subsequently
+calling) the identity morphism.</p>
+<p>If no suitable <span class="math">\(f, g\)</span> can be found, a single <tt class="docutils literal"><span class="pre">None</span></tt> is returned.
+This result is cached.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">By <a class="reference external" href="http://trac.sagemath.org/14711">trac ticket #14711</a>, coerce maps should be copied when using them
+outside of the coercion system, because they may become defunct
+by garbage collection.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">coercion_maps</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">copy</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">g</span>
+<span class="go">None</span>
+
+<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">coercion_maps</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">f</span>
+<span class="go">(map internal to coercion system -- copy before use)</span>
+<span class="go">Ring morphism:</span>
+<span class="go">  From: Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">  To:   Univariate Polynomial Ring in x over Rational Field</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">g</span>
+<span class="go">(map internal to coercion system -- copy before use)</span>
+<span class="go">Polynomial base injection morphism:</span>
+<span class="go">  From: Rational Field</span>
+<span class="go">  To:   Univariate Polynomial Ring in x over Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">coercion_maps</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span> <span class="ow">is</span> <span class="bp">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that to break symmetry, if there is a coercion map in both
+directions, the parent on the left is used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">V</span> <span class="o">=</span> <span class="n">QQ</span><span class="o">^</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">__class__</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">V</span> <span class="o">==</span> <span class="n">W</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">V</span> <span class="ow">is</span> <span class="n">W</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">coercion_maps</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
+<span class="go">(None, (map internal to coercion system -- copy before use)</span>
+<span class="go">Call morphism:</span>
+<span class="go">  From: Vector space of dimension 3 over Rational Field</span>
+<span class="go">  To:   Vector space of dimension 3 over Rational Field)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">coercion_maps</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">V</span><span class="p">)</span>
+<span class="go">(None, (map internal to coercion system -- copy before use)</span>
+<span class="go">Call morphism:</span>
+<span class="go">  From: Vector space of dimension 3 over Rational Field</span>
+<span class="go">  To:   Vector space of dimension 3 over Rational Field)</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">V</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">W</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="n">w</span><span class="p">)</span> <span class="ow">is</span> <span class="n">V</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">w</span><span class="o">+</span><span class="n">v</span><span class="p">)</span> <span class="ow">is</span> <span class="n">W</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.common_parent">
+<tt class="descname">common_parent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.common_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a common parent for all the inputs. It&#8217;s essentially
+an <span class="math">\(n\)</span>-ary canonical coercion except it can operate on parents
+rather than just elements.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">args</span></tt> &#8211; a set of elements and/or parents</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A <a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Parent</span></tt></a> into which each input should coerce, or raises a
+<tt class="docutils literal"><span class="pre">TypeError</span></tt> if no such <a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Parent</span></tt></a> can be found.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">RR</span><span class="p">)</span>
+<span class="go">Real Field with 53 bits of precision</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[[</span><span class="s">&#39;T&#39;</span><span class="p">]],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;T&#39;</span><span class="p">],</span> <span class="n">RDF</span><span class="p">)</span>
+<span class="go">Power Series Ring in T over Real Double Field</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="mi">4</span><span class="n">r</span><span class="p">,</span> <span class="mi">5</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&lt;type &#39;int&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="go">&lt;type &#39;float&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">RealField</span><span class="p">(</span><span class="n">prec</span><span class="p">)</span> <span class="k">for</span> <span class="n">prec</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mf">20.</span><span class="o">.</span><span class="mi">100</span><span class="p">]])</span>
+<span class="go">Real Field with 10 bits of precision</span>
+</pre></div>
+</div>
+<p>There are some cases where the ordering does matter, but if a parent
+can be found it is always the same:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x,y&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;y,z&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;y,z&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x,y&#39;</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x,y&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;y,z&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;z,t&#39;</span><span class="p">])</span>
+<span class="go">Multivariate Polynomial Ring in x, y, z, t over Rational Field</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">common_parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x,y&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;z,t&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;y,z&#39;</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: no common canonical parent for objects with parents</span>: <span class="n-Identifier">&#39;Multivariate Polynomial Ring in x, y over Rational Field&#39; and &#39;Multivariate Polynomial Ring in z, t over Rational Field&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.discover_action">
+<tt class="descname">discover_action</tt><big>(</big><em>R</em>, <em>S</em>, <em>op</em>, <em>r=None</em>, <em>s=None</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.discover_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">R</span></tt> - the left Parent (or type)</li>
+<li><tt class="docutils literal"><span class="pre">S</span></tt> - the right Parent (or type)</li>
+<li><tt class="docutils literal"><span class="pre">op</span></tt> - the operand, typically an element of the operator module</li>
+<li><tt class="docutils literal"><span class="pre">r</span></tt> - (optional) element of R</li>
+<li><tt class="docutils literal"><span class="pre">s</span></tt> - (optional) element of S.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>An action A such that s op r is given by A(s,r).</li>
+</ul>
+<p>The steps taken are illustrated below.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If R or S is a Parent, ask it for an action by/on R:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_action</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Left scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+</pre></div>
+</div>
+<p>If R or S a type, recursively call get_action with the Sage versions of R and/or S:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_action</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">with precomposition on right by Native morphism:</span>
+<span class="go">  From: Set of Python objects of type &#39;int&#39;</span>
+<span class="go">  To:   Integer Ring</span>
+</pre></div>
+</div>
+<p>If op in an inplace operation, look for the non-inplace action:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_action</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">imul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+</pre></div>
+</div>
+<p>If op is division, look for action on right by inverse:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_action</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Right inverse action by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">with precomposition on right by Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field</span>
+</pre></div>
+</div>
+<p>Bug <a class="reference external" href="http://trac.sagemath.org/17740">trac ticket #17740</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_action</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Right inverse action by Finite Field of size 5 on Univariate Polynomial Ring in x over Finite Field of size 5</span>
+<span class="go">with precomposition on right by Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">bin_op</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)[</span><span class="s">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gen</span><span class="p">(),</span> <span class="mi">7</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Finite Field of size 5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.discover_coercion">
+<tt class="descname">discover_coercion</tt><big>(</big><em>R</em>, <em>S</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.discover_coercion" title="Permalink to this definition">¶</a></dt>
+<dd><p>This actually implements the finding of coercion maps as described in
+the <tt class="docutils literal"><span class="pre">coercion_maps</span></tt> method.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If R is S, then two identity morphisms suffice:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_coercion</span><span class="p">(</span><span class="n">SR</span><span class="p">,</span> <span class="n">SR</span><span class="p">)</span>
+<span class="go">(None, None)</span>
+</pre></div>
+</div>
+<p>If there is a coercion map either direction, use that:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_coercion</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="go">((map internal to coercion system -- copy before use)</span>
+<span class="go">Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field, None)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_coercion</span><span class="p">(</span><span class="n">RR</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="go">(None, (map internal to coercion system -- copy before use)</span>
+<span class="go"> Generic map:</span>
+<span class="go">  From: Rational Field</span>
+<span class="go">  To:   Real Field with 53 bits of precision)</span>
+</pre></div>
+</div>
+<p>Otherwise, try and compute an appropriate cover:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">discover_coercion</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x,y&#39;</span><span class="p">],</span> <span class="n">RDF</span><span class="p">)</span>
+<span class="go">((map internal to coercion system -- copy before use)</span>
+<span class="go">Call morphism:</span>
+<span class="go">  From: Multivariate Polynomial Ring in x, y over Integer Ring</span>
+<span class="go">  To:   Multivariate Polynomial Ring in x, y over Real Double Field,</span>
+<span class="go"> Polynomial base injection morphism:</span>
+<span class="go">  From: Real Double Field</span>
+<span class="go">  To:   Multivariate Polynomial Ring in x, y over Real Double Field)</span>
+</pre></div>
+</div>
+<p>Sometimes there is a reasonable &#8220;cover,&#8221; but no canonical coercion:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">pushout</span><span class="o">.</span><span class="n">pushout</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">QQ</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">Vector space of dimension 3 over Rational Field</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">cm</span><span class="o">.</span><span class="n">discover_coercion</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">QQ</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.division_parent">
+<tt class="descname">division_parent</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.division_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deduces where the result of division in parent lies by calculating
+the inverse of <tt class="docutils literal"><span class="pre">parent.one()</span></tt> or <tt class="docutils literal"><span class="pre">parent.an_element()</span></tt>.</p>
+<p>The result is cached.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
+<span class="go">Fraction Field of Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">41</span><span class="p">))</span>
+<span class="go">Finite Field of size 41</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">Integers</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="go">Ring of integers modulo 100</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">division_parent</span><span class="p">(</span><span class="n">SymmetricGroup</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">Symmetric group of order 5! as a permutation group</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.exception_stack">
+<tt class="descname">exception_stack</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.exception_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of exceptions that were caught in the course of
+executing the last binary operation. Useful for diagnosis when
+user-defined maps or actions raise exceptions that are caught in
+the course of coercion detection.</p>
+<p>If all went well, this should be the empty list. If things aren&#8217;t
+happening as you expect, this is a good place to check. See also
+<a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.coercion_traceback" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-func docutils literal"><span class="pre">coercion_traceback()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">record_exceptions</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span>
+<span class="go">5/2</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">exception_stack</span><span class="p">()</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: unsupported operand parent(s) for &#39;+&#39;</span>: <span class="n-Identifier">&#39;Rational Field&#39; and &#39;Finite Field of size 3&#39;</span>
+</pre></div>
+</div>
+<p>Now see what the actual problem was:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">traceback</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">exception_stack</span><span class="p">()</span>
+<span class="go">[&#39;Traceback (most recent call last):...&#39;, &#39;Traceback (most recent call last):...&#39;]</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">cm</span><span class="o">.</span><span class="n">exception_stack</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: no common canonical parent for objects with parents</span>: <span class="n-Identifier">&#39;Rational Field&#39; and &#39;Finite Field of size 3&#39;</span>
+</pre></div>
+</div>
+<p>This is typically accessed via the <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.coercion_traceback" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-func docutils literal"><span class="pre">coercion_traceback()</span></tt></a> function.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">coercion_traceback</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError: no common canonical parent for objects with parents</span>: <span class="n-Identifier">&#39;Rational Field&#39; and &#39;Finite Field of size 3&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.explain">
+<tt class="descname">explain</tt><big>(</big><em>xp</em>, <em>yp</em>, <em>op='mul'</em>, <em>verbosity=2</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.explain" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function can be used to understand what coercions will happen
+for an arithmetic operation between xp and yp (which may be either
+elements or parents). If the parent of the result can be determined
+then it will be returned.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="go">Identical parents, arithmetic performed immediately.</span>
+<span class="go">Result lives in Integer Ring</span>
+<span class="go">Integer Ring</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+<span class="go">Coercion on right operand via</span>
+<span class="go">    Native morphism:</span>
+<span class="go">      From: Set of Python objects of type &#39;int&#39;</span>
+<span class="go">      To:   Rational Field</span>
+<span class="go">Arithmetic performed after coercions.</span>
+<span class="go">Result lives in Rational Field</span>
+<span class="go">Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="go">Action discovered.</span>
+<span class="go">    Right scalar multiplication by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">Result lives in Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">)</span>
+<span class="go">Coercion on left operand via</span>
+<span class="go">    Ring morphism:</span>
+<span class="go">      From: Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">      To:   Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">      Defn: Induced from base ring by</span>
+<span class="go">            Natural morphism:</span>
+<span class="go">              From: Integer Ring</span>
+<span class="go">              To:   Rational Field</span>
+<span class="go">Coercion on right operand via</span>
+<span class="go">    Polynomial base injection morphism:</span>
+<span class="go">      From: Rational Field</span>
+<span class="go">      To:   Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">Arithmetic performed after coercions.</span>
+<span class="go">Result lives in Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<p>Sometimes with non-sage types there is not enough information to deduce
+what will actually happen:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">RealField</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="nb">float</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">)</span>
+<span class="go">Right operand is numeric, will attempt coercion in both directions.</span>
+<span class="go">Unknown result parent.</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">RealField</span><span class="p">(</span><span class="mi">100</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">&lt;type &#39;float&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">)</span>
+<span class="go">Right operand is numeric, will attempt coercion in both directions.</span>
+<span class="go">Unknown result parent.</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">QQ</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">&lt;type &#39;float&#39;&gt;</span>
+</pre></div>
+</div>
+<p>Special care is taken to deal with division:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Identical parents, arithmetic performed immediately.</span>
+<span class="go">Result lives in Rational Field</span>
+<span class="go">Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Coercion on left operand via</span>
+<span class="go">    Ring morphism:</span>
+<span class="go">      From: Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">      To:   Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">      Defn: Induced from base ring by</span>
+<span class="go">            Natural morphism:</span>
+<span class="go">              From: Integer Ring</span>
+<span class="go">              To:   Rational Field</span>
+<span class="go">Arithmetic performed after coercions.</span>
+<span class="go">Result lives in Fraction Field of Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">Fraction Field of Univariate Polynomial Ring in x over Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Coercion on left operand via</span>
+<span class="go">    Native morphism:</span>
+<span class="go">      From: Set of Python objects of type &#39;int&#39;</span>
+<span class="go">      To:   Integer Ring</span>
+<span class="go">Arithmetic performed after coercions.</span>
+<span class="go">Result lives in Rational Field</span>
+<span class="go">Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">)</span>
+<span class="go">Action discovered.</span>
+<span class="go">    Right inverse action by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">    with precomposition on right by Natural morphism:</span>
+<span class="go">      From: Integer Ring</span>
+<span class="go">      To:   Rational Field</span>
+<span class="go">Result lives in Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function is accurate only in so far as analyse is kept
+in sync with the <a class="reference internal" href="#sage.structure.coerce.CoercionModel_cache_maps.bin_op" title="sage.structure.coerce.CoercionModel_cache_maps.bin_op"><tt class="xref py py-meth docutils literal"><span class="pre">bin_op()</span></tt></a> and
+<a class="reference internal" href="#sage.structure.coerce.CoercionModel_cache_maps.canonical_coercion" title="sage.structure.coerce.CoercionModel_cache_maps.canonical_coercion"><tt class="xref py py-meth docutils literal"><span class="pre">canonical_coercion()</span></tt></a> which are kept separate for
+maximal efficiency.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.get_action">
+<tt class="descname">get_action</tt><big>(</big><em>R</em>, <em>S</em>, <em>op</em>, <em>r=None</em>, <em>s=None</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.get_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the action of R on S or S on R associated to the operation op.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">imul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">with precomposition on right by Native morphism:</span>
+<span class="go">  From: Set of Python objects of type &#39;int&#39;</span>
+<span class="go">  To:   Integer Ring</span>
+
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">div</span><span class="p">);</span> <span class="n">A</span>
+<span class="go">Right inverse action by Rational Field on Univariate Polynomial Ring in x over Rational Field</span>
+<span class="go">with precomposition on right by Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">1/5*x + 2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.get_cache">
+<tt class="descname">get_cache</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.get_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>This returns the current cache of coercion maps and actions, primarily
+useful for debugging and introspection.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span>
+<span class="go">3/2</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">maps</span><span class="p">,</span> <span class="n">actions</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now lets see what happens when we do a binary operations with
+an integer and a rational:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">left_morphism</span><span class="p">,</span> <span class="n">right_morphism</span> <span class="o">=</span> <span class="n">maps</span><span class="p">[</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">copy</span><span class="p">(</span><span class="n">left_morphism</span><span class="p">)</span>
+<span class="go">Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">right_morphism</span>
+<span class="go">None</span>
+</pre></div>
+</div>
+<p>We can see that it coerces the left operand from an integer to a
+rational, and doesn&#8217;t do anything to the right.</p>
+<p>Now for some actions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
+<span class="go">1/2*x</span>
+<span class="gp">sage: </span><span class="n">maps</span><span class="p">,</span> <span class="n">actions</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">act</span> <span class="o">=</span> <span class="n">actions</span><span class="p">[</span><span class="n">QQ</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">];</span> <span class="n">act</span>
+<span class="go">Left scalar multiplication by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">act</span><span class="o">.</span><span class="n">actor</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">act</span><span class="o">.</span><span class="n">domain</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">act</span><span class="o">.</span><span class="n">codomain</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+<span class="gp">sage: </span><span class="n">act</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">1/5*x + 2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.record_exceptions">
+<tt class="descname">record_exceptions</tt><big>(</big><em>value=True</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.record_exceptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables (or disables) recording of the exceptions suppressed during
+arithmetic.</p>
+<p>Each time that record_exceptions is called (either enabling or disabling
+the record), the exception_stack is cleared.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">record_exceptions</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">_test_exception_stack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">exception_stack</span><span class="p">()</span>
+<span class="go">[&#39;Traceback (most recent call last):\n  File &quot;sage/structure/coerce.pyx&quot;, line ...TypeError: just a test&#39;]</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">record_exceptions</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">_test_exception_stack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">exception_stack</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.reset_cache">
+<tt class="descname">reset_cache</tt><big>(</big><em>lookup_dict_size=127</em>, <em>lookup_dict_threshold=0.75</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.reset_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the coercion cache.</p>
+<p>This should have no impact on the result of arithmetic operations, as
+the exact same coercions and actions will be re-discovered when needed.</p>
+<p>It may be useful for debugging, and may also free some memory.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>    <span class="c"># random</span>
+<span class="go">42</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">reset_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">get_cache</span><span class="p">()</span>
+<span class="go">({}, {})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.verify_action">
+<tt class="descname">verify_action</tt><big>(</big><em>action</em>, <em>R</em>, <em>S</em>, <em>op</em>, <em>fix=True</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.verify_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify that <tt class="docutils literal"><span class="pre">action</span></tt> takes an element of R on the left and S
+on the right, raising an error if not.</p>
+<p>This is used for consistency checking in the coercion model.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">verify_action</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">QQ</span><span class="p">),</span> <span class="n">R</span><span class="p">,</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="go">Right scalar multiplication by Rational Field on Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">verify_action</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">QQ</span><span class="p">),</span> <span class="n">RDF</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">There is a BUG in the coercion model:</span>
+<span class="go">    Action found for R &lt;built-in function mul&gt; S does not have the correct domains</span>
+<span class="go">    R = Real Double Field</span>
+<span class="go">    S = Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="go">    (should be Univariate Polynomial Ring in x over Integer Ring, Rational Field)</span>
+<span class="go">    action = Right scalar multiplication by Rational Field on Univariate Polynomial Ring in x over Integer Ring (&lt;type &#39;sage.structure.coerce_actions.RightModuleAction&#39;&gt;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.coerce.CoercionModel_cache_maps.verify_coercion_maps">
+<tt class="descname">verify_coercion_maps</tt><big>(</big><em>R</em>, <em>S</em>, <em>homs</em>, <em>fix=False</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.CoercionModel_cache_maps.verify_coercion_maps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure this is a valid pair of homomorphisms from R and S to a common parent.
+This function is used to protect the user against buggy parents.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">homs</span> <span class="o">=</span> <span class="n">QQ</span><span class="o">.</span><span class="n">coerce_map_from</span><span class="p">(</span><span class="n">ZZ</span><span class="p">),</span> <span class="bp">None</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">verify_coercion_maps</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">homs</span><span class="p">)</span> <span class="o">==</span> <span class="n">homs</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">homs</span> <span class="o">=</span> <span class="n">QQ</span><span class="o">.</span><span class="n">coerce_map_from</span><span class="p">(</span><span class="n">ZZ</span><span class="p">),</span> <span class="n">RR</span><span class="o">.</span><span class="n">coerce_map_from</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">verify_coercion_maps</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">QQ</span><span class="p">,</span> <span class="n">homs</span><span class="p">)</span> <span class="o">==</span> <span class="n">homs</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">(&#39;BUG in coercion model, codomains must be identical&#39;, Natural morphism:</span>
+<span class="go">  From: Integer Ring</span>
+<span class="go">  To:   Rational Field, Generic map:</span>
+<span class="go">  From: Rational Field</span>
+<span class="go">  To:   Real Field with 53 bits of precision)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.structure.coerce.py_scalar_parent">
+<tt class="descclassname">sage.structure.coerce.</tt><tt class="descname">py_scalar_parent</tt><big>(</big><em>py_type</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.py_scalar_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Sage equivalent of the given python type, if one exists.
+If there is no equivalent, return None.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce</span> <span class="kn">import</span> <span class="n">py_scalar_parent</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">long</span><span class="p">)</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="go">Real Double Field</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">complex</span><span class="p">)</span>
+<span class="go">Complex Double Field</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">py_scalar_parent</span><span class="p">(</span><span class="nb">dict</span><span class="p">),</span>
+<span class="go">(None,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.structure.coerce.py_scalar_to_element">
+<tt class="descclassname">sage.structure.coerce.</tt><tt class="descname">py_scalar_to_element</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.structure.coerce.py_scalar_to_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <tt class="docutils literal"><span class="pre">x</span></tt> to a Sage <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Element" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> if possible.</p>
+<p>If <tt class="docutils literal"><span class="pre">x</span></tt> was already an <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Element" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">Element</span></tt></a> or if there is no obvious
+conversion possible, just return <tt class="docutils literal"><span class="pre">x</span></tt> itself.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce</span> <span class="kn">import</span> <span class="n">py_scalar_to_element</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(42, Integer Ring)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(42, Integer Ring)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="nb">long</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(42, Integer Ring)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(42.0, Real Double Field)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span> <span class="n">parent</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">(42.0, Complex Double Field)</span>
+<span class="gp">sage: </span><span class="n">py_scalar_to_element</span><span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">)</span>
+<span class="go">&#39;hello&#39;</span>
+</pre></div>
+</div>
+<p>Note that bools are converted to 0 or 1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">py_scalar_to_element</span><span class="p">(</span><span class="bp">False</span><span class="p">),</span> <span class="n">py_scalar_to_element</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">(0, 1)</span>
+</pre></div>
+</div>
+<p>Test compatibility with <a class="reference internal" href="#sage.structure.coerce.py_scalar_parent" title="sage.structure.coerce.py_scalar_parent"><tt class="xref py py-func docutils literal"><span class="pre">py_scalar_parent()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce</span> <span class="kn">import</span> <span class="n">py_scalar_parent</span>
+<span class="gp">sage: </span><span class="n">elt</span> <span class="o">=</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">42</span><span class="p">),</span> <span class="nb">long</span><span class="p">(</span><span class="mi">42</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="mi">42</span><span class="p">),</span> <span class="nb">complex</span><span class="p">(</span><span class="mi">42</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">elt</span><span class="p">:</span>
+<span class="go">....:     assert py_scalar_parent(type(x)) == py_scalar_to_element(x).parent()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../../index.html"
+                                  title="previous chapter">Coercion</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="coerce_actions.html"
+                                  title="next chapter">Coerce actions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/structure/coerce.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coerce_actions.html" title="Coerce actions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../../index.html" title="Coercion"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Coercion</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

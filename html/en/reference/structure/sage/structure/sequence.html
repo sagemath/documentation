@@ -1,0 +1,943 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Sequences &mdash; Sage Reference Manual v6.6: Basic Structures</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Basic Structures" href="../../index.html" />
+    <link rel="next" title="Element Wrapper" href="element_wrapper.html" />
+    <link rel="prev" title="Mutability Cython Implementation" href="mutability.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="element_wrapper.html" title="Element Wrapper"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mutability.html" title="Mutability Cython Implementation"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sequences">
+<span id="sage-structure-sequence"></span><h1>Sequences<a class="headerlink" href="#sequences" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.structure.sequence"></span><p>A mutable sequence of elements with a common guaranteed category,
+which can be set immutable.</p>
+<p>Sequence derives from list, so has all the functionality of lists and
+can be used wherever lists are used.  When a sequence is created
+without explicitly given the common universe of the elements, the
+constructor coerces the first and second element to some
+<em>canonical</em> common parent, if possible, then the second and
+third, etc.  If this is possible, it then coerces everything into the
+canonical parent at the end.  (Note that canonical coercion is very
+restrictive.)  The sequence then has a function <tt class="docutils literal"><span class="pre">universe()</span></tt>
+which returns either the common canonical parent (if the coercion
+succeeded), or the category of all objects (Objects()).  So if you
+have a list <span class="math">\(v\)</span> and type</p>
+<blockquote>
+<div>sage: v = [1, 2/3, 5]
+sage: w = Sequence(v)
+sage: w.universe()
+Rational Field</div></blockquote>
+<p>then since <tt class="docutils literal"><span class="pre">w.universe()</span></tt> is <span class="math">\(\QQ\)</span>, you&#8217;re guaranteed that all
+elements of <span class="math">\(w\)</span> are rationals:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+</pre></div>
+</div>
+<p>If you do assignment to <span class="math">\(w\)</span> this property of being rationals is guaranteed
+to be preserved.</p>
+<blockquote>
+<div>sage: w[0] = 2
+sage: w[0].parent()
+Rational Field
+sage: w[0] = &#8216;hi&#8217;
+Traceback (most recent call last):
+...
+TypeError: unable to convert hi to a rational</div></blockquote>
+<p>However, if you do <tt class="docutils literal"><span class="pre">w</span> <span class="pre">=</span> <span class="pre">Sequence(v)</span></tt> and the resulting universe
+is <tt class="docutils literal"><span class="pre">Objects()</span></tt>, the elements are not guaranteed to have any
+special parent.  This is what should happen, e.g., with finite field
+elements of different characteristics:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)(</span><span class="mi">1</span><span class="p">),</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">)(</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Category of objects</span>
+</pre></div>
+</div>
+<p>You can make a list immutable with <tt class="docutils literal"><span class="pre">v.freeze()</span></tt>.  Assignment is
+never again allowed on an immutable list.</p>
+<p>Creation of a sequence involves making a copy of the input list, and
+substantial coercions.  It can be greatly sped up by explicitly
+specifying the universe of the sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">),</span> <span class="n">universe</span><span class="o">=</span><span class="n">ZZ</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mf">1.</span><span class="o">.</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">==</span> <span class="n">v</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="function">
+<dt id="sage.structure.sequence.Sequence">
+<tt class="descclassname">sage.structure.sequence.</tt><tt class="descname">Sequence</tt><big>(</big><em>x</em>, <em>universe=None</em>, <em>check=True</em>, <em>immutable=False</em>, <em>cr=False</em>, <em>cr_str=None</em>, <em>use_sage_types=False</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mutable list of elements with a common guaranteed universe,
+which can be set immutable.</p>
+<p>A universe is either an object that supports coercion (e.g., a
+parent), or a category.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">x</span></tt> - a list or tuple instance</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">universe</span></tt> - (default: None) the universe of elements; if None
+determined using canonical coercions and the entire list of
+elements.  If list is empty, is category Objects() of all
+objects.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">check</span></tt> &#8211; (default: True) whether to coerce the elements of x
+into the universe</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">immutable</span></tt> - (default: True) whether or not this sequence is
+immutable</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cr</span></tt> - (default: False) if True, then print a carriage return
+after each comma when printing this sequence.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cr_str</span></tt> - (default: False) if True, then print a carriage return
+after each comma when calling <tt class="docutils literal"><span class="pre">str()</span></tt> on this sequence.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">use_sage_types</span></tt> &#8211; (default: False) if True, coerce the</dt>
+<dd><p class="first last">built-in Python numerical types int, long, float, complex to the
+corresponding Sage types (this makes functions like vector()
+more flexible)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a sequence</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">&lt;type &#39;int&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>We can request that the built-in Python numerical types be coerced
+to Sage objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">use_sage_types</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>You can also use seq for &#8220;Sequence&#8221;, which is identical to using
+Sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">seq</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="p">]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">[3, 4/3]</span>
+</pre></div>
+</div>
+<p>Note that assignment coerces if possible,:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">no conversion of this rational to integer</span>
+</pre></div>
+</div>
+<p>Sequences can be used absolutely anywhere lists or tuples can be used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Sequence can be immutable, so entries can&#8217;t be changed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>Only immutable sequences are hashable (unlike Python lists),
+though the hashing is potentially slow, since it first involves
+conversion of the sequence to a tuple, and returning the hash of
+that.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="go">1591723448             # 32-bit</span>
+<span class="go">-4181190870548101704   # 64-bit</span>
+</pre></div>
+</div>
+<p>If you really know what you are doing, you can circumvent the type
+checking (for an efficiency gain):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>        <span class="c"># bad circumvention</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>     <span class="c"># not so bad circumvention</span>
+</pre></div>
+</div>
+<p>You can make a sequence with a new universe from an old sequence.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>Sequences themselves live in a category, the category of all sequences
+in the given universe.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>This is also the parent of any sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>The default universe for any sequence, if no compatible parent structure
+can be found, is the universe of all Sage objects.</p>
+<p>This example illustrates how every element of a list is taken into account
+when constructing a sequence.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">3</span><span class="p">)]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1, 3]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="go">[2, 3, 4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.sequence.Sequence_generic">
+<em class="property">class </em><tt class="descclassname">sage.structure.sequence.</tt><tt class="descname">Sequence_generic</tt><big>(</big><em>x</em>, <em>universe=None</em>, <em>check=True</em>, <em>immutable=False</em>, <em>cr=False</em>, <em>cr_str=None</em>, <em>use_sage_types=False</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="sage_object.html#sage.structure.sage_object.SageObject" title="sage.structure.sage_object.SageObject"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a>, <a class="reference external" href="http://docs.python.org/library/functions.html#list" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">list</span></tt></a></p>
+<p>A mutable list of elements with a common guaranteed universe,
+which can be set immutable.</p>
+<p>A universe is either an object that supports coercion (e.g., a parent),
+or a category.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">x</span></tt> - a list or tuple instance</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">universe</span></tt> - (default: None) the universe of elements; if None
+determined using canonical coercions and the entire list of
+elements.  If list is empty, is category Objects() of all
+objects.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">check</span></tt> &#8211; (default: True) whether to coerce the elements of x
+into the universe</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">immutable</span></tt> - (default: True) whether or not this sequence is
+immutable</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cr</span></tt> - (default: False) if True, then print a carriage return
+after each comma when printing this sequence.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">use_sage_types</span></tt> &#8211; (default: False) if True, coerce the</dt>
+<dd><p class="first last">built-in Python numerical types int, long, float, complex to the
+corresponding Sage types (this makes functions like vector()
+more flexible)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a sequence</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">&lt;type &#39;int&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>We can request that the built-in Python numerical types be coerced
+to Sage objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">use_sage_types</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>You can also use seq for &#8220;Sequence&#8221;, which is identical to using Sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">seq</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="p">]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">[3, 4/3]</span>
+</pre></div>
+</div>
+<p>Note that assignment coerces if possible,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">no conversion of this rational to integer</span>
+</pre></div>
+</div>
+<p>Sequences can be used absolutely anywhere lists or tuples can be used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Sequence can be immutable, so entries can&#8217;t be changed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>Only immutable sequences are hashable (unlike Python lists),
+though the hashing is potentially slow, since it first involves
+conversion of the sequence to a tuple, and returning the hash of
+that.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="go">1591723448             # 32-bit</span>
+<span class="go">-4181190870548101704   # 64-bit</span>
+</pre></div>
+</div>
+<p>If you really know what you are doing, you can circumvent the type
+checking (for an efficiency gain):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>        <span class="c"># bad circumvention</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>     <span class="c"># not so bad circumvention</span>
+</pre></div>
+</div>
+<p>You can make a sequence with a new universe from an old sequence.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>Sequences themselves live in a category, the category of all sequences
+in the given universe.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>This is also the parent of any sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>The default universe for any sequence, if no compatible parent structure
+can be found, is the universe of all Sage objects.</p>
+<p>This example illustrates how every element of a list is taken into account
+when constructing a sequence.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">3</span><span class="p">)]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1, 3]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="go">[2, 3, 4]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.append">
+<tt class="descname">append</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.append" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>EXAMPLES:</dt>
+<dd>sage: v = Sequence([1,2,3,4], immutable=True)
+sage: v.append(34)
+Traceback (most recent call last):
+...
+ValueError: object is immutable; please change a copy instead.
+sage: v = Sequence([1/3,2,3,4])
+sage: v.append(4)
+sage: type(v[4])
+&lt;type &#8216;sage.rings.rational.Rational&#8217;&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.category">
+<tt class="descname">category</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.category" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.extend">
+<tt class="descname">extend</tt><big>(</big><em>iterable</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extend list by appending elements from the iterable.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[1, 2, 3, 0, 1, 2, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.insert">
+<tt class="descname">insert</tt><big>(</big><em>index</em>, <em>object</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert object before index.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[1, 2, 3, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.is_immutable">
+<tt class="descname">is_immutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.is_immutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this object is immutable (can not be changed)
+and False if it is not.</p>
+<p>To make this object immutable use <a class="reference internal" href="#sage.structure.sequence.Sequence_generic.set_immutable" title="sage.structure.sequence.Sequence_generic.set_immutable"><tt class="xref py py-meth docutils literal"><span class="pre">set_immutable()</span></tt></a>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[5, 2, 3, 4/5]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.is_mutable">
+<tt class="descname">is_mutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.is_mutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">&lt;type &#39;sage.rings.rational.Rational&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_mutable</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.parent">
+<tt class="descname">parent</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.pop">
+<tt class="descname">pop</tt><big>(</big><em>index=-1</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove and return item at index (default last)</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[1, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.remove">
+<tt class="descname">remove</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove first occurrence of value</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[1, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.reverse">
+<tt class="descname">reverse</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.reverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverse the elements of self, in place.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">reverse</span><span class="p">();</span> <span class="n">B</span>
+<span class="go">[3, 2, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.set_immutable">
+<tt class="descname">set_immutable</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.set_immutable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make this object immutable, so it can never again be changed.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[5, 2, 3, 4/5]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set_immutable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.sort">
+<tt class="descname">sort</tt><big>(</big><em>cmp=None</em>, <em>key=None</em>, <em>reverse=False</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort this list <em>IN PLACE</em>.</p>
+<p>cmp(x, y) -&gt; -1, 0, 1</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">B</span>
+<span class="go">[1/5, 2, 3]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">);</span> <span class="n">B</span>
+<span class="go">[3, 2, 1/5]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="nb">cmp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">));</span> <span class="n">B</span>
+<span class="go">[3, 2, 1/5]</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="nb">cmp</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">);</span> <span class="n">B</span>
+<span class="go">[1/5, 2, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.sequence.Sequence_generic.universe">
+<tt class="descname">universe</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.sequence.Sequence_generic.universe" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;-2/5&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Category of objects</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.structure.sequence.seq">
+<tt class="descclassname">sage.structure.sequence.</tt><tt class="descname">seq</tt><big>(</big><em>x</em>, <em>universe=None</em>, <em>check=True</em>, <em>immutable=False</em>, <em>cr=False</em>, <em>cr_str=None</em>, <em>use_sage_types=False</em><big>)</big><a class="headerlink" href="#sage.structure.sequence.seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mutable list of elements with a common guaranteed universe,
+which can be set immutable.</p>
+<p>A universe is either an object that supports coercion (e.g., a
+parent), or a category.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">x</span></tt> - a list or tuple instance</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">universe</span></tt> - (default: None) the universe of elements; if None
+determined using canonical coercions and the entire list of
+elements.  If list is empty, is category Objects() of all
+objects.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">check</span></tt> &#8211; (default: True) whether to coerce the elements of x
+into the universe</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">immutable</span></tt> - (default: True) whether or not this sequence is
+immutable</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cr</span></tt> - (default: False) if True, then print a carriage return
+after each comma when printing this sequence.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cr_str</span></tt> - (default: False) if True, then print a carriage return
+after each comma when calling <tt class="docutils literal"><span class="pre">str()</span></tt> on this sequence.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">use_sage_types</span></tt> &#8211; (default: False) if True, coerce the</dt>
+<dd><p class="first last">built-in Python numerical types int, long, float, complex to the
+corresponding Sage types (this makes functions like vector()
+more flexible)</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a sequence</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">&lt;type &#39;int&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>We can request that the built-in Python numerical types be coerced
+to Sage objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">use_sage_types</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>You can also use seq for &#8220;Sequence&#8221;, which is identical to using
+Sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">seq</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="p">]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">[3, 4/3]</span>
+</pre></div>
+</div>
+<p>Note that assignment coerces if possible,:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">no conversion of this rational to integer</span>
+</pre></div>
+</div>
+<p>Sequences can be used absolutely anywhere lists or tuples can be used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Sequence can be immutable, so entries can&#8217;t be changed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">is_immutable</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">ValueError</span>: <span class="n-Identifier">object is immutable; please change a copy instead.</span>
+</pre></div>
+</div>
+<p>Only immutable sequences are hashable (unlike Python lists),
+though the hashing is potentially slow, since it first involves
+conversion of the sequence to a tuple, and returning the hash of
+that.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">hash</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="go">1591723448             # 32-bit</span>
+<span class="go">-4181190870548101704   # 64-bit</span>
+</pre></div>
+</div>
+<p>If you really know what you are doing, you can circumvent the type
+checking (for an efficiency gain):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>        <span class="c"># bad circumvention</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>     <span class="c"># not so bad circumvention</span>
+</pre></div>
+</div>
+<p>You can make a sequence with a new universe from an old sequence.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Rational Field</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">w</span>
+<span class="go">[0, 2/3, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>Sequences themselves live in a category, the category of all sequences
+in the given universe.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>This is also the parent of any sequence:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Rational Field</span>
+</pre></div>
+</div>
+<p>The default universe for any sequence, if no compatible parent structure
+can be found, is the universe of all Sage objects.</p>
+<p>This example illustrates how every element of a list is taken into account
+when constructing a sequence.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">3</span><span class="p">)]);</span> <span class="n">v</span>
+<span class="go">[1, 2, 1, 3]</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">universe</span><span class="p">()</span>
+<span class="go">Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Category of sequences in Finite Field of size 5</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">parent</span><span class="p">()([</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+<span class="go">[2, 3, 4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="mutability.html"
+                                  title="previous chapter">Mutability Cython Implementation</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="element_wrapper.html"
+                                  title="next chapter">Element Wrapper</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/structure/sequence.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="element_wrapper.html" title="Element Wrapper"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mutability.html" title="Mutability Cython Implementation"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Basic Structures</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

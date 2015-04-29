@@ -1,0 +1,999 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Interface to GAP &mdash; Sage Reference Manual v6.6: Interpreter Interfaces</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Interpreter Interfaces" href="../../index.html" />
+    <link rel="next" title="Interface to GAP3" href="gap3.html" />
+    <link rel="prev" title="Interface to Frobby for fast computations on monomial ideals." href="frobby.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gap3.html" title="Interface to GAP3"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="frobby.html" title="Interface to Frobby for fast computations on monomial ideals."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Interpreter Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="interface-to-gap">
+<span id="sage-interfaces-gap"></span><h1>Interface to GAP<a class="headerlink" href="#interface-to-gap" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.interfaces.gap"></span><p>Sage provides an interface to the GAP system. This system provides
+extensive group theory, combinatorics, etc.</p>
+<p>The GAP interface will only work if GAP is installed on your
+computer; this should be the case, since GAP is included with Sage.
+The interface offers three pieces of functionality:</p>
+<ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">gap_console()</span></tt> - A function that dumps you into
+an interactive command-line GAP session.</li>
+<li><tt class="docutils literal"><span class="pre">gap(expr)</span></tt> - Evaluation of arbitrary GAP
+expressions, with the result returned as a string.</li>
+<li><tt class="docutils literal"><span class="pre">gap.new(expr)</span></tt> - Creation of a Sage object that
+wraps a GAP object. This provides a Pythonic interface to GAP. For
+example, if <tt class="docutils literal"><span class="pre">f=gap.new(10)</span></tt>, then
+<tt class="docutils literal"><span class="pre">f.Factors()</span></tt> returns the prime factorization of
+<span class="math">\(10\)</span> computed using GAP.</li>
+</ol>
+<div class="section" id="first-examples">
+<h2>First Examples<a class="headerlink" href="#first-examples" title="Permalink to this headline">¶</a></h2>
+<p>We factor an integer using GAP:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="mi">20062006</span><span class="p">);</span> <span class="n">n</span>
+<span class="go">20062006</span>
+<span class="gp">sage: </span><span class="n">n</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Gap</span>
+<span class="gp">sage: </span><span class="n">fac</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">Factors</span><span class="p">();</span> <span class="n">fac</span>
+<span class="go">[ 2, 17, 59, 73, 137 ]</span>
+<span class="gp">sage: </span><span class="n">fac</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Gap</span>
+<span class="gp">sage: </span><span class="n">fac</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="gap-and-singular">
+<h2>GAP and Singular<a class="headerlink" href="#gap-and-singular" title="Permalink to this headline">¶</a></h2>
+<p>This example illustrates conversion between Singular and GAP via
+Sage as an intermediate step. First we create and factor a Singular
+polynomial.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">singular</span><span class="p">(</span><span class="mi">389</span><span class="p">)</span>
+<span class="go">389</span>
+<span class="gp">sage: </span><span class="n">R1</span> <span class="o">=</span> <span class="n">singular</span><span class="o">.</span><span class="n">ring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;(x,y)&#39;</span><span class="p">,</span> <span class="s">&#39;dp&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">singular</span><span class="p">(</span><span class="s">&#39;9*x^16-18*x^13*y^2-9*x^12*y^3+9*x^10*y^4-18*x^11*y^2+36*x^8*y^4+18*x^7*y^5-18*x^5*y^6+9*x^6*y^4-18*x^3*y^6-9*x^2*y^7+9*y^8&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">factorize</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">F</span>
+<span class="go">[1]:</span>
+<span class="go">   _[1]=9</span>
+<span class="go">   _[2]=x^6-2*x^3*y^2-x^2*y^3+y^4</span>
+<span class="go">   _[3]=-x^5+y^2</span>
+<span class="go">[2]:</span>
+<span class="go">   1,1,2</span>
+</pre></div>
+</div>
+<p>Next we convert the factor <span class="math">\(-x^5+y^2\)</span> to a Sage
+multivariate polynomial. Note that it is important to let
+<span class="math">\(x\)</span> and <span class="math">\(y\)</span> be the generators of a polynomial ring,
+so the eval command works.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">sage_polystring</span><span class="p">();</span> <span class="n">s</span>
+<span class="go">&#39;-x**5+y**2&#39;</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">s</span><span class="p">);</span> <span class="n">g</span>
+<span class="go">-x^5 + y^2</span>
+</pre></div>
+</div>
+<p>Next we create a polynomial ring in GAP and obtain its
+indeterminates:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">PolynomialRing</span><span class="p">(</span><span class="s">&#39;Rationals&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span> <span class="n">R</span>
+<span class="go">PolynomialRing( Rationals, [&quot;x_1&quot;, &quot;x_2&quot;] )</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">IndeterminatesOfPolynomialRing</span><span class="p">();</span> <span class="n">I</span>
+<span class="go">[ x_1, x_2 ]</span>
+</pre></div>
+</div>
+<p>In order to eval <span class="math">\(g\)</span> in GAP, we need to tell GAP to view
+the variables <tt class="docutils literal"><span class="pre">x0</span></tt> and <tt class="docutils literal"><span class="pre">x1</span></tt> as the two
+generators of <span class="math">\(R\)</span>. This is the one tricky part. In the GAP
+interpreter the object <tt class="docutils literal"><span class="pre">I</span></tt> has its own name (which
+isn&#8217;t <tt class="docutils literal"><span class="pre">I</span></tt>). We can access its name using
+<tt class="docutils literal"><span class="pre">I.name()</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;x := </span><span class="si">%s</span><span class="s">[1];; y := </span><span class="si">%s</span><span class="s">[2];;&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span> <span class="n">I</span><span class="o">.</span><span class="n">name</span><span class="p">()))</span>
+</pre></div>
+</div>
+<p>Now <span class="math">\(x_0\)</span> and <span class="math">\(x_1\)</span> are defined, so we can
+construct the GAP polynomial <span class="math">\(f\)</span> corresponding to
+<span class="math">\(g\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">));</span> <span class="n">f</span>
+<span class="go">-x_1^5+x_2^2</span>
+</pre></div>
+</div>
+<p>We can call GAP functions on <span class="math">\(f\)</span>. For example, we evaluate
+the GAP <tt class="docutils literal"><span class="pre">Value</span></tt> function, which evaluates <span class="math">\(f\)</span>
+at the point <span class="math">\((1,2)\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">Value</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>        <span class="c"># agrees</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="saving-and-loading-objects">
+<h2>Saving and loading objects<a class="headerlink" href="#saving-and-loading-objects" title="Permalink to this headline">¶</a></h2>
+<p>Saving and loading GAP objects (using the dumps method, etc.) is
+<em>not</em> supported, since the output string representation of Gap
+objects is sometimes not valid input to GAP. Creating classes that
+wrap GAP objects <em>is</em> supported, via simply defining the a
+_gap_init_ member function that returns a string that when
+evaluated in GAP constructs the object. See
+<tt class="docutils literal"><span class="pre">groups/perm_gps/permgroup.py</span></tt> for a nontrivial
+example of this.</p>
+</div>
+<div class="section" id="long-input">
+<h2>Long Input<a class="headerlink" href="#long-input" title="Permalink to this headline">¶</a></h2>
+<p>The GAP interface reads in even very long input (using files) in a
+robust manner, as long as you are creating a new object.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Using <tt class="docutils literal"><span class="pre">gap.eval</span></tt> for long input is much less robust, and is not
+recommended.</p>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="s">&#39;&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span><span class="o">%</span><span class="mi">10</span><span class="o">^</span><span class="mi">10000</span>   <span class="c"># ten thousand character string.</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="changing-which-gap-is-used">
+<h2>Changing which GAP is used<a class="headerlink" href="#changing-which-gap-is-used" title="Permalink to this headline">¶</a></h2>
+<p>Use this code to change which GAP interpreter is run. E.g.,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">sage.interfaces.gap</span>
+<span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">gap_cmd</span> <span class="o">=</span> <span class="s">&quot;/usr/local/bin/gap&quot;</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>David Joyner and William Stein: initial version(s)</li>
+<li>William Stein (2006-02-01): modified gap_console command so it uses
+exactly the same startup command as Gap.__init__.</li>
+<li>William Stein (2006-03-02): added tab completions: gap.[tab], x =
+gap(...), x.[tab], and docs, e.g., gap.function? and x.function?</li>
+</ul>
+<dl class="class">
+<dt id="sage.interfaces.gap.Gap">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">Gap</tt><big>(</big><em>max_workspace_size=None</em>, <em>maxread=100000</em>, <em>script_subdirectory=None</em>, <em>use_workspace_cache=True</em>, <em>server=None</em>, <em>server_tmpdir=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.interfaces.gap.Gap_generic" title="sage.interfaces.gap.Gap_generic"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.gap.Gap_generic</span></tt></a></p>
+<p>Interface to the GAP interpreter.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein and David Joyner</li>
+</ul>
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.console">
+<tt class="descname">console</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.console" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawn a new GAP command-line session.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">console</span><span class="p">()</span>  <span class="c"># not tested</span>
+<span class="go">*********   GAP, Version 4.5.7 of 14-Dec-2012 (free software, GPL)</span>
+<span class="go">*  GAP  *   http://www.gap-system.org</span>
+<span class="go">*********   Architecture: x86_64-unknown-linux-gnu-gcc-default64</span>
+<span class="go">Libs used:  gmp, readline</span>
+<span class="go">Loading the library and packages ...</span>
+<span class="go">Packages:   GAPDoc 1.5.1</span>
+<span class="go">Try &#39;?help&#39; for help. See also  &#39;?copyright&#39; and  &#39;?authors&#39;</span>
+<span class="go">gap&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.cputime">
+<tt class="descname">cputime</tt><big>(</big><em>t=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.cputime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount of CPU time that the GAP session has used. If
+<tt class="docutils literal"><span class="pre">t</span></tt> is not None, then it returns the difference
+between the current CPU time and <tt class="docutils literal"><span class="pre">t</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">cputime</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">t</span>  <span class="c">#random</span>
+<span class="go">0.13600000000000001</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">Order</span><span class="p">(</span><span class="n">gap</span><span class="o">.</span><span class="n">SymmetricGroup</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">120</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">cputime</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c">#random</span>
+<span class="go">0.059999999999999998</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.get">
+<tt class="descname">get</tt><big>(</big><em>var</em>, <em>use_file=False</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the string representation of the variable var.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;2&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">&#39;2&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.help">
+<tt class="descname">help</tt><big>(</big><em>s</em>, <em>pager=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print help on a given topic.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">gap</span><span class="o">.</span><span class="n">help</span><span class="p">(</span><span class="s">&#39;SymmetricGroup&#39;</span><span class="p">,</span> <span class="n">pager</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="go">50 Group Libraries</span>
+
+<span class="go">When you start GAP, it already knows several groups. Currently GAP initially</span>
+<span class="go">knows the following groups:</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.save_workspace">
+<tt class="descname">save_workspace</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.save_workspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the GAP workspace.</p>
+<p>TESTS:</p>
+<p>We make sure that #9938 (GAP does not start if the path to the GAP
+workspace file contains more than 82 characters) is fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ORIGINAL_WORKSPACE</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_TMP</span><span class="p">,</span> <span class="s">&quot;gap&quot;</span> <span class="o">+</span> <span class="s">&quot;0&quot;</span><span class="o">*</span><span class="p">(</span><span class="mi">80</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">SAGE_TMP</span><span class="p">)))</span>
+<span class="gp">sage: </span><span class="n">gap</span> <span class="o">=</span> <span class="n">Gap</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="p">(</span><span class="s">&#39;3+2&#39;</span><span class="p">)</span>  <span class="c"># long time (4s on sage.math, 2013)</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">ORIGINAL_WORKSPACE</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.set">
+<tt class="descname">set</tt><big>(</big><em>var</em>, <em>value</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the variable var to the given value.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;2&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">&#39;2&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap.trait_names">
+<tt class="descname">trait_names</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">trait_names</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="s">&#39;Order&#39;</span> <span class="ow">in</span> <span class="n">c</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.interfaces.gap.GapElement">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">GapElement</tt><big>(</big><em>parent</em>, <em>value</em>, <em>is_name=False</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.interfaces.gap.GapElement_generic" title="sage.interfaces.gap.GapElement_generic"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.gap.GapElement_generic</span></tt></a></p>
+<dl class="method">
+<dt id="sage.interfaces.gap.GapElement.str">
+<tt class="descname">str</tt><big>(</big><em>use_file=False</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapElement.str" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">gap</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.GapElement.trait_names">
+<tt class="descname">trait_names</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapElement.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s5</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">SymmetricGroup</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="s">&#39;Centralizer&#39;</span> <span class="ow">in</span> <span class="n">s5</span><span class="o">.</span><span class="n">trait_names</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.interfaces.gap.GapElement_generic">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">GapElement_generic</tt><big>(</big><em>parent</em>, <em>value</em>, <em>is_name=False</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapElement_generic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="expect.html#sage.interfaces.expect.ExpectElement" title="sage.interfaces.expect.ExpectElement"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.expect.ExpectElement</span></tt></a></p>
+<p>Generic interface to the GAP3/GAP4 interpreters.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein and David Joyner (interface for GAP4)</li>
+<li>Franco Saliola (Feb 2010): refactored to separate out the generic
+code</li>
+</ul>
+<dl class="method">
+<dt id="sage.interfaces.gap.GapElement_generic.bool">
+<tt class="descname">bool</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapElement_generic.bool" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">gap</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="p">(</span><span class="s">&#39;false&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.interfaces.gap.GapFunction">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">GapFunction</tt><big>(</big><em>parent</em>, <em>name</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="expect.html#sage.interfaces.expect.ExpectFunction" title="sage.interfaces.expect.ExpectFunction"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.expect.ExpectFunction</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.interfaces.gap.GapFunctionElement">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">GapFunctionElement</tt><big>(</big><em>obj</em>, <em>name</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.GapFunctionElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="expect.html#sage.interfaces.expect.FunctionElement" title="sage.interfaces.expect.FunctionElement"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.expect.FunctionElement</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.interfaces.gap.Gap_generic">
+<em class="property">class </em><tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">Gap_generic</tt><big>(</big><em>name</em>, <em>prompt</em>, <em>command=None</em>, <em>server=None</em>, <em>server_tmpdir=None</em>, <em>ulimit=None</em>, <em>maxread=100000</em>, <em>script_subdirectory=None</em>, <em>restart_on_ctrlc=False</em>, <em>verbose_start=False</em>, <em>init_code=</em>, <span class="optional">[</span><span class="optional">]</span><em>max_startup_time=None</em>, <em>logfile=None</em>, <em>eval_using_file_cutoff=0</em>, <em>do_cleaner=True</em>, <em>remote_cleaner=False</em>, <em>path=None</em>, <em>terminal_echo=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="expect.html#sage.interfaces.expect.Expect" title="sage.interfaces.expect.Expect"><tt class="xref py py-class docutils literal"><span class="pre">sage.interfaces.expect.Expect</span></tt></a></p>
+<p>Generic interface to the GAP3/GAP4 interpreters.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein and David Joyner (interface for GAP4)</li>
+<li>Franco Saliola (Feb 2010): refactored to separate out the generic
+code</li>
+</ul>
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.eval">
+<tt class="descname">eval</tt><big>(</big><em>x</em>, <em>newlines=False</em>, <em>strip=True</em>, <em>split_lines=True</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send the code in the string s to the GAP interpreter and return the
+output as a string.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">s</span></tt> - string containing GAP code.</li>
+<li><tt class="docutils literal"><span class="pre">newlines</span></tt> - bool (default: True); if False,
+remove all backslash-newlines inserted by the GAP output
+formatter.</li>
+<li><tt class="docutils literal"><span class="pre">strip</span></tt> - ignored</li>
+<li><tt class="docutils literal"><span class="pre">split_lines</span></tt> &#8211; bool (default: True); if True then each
+line is evaluated separately.  If False, then the whole
+block of code is evaluated all at once.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;2+2&#39;</span><span class="p">)</span>
+<span class="go">&#39;4&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;Print(4); #test</span><span class="se">\n</span><span class="s"> Print(6);&#39;</span><span class="p">)</span>
+<span class="go">&#39;46&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;Print(&quot;#&quot;); Print(6);&#39;</span><span class="p">)</span>
+<span class="go">&#39;#6&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;4; </span><span class="se">\n</span><span class="s"> 6;&#39;</span><span class="p">)</span>
+<span class="go">&#39;4\n6&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;if 3&gt;2 then</span><span class="se">\n</span><span class="s">Print(&quot;hi&quot;);</span><span class="se">\n</span><span class="s">fi;&#39;</span><span class="p">)</span>
+<span class="go">&#39;hi&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;## this is a test</span><span class="se">\n</span><span class="s">Print(&quot;OK&quot;)&#39;</span><span class="p">)</span>
+<span class="go">&#39;OK&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;Print(&quot;This is a test. Oh no, a #&quot;);# but this is a comment</span><span class="se">\n</span><span class="s">Print(&quot;OK&quot;)&#39;</span><span class="p">)</span>
+<span class="go">&#39;This is a test. Oh no, a #OK&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;if 4&gt;3 then&#39;</span><span class="p">)</span>
+<span class="go">&#39;&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;Print(&quot;Hi how are you?&quot;)&#39;</span><span class="p">)</span>
+<span class="go">&#39;Hi how are you?&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&#39;fi&#39;</span><span class="p">)</span>
+<span class="go">&#39;&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.function_call">
+<tt class="descname">function_call</tt><big>(</big><em>function</em>, <em>args=None</em>, <em>kwds=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.function_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the GAP function with args and kwds.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">function_call</span><span class="p">(</span><span class="s">&#39;SymmetricGroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+<span class="go">SymmetricGroup( [ 1 .. 5 ] )</span>
+</pre></div>
+</div>
+<p>If the GAP function does not return a value, but prints something
+to the screen, then a string of the printed output is returned.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">function_call</span><span class="p">(</span><span class="s">&#39;Display&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">gap</span><span class="o">.</span><span class="n">SymmetricGroup</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">CharacterTable</span><span class="p">()])</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.interfaces.interface.AsciiArtString&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;CT&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.get_record_element">
+<tt class="descname">get_record_element</tt><big>(</big><em>record</em>, <em>name</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.get_record_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the element of a GAP record identified by <tt class="docutils literal"><span class="pre">name</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">record</span></tt> &#8211; a GAP record</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; str</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.interfaces.gap.GapElement" title="sage.interfaces.gap.GapElement"><tt class="xref py py-class docutils literal"><span class="pre">GapElement</span></tt></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rec</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;rec( a := 1, b := &quot;2&quot; )&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get_record_element</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get_record_element</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rec</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;rec( a := 1, b := &quot;2&quot; )&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">gap</span><span class="o">.</span><span class="n">get_record_element</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">))</span>
+<span class="go">&lt;class &#39;sage.interfaces.gap.GapElement&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.interrupt">
+<tt class="descname">interrupt</tt><big>(</big><em>tries=None</em>, <em>timeout=1</em>, <em>quit_on_fail=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.interrupt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interrupt the GAP process</p>
+<p>Gap installs a SIGINT handler, we call it directly instead of
+trying to sent Ctrl-C. Unlike
+<a class="reference internal" href="expect.html#sage.interfaces.expect.Expect.interrupt" title="sage.interfaces.expect.Expect.interrupt"><tt class="xref py py-meth docutils literal"><span class="pre">interrupt()</span></tt></a>, we only try
+once since we are knowing what we are doing.</p>
+<p>Sometimes GAP dies while interrupting.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">_eval_line</span><span class="p">(</span><span class="s">&#39;while(1=1) do i:=1;; od;&#39;</span><span class="p">,</span> <span class="n">wait_for_prompt</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span>
+<span class="go">&#39;&#39;</span>
+<span class="gp">sage: </span><span class="n">rc</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">interrupt</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">gap</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="p">]</span>   <span class="c"># check that it is still working</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="p">(</span><span class="s">&#39;&quot;finished computation&quot;&#39;</span><span class="p">);</span> <span class="n">gap</span><span class="o">.</span><span class="n">interrupt</span><span class="p">();</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;&quot;ok&quot;&#39;</span><span class="p">)</span>
+<span class="go">finished computation</span>
+<span class="go">True</span>
+<span class="go">ok</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.load_package">
+<tt class="descname">load_package</tt><big>(</big><em>pkg</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.load_package" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the Gap package with the given name.</p>
+<p>If loading fails, raise a RuntimeError exception.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">load_package</span><span class="p">(</span><span class="s">&quot;chevie&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">Error loading Gap package chevie. You may want to install the gap_packages SPKG.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.trait_names">
+<tt class="descname">trait_names</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.trait_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">trait_names</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="s">&#39;Order&#39;</span> <span class="ow">in</span> <span class="n">c</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.unbind">
+<tt class="descname">unbind</tt><big>(</big><em>var</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.unbind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the variable named var.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;2&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">&#39;2&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">Gap produced error output</span>
+<span class="go">Error, Variable: &#39;x&#39; must have a value</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.gap.Gap_generic.version">
+<tt class="descname">version</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.Gap_generic.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the version of GAP being used.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">print</span> <span class="n">gap</span><span class="o">.</span><span class="n">version</span><span class="p">()</span>
+<span class="go">4.7...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.gap_command">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">gap_command</tt><big>(</big><em>use_workspace_cache=True</em>, <em>local=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.gap_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.gap_console">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">gap_console</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.gap_console" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawn a new GAP command-line session.</p>
+<p>Note that in gap-4.5.7 you cannot use a workspace cache that had
+no commandline to restore a gap session with commandline.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap_console</span><span class="p">()</span>  <span class="c"># not tested</span>
+<span class="go">*********   GAP, Version 4.5.7 of 14-Dec-2012 (free software, GPL)</span>
+<span class="go">*  GAP  *   http://www.gap-system.org</span>
+<span class="go">*********   Architecture: x86_64-unknown-linux-gnu-gcc-default64</span>
+<span class="go">Libs used:  gmp, readline</span>
+<span class="go">Loading the library and packages ...</span>
+<span class="go">Packages:   GAPDoc 1.5.1</span>
+<span class="go">Try &#39;?help&#39; for help. See also  &#39;?copyright&#39; and  &#39;?authors&#39;</span>
+<span class="go">gap&gt;</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span> <span class="n">gap_command</span>
+<span class="gp">sage: </span><span class="n">cmd</span> <span class="o">=</span> <span class="s">&#39;echo &quot;quit;&quot; | &#39;</span> <span class="o">+</span> <span class="n">gap_command</span><span class="p">(</span><span class="n">use_workspace_cache</span><span class="o">=</span><span class="bp">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">gap_startup</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="s">&#39;http://www.gap-system.org&#39;</span> <span class="ow">in</span> <span class="n">gap_startup</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="s">&#39;Error&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gap_startup</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="s">&#39;sorry&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gap_startup</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.gap_reset_workspace">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">gap_reset_workspace</tt><big>(</big><em>max_workspace_size=None</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.gap_reset_workspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call this to completely reset the GAP workspace, which is used by
+default when Sage first starts GAP.</p>
+<p>The first time you start GAP from Sage, it saves the startup state
+of GAP in a file <tt class="docutils literal"><span class="pre">$HOME/.sage/gap/workspace-HASH</span></tt>, where <tt class="docutils literal"><span class="pre">HASH</span></tt>
+is a hash of the directory where Sage is installed.</p>
+<p>This is useful, since then subsequent startup of GAP is at least 10
+times as fast. Unfortunately, if you install any new code for GAP,
+it won&#8217;t be noticed unless you explicitly load it, e.g., with
+gap.load_package(&#8220;my_package&#8221;)</p>
+<p>The packages sonata, guava, factint, gapdoc, grape, design, toric,
+and laguna are loaded in all cases before the workspace is saved,
+if they are available.</p>
+<p>TESTS:</p>
+<p>Check that <tt class="docutils literal"><span class="pre">gap_reset_workspace</span></tt> still works when <tt class="docutils literal"><span class="pre">GAP_DIR</span></tt>
+doesn&#8217;t exist, see <a class="reference external" href="http://trac.sagemath.org/14171">trac ticket #14171</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ORIGINAL_GAP_DIR</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">GAP_DIR</span>
+<span class="gp">sage: </span><span class="n">ORIGINAL_WORKSPACE</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">GAP_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">(),</span> <span class="s">&quot;test_gap_dir&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">GAP_DIR</span><span class="p">,</span> <span class="s">&quot;test_workspace&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span><span class="p">)</span>  <span class="c"># long time</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">gap_reset_workspace</span><span class="p">()</span>                          <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span><span class="p">)</span>  <span class="c"># long time</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">GAP_DIR</span> <span class="o">=</span> <span class="n">ORIGINAL_GAP_DIR</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">ORIGINAL_WORKSPACE</span>
+</pre></div>
+</div>
+<p>Check that the race condition from <a class="reference external" href="http://trac.sagemath.org/14242">trac ticket #14242</a> has been fixed.
+We temporarily need to change the worksheet filename.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ORIGINAL_WORKSPACE</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Process</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">time</span>
+<span class="gp">sage: </span><span class="n">gap</span> <span class="o">=</span> <span class="n">Gap</span><span class="p">()</span>  <span class="c"># long time (reset GAP session)</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="p">[</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">gap</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;14242&quot;</span><span class="p">,))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">:</span>  <span class="c"># long time, indirect doctest</span>
+<span class="go">....:     p.start()</span>
+<span class="go">....:     time.sleep(0.2)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">:</span>  <span class="c"># long time</span>
+<span class="go">....:     p.join()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span><span class="p">)</span>  <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">WORKSPACE</span> <span class="o">=</span> <span class="n">ORIGINAL_WORKSPACE</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.get_gap_memory_pool_size">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">get_gap_memory_pool_size</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.get_gap_memory_pool_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the gap memory pool size for new GAP processes.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span>         <span class="o">...</span>       <span class="n">get_gap_memory_pool_size</span>
+<span class="gp">sage: </span><span class="n">get_gap_memory_pool_size</span><span class="p">()</span>   <span class="c"># random output</span>
+<span class="go">1534059315</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.gfq_gap_to_sage">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">gfq_gap_to_sage</tt><big>(</big><em>x</em>, <em>F</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.gfq_gap_to_sage" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">x</span></tt> &#8211; GAP finite field element</li>
+<li><tt class="docutils literal"><span class="pre">F</span></tt> &#8211; Sage finite field</li>
+</ul>
+<p>OUTPUT: element of <tt class="docutils literal"><span class="pre">F</span></tt></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;Z(13)&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">gap</span><span class="p">(</span><span class="s">&#39;0*Z(13)&#39;</span><span class="p">))</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;Z(13)&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="s">&#39;Z(13^2)^3&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">12*a + 11</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">multiplicative_generator</span><span class="p">()</span><span class="o">^</span><span class="mi">3</span>
+<span class="go">12*a + 11</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/18048">trac ticket #18048</a> is fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">_gap_</span><span class="p">())</span>
+<span class="go">a^2 + a</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>David Joyner and William Stein</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.intmod_gap_to_sage">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">intmod_gap_to_sage</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.intmod_gap_to_sage" title="Permalink to this definition">¶</a></dt>
+<dd><p>INPUT:</p>
+<ul class="simple">
+<li>x &#8211; Gap integer mod ring element</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="n">Mod</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">18</span><span class="p">));</span> <span class="n">a</span>
+<span class="go">ZmodnZObj( 3, 18 )</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">intmod_gap_to_sage</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="n">b</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Ring of integers modulo 18</span>
+
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="n">Mod</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">17</span><span class="p">));</span> <span class="n">a</span>
+<span class="go">Z(17)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">intmod_gap_to_sage</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="n">b</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Finite Field of size 17</span>
+
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="n">Mod</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">17</span><span class="p">));</span> <span class="n">a</span>
+<span class="go">0*Z(17)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">intmod_gap_to_sage</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="n">b</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Finite Field of size 17</span>
+
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">gap</span><span class="p">(</span><span class="n">Mod</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">65537</span><span class="p">));</span> <span class="n">a</span>
+<span class="go">ZmodpZObj( 3, 65537 )</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">gap</span><span class="o">.</span><span class="n">intmod_gap_to_sage</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="n">b</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Ring of integers modulo 65537</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.is_GapElement">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">is_GapElement</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.is_GapElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if x is a GapElement.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span> <span class="n">is_GapElement</span>
+<span class="gp">sage: </span><span class="n">is_GapElement</span><span class="p">(</span><span class="n">gap</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_GapElement</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.reduce_load">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">reduce_load</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.reduce_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an invalid GAP element. Note that this is the object
+returned when a GAP element is unpickled.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span> <span class="n">reduce_load</span>
+<span class="gp">sage: </span><span class="n">reduce_load</span><span class="p">()</span>
+<span class="go">&lt;repr(&lt;sage.interfaces.gap.GapElement at 0x...&gt;) failed: ValueError: The session in which this object was defined is no longer running.&gt;</span>
+<span class="gp">sage: </span><span class="n">loads</span><span class="p">(</span><span class="n">dumps</span><span class="p">(</span><span class="n">gap</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+<span class="go">&lt;repr(&lt;sage.interfaces.gap.GapElement at 0x...&gt;) failed: ValueError: The session in which this object was defined is no longer running.&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.reduce_load_GAP">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">reduce_load_GAP</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.gap.reduce_load_GAP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the GAP interface object defined in sage.interfaces.gap.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span> <span class="n">reduce_load_GAP</span>
+<span class="gp">sage: </span><span class="n">reduce_load_GAP</span><span class="p">()</span>
+<span class="go">Gap</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.interfaces.gap.set_gap_memory_pool_size">
+<tt class="descclassname">sage.interfaces.gap.</tt><tt class="descname">set_gap_memory_pool_size</tt><big>(</big><em>size_in_bytes</em><big>)</big><a class="headerlink" href="#sage.interfaces.gap.set_gap_memory_pool_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the desired gap memory pool size.</p>
+<p>Subsequently started GAP/libGAP instances will use this as
+default. Currently running instances are unchanged.</p>
+<p>GAP will only reserve <tt class="docutils literal"><span class="pre">size_in_bytes</span></tt> address space. Unless you
+actually start a big GAP computation, the memory will not be
+used. However, corresponding swap space will be reserved so that
+GAP will always be able to use the reserved address space if
+needed. While nothing is actually written to disc as long as you
+don&#8217;t run a big GAP computation, the reserved swap space will not
+be available for other processes.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">size_in_bytes</span></tt> &#8211; integer. The desired memory pool size.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.interfaces.gap</span> <span class="kn">import</span>         <span class="o">...</span>       <span class="n">get_gap_memory_pool_size</span><span class="p">,</span> <span class="n">set_gap_memory_pool_size</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">get_gap_memory_pool_size</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">set_gap_memory_pool_size</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">==</span> <span class="n">get_gap_memory_pool_size</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">n</span>   <span class="c"># random output</span>
+<span class="go">1534059315</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Interface to GAP</a><ul>
+<li><a class="reference internal" href="#first-examples">First Examples</a></li>
+<li><a class="reference internal" href="#gap-and-singular">GAP and Singular</a></li>
+<li><a class="reference internal" href="#saving-and-loading-objects">Saving and loading objects</a></li>
+<li><a class="reference internal" href="#long-input">Long Input</a></li>
+<li><a class="reference internal" href="#changing-which-gap-is-used">Changing which GAP is used</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="frobby.html"
+                                  title="previous chapter">Interface to Frobby for fast computations on monomial ideals.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="gap3.html"
+                                  title="next chapter">Interface to GAP3</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/interfaces/gap.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gap3.html" title="Interface to GAP3"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="frobby.html" title="Interface to Frobby for fast computations on monomial ideals."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Interpreter Interfaces</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

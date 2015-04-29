@@ -1,0 +1,1293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Processes for running doctests &mdash; Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Sage&#39;s Doctesting Framework" href="../../index.html" />
+    <link rel="next" title="Parsing docstrings" href="parsing.html" />
+    <link rel="prev" title="Classes for sources of doctests" href="sources.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="parsing.html" title="Parsing docstrings"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sources.html" title="Classes for sources of doctests"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="processes-for-running-doctests">
+<span id="sage-doctest-forker"></span><h1>Processes for running doctests<a class="headerlink" href="#processes-for-running-doctests" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.doctest.forker"></span><p>This module controls the processes started by Sage that actually run
+the doctests.</p>
+<p>EXAMPLES:</p>
+<p>The following examples are used in doctesting this file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">doctest_var</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span> <span class="n">doctest_var</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">1764</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">+</span> <span class="n">doctest_var</span>
+<span class="go">a + 42</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>David Roe (2012-03-27) &#8211; initial version, based on Robert Bradshaw&#8217;s code.</li>
+</ul>
+<dl class="class">
+<dt id="sage.doctest.forker.DocTestDispatcher">
+<em class="property">class </em><tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">DocTestDispatcher</tt><big>(</big><em>controller</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestDispatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>Creates parallel <a class="reference internal" href="#sage.doctest.forker.DocTestWorker" title="sage.doctest.forker.DocTestWorker"><tt class="xref py py-class docutils literal"><span class="pre">DocTestWorker</span></tt></a> processes and dispatches
+doctesting tasks.</p>
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestDispatcher.dispatch">
+<tt class="descname">dispatch</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestDispatcher.dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the doctests for the controller&#8217;s specified sources,
+by calling <a class="reference internal" href="#sage.doctest.forker.DocTestDispatcher.parallel_dispatch" title="sage.doctest.forker.DocTestDispatcher.parallel_dispatch"><tt class="xref py py-meth docutils literal"><span class="pre">parallel_dispatch()</span></tt></a> or <a class="reference internal" href="#sage.doctest.forker.DocTestDispatcher.serial_dispatch" title="sage.doctest.forker.DocTestDispatcher.serial_dispatch"><tt class="xref py py-meth docutils literal"><span class="pre">serial_dispatch()</span></tt></a>
+according to the <tt class="docutils literal"><span class="pre">--serial</span></tt> option.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestDispatcher</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.util</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">freehom</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;modules&#39;</span><span class="p">,</span> <span class="s">&#39;free_module_homspace.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">bigo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;rings&#39;</span><span class="p">,</span> <span class="s">&#39;big_oh.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span> <span class="o">=</span> <span class="n">DocTestController</span><span class="p">(</span><span class="n">DocTestDefaults</span><span class="p">(),</span> <span class="p">[</span><span class="n">freehom</span><span class="p">,</span> <span class="n">bigo</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">expand_files_into_sources</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDispatcher</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DR</span> <span class="o">=</span> <span class="n">DocTestReporter</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">reporter</span> <span class="o">=</span> <span class="n">DR</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">DD</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">dispatch</span><span class="p">()</span>
+<span class="go">sage -t .../sage/modules/free_module_homspace.py</span>
+<span class="go">    [... tests, ... s]</span>
+<span class="go">sage -t .../sage/rings/big_oh.py</span>
+<span class="go">    [... tests, ... s]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestDispatcher.parallel_dispatch">
+<tt class="descname">parallel_dispatch</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestDispatcher.parallel_dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the doctests from the controller&#8217;s specified sources in parallel.</p>
+<p>This creates <a class="reference internal" href="#sage.doctest.forker.DocTestWorker" title="sage.doctest.forker.DocTestWorker"><tt class="xref py py-class docutils literal"><span class="pre">DocTestWorker</span></tt></a> subprocesses, while the master
+process checks for timeouts and collects and displays the results.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestDispatcher</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.util</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">crem</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;databases&#39;</span><span class="p">,</span> <span class="s">&#39;cremona.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">bigo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;rings&#39;</span><span class="p">,</span> <span class="s">&#39;big_oh.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span> <span class="o">=</span> <span class="n">DocTestController</span><span class="p">(</span><span class="n">DocTestDefaults</span><span class="p">(),</span> <span class="p">[</span><span class="n">crem</span><span class="p">,</span> <span class="n">bigo</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">expand_files_into_sources</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDispatcher</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DR</span> <span class="o">=</span> <span class="n">DocTestReporter</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">reporter</span> <span class="o">=</span> <span class="n">DR</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">DD</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">parallel_dispatch</span><span class="p">()</span>
+<span class="go">sage -t .../databases/cremona.py</span>
+<span class="go">    [... tests, ... s]</span>
+<span class="go">sage -t .../rings/big_oh.py</span>
+<span class="go">    [... tests, ... s]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestDispatcher.serial_dispatch">
+<tt class="descname">serial_dispatch</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestDispatcher.serial_dispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the doctests from the controller&#8217;s specified sources in series.</p>
+<p>There is no graceful handling for signals, no possibility of
+interrupting tests and no timeout.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestDispatcher</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.util</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">homset</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;rings&#39;</span><span class="p">,</span> <span class="s">&#39;homset.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ideal</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span> <span class="s">&#39;sage&#39;</span><span class="p">,</span> <span class="s">&#39;rings&#39;</span><span class="p">,</span> <span class="s">&#39;ideal.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span> <span class="o">=</span> <span class="n">DocTestController</span><span class="p">(</span><span class="n">DocTestDefaults</span><span class="p">(),</span> <span class="p">[</span><span class="n">homset</span><span class="p">,</span> <span class="n">ideal</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">expand_files_into_sources</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDispatcher</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DR</span> <span class="o">=</span> <span class="n">DocTestReporter</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">reporter</span> <span class="o">=</span> <span class="n">DR</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">DD</span>
+<span class="gp">sage: </span><span class="n">DC</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">serial_dispatch</span><span class="p">()</span>
+<span class="go">sage -t .../rings/homset.py</span>
+<span class="go">    [... tests, ... s]</span>
+<span class="go">sage -t .../rings/ideal.py</span>
+<span class="go">    [... tests, ... s]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.forker.DocTestTask">
+<em class="property">class </em><tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">DocTestTask</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class encapsulates the tests from a single source.</p>
+<p>This class does not insulate from problems in the source
+(e.g. entering an infinite loop or causing a segfault), that has to
+be dealt with at a higher level.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">source</span></tt> &#8211; a <a class="reference internal" href="sources.html#sage.doctest.sources.DocTestSource" title="sage.doctest.sources.DocTestSource"><tt class="xref py py-class docutils literal"><span class="pre">sage.doctest.sources.DocTestSource</span></tt></a> instance.</li>
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; boolean, controls reporting of progress by <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTestRunner" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTestRunner</span></tt></a>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">,</span> <span class="n">DocTestController</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;sources.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTT</span> <span class="o">=</span> <span class="n">DocTestTask</span><span class="p">(</span><span class="n">FDS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DC</span> <span class="o">=</span> <span class="n">DocTestController</span><span class="p">(</span><span class="n">DD</span><span class="p">,[</span><span class="n">filename</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">ntests</span><span class="p">,</span> <span class="n">results</span> <span class="o">=</span> <span class="n">DTT</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ntests</span> <span class="o">&gt;=</span> <span class="mi">300</span> <span class="ow">or</span> <span class="n">ntests</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="go">[&#39;cputime&#39;, &#39;err&#39;, &#39;failures&#39;, &#39;optionals&#39;, &#39;walltime&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.forker.DocTestWorker">
+<em class="property">class </em><tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">DocTestWorker</tt><big>(</big><em>source</em>, <em>options</em>, <em>funclist=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">multiprocessing.process.Process</span></tt></p>
+<p>The DocTestWorker process runs one <a class="reference internal" href="#sage.doctest.forker.DocTestTask" title="sage.doctest.forker.DocTestTask"><tt class="xref py py-class docutils literal"><span class="pre">DocTestTask</span></tt></a> for a given
+source. It returns messages about doctest failures (or all tests if
+verbose doctesting) though a pipe and returns results through a
+<tt class="docutils literal"><span class="pre">multiprocessing.Queue</span></tt> instance (both these are created in the
+<a class="reference internal" href="#sage.doctest.forker.DocTestWorker.start" title="sage.doctest.forker.DocTestWorker.start"><tt class="xref py py-meth docutils literal"><span class="pre">start()</span></tt></a> method).</p>
+<p>It runs the task in its own process-group, such that killing the
+process group kills this process together with its child processes.</p>
+<p>The class has additional methods and attributes for bookkeeping
+by the master process. Except in <a class="reference internal" href="#sage.doctest.forker.DocTestWorker.run" title="sage.doctest.forker.DocTestWorker.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a>, nothing from this
+class should be accessed by the child process.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">source</span></tt> &#8211; a <tt class="xref py py-class docutils literal"><span class="pre">DocTestSource</span></tt> instance</li>
+<li><tt class="docutils literal"><span class="pre">options</span></tt> &#8211; an object representing doctest options.</li>
+<li><tt class="docutils literal"><span class="pre">funclist</span></tt> &#8211; a list of callables to be called at the start of
+the child process.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestWorker</span><span class="p">,</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;util.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">DocTestWorker</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DC</span> <span class="o">=</span> <span class="n">DocTestController</span><span class="p">(</span><span class="n">DD</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">reporter</span> <span class="o">=</span> <span class="n">DocTestReporter</span><span class="p">(</span><span class="n">DC</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>  <span class="c"># Wait for worker to finish</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">W</span><span class="o">.</span><span class="n">result_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">reporter</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">W</span><span class="o">.</span><span class="n">exitcode</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+<span class="go">    [... tests, ... s]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestWorker.kill">
+<tt class="descname">kill</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker.kill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kill this worker. The first time this is called, use
+<tt class="docutils literal"><span class="pre">SIGHUP</span></tt>. Subsequent times, use <tt class="docutils literal"><span class="pre">SIGKILL</span></tt>.  Also close the
+message pipe if it was still open.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">time</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestWorker</span><span class="p">,</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;tests&#39;</span><span class="p">,</span><span class="s">&#39;99seconds.rst&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We set up the worker to start by blocking <tt class="docutils literal"><span class="pre">SIGHUP</span></tt>, such that
+killing will fail initially:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.pselect</span> <span class="kn">import</span> <span class="n">PSelecter</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">signal</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">block_hup</span><span class="p">():</span>
+<span class="go">....:     # We never __exit__()</span>
+<span class="go">....:     PSelecter([signal.SIGHUP]).__enter__()</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">DocTestWorker</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="n">DD</span><span class="p">,</span> <span class="p">[</span><span class="n">block_hup</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">killed</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">killed</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>  <span class="c"># Worker doesn&#39;t die</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>         <span class="c"># Worker dies now</span>
+<span class="gp">sage: </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestWorker.read_messages">
+<tt class="descname">read_messages</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker.read_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>In the master process, read from the pipe and store the data
+read in the <tt class="docutils literal"><span class="pre">messages</span></tt> attribute.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function may need to be called multiple times in
+order to read all of the messages.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestWorker</span><span class="p">,</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;util.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">nthreads</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">DocTestWorker</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">while</span> <span class="n">W</span><span class="o">.</span><span class="n">rmessages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+<span class="go">....:     W.read_messages()</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestWorker.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the <a class="reference internal" href="#sage.doctest.forker.DocTestTask" title="sage.doctest.forker.DocTestTask"><tt class="xref py py-class docutils literal"><span class="pre">DocTestTask</span></tt></a> under its own PGID.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">run_doctests</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">symbolic</span><span class="o">.</span><span class="n">units</span><span class="p">)</span> <span class="c"># indirect doctest</span>
+<span class="go">Running doctests with ID ...</span>
+<span class="go">Doctesting 1 file.</span>
+<span class="go">sage -t .../sage/symbolic/units.py</span>
+<span class="go">    [... tests, ... s]</span>
+<span class="go">----------------------------------------------------------------------</span>
+<span class="go">All tests passed!</span>
+<span class="go">----------------------------------------------------------------------</span>
+<span class="go">Total time for all tests: ... seconds</span>
+<span class="go">    cpu time: ... seconds</span>
+<span class="go">    cumulative wall time: ... seconds</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestWorker.save_result_output">
+<tt class="descname">save_result_output</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker.save_result_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Annotate <tt class="docutils literal"><span class="pre">self</span></tt> with <tt class="docutils literal"><span class="pre">self.result</span></tt> (the result read through
+the <tt class="docutils literal"><span class="pre">result_queue</span></tt> and with <tt class="docutils literal"><span class="pre">self.output</span></tt>, the complete
+contents of <tt class="docutils literal"><span class="pre">self.outtmpfile</span></tt>. Then close the Queue and
+<tt class="docutils literal"><span class="pre">self.outtmpfile</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestWorker</span><span class="p">,</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;util.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">DocTestWorker</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">save_result_output</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="go">[&#39;cputime&#39;, &#39;err&#39;, &#39;failures&#39;, &#39;optionals&#39;, &#39;walltime&#39;]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">output</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.DocTestWorker.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.DocTestWorker.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the worker and close the writing end of the message pipe.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">DocTestWorker</span><span class="p">,</span> <span class="n">DocTestTask</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.reporting</span> <span class="kn">import</span> <span class="n">DocTestReporter</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestController</span><span class="p">,</span> <span class="n">DocTestDefaults</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;util.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span> <span class="o">=</span> <span class="n">DocTestWorker</span><span class="p">(</span><span class="n">FDS</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     os.fstat(W.wmessages)</span>
+<span class="go">....: except OSError:</span>
+<span class="go">....:     print &quot;Write end of pipe successfully closed&quot;</span>
+<span class="go">Write end of pipe successfully closed</span>
+<span class="gp">sage: </span><span class="n">W</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>  <span class="c"># Wait for worker to finish</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.forker.SageDocTestRunner">
+<em class="property">class </em><tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">SageDocTestRunner</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTestRunner" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTestRunner</span></tt></a></p>
+<p>A customized version of DocTestRunner that tracks dependencies
+of doctests.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">stdout</span></tt> &#8211; an open file to restore for debugging</li>
+<li><tt class="docutils literal"><span class="pre">checker</span></tt> &#8211; None, or an instance of
+<a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.OutputChecker" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.OutputChecker</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; boolean, determines whether verbose printing
+is enabled.</li>
+<li><tt class="docutils literal"><span class="pre">optionflags</span></tt> &#8211; Controls the comparison with the expected
+output.  See <tt class="xref py py-mod docutils literal"><span class="pre">testmod</span></tt> for more information.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span>
+<span class="go">&lt;sage.doctest.forker.SageDocTestRunner instance at ...&gt;</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.compile_and_execute">
+<tt class="descname">compile_and_execute</tt><big>(</big><em>example</em>, <em>compiler</em>, <em>globs</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.compile_and_execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the given example, recording dependencies.</p>
+<p>Rather than using a basic dictionary, Sage&#8217;s doctest runner
+uses a <a class="reference internal" href="util.html#sage.doctest.util.RecordingDict" title="sage.doctest.util.RecordingDict"><tt class="xref py py-class docutils literal"><span class="pre">sage.doctest.util.RecordingDict</span></tt></a>, which records
+every time a value is set or retrieved.  Executing the given
+code with this recording dictionary as the namespace allows
+Sage to track dependencies between doctest lines.  For
+example, in the following two lines</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>the recording dictionary records that the second line depends
+on the first since the first INSERTS <tt class="docutils literal"><span class="pre">x</span></tt> into the global
+namespace and the second line RETRIEVES <tt class="docutils literal"><span class="pre">x</span></tt> from the global
+namespace.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance.</li>
+<li><tt class="docutils literal"><span class="pre">compiler</span></tt> &#8211; a callable that, applied to example,
+produces a code object</li>
+<li><tt class="docutils literal"><span class="pre">globs</span></tt> &#8211; a dictionary in which to execute the code.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the output of the compiled code snippet.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.util</span> <span class="kn">import</span> <span class="n">RecordingDict</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">hashlib</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">running_doctest_digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">globs</span> <span class="o">=</span> <span class="n">RecordingDict</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="s">&#39;doctest_var&#39;</span> <span class="ow">in</span> <span class="n">globs</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="n">globs</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ex0</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">compiler</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">ex</span><span class="p">:</span> <span class="nb">compile</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="s">&#39;&lt;doctest sage.doctest.forker[0]&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;single&#39;</span><span class="p">,</span> <span class="mi">32768</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">compile_and_execute</span><span class="p">(</span><span class="n">ex0</span><span class="p">,</span> <span class="n">compiler</span><span class="p">,</span> <span class="n">globs</span><span class="p">)</span>
+<span class="go">1764</span>
+<span class="gp">sage: </span><span class="n">globs</span><span class="p">[</span><span class="s">&#39;doctest_var&#39;</span><span class="p">]</span>
+<span class="go">42</span>
+<span class="gp">sage: </span><span class="n">globs</span><span class="o">.</span><span class="n">set</span>
+<span class="go">{&#39;doctest_var&#39;}</span>
+<span class="gp">sage: </span><span class="n">globs</span><span class="o">.</span><span class="n">got</span>
+<span class="go">{&#39;Integer&#39;}</span>
+</pre></div>
+</div>
+<p>Now we can execute some more doctests to see the dependencies.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ex1</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">compiler</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">ex</span><span class="p">:</span><span class="nb">compile</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="s">&#39;&lt;doctest sage.doctest.forker[1]&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;single&#39;</span><span class="p">,</span> <span class="mi">32768</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">compile_and_execute</span><span class="p">(</span><span class="n">ex1</span><span class="p">,</span> <span class="n">compiler</span><span class="p">,</span> <span class="n">globs</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">globs</span><span class="o">.</span><span class="n">set</span><span class="p">))</span>
+<span class="go">[&#39;R&#39;, &#39;a&#39;]</span>
+<span class="gp">sage: </span><span class="n">globs</span><span class="o">.</span><span class="n">got</span>
+<span class="go">{&#39;ZZ&#39;}</span>
+<span class="gp">sage: </span><span class="n">ex1</span><span class="o">.</span><span class="n">predecessors</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ex2</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">compiler</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">ex</span><span class="p">:</span><span class="nb">compile</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="s">&#39;&lt;doctest sage.doctest.forker[2]&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;single&#39;</span><span class="p">,</span> <span class="mi">32768</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">compile_and_execute</span><span class="p">(</span><span class="n">ex2</span><span class="p">,</span> <span class="n">compiler</span><span class="p">,</span> <span class="n">globs</span><span class="p">)</span>
+<span class="go">a + 42</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">globs</span><span class="o">.</span><span class="n">set</span><span class="p">)</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">globs</span><span class="o">.</span><span class="n">got</span><span class="p">))</span>
+<span class="go">[&#39;a&#39;, &#39;doctest_var&#39;]</span>
+<span class="gp">sage: </span><span class="nb">set</span><span class="p">(</span><span class="n">ex2</span><span class="o">.</span><span class="n">predecessors</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">([</span><span class="n">ex0</span><span class="p">,</span><span class="n">ex1</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.report_failure">
+<tt class="descname">report_failure</tt><big>(</big><em>out</em>, <em>test</em>, <em>example</em>, <em>got</em>, <em>globs</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.report_failure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a doctest fails.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for printing</li>
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance in <tt class="docutils literal"><span class="pre">test</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">got</span></tt> &#8211; a string, the result of running <tt class="docutils literal"><span class="pre">example</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">globs</span></tt> &#8211; a dictionary of globals, used if in debugging mode</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>prints a report to <tt class="docutils literal"><span class="pre">out</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">no_failure_yet</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">report_failure</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">,</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ex</span><span class="p">,</span> <span class="s">&#39;BAD ANSWER</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="p">{})</span>
+<span class="go">**********************************************************************</span>
+<span class="go">File &quot;.../sage/doctest/forker.py&quot;, line 11, in sage.doctest.forker</span>
+<span class="go">Failed example:</span>
+<span class="go">    doctest_var = 42; doctest_var^2</span>
+<span class="go">Expected:</span>
+<span class="go">    1764</span>
+<span class="go">Got:</span>
+<span class="go">    BAD ANSWER</span>
+</pre></div>
+</div>
+<p>If debugging is turned on this function starts an IPython
+prompt when a test returns an incorrect answer:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;SAGE_PEXPECT_LOG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;1&quot;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;import doctest, sys, os, multiprocessing, subprocess&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;from sage.doctest.parsing import SageOutputChecker&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;import sage.doctest.forker as sdf&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;sdf.init_sage()&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;from sage.doctest.control import DocTestDefaults&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DD = DocTestDefaults(debug=True)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;ex1 = doctest.Example(&#39;a = 17&#39;, &#39;&#39;)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;ex2 = doctest.Example(&#39;2*a&#39;, &#39;1&#39;)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DT = doctest.DocTest([ex1,ex2], globals(), &#39;doubling&#39;, None, 0, None)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DTR = sdf.SageDocTestRunner(SageOutputChecker(), verbose=False, sage_options=DD, optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">_prompt</span> <span class="o">=</span> <span class="s">r&quot;debug: &quot;</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DTR.run(DT, clear_globs=False)&quot;</span><span class="p">)</span> <span class="c"># indirect doctest</span>
+<span class="go">**********************************************************************</span>
+<span class="go">Line 1, in doubling</span>
+<span class="go">Failed example:</span>
+<span class="go">    2*a</span>
+<span class="go">Expected:</span>
+<span class="go">    1</span>
+<span class="go">Got:</span>
+<span class="go">    34</span>
+<span class="go">**********************************************************************</span>
+<span class="go">Previously executed commands:</span>
+<span class="gp">...</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">)</span>
+<span class="go">&#39;...17&#39;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">_prompt</span> <span class="o">=</span> <span class="s">&quot;sage: &quot;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;quit&quot;</span><span class="p">)</span>
+<span class="go">&#39;Returning to doctests...TestResults(failed=1, attempted=2)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.report_overtime">
+<tt class="descname">report_overtime</tt><big>(</big><em>out</em>, <em>test</em>, <em>example</em>, <em>got</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.report_overtime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the <tt class="docutils literal"><span class="pre">warn_long</span></tt> option flag is set and a doctest
+runs longer than the specified time.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for printing</li>
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance in <tt class="docutils literal"><span class="pre">test</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">got</span></tt> &#8211; a string, the result of running <tt class="docutils literal"><span class="pre">example</span></tt></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>prints a report to <tt class="docutils literal"><span class="pre">out</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.misc</span> <span class="kn">import</span> <span class="n">walltime</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">walltime</span> <span class="o">=</span> <span class="mf">1.23</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">report_overtime</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">,</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ex</span><span class="p">,</span> <span class="s">&#39;BAD ANSWER</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="go">**********************************************************************</span>
+<span class="go">File &quot;.../sage/doctest/forker.py&quot;, line 11, in sage.doctest.forker</span>
+<span class="go">Warning, slow doctest:</span>
+<span class="go">    doctest_var = 42; doctest_var^2</span>
+<span class="go">Test ran for 1.23 s</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.report_start">
+<tt class="descname">report_start</tt><big>(</big><em>out</em>, <em>test</em>, <em>example</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.report_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when an example starts.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for printing</li>
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance in <tt class="docutils literal"><span class="pre">test</span></tt></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>prints a report to <tt class="docutils literal"><span class="pre">out</span></tt></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">report_start</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">,</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ex</span><span class="p">)</span>
+<span class="go">Trying (line 11):    doctest_var = 42; doctest_var^2</span>
+<span class="go">Expecting:</span>
+<span class="go">    1764</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.report_success">
+<tt class="descname">report_success</tt><big>(</big><em>out</em>, <em>test</em>, <em>example</em>, <em>got</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.report_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when an example succeeds.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for printing</li>
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance in <tt class="docutils literal"><span class="pre">test</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">got</span></tt> &#8211; a string, the result of running <tt class="docutils literal"><span class="pre">example</span></tt></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>prints a report to <tt class="docutils literal"><span class="pre">out</span></tt></li>
+<li>if in debugging mode, starts an IPython prompt at the point
+of the failure</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.misc</span> <span class="kn">import</span> <span class="n">walltime</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">ex</span><span class="o">.</span><span class="n">walltime</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">report_success</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">,</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ex</span><span class="p">,</span> <span class="s">&#39;1764&#39;</span><span class="p">)</span>
+<span class="go">ok [0.00 s]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.report_unexpected_exception">
+<tt class="descname">report_unexpected_exception</tt><big>(</big><em>out</em>, <em>test</em>, <em>example</em>, <em>exc_info</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.report_unexpected_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a doctest raises an exception that&#8217;s not matched by the expected output.</p>
+<p>If debugging has been turned on, starts an interactive debugger.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for printing</li>
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a> instance</li>
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance in <tt class="docutils literal"><span class="pre">test</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">exc_info</span></tt> &#8211; the result of <tt class="docutils literal"><span class="pre">sys.exc_info()</span></tt></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>prints a report to <tt class="docutils literal"><span class="pre">out</span></tt></li>
+<li>if in debugging mode, starts PDB with the given traceback</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;SAGE_PEXPECT_LOG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;1&quot;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;import doctest, sys, os, multiprocessing, subprocess&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;from sage.doctest.parsing import SageOutputChecker&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;import sage.doctest.forker as sdf&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;from sage.doctest.control import DocTestDefaults&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DD = DocTestDefaults(debug=True)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;ex = doctest.Example(&#39;E = EllipticCurve([0,0]); E&#39;, &#39;A singular Elliptic Curve&#39;)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DT = doctest.DocTest([ex], globals(), &#39;singular_curve&#39;, None, 0, None)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DTR = sdf.SageDocTestRunner(SageOutputChecker(), verbose=False, sage_options=DD, optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS)&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">_prompt</span> <span class="o">=</span> <span class="s">r&quot;\(Pdb\) &quot;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;DTR.run(DT, clear_globs=False)&quot;</span><span class="p">)</span> <span class="c"># indirect doctest</span>
+<span class="go">&#39;... ArithmeticError(&quot;invariants &quot; + str(ainvs) + &quot; define a singular curve&quot;)&#39;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;l&quot;</span><span class="p">)</span>
+<span class="go">&#39;...if self.discriminant() == 0:...raise ArithmeticError...&#39;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;u&quot;</span><span class="p">)</span>
+<span class="go">&#39;...EllipticCurve_field.__init__(self, K, ainvs)&#39;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;p ainvs&quot;</span><span class="p">)</span>
+<span class="go">&#39;(0, 0, 0, 0, 0)&#39;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">_prompt</span> <span class="o">=</span> <span class="s">&quot;sage: &quot;</span>
+<span class="gp">sage: </span><span class="n">sage0</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;quit&quot;</span><span class="p">)</span>
+<span class="go">&#39;TestResults(failed=1, attempted=1)&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.run">
+<tt class="descname">run</tt><big>(</big><em>test</em>, <em>compileflags=None</em>, <em>out=None</em>, <em>clear_globs=True</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the examples in a given doctest.</p>
+<p>This function replaces <tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTestRunner.run</span></tt>
+since it needs to handle spoofing. It also leaves the display
+hook in place.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">test</span></tt> &#8211; an instance of <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.DocTest" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.DocTest</span></tt></a></li>
+<li><tt class="docutils literal"><span class="pre">compileflags</span></tt> &#8211; the set of compiler flags used to
+execute examples (passed in to the <a class="reference external" href="http://docs.python.org/library/functions.html#compile" title="(in Python v2.7)"><tt class="xref py py-func docutils literal"><span class="pre">compile()</span></tt></a>).  If
+None, they are filled in from the result of
+<tt class="xref py py-func docutils literal"><span class="pre">doctest._extract_future_flags()</span></tt> applied to
+<tt class="docutils literal"><span class="pre">test.globs</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">out</span></tt> &#8211; a function for writing the output (defaults to
+<tt class="xref py py-func docutils literal"><span class="pre">sys.stdout.write()</span></tt>).</li>
+<li><tt class="docutils literal"><span class="pre">clear_globs</span></tt> &#8211; boolean (default True): whether to clear
+the namespace after running this doctest.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> &#8211; integer, the number of examples that failed</li>
+<li><tt class="docutils literal"><span class="pre">t</span></tt> &#8211; the number of examples tried</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">clear_globs</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">TestResults(failed=0, attempted=4)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.summarize">
+<tt class="descname">summarize</tt><big>(</big><em>verbose=None</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.summarize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print results of testing to <tt class="docutils literal"><span class="pre">self.msgfile</span></tt> and return number
+of failures and tests run.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; whether to print lots of stuff</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>returns <tt class="docutils literal"><span class="pre">(f,</span> <span class="pre">t)</span></tt>, a <tt class="xref py py-class docutils literal"><span class="pre">doctest.TestResults</span></tt> instance
+giving the number of failures and the total number of tests
+run.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">_name2ft</span><span class="p">[</span><span class="s">&#39;sage.doctest.forker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">120</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">results</span> <span class="o">=</span> <span class="n">DTR</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
+<span class="go">**********************************************************************</span>
+<span class="go">1 item had failures:</span>
+<span class="go">    1 of 120 in sage.doctest.forker</span>
+<span class="gp">sage: </span><span class="n">results</span>
+<span class="go">TestResults(failed=1, attempted=120)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.update_digests">
+<tt class="descname">update_digests</tt><big>(</big><em>example</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.update_digests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update global and doctest digests.</p>
+<p>Sage&#8217;s doctest runner tracks the state of doctests so that
+their dependencies are known.  For example, in the following
+two lines</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>it records that the second line depends on the first since the
+first INSERTS <tt class="docutils literal"><span class="pre">x</span></tt> into the global namespace and the second
+line RETRIEVES <tt class="docutils literal"><span class="pre">x</span></tt> from the global namespace.</p>
+<p>This function updates the hashes that record these
+dependencies.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">example</span></tt> &#8211; a <a class="reference external" href="http://docs.python.org/library/doctest.html#doctest.Example" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">doctest.Example</span></tt></a> instance</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">hashlib</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">running_global_digest</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;d41d8cd98f00b204e9800998ecf8427e&#39;</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">running_doctest_digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ex</span> <span class="o">=</span> <span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">examples</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="n">ex</span><span class="o">.</span><span class="n">predecessors</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">update_digests</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">running_global_digest</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;3cb44104292c3a3ab4da3112ce5dc35c&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageDocTestRunner.update_results">
+<tt class="descname">update_results</tt><big>(</big><em>D</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageDocTestRunner.update_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>When returning results we pick out the results of interest
+since many attributes are not pickleable.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">D</span></tt> &#8211; a dictionary to update with cputime and walltime</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the number of failures (or False if there is no failure attribute)</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.parsing</span> <span class="kn">import</span> <span class="n">SageOutputChecker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageDocTestRunner</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.sources</span> <span class="kn">import</span> <span class="n">FileDocTestSource</span><span class="p">,</span> <span class="n">DictAsObject</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.control</span> <span class="kn">import</span> <span class="n">DocTestDefaults</span><span class="p">;</span> <span class="n">DD</span> <span class="o">=</span> <span class="n">DocTestDefaults</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.env</span> <span class="kn">import</span> <span class="n">SAGE_SRC</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">doctest</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="gp">sage: </span><span class="n">DTR</span> <span class="o">=</span> <span class="n">SageDocTestRunner</span><span class="p">(</span><span class="n">SageOutputChecker</span><span class="p">(),</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sage_options</span><span class="o">=</span><span class="n">DD</span><span class="p">,</span> <span class="n">optionflags</span><span class="o">=</span><span class="n">doctest</span><span class="o">.</span><span class="n">NORMALIZE_WHITESPACE</span><span class="o">|</span><span class="n">doctest</span><span class="o">.</span><span class="n">ELLIPSIS</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAGE_SRC</span><span class="p">,</span><span class="s">&#39;sage&#39;</span><span class="p">,</span><span class="s">&#39;doctest&#39;</span><span class="p">,</span><span class="s">&#39;forker.py&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">FDS</span> <span class="o">=</span> <span class="n">FileDocTestSource</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">DD</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">doctests</span><span class="p">,</span> <span class="n">extras</span> <span class="o">=</span> <span class="n">FDS</span><span class="o">.</span><span class="n">create_doctests</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.util</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">doctests</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">TestResults(failed=0, attempted=4)</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">DTR</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">DictAsObject</span><span class="p">({</span><span class="s">&#39;cputime&#39;</span><span class="p">:[],</span><span class="s">&#39;walltime&#39;</span><span class="p">:[],</span><span class="s">&#39;err&#39;</span><span class="p">:</span><span class="bp">None</span><span class="p">})</span>
+<span class="gp">sage: </span><span class="n">DTR</span><span class="o">.</span><span class="n">update_results</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()))</span>
+<span class="go">[(&#39;cputime&#39;, [...]), (&#39;err&#39;, None), (&#39;failures&#39;, 0), (&#39;walltime&#39;, [...])]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.doctest.forker.SageSpoofInOut">
+<em class="property">class </em><tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">SageSpoofInOut</tt><big>(</big><em>outfile=None</em>, <em>infile=None</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageSpoofInOut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>We replace the standard <tt class="xref py py-class docutils literal"><span class="pre">doctest._SpoofOut</span></tt> for three reasons:</p>
+<ul class="simple">
+<li>we need to divert the output of C programs that don&#8217;t print
+through sys.stdout,</li>
+<li>we want the ability to recover partial output from doctest
+processes that segfault.</li>
+<li>we also redirect stdin (usually from /dev/null) during doctests.</li>
+</ul>
+<p>This class defines streams <tt class="docutils literal"><span class="pre">self.real_stdin</span></tt>, <tt class="docutils literal"><span class="pre">self.real_stdout</span></tt>
+and <tt class="docutils literal"><span class="pre">self.real_stderr</span></tt> which refer to the original streams.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">outfile</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">tempfile.TemporaryFile()</span></tt>) a seekable open file
+object to which stdout and stderr should be redirected.</li>
+<li><tt class="docutils literal"><span class="pre">infile</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">open(os.devnull)</span></tt>) an open file object
+from which stdin should be redirected.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">tempfile</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageSpoofInOut</span>
+<span class="gp">sage: </span><span class="n">O</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     print(&quot;hello world&quot;)</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="go">&#39;hello world\n&#39;</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">(</span><span class="n">outfile</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">infile</span><span class="o">=</span><span class="n">O</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     _ = subprocess.check_call(&quot;cat&quot;)</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="go">hello world</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.doctest.forker.SageSpoofInOut.getvalue">
+<tt class="descname">getvalue</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageSpoofInOut.getvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the value that has been printed to <tt class="docutils literal"><span class="pre">outfile</span></tt> since the
+last time this function was called.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageSpoofInOut</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     print &quot;step 1&quot;</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="go">&#39;step 1\n&#39;</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     print &quot;step 2&quot;</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="go">&#39;step 2\n&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageSpoofInOut.start_spoofing">
+<tt class="descname">start_spoofing</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageSpoofInOut.start_spoofing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set stdin to read from <tt class="docutils literal"><span class="pre">self.infile</span></tt> and stdout to print to
+<tt class="docutils literal"><span class="pre">self.outfile</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">tempfile</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageSpoofInOut</span>
+<span class="gp">sage: </span><span class="n">O</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     print(&quot;this is not printed&quot;)</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="go">&#39;this is not printed\n&#39;</span>
+<span class="gp">sage: </span><span class="n">O</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">(</span><span class="n">infile</span><span class="o">=</span><span class="n">O</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     v = sys.stdin.read()</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">v</span>
+<span class="go">&#39;this is not printed\n&#39;</span>
+</pre></div>
+</div>
+<p>We also catch non-Python output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     retval = os.system(&#39;&#39;&#39;echo &quot;Hello there&quot;\nif [ $? -eq 0 ]; then\necho &quot;good&quot;\nfi&#39;&#39;&#39;)</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="go">&#39;Hello there\ngood\n&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.doctest.forker.SageSpoofInOut.stop_spoofing">
+<tt class="descname">stop_spoofing</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.SageSpoofInOut.stop_spoofing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset stdin and stdout to their original values.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">SageSpoofInOut</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SageSpoofInOut</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     S.start_spoofing()</span>
+<span class="go">....:     print &quot;this is not printed&quot;</span>
+<span class="go">....: finally:</span>
+<span class="go">....:     S.stop_spoofing()</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="s">&quot;this is now printed&quot;</span>
+<span class="go">this is now printed</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.forker.dummy_handler">
+<tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">dummy_handler</tt><big>(</big><em>sig</em>, <em>frame</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.dummy_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dummy signal handler for SIGCHLD (just to ensure the signal
+isn&#8217;t ignored).</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">signal</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">dummy_handler</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">dummy_handler</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIG_DFL</span><span class="p">)</span>
+<span class="go">&lt;function dummy_handler at ...&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.forker.init_sage">
+<tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">init_sage</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.doctest.forker.init_sage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import the Sage library.</p>
+<p>This function is called once at the beginning of a doctest run
+(rather than once for each file).  It imports the Sage library,
+sets DOCTEST_MODE to True, and invalidates any interfaces.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">init_sage</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">doctest</span><span class="o">.</span><span class="n">DOCTEST_MODE</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="gp">sage: </span><span class="n">init_sage</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">doctest</span><span class="o">.</span><span class="n">DOCTEST_MODE</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Check that pexpect interfaces are invalidated, but still work:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;my_test_var := 42;&quot;</span><span class="p">)</span>
+<span class="go">&#39;42&#39;</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;my_test_var;&quot;</span><span class="p">)</span>
+<span class="go">&#39;42&#39;</span>
+<span class="gp">sage: </span><span class="n">init_sage</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="p">(</span><span class="s">&#39;Group((1,2,3)(4,5), (3,4))&#39;</span><span class="p">)</span>
+<span class="go">Group( [ (1,2,3)(4,5), (3,4) ] )</span>
+<span class="gp">sage: </span><span class="n">gap</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;my_test_var;&quot;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">RuntimeError</span>: <span class="n-Identifier">Gap produced error output...</span>
+</pre></div>
+</div>
+<p>Check that SymPy equation pretty printer is limited in doctest
+mode to default width (80 chars):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">sympify</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sympy.printing.pretty.pretty</span> <span class="kn">import</span> <span class="n">PrettyPrinter</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">sympify</span><span class="p">(</span><span class="s">&#39;+x^&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">)))</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">PrettyPrinter</span><span class="p">(</span><span class="n">settings</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;wrap_line&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">})</span><span class="o">.</span><span class="n">doprint</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go"> 29    28    27    26    25    24    23    22    21    20    19    18    17</span>
+<span class="go">x   + x   + x   + x   + x   + x   + x   + x   + x   + x   + x   + x   + x   +</span>
+
+<span class="go"> 16    15    14    13    12    11    10    9    8    7    6    5    4    3</span>
+<span class="go">x   + x   + x   + x   + x   + x   + x   + x  + x  + x  + x  + x  + x  + x  + x</span>
+
+<span class="go">2</span>
+<span class="go">  + x</span>
+</pre></div>
+</div>
+<p>The displayhook sorts dictionary keys to simplify doctesting of
+dictionary output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">{</span><span class="s">&#39;a&#39;</span><span class="p">:</span><span class="mi">23</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span> <span class="s">&#39;au&#39;</span><span class="p">:</span><span class="mi">56</span><span class="p">,</span> <span class="s">&#39;bbf&#39;</span><span class="p">:</span><span class="mi">234</span><span class="p">,</span> <span class="s">&#39;aaa&#39;</span><span class="p">:</span><span class="mi">234</span><span class="p">}</span>
+<span class="go">{&#39;a&#39;: 23, &#39;aaa&#39;: 234, &#39;au&#39;: 56, &#39;b&#39;: 34, &#39;bbf&#39;: 234}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.doctest.forker.warning_function">
+<tt class="descclassname">sage.doctest.forker.</tt><tt class="descname">warning_function</tt><big>(</big><em>file</em><big>)</big><a class="headerlink" href="#sage.doctest.forker.warning_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a function that prints warnings to the given file.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">file</span></tt> &#8211; an open file handle.</li>
+</ul>
+<p>OUPUT:</p>
+<ul class="simple">
+<li>a function that prings warnings to the given file.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.doctest.forker</span> <span class="kn">import</span> <span class="n">warning_function</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">wrn</span> <span class="o">=</span> <span class="n">warning_function</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">wrn</span><span class="p">(</span><span class="s">&quot;bad stuff&quot;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">,</span> <span class="s">&quot;myfile.py&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&#39;doctest:...: UserWarning: bad stuff\n&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="sources.html"
+                                  title="previous chapter">Classes for sources of doctests</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="parsing.html"
+                                  title="next chapter">Parsing docstrings</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/doctest/forker.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="parsing.html" title="Parsing docstrings"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sources.html" title="Classes for sources of doctests"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Sage&#39;s Doctesting Framework</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

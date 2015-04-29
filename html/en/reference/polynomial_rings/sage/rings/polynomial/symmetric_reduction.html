@@ -1,0 +1,569 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Symmetric Reduction of Infinite Polynomials &mdash; Sage Reference Manual v6.6: Polynomial Rings</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.6: Polynomial Rings" href="../../../index.html" />
+    <link rel="up" title="Infinite Polynomial Rings" href="../../../polynomial_rings_infinite.html" />
+    <link rel="next" title="Laurent Polynomials and Polynomial Rings" href="../../../polynomial_rings_laurent.html" />
+    <link rel="prev" title="Symmetric Ideals of Infinite Polynomial Rings" href="symmetric_ideal.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../polynomial_rings_laurent.html" title="Laurent Polynomials and Polynomial Rings"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="symmetric_ideal.html" title="Symmetric Ideals of Infinite Polynomial Rings"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_infinite.html" accesskey="U">Infinite Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="symmetric-reduction-of-infinite-polynomials">
+<span id="sage-rings-polynomial-symmetric-reduction"></span><h1>Symmetric Reduction of Infinite Polynomials<a class="headerlink" href="#symmetric-reduction-of-infinite-polynomials" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.polynomial.symmetric_reduction"></span><p><a class="reference internal" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy" title="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy"><tt class="xref py py-class docutils literal"><span class="pre">SymmetricReductionStrategy</span></tt></a>
+provides a framework for efficient symmetric reduction of Infinite
+Polynomials, see <a class="reference internal" href="infinite_polynomial_element.html#module-sage.rings.polynomial.infinite_polynomial_element" title="sage.rings.polynomial.infinite_polynomial_element"><tt class="xref py py-mod docutils literal"><span class="pre">infinite_polynomial_element</span></tt></a>.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Simon King &lt;<a class="reference external" href="mailto:simon&#46;king&#37;&#52;&#48;nuigalway&#46;ie">simon<span>&#46;</span>king<span>&#64;</span>nuigalway<span>&#46;</span>ie</a>&gt;</li>
+</ul>
+<p>THEORY:</p>
+<p>According to M. Aschenbrenner and C. Hillar <a class="reference internal" href="symmetric_ideal.html#ab2007" id="id1">[AB2007]</a>, Symmetric
+Reduction of an element <span class="math">\(p\)</span> of an Infinite Polynomial Ring <span class="math">\(X\)</span> by some
+other element <span class="math">\(q\)</span> means the following:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Let <span class="math">\(M\)</span> and <span class="math">\(N\)</span> be the leading terms of <span class="math">\(p\)</span> and <span class="math">\(q\)</span>.</li>
+<li>Test whether there is a permutation <span class="math">\(P\)</span> that does not
+does not diminish the variable indices occurring in <span class="math">\(N\)</span>
+and preserves their order, so that there is some term
+<span class="math">\(T\in X\)</span> with <span class="math">\(T N^P = M\)</span>. If there is no such permutation,
+return <span class="math">\(p\)</span>.</li>
+<li>Replace <span class="math">\(p\)</span> by <span class="math">\(p-T q^P\)</span> and continue with step 1.</li>
+</ol>
+</div></blockquote>
+<p>When reducing one polynomial <span class="math">\(p\)</span> with respect to a list <span class="math">\(L\)</span> of other
+polynomials, there usually is a choice of order on which the
+efficiency crucially depends. Also it helps to modify the polynomials
+on the list in order to simplify the basic reduction steps.</p>
+<p>The preparation of <span class="math">\(L\)</span> may be expensive. Hence, if the same list is
+used many times then it is reasonable to perform the preparation only
+once. This is the background of
+<a class="reference internal" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy" title="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy"><tt class="xref py py-class docutils literal"><span class="pre">SymmetricReductionStrategy</span></tt></a>.</p>
+<p>Our current strategy is to keep the number of terms in the polynomials
+as small as possible. For this, we sort <span class="math">\(L\)</span> by increasing number of
+terms. If several elements of <span class="math">\(L\)</span> allow for a reduction of <span class="math">\(p\)</span>, we
+chose the one with the smallest number of terms. Later on, it should
+be possible to implement further strategies for choice.</p>
+<p>When adding a new polynomial <span class="math">\(q\)</span> to <span class="math">\(L\)</span>, we first reduce <span class="math">\(q\)</span> with
+respect to <span class="math">\(L\)</span>. Then, we test heuristically whether it is possible to
+reduce the number of terms of the elements of <span class="math">\(L\)</span> by reduction modulo
+<span class="math">\(q\)</span>.  That way, we see best chances to keep the number of terms in
+intermediate reduction steps relatively small.</p>
+<p>EXAMPLES:</p>
+<p>First, we create an infinite polynomial ring and one of its elements:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We want to symmetrically reduce it by another polynomial. So, we put
+this other polynomial into a list and create a Symmetric Reduction
+Strategy object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    x_1*y_2^2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">x_3*y_1^2 + y_3*y_1</span>
+</pre></div>
+</div>
+<p>The preceding is correct, since any permutation that turns
+<tt class="docutils literal"><span class="pre">y[2]^2*x[1]</span></tt> into a factor of <tt class="docutils literal"><span class="pre">y[1]^2*x[3]</span></tt> interchanges the
+variable indices 1 and 2 &#8211; which is not allowed in a symmetric
+reduction. However, reduction by <tt class="docutils literal"><span class="pre">y[1]^2*x[2]</span></tt> works, since one can
+change variable index 1 into 2 and 2 into 3. So, we add this to
+<tt class="docutils literal"><span class="pre">S</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">add_generator</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    x_2*y_1^2,</span>
+<span class="go">    x_1*y_2^2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">y_3*y_1</span>
+</pre></div>
+</div>
+<p>The next example shows that tail reduction is not done, unless it is
+explicitly advised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">x_3 + 2*x_2*y_1^2 + 3*x_1*y_2^2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">tailreduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">x_3</span>
+</pre></div>
+</div>
+<p>However, it is possible to ask for tailreduction already when the
+Symmetric Reduction Strategy is created:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S2</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">tailreduce</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S2</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    x_2*y_1^2,</span>
+<span class="go">    x_1*y_2^2</span>
+<span class="go">with tailreduction</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">x_3</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy">
+<em class="property">class </em><tt class="descclassname">sage.rings.polynomial.symmetric_reduction.</tt><tt class="descname">SymmetricReductionStrategy</tt><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>A framework for efficient symmetric reduction of InfinitePolynomial, see
+<a class="reference internal" href="infinite_polynomial_element.html#module-sage.rings.polynomial.infinite_polynomial_element" title="sage.rings.polynomial.infinite_polynomial_element"><tt class="xref py py-mod docutils literal"><span class="pre">infinite_polynomial_element</span></tt></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Parent</span></tt> &#8211; an Infinite Polynomial Ring, see
+<a class="reference internal" href="infinite_polynomial_element.html#module-sage.rings.polynomial.infinite_polynomial_element" title="sage.rings.polynomial.infinite_polynomial_element"><tt class="xref py py-mod docutils literal"><span class="pre">infinite_polynomial_element</span></tt></a>.</li>
+<li><tt class="docutils literal"><span class="pre">L</span></tt> &#8211; (list, default the empty list) List of elements of <tt class="docutils literal"><span class="pre">Parent</span></tt>
+with respect to which will be reduced.</li>
+<li><tt class="docutils literal"><span class="pre">good_input</span></tt> &#8211; (bool, default <tt class="docutils literal"><span class="pre">None</span></tt>) If this optional parameter
+is true, it is assumed that each element of <tt class="docutils literal"><span class="pre">L</span></tt> is symmetrically
+reduced with respect to the previous elements of <tt class="docutils literal"><span class="pre">L</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">good_input</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">y_3 + 3*y_2^2*y_1 + 2*y_2*y_1^2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">tailreduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">y_3</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.add_generator">
+<tt class="descname">add_generator</tt><big>(</big><em>p</em>, <em>good_input=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.add_generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add another polynomial to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">p</span></tt> &#8211; An element of the underlying infinite polynomial ring.</li>
+<li><tt class="docutils literal"><span class="pre">good_input</span></tt> &#8211; (bool, default <tt class="docutils literal"><span class="pre">None</span></tt>) If <tt class="docutils literal"><span class="pre">True</span></tt>, it is
+assumed that <tt class="docutils literal"><span class="pre">p</span></tt> is reduced with respect to <tt class="docutils literal"><span class="pre">self</span></tt>. Otherwise,
+this reduction will be done first (which may cost some time).</li>
+</ul>
+<p>NOTE:</p>
+<p>Previously added polynomials may be modified. All input is
+prepared in view of an efficient symmetric reduction.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">add_generator</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    x_3*y_1 + x_1*y_1 + y_3</span>
+</pre></div>
+</div>
+<p>Note that the first added polynomial will be simplified when
+adding a suitable second polynomial:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">add_generator</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    y_3,</span>
+<span class="go">    x_2 + x_1</span>
+</pre></div>
+</div>
+<p>By default, reduction is applied to any newly added
+polynomial. This can be avoided by specifying the optional
+parameter &#8216;good_input&#8217;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">add_generator</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    y_3,</span>
+<span class="go">    x_1*y_1 - y_2,</span>
+<span class="go">    x_2 + x_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">-2*x_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">add_generator</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">good_input</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    y_3,</span>
+<span class="go">    x_3 + x_2,</span>
+<span class="go">    x_1*y_1 - y_2,</span>
+<span class="go">    x_2 + x_1</span>
+</pre></div>
+</div>
+<p>In the previous example, <tt class="docutils literal"><span class="pre">x[3]</span> <span class="pre">+</span> <span class="pre">x[2]</span></tt> is added without
+being reduced to zero.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.gens">
+<tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of Infinite Polynomials modulo which self reduces.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in y over Rational Field, modulo</span>
+<span class="go">    y_2*y_1^2,</span>
+<span class="go">    y_2^2*y_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">[y_2*y_1^2, y_2^2*y_1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.reduce">
+<tt class="descname">reduce</tt><big>(</big><em>p</em>, <em>notail=False</em>, <em>report=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symmetric reduction of an infinite polynomial.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">p</span></tt> &#8211; an element of the underlying infinite polynomial ring.</li>
+<li><tt class="docutils literal"><span class="pre">notail</span></tt> &#8211; (bool, default <tt class="docutils literal"><span class="pre">False</span></tt>) If <tt class="docutils literal"><span class="pre">True</span></tt>, tail reduction
+is avoided (but there is no guarantee that there will be no tail
+reduction at all).</li>
+<li><tt class="docutils literal"><span class="pre">report</span></tt> &#8211; (object, default <tt class="docutils literal"><span class="pre">None</span></tt>) If not <tt class="docutils literal"><span class="pre">None</span></tt>, print
+information on the progress of the computation.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>Reduction of <tt class="docutils literal"><span class="pre">p</span></tt> with respect to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>NOTE:</p>
+<p>If tail reduction shall be forced, use <a class="reference internal" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.tailreduce" title="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.tailreduce"><tt class="xref py py-meth docutils literal"><span class="pre">tailreduce()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span> <span class="n">tailreduce</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+<span class="go">x_4*y_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">notail</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">x_4*y_1 + x_1*y_4</span>
+</pre></div>
+</div>
+<p>Last, we demonstrate the &#8216;report&#8217; option:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    y_3 + y_2,</span>
+<span class="go">    x_2 + y_1,</span>
+<span class="go">    x_1*y_2 + y_4 - y_3*y_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">report</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">:::&gt;</span>
+<span class="go">x_1*y_1 + y_4 - y_3*y_1 - y_1</span>
+</pre></div>
+</div>
+<p>Each &#8216;:&#8217; indicates that one reduction of the leading monomial
+was performed. Eventually, the &#8216;&gt;&#8217; indicates that the
+computation is finished.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.reset">
+<tt class="descname">reset</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all polynomials from <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in y over Rational Field, modulo</span>
+<span class="go">    y_2*y_1^2,</span>
+<span class="go">    y_2^2*y_1</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in y over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.setgens">
+<tt class="descname">setgens</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.setgens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define the list of Infinite Polynomials modulo which self reduces.</p>
+<p>INPUT:</p>
+<p><tt class="docutils literal"><span class="pre">L</span></tt> &#8211; a list of elements of the underlying infinite polynomial ring.</p>
+<p>NOTE:</p>
+<p>It is not tested if <tt class="docutils literal"><span class="pre">L</span></tt> is a good input. That method simply
+assigns a <em>copy</em> of <tt class="docutils literal"><span class="pre">L</span></tt> to the generators of self.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">setgens</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">gens</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">R</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in y over Rational Field, modulo</span>
+<span class="go">    y_2*y_1^2,</span>
+<span class="go">    y_2^2*y_1</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span> <span class="ow">is</span> <span class="n">S</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span> <span class="o">==</span> <span class="n">S</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.tailreduce">
+<tt class="descname">tailreduce</tt><big>(</big><em>p</em>, <em>report=None</em><big>)</big><a class="headerlink" href="#sage.rings.polynomial.symmetric_reduction.SymmetricReductionStrategy.tailreduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symmetric reduction of an infinite polynomial, with forced tail reduction.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">p</span></tt> &#8211; an element of the underlying infinite polynomial ring.</li>
+<li><tt class="docutils literal"><span class="pre">report</span></tt> &#8211; (object, default <tt class="docutils literal"><span class="pre">None</span></tt>) If not <tt class="docutils literal"><span class="pre">None</span></tt>, print
+information on the progress of the computation.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>Reduction (including the non-leading elements) of <tt class="docutils literal"><span class="pre">p</span></tt> with respect to <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.polynomial.symmetric_reduction</span> <span class="kn">import</span> <span class="n">SymmetricReductionStrategy</span>
+<span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">InfinitePolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+<span class="go">x_4*y_1 + x_1*y_4</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">tailreduce</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+<span class="go">x_4*y_1</span>
+</pre></div>
+</div>
+<p>Last, we demonstrate the &#8216;report&#8217; option:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">SymmetricReductionStrategy</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">S</span>
+<span class="go">Symmetric Reduction Strategy in Infinite polynomial ring in x, y over Rational Field, modulo</span>
+<span class="go">    y_3 + y_2,</span>
+<span class="go">    x_2 + y_1,</span>
+<span class="go">    x_1*y_2 + y_4 + y_1^2</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">tailreduce</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">report</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">T[3]:::&gt;</span>
+<span class="go">T[3]:&gt;</span>
+<span class="go">x_1*y_1 - y_2 + y_1^2 - y_1</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>The protocol means the following.</dt>
+<dd><ul class="first last simple">
+<li>&#8216;T[3]&#8217; means that we currently do tail reduction for a polynomial
+with three terms.</li>
+<li>&#8216;:::&gt;&#8217; means that there were three reductions of leading terms.</li>
+<li>The tail of the result of the preceding reduction still has three
+terms. One reduction of leading terms was possible, and then the
+final result was obtained.</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="symmetric_ideal.html"
+                                  title="previous chapter">Symmetric Ideals of Infinite Polynomial Rings</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../../../polynomial_rings_laurent.html"
+                                  title="next chapter">Laurent Polynomials and Polynomial Rings</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/rings/polynomial/symmetric_reduction.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../../polynomial_rings_laurent.html" title="Laurent Polynomials and Polynomial Rings"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="symmetric_ideal.html" title="Symmetric Ideals of Infinite Polynomial Rings"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Polynomial Rings</a> &raquo;</li>
+
+          <li><a href="../../../polynomial_rings_infinite.html" >Infinite Polynomial Rings</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

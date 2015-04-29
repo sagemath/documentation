@@ -1,0 +1,380 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>More Interesting Examples with f2py &mdash; Thematic Tutorials v6.6</title>
+    
+    <link rel="stylesheet" href="../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '6.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.6" href="../index.html" />
+    <link rel="up" title="Using Compiled Code Interactively" href="using_compiled_code_iteractively.html" />
+    <link rel="next" title="Weave" href="weave.html" />
+    <link rel="prev" title="f2py" href="f2py.html" />
+    <link rel="icon" href="../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="weave.html" title="Weave"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="f2py.html" title="f2py"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" accesskey="U">Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="more-interesting-examples-with-f2py">
+<h1>More Interesting Examples with f2py<a class="headerlink" href="#more-interesting-examples-with-f2py" title="Permalink to this headline">¶</a></h1>
+<p>Let us now look at some more interesting examples using f2py. We
+will implement a simple iterative method for solving laplace&#8217;s
+equation in a square. Actually, this implementation is taken from
+<a class="reference external" href="http://www.scipy.org/PerformancePython?highlight=%28performance%29">http://www.scipy.org/PerformancePython?highlight=%28performance%29</a>
+page on the scipy website. It has lots of information on
+implementing numerical algorithms in python.</p>
+<p>The following fortran code implements a single iteration of a
+relaxation method for solving Laplace&#8217;s equation in a square.</p>
+<div class="highlight-python"><div class="highlight"><pre>%fortran
+      subroutine timestep(u,n,m,dx,dy,error)
+      double precision u(n,m)
+      double precision dx,dy,dx2,dy2,dnr_inv,tmp,diff
+      integer n,m,i,j
+cf2py intent(in) :: dx,dy
+cf2py intent(in,out) :: u
+cf2py intent(out) :: error
+cf2py intent(hide) :: n,m
+      dx2 = dx*dx
+      dy2 = dy*dy
+      dnr_inv = 0.5d0 / (dx2+dy2)
+      error = 0d0
+      do 200,j=2,m-1
+         do 100,i=2,n-1
+            tmp = u(i,j)
+            u(i,j) = ((u(i-1,j) + u(i+1,j))*dy2+
+     &amp;           (u(i,j-1) + u(i,j+1))*dx2)*dnr_inv
+            diff = u(i,j) - tmp
+            error = error + diff*diff
+ 100     continue
+ 200  continue
+      error = sqrt(error)
+      end
+</pre></div>
+</div>
+<p>If you do</p>
+<div class="highlight-python"><div class="highlight"><pre>timestep?
+</pre></div>
+</div>
+<p>You find that you need pass timestep a numpy array u, and the grid
+spacing dx,dy and it will return the updated u, together with an
+error estimate. To apply this to actually solve a problem use this
+driver code</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">j</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">num_points</span><span class="o">=</span><span class="mi">50</span>
+<span class="n">u</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_points</span><span class="p">,</span><span class="n">num_points</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">pi_c</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">x</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="mf">0.0</span><span class="p">:</span><span class="n">pi_c</span><span class="p">:</span><span class="n">num_points</span><span class="o">*</span><span class="n">j</span><span class="p">]</span>
+<span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">u</span><span class="p">[</span><span class="n">num_points</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">solve_laplace</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">):</span>
+   <span class="nb">iter</span> <span class="o">=</span><span class="mi">0</span>
+   <span class="n">err</span> <span class="o">=</span> <span class="mi">2</span>
+   <span class="k">while</span><span class="p">(</span><span class="nb">iter</span> <span class="o">&lt;</span><span class="mi">10000</span> <span class="ow">and</span> <span class="n">err</span><span class="o">&gt;</span><span class="mf">1e-6</span><span class="p">):</span>
+      <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">err</span><span class="p">)</span><span class="o">=</span><span class="n">timestep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">)</span>
+      <span class="nb">iter</span><span class="o">+=</span><span class="mi">1</span>
+   <span class="k">return</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">err</span><span class="p">,</span><span class="nb">iter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now call the routine using</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="n">sol</span><span class="p">,</span><span class="n">err</span><span class="p">,</span><span class="nb">iter</span><span class="p">)</span><span class="o">=</span><span class="n">solve_laplace</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">pi_c</span><span class="o">/</span><span class="p">(</span><span class="n">num_points</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="n">pi_c</span><span class="o">/</span><span class="p">(</span><span class="n">num_points</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This solves the equation with boundary conditions that the right
+and left edge of the square are half an oscillation of the sine
+function. With a 51x51 grid that we are using I find that it takes
+around .2 s to solve this requiring 2750 iterations. If you have
+the gnuplot package installed (use optional
+packages() to find its name and install
+package to install it), then you can plot this using</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">Gnuplot</span>
+<span class="n">g</span><span class="o">=</span><span class="n">Gnuplot</span><span class="o">.</span><span class="n">Gnuplot</span><span class="p">(</span><span class="n">persist</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">g</span><span class="p">(</span><span class="s">&#39;set parametric&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="p">(</span><span class="s">&#39;set data style lines&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="p">(</span><span class="s">&#39;set hidden&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="p">(</span><span class="s">&#39;set contour base&#39;</span><span class="p">)</span>
+<span class="n">g</span><span class="p">(</span><span class="s">&#39;set zrange [-.2:1.2]&#39;</span><span class="p">)</span>
+<span class="n">data</span><span class="o">=</span><span class="n">Gnuplot</span><span class="o">.</span><span class="n">GridData</span><span class="p">(</span><span class="n">sol</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">binary</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">splot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To see what we have gained by using f2py let us compare the same
+algorithm in pure python and a vectorized version using numpy
+arrays.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">slowTimeStep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes a time step using straight forward Python loops.&quot;&quot;&quot;</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">dx2</span><span class="p">,</span> <span class="n">dy2</span> <span class="o">=</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">dnr_inv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="n">dx2</span> <span class="o">+</span> <span class="n">dy2</span><span class="p">)</span>
+
+
+    <span class="n">err</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span><span class="o">*</span><span class="n">dy2</span> <span class="o">+</span>
+                      <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">dx2</span><span class="p">)</span><span class="o">*</span><span class="n">dnr_inv</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">tmp</span>
+            <span class="n">err</span> <span class="o">+=</span> <span class="n">diff</span><span class="o">*</span><span class="n">diff</span>
+
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">numpyTimeStep</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dy</span><span class="p">):</span>
+    <span class="n">dx2</span><span class="p">,</span> <span class="n">dy2</span> <span class="o">=</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">dnr_inv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">/</span><span class="p">(</span><span class="n">dx2</span> <span class="o">+</span> <span class="n">dy2</span><span class="p">)</span>
+    <span class="n">u_old</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c"># The actual iteration</span>
+    <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="mi">2</span><span class="p">:,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">dy2</span> <span class="o">+</span>
+                     <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">*</span><span class="n">dx2</span><span class="p">)</span><span class="o">*</span><span class="n">dnr_inv</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">u_old</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">v</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>You can try these out by changing the timestep function used in our
+driver routine. The python version is slow even on a 50x50 grid. It
+takes 70 seconds to solve the system in 3000 iterations. It takes
+the numpy routine 2 seconds to reach the error tolerance in around
+5000 iterations. In contrast it takes the f2py routine around .2
+seconds to reach the error tolerance using 3000 iterations. I
+should point out that the numpy routine is not quite the same
+algorithm since it is a jacobi iteration while the f2py one is
+gauss-seidel. This is why the numpy version requires more
+iterations. Even accounting for this you can see the f2py version
+appears to be around 5 times faster than the numpy version.
+Actually if you try this on a 500x500 grid I find that it takes the
+numpy routine 30 seconds to do 500 iterations while it only takes
+about 2 seconds for the f2py to do this. So the f2py version is
+really about 15 times faster. On smaller grids each actual
+iteration is relatively cheap and so the overhead of calling f2py
+is more evident, on larger examples where the iteration is
+expensive, the advantage of f2py is clear. Even on the small
+example it is still very fast. Note that a 500x500 grid in python
+would take around half an hour to do 500 iterations.</p>
+<p>To my knowledge the fastest that you could implement this algorithm
+in matlab would be to vectorize it exactly like the numpy routine
+we have. Vector addition in matlab and numpy are comparable. So
+unless there is some trick I don&#8217;t know about, using f2py you can
+interactively write code 15 times faster than anything you could
+write in matlab (Please correct me if I&#8217;m wrong). You can actually
+make the f2py version a little bit faster by using
+intent(in,out,overwrite) and creating the initial numpy array using
+order=&#8217;FORTRAN&#8217;. This eliminates the unnecessary copying that is
+occurring in memory.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="f2py.html"
+                                  title="previous chapter">f2py</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="weave.html"
+                                  title="next chapter">Weave</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/numerical_sage/f2py_examples.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="weave.html" title="Weave"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="f2py.html" title="f2py"
+             >previous</a> |</li>
+  
+    
+      <a href="../../index.html"><img src="../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../index.html">Thematic Tutorials v6.6</a> &raquo;</li>
+
+          <li><a href="../toctree.html" >Thematic tutorial document tree</a> &raquo;</li>
+          <li><a href="index.html" >Numerical Computing with Sage</a> &raquo;</li>
+          <li><a href="using_compiled_code_iteractively.html" >Using Compiled Code Interactively</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
