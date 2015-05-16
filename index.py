@@ -27,6 +27,8 @@ body { background-color: white; }
 <body>
 """]
 
+filter_ref = ["graph-", "generic-graph-"]
+
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
 
 for path in glob("*/*"):
@@ -51,16 +53,23 @@ for what in sorted(pages.keys()):
     for lang, entries in sorted(pages[what].iteritems()):
         output.append("<li>%s</li>" % LANG.get(lang, lang))
         output.append("<ul>")
-        for entry in entries:
+        for entry in sorted(entries):
+            entries = entry.split("/")
             if what == "html":
-                fn = entry.split("/")[-2].replace("_", " ").title()
+                fn = entries[-2].replace("_", " ").title()
+                subcat = ""
             elif what == "pdf":
-                fn = entry.split(
-                    "/")[-1][:-4].replace("_",
-                                          " ").title() + " (PDF)"
-            output.append("<li><a href='{path}'>{fn}</a></li>".format(
+                if any(entries[-1].startswith(_) for _ in filter_ref):
+                    continue
+                fn = entries[-1][:-4] \
+                    .replace("_", " ") \
+                    .title() + " (pdf)"
+                subcat = (entries[2].title() + ": ") if len(
+                    entries) >= 5 else ""
+            output.append("<li><a href='{path}'>{subcat}{fn}</a></li>".format(
                           path=entry,
                           lang=LANG.get(lang, lang),
+                          subcat=subcat,
                           fn=fn))
         output.append("</ul>")
     output.append("</ul>")
