@@ -11,7 +11,8 @@ LANG = {
   "ru": "Russian",
   "fr": "French",
   "it": "Italian",
-  "ca": "Catalan"
+  "ca": "Catalan",
+  "tr": "Turkish"
 }
 
 output = ["""\
@@ -25,6 +26,10 @@ body { background-color: white; }
 <link rel="shortcut icon" href="html/en/website/_static/favicon.ico"/>
 </head>
 <body>
+<img width="350" alt="SageMath Logo"
+style="border-radius: 10px;"
+src="http://www.sagemath.org/pix/sage_logo_new_l_hc_edgy-nq8.png"
+title="SageMath Mathematical Software">
 """]
 
 filter_ref = ["graph-", "generic-graph-"]
