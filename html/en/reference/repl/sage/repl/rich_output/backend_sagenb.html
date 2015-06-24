@@ -1,0 +1,494 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SageNB Backend for the Sage Rich Output System &mdash; Sage Reference Manual v6.7: The Sage Command Line</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.7: The Sage Command Line" href="../../../index.html" />
+    <link rel="next" title="Constructors that automatically inject variables into the global module scope" href="../../ext/interactive_constructors_c.html" />
+    <link rel="prev" title="IPython Backend for the Sage Rich Output System" href="backend_ipython.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../ext/interactive_constructors_c.html" title="Constructors that automatically inject variables into the global module scope"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="backend_ipython.html" title="IPython Backend for the Sage Rich Output System"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">The Sage Command Line</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="sagenb-backend-for-the-sage-rich-output-system">
+<span id="sage-repl-rich-output-backend-sagenb"></span><h1>SageNB Backend for the Sage Rich Output System<a class="headerlink" href="#sagenb-backend-for-the-sage-rich-output-system" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.repl.rich_output.backend_sagenb"></span><p>This module defines the IPython backends for
+<tt class="xref py py-mod docutils literal"><span class="pre">sage.repl.rich_output</span></tt>.</p>
+<p>EXAMPLES:</p>
+<p>Install the SageNB displayhook while doctesting for the rest of this
+file. This somewhat odd incantation is how SageNB installed its
+displayhook before:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.displayhook</span> <span class="kn">import</span> <span class="n">DisplayHook</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="gp">sage: </span><span class="n">sys</span><span class="o">.</span><span class="n">displayhook</span> <span class="o">=</span> <span class="n">DisplayHook</span><span class="p">()</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output</span> <span class="kn">import</span> <span class="n">get_display_manager</span>
+<span class="gp">sage: </span><span class="n">get_display_manager</span><span class="p">()</span>
+<span class="go">The Sage display manager using the SageNB backend</span>
+</pre></div>
+</div>
+<p>We also enable the SageNB magic global variable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.plot.plot</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">EMBEDDED_MODE</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>And switch to a temporary directory so our current directory will not
+get cluttered with temporary files:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>The SageNB notebook is based on saving data files with predictable
+filenames:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0.png&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">Graphics</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0.png&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;sage0.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.repl.rich_output.backend_sagenb.BackendSageNB">
+<em class="property">class </em><tt class="descclassname">sage.repl.rich_output.backend_sagenb.</tt><tt class="descname">BackendSageNB</tt><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.BackendSageNB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="backend_base.html#sage.repl.rich_output.backend_base.BackendBase" title="sage.repl.rich_output.backend_base.BackendBase"><tt class="xref py py-class docutils literal"><span class="pre">sage.repl.rich_output.backend_base.BackendBase</span></tt></a></p>
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.BackendSageNB.display_immediately">
+<tt class="descname">display_immediately</tt><big>(</big><em>plain_text</em>, <em>rich_output</em><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.BackendSageNB.display_immediately" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show output without waiting for the prompt.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">plain_text</span></tt> &#8211; instance of
+<a class="reference internal" href="output_basic.html#sage.repl.rich_output.output_basic.OutputPlainText" title="sage.repl.rich_output.output_basic.OutputPlainText"><tt class="xref py py-class docutils literal"><span class="pre">OutputPlainText</span></tt></a>. The
+plain text version of the output.</li>
+<li><tt class="docutils literal"><span class="pre">rich_output</span></tt> &#8211; instance of an output container class
+(subclass of
+<a class="reference internal" href="output_basic.html#sage.repl.rich_output.output_basic.OutputBase" title="sage.repl.rich_output.output_basic.OutputBase"><tt class="xref py py-class docutils literal"><span class="pre">OutputBase</span></tt></a>). Guaranteed
+to be one of the output containers returned from
+<a class="reference internal" href="#sage.repl.rich_output.backend_sagenb.BackendSageNB.supported_output" title="sage.repl.rich_output.backend_sagenb.BackendSageNB.supported_output"><tt class="xref py py-meth docutils literal"><span class="pre">supported_output()</span></tt></a>, possibly the same as
+<tt class="docutils literal"><span class="pre">plain_text</span></tt>.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>This method does not return anything.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">sage.repl.rich_output.output_catalog</span> <span class="kn">as</span> <span class="nn">catalog</span>
+<span class="gp">sage: </span><span class="n">plain_text</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">OutputPlainText</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">BackendSageNB</span>
+<span class="gp">sage: </span><span class="n">backend</span> <span class="o">=</span> <span class="n">BackendSageNB</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">backend</span><span class="o">.</span><span class="n">display_immediately</span><span class="p">(</span><span class="n">plain_text</span><span class="p">,</span> <span class="n">plain_text</span><span class="p">)</span>
+<span class="go">Example plain text output</span>
+<span class="gp">sage: </span><span class="n">latex</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">OutputLatex</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">backend</span><span class="o">.</span><span class="n">display_immediately</span><span class="p">(</span><span class="n">plain_text</span><span class="p">,</span> <span class="n">latex</span><span class="p">)</span>
+<span class="go">&lt;html&gt;&lt;script type=&quot;math/tex; mode=display&quot;&gt;\newcommand{\Bold}[1]{\mathbf{#1}}\int \sin\left(x\right)\,{d x}&lt;/script&gt;&lt;/html&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.BackendSageNB.embed_image">
+<tt class="descname">embed_image</tt><big>(</big><em>output_buffer</em>, <em>file_ext</em><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.BackendSageNB.embed_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Embed Image in the SageNB worksheet</p>
+<p>SageNB scans per-cell directories for image files, so all we
+have to do here is to save the image at the right place.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">output_buffer</span></tt> &#8211;
+<tt class="xref py py-class docutils literal"><span class="pre">Buffer</span></tt>. A buffer
+holding the image data.</li>
+<li><tt class="docutils literal"><span class="pre">file_ext</span></tt> &#8211; string. The file extension to use for saving
+the image.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>Nothing is returned. The image file is saved in the
+appropriate place for SageNB.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output</span> <span class="kn">import</span> <span class="n">get_display_manager</span>
+<span class="gp">sage: </span><span class="n">dm</span> <span class="o">=</span> <span class="n">get_display_manager</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">rich_output</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">OutputImagePng</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0.png&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">dm</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">embed_image</span><span class="p">(</span><span class="n">rich_output</span><span class="o">.</span><span class="n">png</span><span class="p">,</span> <span class="s">&#39;.png&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0.png&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.BackendSageNB.supported_output">
+<tt class="descname">supported_output</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.BackendSageNB.supported_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the outputs that are supported by the SageNB backend.</p>
+<p>OUTPUT:</p>
+<p>Iterable of output container classes, that is, subclass of
+<a class="reference internal" href="output_basic.html#sage.repl.rich_output.output_basic.OutputBase" title="sage.repl.rich_output.output_basic.OutputBase"><tt class="xref py py-class docutils literal"><span class="pre">OutputBase</span></tt></a>).
+The order is ignored.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">BackendSageNB</span>
+<span class="gp">sage: </span><span class="n">backend</span> <span class="o">=</span> <span class="n">BackendSageNB</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">supp</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">supported_output</span><span class="p">();</span>  <span class="n">supp</span>     <span class="c"># random output</span>
+<span class="go">set([&lt;class &#39;sage.repl.rich_output.output_graphics.OutputPlainText&#39;&gt;, </span>
+<span class="go">     ...,</span>
+<span class="go">     &lt;class &#39;sage.repl.rich_output.output_graphics.OutputCanvas3d&#39;&gt;])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.output_basic</span> <span class="kn">import</span> <span class="n">OutputLatex</span>
+<span class="gp">sage: </span><span class="n">OutputLatex</span> <span class="ow">in</span> <span class="n">supp</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol">
+<em class="property">class </em><tt class="descclassname">sage.repl.rich_output.backend_sagenb.</tt><tt class="descname">SageNbOutputSceneJmol</tt><big>(</big><em>scene_zip</em>, <em>preview_png</em><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="output_graphics3d.html#sage.repl.rich_output.output_graphics3d.OutputSceneJmol" title="sage.repl.rich_output.output_graphics3d.OutputSceneJmol"><tt class="xref py py-class docutils literal"><span class="pre">sage.repl.rich_output.output_graphics3d.OutputSceneJmol</span></tt></a></p>
+<p>Adapt Jmol rich output container for SageNB.</p>
+<p>For legacy reasons, SageNB expects Jmol files saved under strange
+names. This class takes care of that.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="go">SageNbOutputSceneJmol container</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.embed">
+<tt class="descname">embed</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.embed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save all files necessary to embed jmol</p>
+<p>EXAMPLES:</p>
+<p>Switch to a new empty temporary directory:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">())</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">embed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">))</span>
+<span class="go">[&#39;.jmol_images&#39;, &#39;sage0-size32-....jmol.zip&#39;, &#39;sage0-size32.jmol&#39;]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;.jmol_images&#39;</span><span class="p">))</span>
+<span class="go">[&#39;sage0-size32.jmol.png&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.preview_filename">
+<tt class="descname">preview_filename</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.preview_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the filename for the png preview</p>
+<p>OUTPUT:</p>
+<p>String.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">preview_filename</span><span class="p">()</span>
+<span class="go">&#39;./.jmol_images/sage0-size32.jmol.png&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.sagenb_launch_script_filename">
+<tt class="descname">sagenb_launch_script_filename</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.sagenb_launch_script_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the launch script filename used by SageNB</p>
+<p>OUTPUT:</p>
+<p>String.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">sagenb_launch_script_filename</span><span class="p">()</span>
+<span class="go">&#39;sage0-size32.jmol&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.save_launch_script">
+<tt class="descname">save_launch_script</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.save_launch_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the Jmol launch script</p>
+<p>See <a class="reference internal" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.sagenb_launch_script_filename" title="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.sagenb_launch_script_filename"><tt class="xref py py-meth docutils literal"><span class="pre">sagenb_launch_script_filename()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0-size32.jmol&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">save_launch_script</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;sage0-size32.jmol&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.save_preview">
+<tt class="descname">save_preview</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.save_preview" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the preview PNG image</p>
+<p>See <a class="reference internal" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.preview_filename" title="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.preview_filename"><tt class="xref py py-meth docutils literal"><span class="pre">preview_filename()</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">shutil</span>
+<span class="gp">sage: </span><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&#39;.jmol_images&#39;</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">save_preview</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;.jmol_images&#39;</span><span class="p">)</span>
+<span class="go">[&#39;sage1-size32.jmol.png&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.scene_zip_filename">
+<tt class="descname">scene_zip_filename</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.SageNbOutputSceneJmol.scene_zip_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the filename for the scene zip archive</p>
+<p>OUTPUT:</p>
+<p>String.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">SageNbOutputSceneJmol</span>
+<span class="gp">sage: </span><span class="n">j</span> <span class="o">=</span> <span class="n">SageNbOutputSceneJmol</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">j</span><span class="o">.</span><span class="n">scene_zip_filename</span><span class="p">()</span>
+<span class="go">&#39;sage0-size32-....jmol.zip&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.repl.rich_output.backend_sagenb.world_readable">
+<tt class="descclassname">sage.repl.rich_output.backend_sagenb.</tt><tt class="descname">world_readable</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#sage.repl.rich_output.backend_sagenb.world_readable" title="Permalink to this definition">¶</a></dt>
+<dd><p>All SageNB temporary files must be world-writeable.</p>
+<p>Discussion of this design choice can be found at <a class="reference external" href="http://trac.sagemath.org/17743">trac ticket #17743</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">stat</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>At least on a sane system the temporary files are only readable by
+the user, but not by others in the group or total strangers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mode</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span>
+<span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IRUSR</span><span class="p">),</span> <span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IRGRP</span><span class="p">),</span> <span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IROTH</span><span class="p">)</span>   <span class="c"># random output</span>
+<span class="go">(True, False, False)</span>
+</pre></div>
+</div>
+<p>This function disables that protection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.rich_output.backend_sagenb</span> <span class="kn">import</span> <span class="n">world_readable</span>
+<span class="gp">sage: </span><span class="n">world_readable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mode</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">st_mode</span>
+<span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IRUSR</span><span class="p">),</span> <span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IRGRP</span><span class="p">),</span> <span class="nb">bool</span><span class="p">(</span><span class="n">mode</span> <span class="o">&amp;</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IROTH</span><span class="p">)</span>
+<span class="go">(True, True, True)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="backend_ipython.html"
+                                  title="previous chapter">IPython Backend for the Sage Rich Output System</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../../ext/interactive_constructors_c.html"
+                                  title="next chapter">Constructors that automatically inject variables into the global module scope</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/repl/rich_output/backend_sagenb.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../ext/interactive_constructors_c.html" title="Constructors that automatically inject variables into the global module scope"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="backend_ipython.html" title="IPython Backend for the Sage Rich Output System"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">The Sage Command Line</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

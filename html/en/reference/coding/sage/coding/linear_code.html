@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Linear Codes &mdash; Sage Reference Manual v6.6: Coding Theory</title>
+    <title>Linear Codes &mdash; Sage Reference Manual v6.7: Coding Theory</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6',
+        VERSION:     '6.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v6.6: Coding Theory" href="../../index.html" />
+    <link rel="top" title="Sage Reference Manual v6.7: Coding Theory" href="../../index.html" />
     <link rel="next" title="Linear code constructions" href="code_constructions.html" />
     <link rel="prev" title="Index of Codes" href="codes_catalog.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
@@ -229,68 +229,41 @@ and the automorphism group</li>
 </pre></div>
 </div>
 <dl class="class">
-<dt id="sage.coding.linear_code.LinearCode">
-<em class="property">class </em><tt class="descclassname">sage.coding.linear_code.</tt><tt class="descname">LinearCode</tt><big>(</big><em>generator_matrix</em>, <em>d=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../modules/sage/modules/module.html#sage.modules.module.Module" title="(in Sage Reference Manual: Modules v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.modules.module.Module</span></tt></a></p>
-<p>Linear codes over a finite field or finite ring.</p>
-<p>A <em>linear code</em> is a subspace of a vector space over a finite field. It can
-be defined by one of its basis or equivalently a generator matrix (a <span class="math">\(k
-\times n\)</span> matrix of full rank <span class="math">\(k\)</span>).</p>
-<p>See <a class="reference external" href="http://en.wikipedia.org/wiki/Linear_code">Wikipedia article Linear_code</a> for more information.</p>
-<p>INPUT:</p>
+<dt id="sage.coding.linear_code.AbstractLinearCode">
+<em class="property">class </em><tt class="descclassname">sage.coding.linear_code.</tt><tt class="descname">AbstractLinearCode</tt><big>(</big><em>base_field</em>, <em>length</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../modules/sage/modules/module.html#sage.modules.module.Module" title="(in Sage Reference Manual: Modules v6.7)"><tt class="xref py py-class docutils literal"><span class="pre">sage.modules.module.Module</span></tt></a></p>
+<p>Abstract class for linear codes.</p>
+<p>This class contains all methods that can be used on Linear Codes
+and on Linear Codes families.
+So, every Linear Code-related class should inherit from this abstract
+class.</p>
+<p>This class provides:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">generator_matrix</span></tt> &#8211; a generator matrix over a finite field (<tt class="docutils literal"><span class="pre">G</span></tt> can be
-defined over a finite ring but the matrices over that ring must have
-certain attributes, such as <tt class="docutils literal"><span class="pre">rank</span></tt>)</li>
-<li><tt class="docutils literal"><span class="pre">d</span></tt> &#8211; (optional, default: <tt class="docutils literal"><span class="pre">None</span></tt>) the minimum distance of the code</li>
+<li><tt class="docutils literal"><span class="pre">length</span></tt>, the length of the code</li>
+<li>numerous methods that will work for any linear code (including families)</li>
 </ul>
+<p>To implement a linear code, you need to:</p>
+<ul class="simple">
+<li>inherit from AbstractLinearCode</li>
+<li>call AbstractLinearCode <tt class="docutils literal"><span class="pre">__init__</span></tt> method in the subclass constructor. Example:
+<tt class="docutils literal"><span class="pre">super(SubclassName,</span> <span class="pre">self).__init__(base_field,</span> <span class="pre">length)</span></tt>.
+By doing that, your subclass will have its <tt class="docutils literal"><span class="pre">length</span></tt> parameter
+initialized and will be properly set as a member of the category framework.
+You need of course to complete the constructor by adding any additional parameter
+needed to describe properly the code defined in the subclass.</li>
+<li>reimplement <tt class="docutils literal"><span class="pre">generator_matrix()</span></tt> method</li>
+</ul>
+<p>As AbstractLinearCode is not designed to be implemented, it does not have any representation
+methods. You should implement <tt class="docutils literal"><span class="pre">_repr_</span></tt> and <tt class="docutils literal"><span class="pre">_latex_</span></tt> methods in the sublclass.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The veracity of the minimum distance <tt class="docutils literal"><span class="pre">d</span></tt>, if provided, is not
-checked.</p>
+<p class="last">AbstractLinearCode embeds some generic implementations of helper methods like <tt class="docutils literal"><span class="pre">__cmp__</span></tt> or <tt class="docutils literal"><span class="pre">__eq__</span></tt>.
+As they are designed to fit for every linear code, they mostly use the generator matrix
+and thus can be long for certain families of code. In that case, overriding these methods is encouraged.</p>
 </div>
-<p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
-<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">C</span>
-<span class="go">Linear code of length 7, dimension 4 over Finite Field of size 2</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
-<span class="go">Finite Field of size 2</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">dimension</span><span class="p">()</span>
-<span class="go">4</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
-<span class="go">7</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">minimum_distance</span><span class="p">()</span>
-<span class="go">3</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">spectrum</span><span class="p">()</span>
-<span class="go">[1, 0, 0, 7, 7, 0, 0, 1]</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">weight_distribution</span><span class="p">()</span>
-<span class="go">[1, 0, 0, 7, 7, 0, 0, 1]</span>
-</pre></div>
-</div>
-<p>The minimum distance of the code, if known, can be provided as an
-optional parameter.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">minimum_distance</span><span class="p">()</span>
-<span class="go">3</span>
-</pre></div>
-</div>
-<p>Another example.:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
-<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">C</span>
-<span class="go">Linear code of length 7, dimension 4 over Finite Field of size 5</span>
-</pre></div>
-</div>
-<p>AUTHORS:</p>
-<ul class="simple">
-<li>David Joyner (11-2005)</li>
-</ul>
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.ambient_space">
-<tt class="descname">ambient_space</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.ambient_space" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.ambient_space">
+<tt class="descname">ambient_space</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.ambient_space" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the ambient vector space of <span class="math">\(self\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -301,8 +274,8 @@ optional parameter.:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.assmus_mattson_designs">
-<tt class="descname">assmus_mattson_designs</tt><big>(</big><em>t</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.assmus_mattson_designs" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.assmus_mattson_designs">
+<tt class="descname">assmus_mattson_designs</tt><big>(</big><em>t</em>, <em>mode=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.assmus_mattson_designs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assmus and Mattson Theorem (section 8.4, page 303 of [HP]): Let
 <span class="math">\(A_0, A_1, ..., A_n\)</span> be the weights of the codewords in a binary
 linear <span class="math">\([n , k, d]\)</span> code <span class="math">\(C\)</span>, and let <span class="math">\(A_0^*, A_1^*, ..., A_n^*\)</span> be
@@ -376,8 +349,8 @@ Cambridge Univ. Press, 2003.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.automorphism_group_gens">
-<tt class="descname">automorphism_group_gens</tt><big>(</big><em>equivalence='semilinear'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.automorphism_group_gens" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.automorphism_group_gens">
+<tt class="descname">automorphism_group_gens</tt><big>(</big><em>equivalence='semilinear'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.automorphism_group_gens" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return generators of the automorphism group of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
 <p>INPUT:</p>
 <ul>
@@ -419,8 +392,21 @@ Cambridge Univ. Press, 2003.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.basis">
-<tt class="descname">basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.basis" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.base_field">
+<tt class="descname">base_field</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.base_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the base field of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">base_field</span><span class="p">()</span>
+<span class="go">Finite Field of size 2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.linear_code.AbstractLinearCode.basis">
+<tt class="descname">basis</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.basis" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a basis of <span class="math">\(self\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -431,8 +417,8 @@ Cambridge Univ. Press, 2003.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.binomial_moment">
-<tt class="descname">binomial_moment</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.binomial_moment" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.binomial_moment">
+<tt class="descname">binomial_moment</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.binomial_moment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the i-th binomial moment of the <span class="math">\([n,k,d]_q\)</span>-code <span class="math">\(C\)</span>:</p>
 <div class="math">
 \[B_i(C) = \sum_{S, |S|=i} \frac{q^{k_S}-1}{q-1}\]</div>
@@ -461,8 +447,8 @@ Comput. Sci., 2948, Springer, Berlin, 2004.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.canonical_representative">
-<tt class="descname">canonical_representative</tt><big>(</big><em>equivalence='semilinear'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.canonical_representative" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.canonical_representative">
+<tt class="descname">canonical_representative</tt><big>(</big><em>equivalence='semilinear'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.canonical_representative" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute a canonical orbit representative under the action of the
 semimonomial transformation group.</p>
 <p>See <a class="reference internal" href="codecan/autgroup_can_label.html#module-sage.coding.codecan.autgroup_can_label" title="sage.coding.codecan.autgroup_can_label"><tt class="xref py py-mod docutils literal"><span class="pre">sage.coding.codecan.autgroup_can_label</span></tt></a>
@@ -517,8 +503,8 @@ automorphism of <span class="math">\(C\)</span>, the following must also yield <
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.cardinality">
-<tt class="descname">cardinality</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.cardinality" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.cardinality">
+<tt class="descname">cardinality</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.cardinality" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the size of this code.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -531,8 +517,8 @@ automorphism of <span class="math">\(C\)</span>, the following must also yield <
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.characteristic">
-<tt class="descname">characteristic</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.characteristic" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.characteristic">
+<tt class="descname">characteristic</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.characteristic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the characteristic of the base ring of <span class="math">\(self\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -543,8 +529,8 @@ automorphism of <span class="math">\(C\)</span>, the following must also yield <
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.characteristic_polynomial">
-<tt class="descname">characteristic_polynomial</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.characteristic_polynomial" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.characteristic_polynomial">
+<tt class="descname">characteristic_polynomial</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.characteristic_polynomial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the characteristic polynomial of a linear code, as defined in
 van Lint&#8217;s text [vL].</p>
 <p>EXAMPLES:</p>
@@ -561,15 +547,15 @@ GTM, 86, 1999.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.check_mat">
-<tt class="descname">check_mat</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.check_mat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.LinearCode.parity_check_matrix" title="sage.coding.linear_code.LinearCode.parity_check_matrix"><tt class="xref py py-func docutils literal"><span class="pre">parity_check_matrix()</span></tt></a> instead.
+<dt id="sage.coding.linear_code.AbstractLinearCode.check_mat">
+<tt class="descname">check_mat</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.check_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.AbstractLinearCode.parity_check_matrix" title="sage.coding.linear_code.AbstractLinearCode.parity_check_matrix"><tt class="xref py py-func docutils literal"><span class="pre">parity_check_matrix()</span></tt></a> instead.
 See <a class="reference external" href="http://trac.sagemath.org/17973">trac ticket #17973</a> for details.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.chinen_polynomial">
-<tt class="descname">chinen_polynomial</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.chinen_polynomial" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.chinen_polynomial">
+<tt class="descname">chinen_polynomial</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.chinen_polynomial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Chinen zeta polynomial of the code.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -590,8 +576,8 @@ Riemann hypothesis&#8221;, April 2007 preprint.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.covering_radius">
-<tt class="descname">covering_radius</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.covering_radius" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.covering_radius">
+<tt class="descname">covering_radius</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.covering_radius" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wraps Guava&#8217;s <tt class="docutils literal"><span class="pre">CoveringRadius</span></tt> command.</p>
 <p>The covering radius of a linear code <span class="math">\(C\)</span> is the smallest number <span class="math">\(r\)</span>
 with the property that each element <span class="math">\(v\)</span> of the ambient vector space
@@ -611,8 +597,8 @@ with <span class="math">\(d\)</span> the minimum distance of <span class="math">
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.decode">
-<tt class="descname">decode</tt><big>(</big><em>right</em>, <em>algorithm='syndrome'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.decode" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.decode">
+<tt class="descname">decode</tt><big>(</big><em>right</em>, <em>algorithm='syndrome'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.decode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decodes the received vector <tt class="docutils literal"><span class="pre">right</span></tt> to an element <span class="math">\(c\)</span> in this code.</p>
 <p>Optional algorithms are &#8220;guava&#8221;, &#8220;nearest neighbor&#8221; or &#8220;syndrome&#8221;. The
 <tt class="docutils literal"><span class="pre">algorithm=&quot;guava&quot;</span></tt> wraps GUAVA&#8217;s <tt class="docutils literal"><span class="pre">Decodeword</span></tt>.  Hamming codes have
@@ -673,8 +659,8 @@ large.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.dimension">
-<tt class="descname">dimension</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.dimension" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.dimension">
+<tt class="descname">dimension</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.dimension" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the dimension of this code.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
@@ -686,8 +672,8 @@ large.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.direct_sum">
-<tt class="descname">direct_sum</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.direct_sum" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.direct_sum">
+<tt class="descname">direct_sum</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.direct_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the code given by the direct sum of the codes <tt class="docutils literal"><span class="pre">self</span></tt> and
 <tt class="docutils literal"><span class="pre">other</span></tt>, which must be linear codes defined over the same base ring.</p>
 <p>EXAMPLES:</p>
@@ -701,8 +687,8 @@ large.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.divisor">
-<tt class="descname">divisor</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.divisor" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.divisor">
+<tt class="descname">divisor</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.divisor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the divisor of a code, which is the smallest integer <span class="math">\(d_0 &gt; 0\)</span>
 such that each <span class="math">\(A_i &gt; 0\)</span> iff <span class="math">\(i\)</span> is divisible by <span class="math">\(d_0\)</span>.</p>
 <p>EXAMPLES:</p>
@@ -717,8 +703,8 @@ such that each <span class="math">\(A_i &gt; 0\)</span> iff <span class="math">\
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.dual_code">
-<tt class="descname">dual_code</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.dual_code" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.dual_code">
+<tt class="descname">dual_code</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.dual_code" title="Permalink to this definition">¶</a></dt>
 <dd><p>This computes the dual code <span class="math">\(Cd\)</span> of the code <span class="math">\(C\)</span>,</p>
 <div class="math">
 \[Cd = \{ v \in V\ |\ v\cdot c = 0,\ \forall c \in C \}.\]</div>
@@ -735,8 +721,8 @@ such that each <span class="math">\(A_i &gt; 0\)</span> iff <span class="math">\
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.extended_code">
-<tt class="descname">extended_code</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.extended_code" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.extended_code">
+<tt class="descname">extended_code</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.extended_code" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="docutils literal"><span class="pre">self</span></tt> is a linear code of length <span class="math">\(n\)</span> defined over <span class="math">\(F\)</span> then this
 returns the code of length <span class="math">\(n+1\)</span> where the last digit <span class="math">\(c_n\)</span> satisfies
 the check condition <span class="math">\(c_0+...+c_n=0\)</span>. If <tt class="docutils literal"><span class="pre">self</span></tt> is an <span class="math">\([n,k,d]\)</span>
@@ -754,8 +740,8 @@ code, where <span class="math">\(d^=d\)</span> (if d is even) and <span class="m
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.galois_closure">
-<tt class="descname">galois_closure</tt><big>(</big><em>F0</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.galois_closure" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.galois_closure">
+<tt class="descname">galois_closure</tt><big>(</big><em>F0</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.galois_closure" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="docutils literal"><span class="pre">self</span></tt> is a linear code defined over <span class="math">\(F\)</span> and <span class="math">\(F_0\)</span> is a subfield
 with Galois group <span class="math">\(G = Gal(F/F_0)\)</span> then this returns the <span class="math">\(G\)</span>-module
 <span class="math">\(C^-\)</span> containing <span class="math">\(C\)</span>.</p>
@@ -777,42 +763,20 @@ with Galois group <span class="math">\(G = Gal(F/F_0)\)</span> then this returns
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.gen_mat">
-<tt class="descname">gen_mat</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.gen_mat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.LinearCode.generator_matrix" title="sage.coding.linear_code.LinearCode.generator_matrix"><tt class="xref py py-func docutils literal"><span class="pre">generator_matrix()</span></tt></a> instead.
+<dt id="sage.coding.linear_code.AbstractLinearCode.gen_mat_systematic">
+<tt class="descname">gen_mat_systematic</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.gen_mat_systematic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.AbstractLinearCode.generator_matrix_systematic" title="sage.coding.linear_code.AbstractLinearCode.generator_matrix_systematic"><tt class="xref py py-func docutils literal"><span class="pre">generator_matrix_systematic()</span></tt></a> instead.
 See <a class="reference external" href="http://trac.sagemath.org/17973">trac ticket #17973</a> for details.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.gen_mat_systematic">
-<tt class="descname">gen_mat_systematic</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.gen_mat_systematic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.LinearCode.generator_matrix_systematic" title="sage.coding.linear_code.LinearCode.generator_matrix_systematic"><tt class="xref py py-func docutils literal"><span class="pre">generator_matrix_systematic()</span></tt></a> instead.
-See <a class="reference external" href="http://trac.sagemath.org/17973">trac ticket #17973</a> for details.</p>
-</dd></dl>
+<dt id="sage.coding.linear_code.AbstractLinearCode.generator_matrix">
+<tt class="descname">generator_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.generator_matrix">
-<tt class="descname">generator_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a generator matrix of this code.</p>
-<p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C1</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-<span class="gp">sage: </span><span class="n">C1</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
-<span class="go">[1 0 0 0 0 1 1]</span>
-<span class="go">[0 1 0 0 1 0 1]</span>
-<span class="go">[0 0 1 0 1 1 0]</span>
-<span class="go">[0 0 0 1 1 1 1]</span>
-<span class="gp">sage: </span><span class="n">C2</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&quot;a&quot;</span><span class="p">))</span>
-<span class="gp">sage: </span><span class="n">C2</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
-<span class="go">[    1     0     0 a + 1     a]</span>
-<span class="go">[    0     1     0     1     1]</span>
-<span class="go">[    0     0     1     a a + 1]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.generator_matrix_systematic">
-<tt class="descname">generator_matrix_systematic</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.generator_matrix_systematic" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.generator_matrix_systematic">
+<tt class="descname">generator_matrix_systematic</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.generator_matrix_systematic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a systematic generator matrix of the code.</p>
 <p>A generator matrix of a code is called systematic if it contains
 a set of columns forming an identity matrix.</p>
@@ -830,8 +794,8 @@ a set of columns forming an identity matrix.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.gens">
-<tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.gens" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.gens">
+<tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.gens" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the generators of this code as a list of vectors.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -842,8 +806,8 @@ a set of columns forming an identity matrix.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.genus">
-<tt class="descname">genus</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.genus" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.genus">
+<tt class="descname">genus</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.genus" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the &#8220;Duursma genus&#8221; of the code, <span class="math">\(\gamma_C = n+1-k-d\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C1</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span> <span class="n">C1</span>
@@ -861,8 +825,8 @@ agree with the definition, <span class="math">\(n+1-k-d\)</span>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.information_set">
-<tt class="descname">information_set</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.information_set" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.information_set">
+<tt class="descname">information_set</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.information_set" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an information set of the code.</p>
 <p>A set of column positions of a generator matrix of a code
 is called an information set if the corresponding columns
@@ -884,8 +848,8 @@ form a square matrix of full rank.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_galois_closed">
-<tt class="descname">is_galois_closed</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_galois_closed" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_galois_closed">
+<tt class="descname">is_galois_closed</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_galois_closed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if <tt class="docutils literal"><span class="pre">self</span></tt> is equal to its Galois closure.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&quot;a&quot;</span><span class="p">))</span>
@@ -896,8 +860,8 @@ form a square matrix of full rank.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_permutation_automorphism">
-<tt class="descname">is_permutation_automorphism</tt><big>(</big><em>g</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_permutation_automorphism" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_permutation_automorphism">
+<tt class="descname">is_permutation_automorphism</tt><big>(</big><em>g</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_permutation_automorphism" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <span class="math">\(1\)</span> if <span class="math">\(g\)</span> is an element of <span class="math">\(S_n\)</span> (<span class="math">\(n\)</span> = length of self) and
 if <span class="math">\(g\)</span> is an automorphism of self.</p>
 <p>EXAMPLES:</p>
@@ -920,8 +884,8 @@ if <span class="math">\(g\)</span> is an automorphism of self.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_permutation_equivalent">
-<tt class="descname">is_permutation_equivalent</tt><big>(</big><em>other</em>, <em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_permutation_equivalent" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_permutation_equivalent">
+<tt class="descname">is_permutation_equivalent</tt><big>(</big><em>other</em>, <em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_permutation_equivalent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">other</span></tt> are permutation equivalent
 codes and <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</p>
 <p>The <tt class="docutils literal"><span class="pre">algorithm=&quot;verbose&quot;</span></tt> option also returns a permutation (if
@@ -947,8 +911,8 @@ codes and <tt class="docutils literal"><span class="pre">False</span></tt> other
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_self_dual">
-<tt class="descname">is_self_dual</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_self_dual" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_self_dual">
+<tt class="descname">is_self_dual</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_self_dual" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the code is self-dual (in the usual Hamming inner
 product) and <tt class="docutils literal"><span class="pre">False</span></tt> otherwise.</p>
 <p>EXAMPLES:</p>
@@ -963,8 +927,8 @@ product) and <tt class="docutils literal"><span class="pre">False</span></tt> ot
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_self_orthogonal">
-<tt class="descname">is_self_orthogonal</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_self_orthogonal" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_self_orthogonal">
+<tt class="descname">is_self_orthogonal</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_self_orthogonal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if this code is self-orthogonal and <tt class="docutils literal"><span class="pre">False</span></tt>
 otherwise.</p>
 <p>A code is self-orthogonal if it is a subcode of its dual.</p>
@@ -983,8 +947,8 @@ otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.is_subcode">
-<tt class="descname">is_subcode</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.is_subcode" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.is_subcode">
+<tt class="descname">is_subcode</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.is_subcode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if <tt class="docutils literal"><span class="pre">self</span></tt> is a subcode of <tt class="docutils literal"><span class="pre">other</span></tt>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C1</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -1015,8 +979,8 @@ otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.length">
-<tt class="descname">length</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.length" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.length">
+<tt class="descname">length</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the length of this code.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -1027,8 +991,8 @@ otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.list">
-<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.list" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of all elements of this linear code.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -1041,8 +1005,8 @@ otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.minimum_distance">
-<tt class="descname">minimum_distance</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.minimum_distance" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.minimum_distance">
+<tt class="descname">minimum_distance</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.minimum_distance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the minimum distance of this linear code.</p>
 <p>By default, this uses a GAP kernel function (in C and not part of
 Guava) written by Steve Linton.  If <tt class="docutils literal"><span class="pre">algorithm=&quot;guava&quot;</span></tt> is set  and
@@ -1105,8 +1069,8 @@ recomputed even if there is a stored value from a previous run.:</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.module_composition_factors">
-<tt class="descname">module_composition_factors</tt><big>(</big><em>gp</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.module_composition_factors" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.module_composition_factors">
+<tt class="descname">module_composition_factors</tt><big>(</big><em>gp</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.module_composition_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints the GAP record of the Meataxe composition factors module in
 Meataxe notation. This uses GAP but not Guava.</p>
 <p>EXAMPLES:</p>
@@ -1120,9 +1084,11 @@ Meataxe notation. This uses GAP but not Guava.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.parity_check_matrix">
-<tt class="descname">parity_check_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.parity_check_matrix" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.parity_check_matrix">
+<tt class="descname">parity_check_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.parity_check_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the parity check matrix of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>The parity check matrix of a linear code <span class="math">\(C\)</span> corresponds to the
+generator matrix of the dual code of <span class="math">\(C\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 <span class="gp">sage: </span><span class="n">Cperp</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span>
@@ -1152,15 +1118,15 @@ Meataxe notation. This uses GAP but not Guava.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.permutation_automorphism_group">
-<tt class="descname">permutation_automorphism_group</tt><big>(</big><em>algorithm='partition'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.permutation_automorphism_group" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.permutation_automorphism_group">
+<tt class="descname">permutation_automorphism_group</tt><big>(</big><em>algorithm='partition'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.permutation_automorphism_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <span class="math">\(C\)</span> is an <span class="math">\([n,k,d]\)</span> code over <span class="math">\(F\)</span>, this function computes the
 subgroup <span class="math">\(Aut(C) \subset S_n\)</span> of all permutation automorphisms of <span class="math">\(C\)</span>.
 The binary case always uses the (default) partition refinement
 algorithm of Robert Miller.</p>
 <p>Note that if the base ring of <span class="math">\(C\)</span> is <span class="math">\(GF(2)\)</span> then this is the full
 automorphism group. Otherwise, you could use
-<a class="reference internal" href="#sage.coding.linear_code.LinearCode.automorphism_group_gens" title="sage.coding.linear_code.LinearCode.automorphism_group_gens"><tt class="xref py py-meth docutils literal"><span class="pre">automorphism_group_gens()</span></tt></a>
+<tt class="xref py py-meth docutils literal"><span class="pre">automorphism_group_gens()</span></tt>
 to compute generators of the full automorphism group.</p>
 <p>INPUT:</p>
 <ul class="simple">
@@ -1173,7 +1139,7 @@ several stages of the computation. If <tt class="docutils literal"><span class="
 Finally, if <tt class="docutils literal"><span class="pre">&quot;codecan&quot;</span></tt> then the partition refinement algorithm
 of Thomas Feulner is used, which also computes a canonical
 representative of <tt class="docutils literal"><span class="pre">self</span></tt> (call
-<a class="reference internal" href="#sage.coding.linear_code.LinearCode.canonical_representative" title="sage.coding.linear_code.LinearCode.canonical_representative"><tt class="xref py py-meth docutils literal"><span class="pre">canonical_representative()</span></tt></a>
+<tt class="xref py py-meth docutils literal"><span class="pre">canonical_representative()</span></tt>
 to access it).</li>
 </ul>
 <p>OUTPUT:</p>
@@ -1247,8 +1213,8 @@ Using the 132 codewords of weight 5 Supergroup size: 39916800
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.permuted_code">
-<tt class="descname">permuted_code</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.permuted_code" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.permuted_code">
+<tt class="descname">permuted_code</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.permuted_code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the permuted code, which is equivalent to <tt class="docutils literal"><span class="pre">self</span></tt> via the
 column permutation <tt class="docutils literal"><span class="pre">p</span></tt>.</p>
 <p>EXAMPLES:</p>
@@ -1266,8 +1232,8 @@ column permutation <tt class="docutils literal"><span class="pre">p</span></tt>.
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.punctured">
-<tt class="descname">punctured</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.punctured" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.punctured">
+<tt class="descname">punctured</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.punctured" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the code punctured at the positions <span class="math">\(L\)</span>,
 <span class="math">\(L \subset \{1,2,...,n\}\)</span>. If this code <span class="math">\(C\)</span> is of length <span class="math">\(n\)</span> in
 GF(q) then the code <span class="math">\(C^L\)</span> obtained from <span class="math">\(C\)</span> by puncturing at the
@@ -1297,8 +1263,8 @@ code at <span class="math">\(L\)</span>. The dimension of <span class="math">\(C
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.random_element">
-<tt class="descname">random_element</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.random_element" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.random_element">
+<tt class="descname">random_element</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.random_element" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a random codeword; passes other positional and keyword
 arguments to <tt class="docutils literal"><span class="pre">random_element()</span></tt> method of vector space.</p>
 <p>OUTPUT:</p>
@@ -1326,10 +1292,10 @@ arguments to <tt class="docutils literal"><span class="pre">random_element()</sp
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.redundancy_matrix">
-<tt class="descname">redundancy_matrix</tt><big>(</big><em>C</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.redundancy_matrix" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.redundancy_matrix">
+<tt class="descname">redundancy_matrix</tt><big>(</big><em>C</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.redundancy_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>If C is a linear [n,k,d] code then this function returns a
-<span class="math">\(k      imes (n-k)\)</span> matrix A such that G = (I,A) generates a code (in
+<span class="math">\(k \times (n-k)\)</span> matrix A such that G = (I,A) generates a code (in
 standard form) equivalent to C. If C is already in standard form and
 G = (I,A) is its generator matrix then this function simply returns
 that A.</p>
@@ -1366,8 +1332,8 @@ that A.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.sd_duursma_data">
-<tt class="descname">sd_duursma_data</tt><big>(</big><em>C</em>, <em>i</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.sd_duursma_data" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.sd_duursma_data">
+<tt class="descname">sd_duursma_data</tt><big>(</big><em>C</em>, <em>i</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.sd_duursma_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Duursma data <span class="math">\(v\)</span> and <span class="math">\(m\)</span> of this formally s.d. code <span class="math">\(C\)</span>
 and the type number <span class="math">\(i\)</span> in (1,2,3,4).  Does <em>not</em> check if this code
 is actually sd.</p>
@@ -1403,8 +1369,8 @@ polynomials&#8221;</td></tr>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.sd_duursma_q">
-<tt class="descname">sd_duursma_q</tt><big>(</big><em>C</em>, <em>i</em>, <em>d0</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.sd_duursma_q" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.sd_duursma_q">
+<tt class="descname">sd_duursma_q</tt><big>(</big><em>C</em>, <em>i</em>, <em>d0</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.sd_duursma_q" title="Permalink to this definition">¶</a></dt>
 <dd><p>INPUT:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">C</span></tt> - sd code; does <em>not</em> check if <span class="math">\(C\)</span> is actually an sd code</li>
@@ -1436,8 +1402,8 @@ polynomials&#8221;</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.sd_zeta_polynomial">
-<tt class="descname">sd_zeta_polynomial</tt><big>(</big><em>C</em>, <em>typ=1</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.sd_zeta_polynomial" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.sd_zeta_polynomial">
+<tt class="descname">sd_zeta_polynomial</tt><big>(</big><em>C</em>, <em>typ=1</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.sd_zeta_polynomial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Duursma zeta function of a self-dual code using the
 construction in <a class="reference internal" href="#d" id="id3">[D]</a>.</p>
 <p>INPUT:</p>
@@ -1478,8 +1444,8 @@ polynomials&#8221;</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.shortened">
-<tt class="descname">shortened</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.shortened" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.shortened">
+<tt class="descname">shortened</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.shortened" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the code shortened at the positions <tt class="docutils literal"><span class="pre">L</span></tt>, where
 <span class="math">\(L \subset \{1,2,...,n\}\)</span>.</p>
 <p>Consider the subcode <span class="math">\(C(L)\)</span> consisting of all codewords <span class="math">\(c\in C\)</span> which
@@ -1506,8 +1472,8 @@ in the construction below.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.spectrum">
-<tt class="descname">spectrum</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.spectrum" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.spectrum">
+<tt class="descname">spectrum</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the spectrum of <tt class="docutils literal"><span class="pre">self</span></tt> as a list.</p>
 <p>The default algorithm uses a GAP kernel function (in C) written by
 Steve Linton.</p>
@@ -1560,8 +1526,8 @@ slower than the GAP algorithm in other larger examples.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.standard_form">
-<tt class="descname">standard_form</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.standard_form" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.standard_form">
+<tt class="descname">standard_form</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.standard_form" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the standard form of this linear code.</p>
 <p>An <span class="math">\([n,k]\)</span> linear code with generator matrix <span class="math">\(G\)</span> in standard form is
 the row-reduced echelon form of <span class="math">\(G\)</span> is <span class="math">\((I,A)\)</span>, where <span class="math">\(I\)</span> denotes the
@@ -1595,8 +1561,8 @@ is the permutation sending <tt class="docutils literal"><span class="pre">self</
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.support">
-<tt class="descname">support</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.support" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.support">
+<tt class="descname">support</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.support" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the set of indices <span class="math">\(j\)</span> where <span class="math">\(A_j\)</span> is nonzero, where
 spectrum(self) = <span class="math">\([A_0,A_1,...,A_n]\)</span>.</p>
 <p>OUTPUT:</p>
@@ -1614,8 +1580,51 @@ spectrum(self) = <span class="math">\([A_0,A_1,...,A_n]\)</span>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.weight_distribution">
-<tt class="descname">weight_distribution</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.weight_distribution" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.syndrome">
+<tt class="descname">syndrome</tt><big>(</big><em>r</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.syndrome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the syndrome of <tt class="docutils literal"><span class="pre">r</span></tt>.</p>
+<p>The syndrome of <tt class="docutils literal"><span class="pre">r</span></tt> is the result of <span class="math">\(H \times r\)</span> where <span class="math">\(H\)</span> is
+the parity check matrix of <tt class="docutils literal"><span class="pre">self</span></tt>. If <tt class="docutils literal"><span class="pre">r</span></tt> belongs to <tt class="docutils literal"><span class="pre">self</span></tt>,
+its syndrome equals to the zero vector.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">r</span></tt> &#8211; a vector of the same length as <tt class="docutils literal"><span class="pre">self</span></tt></li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a column vector</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="ow">in</span> <span class="n">C</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">syndrome</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">(0, 0, 0)</span>
+</pre></div>
+</div>
+<p>If <tt class="docutils literal"><span class="pre">r</span></tt> is not a codeword, its syndrome is not equal to zero:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="ow">in</span> <span class="n">C</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">syndrome</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">(0, 1, 1)</span>
+</pre></div>
+</div>
+<p>Syndrome computation works fine on bigger fields:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">RandomLinearCode</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">59</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">random_element</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">syndrome</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">(0, 0, 0, 0, 0, 0, 0, 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.linear_code.AbstractLinearCode.weight_distribution">
+<tt class="descname">weight_distribution</tt><big>(</big><em>algorithm=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.weight_distribution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the spectrum of <tt class="docutils literal"><span class="pre">self</span></tt> as a list.</p>
 <p>The default algorithm uses a GAP kernel function (in C) written by
 Steve Linton.</p>
@@ -1668,8 +1677,8 @@ slower than the GAP algorithm in other larger examples.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.weight_enumerator">
-<tt class="descname">weight_enumerator</tt><big>(</big><em>names='xy'</em>, <em>name2=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.weight_enumerator" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.weight_enumerator">
+<tt class="descname">weight_enumerator</tt><big>(</big><em>names='xy'</em>, <em>name2=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.weight_enumerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the weight enumerator of the code.</p>
 <p>INPUT:</p>
 <ul class="simple">
@@ -1700,8 +1709,8 @@ contains only one variable.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.zero">
-<tt class="descname">zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.zero" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.zero">
+<tt class="descname">zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.zero" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the zero vector.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -1716,8 +1725,8 @@ contains only one variable.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.zeta_function">
-<tt class="descname">zeta_function</tt><big>(</big><em>name='T'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.zeta_function" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.zeta_function">
+<tt class="descname">zeta_function</tt><big>(</big><em>name='T'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.zeta_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Duursma zeta function of the code.</p>
 <p>INPUT:</p>
 <ul class="simple">
@@ -1736,8 +1745,8 @@ contains only one variable.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.coding.linear_code.LinearCode.zeta_polynomial">
-<tt class="descname">zeta_polynomial</tt><big>(</big><em>name='T'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.zeta_polynomial" title="Permalink to this definition">¶</a></dt>
+<dt id="sage.coding.linear_code.AbstractLinearCode.zeta_polynomial">
+<tt class="descname">zeta_polynomial</tt><big>(</big><em>name='T'</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.AbstractLinearCode.zeta_polynomial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Duursma zeta polynomial of this code.</p>
 <p>Assumes that the minimum distances of this code and its dual are
 greater than 1.  Prints a warning to <tt class="docutils literal"><span class="pre">stdout</span></tt> otherwise.</p>
@@ -1774,6 +1783,94 @@ greater than 1.  Prints a warning to <tt class="docutils literal"><span class="p
 <li>I. Duursma, &#8220;From weight enumerators to zeta functions&#8221;, in
 Discrete Applied Mathematics, vol. 111, no. 1-2, pp. 55-73, 2001.</li>
 </ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.coding.linear_code.LinearCode">
+<em class="property">class </em><tt class="descclassname">sage.coding.linear_code.</tt><tt class="descname">LinearCode</tt><big>(</big><em>generator_matrix</em>, <em>d=None</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.coding.linear_code.AbstractLinearCode" title="sage.coding.linear_code.AbstractLinearCode"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode</span></tt></a></p>
+<p>Linear codes over a finite field or finite ring, represented using a
+generator matrix.</p>
+<p>This class should be used for arbitrary and unstructured linear codes. This
+means that basic operations on the code, such as the computation of the
+minimum distance, will use generic, slow algorithms.</p>
+<p>If you are looking for constructing a code from a more specific family, see
+if the family has been implemented by investigating codes.&lt;tab&gt;. These
+more specific classes use properties particular for that family to allow
+faster algorithms, and could also have family-specific methods.</p>
+<p>See <a class="reference external" href="http://en.wikipedia.org/wiki/Linear_code">Wikipedia article Linear_code</a> for more information on unstructured linear codes.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">generator_matrix</span></tt> &#8211; a generator matrix over a finite field (<tt class="docutils literal"><span class="pre">G</span></tt> can be
+defined over a finite ring but the matrices over that ring must have
+certain attributes, such as <tt class="docutils literal"><span class="pre">rank</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">d</span></tt> &#8211; (optional, default: <tt class="docutils literal"><span class="pre">None</span></tt>) the minimum distance of the code</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The veracity of the minimum distance <tt class="docutils literal"><span class="pre">d</span></tt>, if provided, is not
+checked.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span>
+<span class="go">Linear code of length 7, dimension 4 over Finite Field of size 2</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Finite Field of size 2</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">dimension</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+<span class="go">7</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">minimum_distance</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">spectrum</span><span class="p">()</span>
+<span class="go">[1, 0, 0, 7, 7, 0, 0, 1]</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">weight_distribution</span><span class="p">()</span>
+<span class="go">[1, 0, 0, 7, 7, 0, 0, 1]</span>
+</pre></div>
+</div>
+<p>The minimum distance of the code, if known, can be provided as an
+optional parameter.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">minimum_distance</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>Another example.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">C</span>  <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span>
+<span class="go">Linear code of length 7, dimension 4 over Finite Field of size 5</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>David Joyner (11-2005)</li>
+</ul>
+<dl class="method">
+<dt id="sage.coding.linear_code.LinearCode.gen_mat">
+<tt class="descname">gen_mat</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.gen_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated: Use <a class="reference internal" href="#sage.coding.linear_code.LinearCode.generator_matrix" title="sage.coding.linear_code.LinearCode.generator_matrix"><tt class="xref py py-func docutils literal"><span class="pre">generator_matrix()</span></tt></a> instead.
+See <a class="reference external" href="http://trac.sagemath.org/17973">trac ticket #17973</a> for details.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.linear_code.LinearCode.generator_matrix">
+<tt class="descname">generator_matrix</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.linear_code.LinearCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator matrix of this code.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="mi">2</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">LinearCode</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="go">[1 2 1]</span>
+<span class="go">[2 1 1]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -1855,8 +1952,8 @@ length n and dimension k, courtesy of the www page
 <span class="go">Construction of a linear code</span>
 <span class="go">[72,36,15] over GF(2):</span>
 <span class="go">[1]:  [73, 36, 16] Cyclic Linear Code over GF(2)</span>
-<span class="go">     CyclicCode of length 73 with generating polynomial x^37 + x^36 + x^34 +</span>
-<span class="go">x^33 + x^32 + x^27 + x^25 + x^24 + x^22 + x^21 + x^19 + x^18 + x^15 + x^11 +</span>
+<span class="go">     CyclicCode of length 73 with generating polynomial x^37 + x^36 + x^34</span>
+<span class="go">x^33 + x^32 + x^27 + x^25 + x^24 + x^22 + x^21 + x^19 + x^18 + x^15 + x^11</span>
 <span class="go">x^10 + x^8 + x^7 + x^5 + x^3 + 1</span>
 <span class="go">[2]:  [72, 36, 15] Linear Code over GF(2)</span>
 <span class="go">     Puncturing of [1] at 1</span>
@@ -1882,7 +1979,7 @@ linear code with word length <tt class="docutils literal"><span class="pre">n</s
 each bound. The function Display can be used to show the explanations.</p>
 <p>The values for the lower and upper bound are obtained from a table
 constructed by Cen Tjhai for GUAVA, derived from the table of
-Brouwer. (See <a class="reference external" href="http://www.win.tue.nl/">http://www.win.tue.nl/</a> aeb/voorlincod.html or use the
+Brouwer. (See <a class="reference external" href="http://www.codetables.de/">http://www.codetables.de/</a> or use the
 Sage function <tt class="docutils literal"><span class="pre">minimum_distance_why</span></tt> for the most recent data.)
 These tables contain lower and upper bounds for <span class="math">\(q=2\)</span> (when <tt class="docutils literal"><span class="pre">n</span> <span class="pre">&lt;=</span> <span class="pre">257</span></tt>),
 <span class="math">\(q=3\)</span> (when <tt class="docutils literal"><span class="pre">n</span> <span class="pre">&lt;=</span> <span class="pre">243</span></tt>), <span class="math">\(q=4\)</span> (<tt class="docutils literal"><span class="pre">n</span> <span class="pre">&lt;=</span> <span class="pre">256</span></tt>). (Current as of

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Elements of free modules &mdash; Sage Reference Manual v6.6: Modules</title>
+    <title>Elements of free modules &mdash; Sage Reference Manual v6.7: Modules</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6',
+        VERSION:     '6.7',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v6.6: Modules" href="../../index.html" />
+    <link rel="top" title="Sage Reference Manual v6.7: Modules" href="../../index.html" />
     <link rel="next" title="Free modules of finite rank" href="../tensor/modules/finite_rank_free_module.html" />
     <link rel="prev" title="Discrete Subgroups of \(\ZZ^n\)." href="free_module_integer.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
@@ -72,11 +72,10 @@
 <li>Josh Kantor</li>
 <li>Thomas Feulner (2012-11): Added <a class="reference internal" href="#sage.modules.free_module_element.FreeModuleElement.hamming_weight" title="sage.modules.free_module_element.FreeModuleElement.hamming_weight"><tt class="xref py py-meth docutils literal"><span class="pre">FreeModuleElement.hamming_weight()</span></tt></a> and
 <a class="reference internal" href="#sage.modules.free_module_element.FreeModuleElement_generic_sparse.hamming_weight" title="sage.modules.free_module_element.FreeModuleElement_generic_sparse.hamming_weight"><tt class="xref py py-meth docutils literal"><span class="pre">FreeModuleElement_generic_sparse.hamming_weight()</span></tt></a></li>
+<li>Jeroen Demeyer (2015-02-24): Implement fast Cython methods
+<tt class="docutils literal"><span class="pre">get_unsafe</span></tt> and <tt class="docutils literal"><span class="pre">set_unsafe</span></tt> similar to other places in Sage
+(<a class="reference external" href="http://trac.sagemath.org/17562">trac ticket #17562</a>)</li>
 </ul>
-<p>TODO: Change to use a get_unsafe / set_unsafe, etc., structure
-exactly like with matrices, since we&#8217;ll have to define a bunch of
-special purpose implementations of vectors easily and
-systematically.</p>
 <p>EXAMPLES: We create a vector space over <span class="math">\(\QQ\)</span> and a
 subspace of this space.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">V</span> <span class="o">=</span> <span class="n">QQ</span><span class="o">^</span><span class="mi">5</span>
@@ -152,7 +151,7 @@ field.</p>
 <dl class="class">
 <dt id="sage.modules.free_module_element.FreeModuleElement">
 <em class="property">class </em><tt class="descclassname">sage.modules.free_module_element.</tt><tt class="descname">FreeModuleElement</tt><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Vector" title="(in Sage Reference Manual: Basic Structures v6.6)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.Vector</span></tt></a></p>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Vector" title="(in Sage Reference Manual: Basic Structures v6.7)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.Vector</span></tt></a></p>
 <p>An element of a generic free module.</p>
 <dl class="method">
 <dt id="sage.modules.free_module_element.FreeModuleElement.Mod">
@@ -354,7 +353,7 @@ matrix constructor demonstrates Sage&#8217;s preference for rows.</p>
 </pre></div>
 </div>
 <p>TESTS:</p>
-<p>The <a class="reference external" href="../../../matrices/sage/matrix/matrix1.html#sage.matrix.matrix1.Matrix.column" title="(in Sage Reference Manual: Matrices and Spaces of Matrices v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">column()</span></tt></a> method will return
+<p>The <a class="reference external" href="../../../matrices/sage/matrix/matrix1.html#sage.matrix.matrix1.Matrix.column" title="(in Sage Reference Manual: Matrices and Spaces of Matrices v6.7)"><tt class="xref py py-meth docutils literal"><span class="pre">column()</span></tt></a> method will return
 a specified column of a matrix as a vector.  So here are a couple
 of round-trips.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="p">[[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">]])</span>
@@ -882,16 +881,11 @@ self.element() returns a vector corresponding to self.</p>
 <dl class="method">
 <dt id="sage.modules.free_module_element.FreeModuleElement.get">
 <tt class="descname">get</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>The get method is in some cases more efficient (and more
-dangerous) than __getitem__, because it is not guaranteed to
-do any error checking.</p>
+<dd><p>Like <tt class="docutils literal"><span class="pre">__getitem__</span></tt> but without bounds checking:
+<span class="math">\(i\)</span> must satisfy <tt class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">i</span> <span class="pre">&lt;</span> <span class="pre">self.degree</span></tt>.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">vector</span><span class="p">(</span><span class="n">SR</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="go">1/2</span>
-<span class="gp">sage: </span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-<span class="gt">Traceback (most recent call last):</span>
-<span class="c">...</span>
-<span class="nc">IndexError</span>: <span class="n-Identifier">index out of range</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1360,7 +1354,7 @@ infinity (<tt class="docutils literal"><span class="pre">oo</span></tt> or <tt c
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">See also <a class="reference external" href="../../../misc/sage/misc/functional.html#sage.misc.functional.norm" title="(in Sage Reference Manual: Miscellaneous v6.6)"><tt class="xref py py-func docutils literal"><span class="pre">sage.misc.functional.norm()</span></tt></a></p>
+<p class="last">See also <a class="reference external" href="../../../misc/sage/misc/functional.html#sage.misc.functional.norm" title="(in Sage Reference Manual: Utilities v6.7)"><tt class="xref py py-func docutils literal"><span class="pre">sage.misc.functional.norm()</span></tt></a></p>
 </div>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
@@ -1900,7 +1894,7 @@ matrix constructor demonstrates Sage&#8217;s preference for rows.</p>
 </pre></div>
 </div>
 <p>TESTS:</p>
-<p>The <a class="reference external" href="../../../matrices/sage/matrix/matrix1.html#sage.matrix.matrix1.Matrix.row" title="(in Sage Reference Manual: Matrices and Spaces of Matrices v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">row()</span></tt></a> method will return
+<p>The <a class="reference external" href="../../../matrices/sage/matrix/matrix1.html#sage.matrix.matrix1.Matrix.row" title="(in Sage Reference Manual: Matrices and Spaces of Matrices v6.7)"><tt class="xref py py-meth docutils literal"><span class="pre">row()</span></tt></a> method will return
 a specified row of a matrix as a vector.  So here are a couple
 of round-trips.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
@@ -1922,15 +1916,15 @@ of round-trips.</p>
 
 <dl class="method">
 <dt id="sage.modules.free_module_element.FreeModuleElement.set">
-<tt class="descname">set</tt><big>(</big><em>i</em>, <em>x</em><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>The set method is meant to be more efficient than __setitem__,
-because it need not be guaranteed to do any error checking or
-coercion. Use with great, great care.</p>
+<tt class="descname">set</tt><big>(</big><em>i</em>, <em>value</em><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <tt class="docutils literal"><span class="pre">__setitem__</span></tt> but without type or bounds checking:
+<span class="math">\(i\)</span> must satisfy <tt class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">i</span> <span class="pre">&lt;</span> <span class="pre">self.degree</span></tt> and <tt class="docutils literal"><span class="pre">value</span></tt> must be
+an element of the coordinate ring.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">]);</span> <span class="n">v</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">SR</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">]);</span> <span class="n">v</span>
 <span class="go">(1/2, 2/5, 0)</span>
-<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">15</span><span class="o">/</span><span class="mi">17</span><span class="p">);</span> <span class="n">v</span>
-<span class="go">(1/2, 2/5, -15/17)</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">pi</span><span class="p">);</span> <span class="n">v</span>
+<span class="go">(1/2, 2/5, pi)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2245,21 +2239,6 @@ entries of self.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.modules.free_module_element.FreeModuleElement_generic_sparse.get">
-<tt class="descname">get</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement_generic_sparse.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like __getitem__ but with no guaranteed type or bounds checking. Returns 0
-if access is out of bounds.</p>
-<p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="n">pi</span><span class="p">],</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="go">2/3</span>
-<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<span class="go">0</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
 <dt id="sage.modules.free_module_element.FreeModuleElement_generic_sparse.hamming_weight">
 <tt class="descname">hamming_weight</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement_generic_sparse.hamming_weight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the number of positions <tt class="docutils literal"><span class="pre">i</span></tt> such that <tt class="docutils literal"><span class="pre">self[i]</span> <span class="pre">!=</span> <span class="pre">0</span></tt>.</p>
@@ -2324,28 +2303,6 @@ if access is out of bounds.</p>
 <span class="go">(0, 5, 0, 0)</span>
 <span class="gp">sage: </span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero_positions</span><span class="p">()</span>
 <span class="go">[1]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="sage.modules.free_module_element.FreeModuleElement_generic_sparse.set">
-<tt class="descname">set</tt><big>(</big><em>i</em>, <em>x</em><big>)</big><a class="headerlink" href="#sage.modules.free_module_element.FreeModuleElement_generic_sparse.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like __setitem__ but with no guaranteed type or bounds checking.</p>
-<p>EXAMPLES:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="n">pi</span><span class="p">],</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pi</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">v</span>
-<span class="go">(1, pi^3, pi)</span>
-</pre></div>
-</div>
-<p>No bounds checking:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">pi</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>This lack of bounds checking causes trouble later:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">v</span>
-<span class="go">&lt;repr(&lt;sage.modules.free_module_element.FreeModuleElement_generic_sparse at 0x...&gt;) failed: IndexError: list assignment index out of range&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2784,7 +2741,7 @@ generated by some common base rings.</p>
 The default distribution is tightly clustered around -1, 0, 1.
 Uniform distributions can be specified by giving bounds, though
 the upper bound is never met.  See
-<a class="reference external" href="../../../rings_standard/sage/rings/integer_ring.html#sage.rings.integer_ring.IntegerRing_class.random_element" title="(in Sage Reference Manual: Standard Commutative Rings v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.integer_ring.IntegerRing_class.random_element()</span></tt></a>
+<a class="reference external" href="../../../rings_standard/sage/rings/integer_ring.html#sage.rings.integer_ring.IntegerRing_class.random_element" title="(in Sage Reference Manual: Standard Commutative Rings v6.7)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.integer_ring.IntegerRing_class.random_element()</span></tt></a>
 for several other variants.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">random_vector</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 <span class="go">(-8, 2, 0, 0, 1, -1, 2, 1, -95, -1)</span>
@@ -2812,7 +2769,7 @@ between -20 and 100.</p>
 </div>
 <p>Now over the rationals.  Note that bounds on the numerator and
 denominator may be specified.  See
-<a class="reference external" href="../../../rings_standard/sage/rings/rational_field.html#sage.rings.rational_field.RationalField.random_element" title="(in Sage Reference Manual: Standard Commutative Rings v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.rational_field.RationalField.random_element()</span></tt></a>
+<a class="reference external" href="../../../rings_standard/sage/rings/rational_field.html#sage.rings.rational_field.RationalField.random_element" title="(in Sage Reference Manual: Standard Commutative Rings v6.7)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.rational_field.RationalField.random_element()</span></tt></a>
 for documentation.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">random_vector</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="go">(0, -1, -4/3, 2, 0, -13, 2/3, 0, -4/5, -1)</span>
@@ -2824,7 +2781,7 @@ for documentation.</p>
 <p>Inexact rings may be used as well.  The reals have
 uniform distributions, with the range <span class="math">\((-1,1)\)</span> as
 the default.  More at:
-<a class="reference external" href="../../../rings_numerical/sage/rings/real_mpfr.html#sage.rings.real_mpfr.RealField_class.random_element" title="(in Sage Reference Manual: Fixed and Arbitrary Precision Numerical Fields v6.6)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.real_mpfr.RealField_class.random_element()</span></tt></a></p>
+<a class="reference external" href="../../../rings_numerical/sage/rings/real_mpfr.html#sage.rings.real_mpfr.RealField_class.random_element" title="(in Sage Reference Manual: Fixed and Arbitrary Precision Numerical Fields v6.7)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.rings.real_mpfr.RealField_class.random_element()</span></tt></a></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">random_vector</span><span class="p">(</span><span class="n">RR</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 <span class="go">(0.248997268533725, -0.112200126330480, 0.776829203293064, -0.899146461031406, 0.534465018743125)</span>
 

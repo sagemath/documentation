@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Profiling in Sage &mdash; Thematic Tutorials v6.7</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v6.7" href="index.html" />
+    <link rel="up" title="Thematic tutorial document tree" href="toctree.html" />
+    <link rel="prev" title="Creating a Tutorial from a Worksheet" href="sws2rst.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="sws2rst.html" title="Creating a Tutorial from a Worksheet"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Thematic Tutorials v6.7</a> &raquo;</li>
+
+          <li><a href="toctree.html" accesskey="U">Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="profiling-in-sage">
+<span id="profiling"></span><h1><a class="toc-backref" href="#id1">Profiling in Sage</a><a class="headerlink" href="#profiling-in-sage" title="Permalink to this headline">¶</a></h1>
+<p>This page lists several methods available in Sage to measure and analyze the
+performances of a piece of code. For more general information on profiling, see
+<a class="reference external" href="http://en.wikipedia.org/wiki/Profiling_(computer_programming)">Wikipedia article Profiling_(computer_programming)</a>.</p>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#profiling-in-sage" id="id1">Profiling in Sage</a><ul>
+<li><a class="reference internal" href="#how-long-does-it-take-time-and-timeit" id="id2">How long does it take? %time and %timeit</a></li>
+<li><a class="reference internal" href="#python-level-function-calls-prun" id="id3">Python-level function calls: %prun</a></li>
+<li><a class="reference internal" href="#python-level-line-by-line-profiling-lprun" id="id4">Python-level line-by-line profiling: %lprun</a></li>
+<li><a class="reference internal" href="#c-level-function-calls-crun" id="id5">C-level function calls: %crun</a></li>
+<li><a class="reference internal" href="#c-level-line-by-line-profiling-perf-linux-only" id="id6">C-level line-by-line profiling: perf (Linux only)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="how-long-does-it-take-time-and-timeit">
+<h2><a class="toc-backref" href="#id2">How long does it take? %time and %timeit</a><a class="headerlink" href="#how-long-does-it-take-time-and-timeit" title="Permalink to this headline">¶</a></h2>
+<p>The two IPython magics <tt class="docutils literal"><span class="pre">%time</span></tt> and <tt class="docutils literal"><span class="pre">%timeit</span></tt> measure the time it takes to
+run a command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="o">%</span><span class="n">time</span> <span class="n">p</span><span class="o">=</span><span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">300</span><span class="p">)</span>
+<span class="go">CPU times: user 152 ms, sys: 0 ns, total: 152 ms</span>
+<span class="go">Wall time: 150 ms</span>
+
+<span class="gp">sage: </span><span class="o">%</span><span class="n">timeit</span> <span class="n">p</span><span class="o">=</span><span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">300</span><span class="p">)</span>
+<span class="go">10 loops, best of 3: 62.2 ms per loop</span>
+</pre></div>
+</div>
+<p>Note that while <tt class="docutils literal"><span class="pre">%time</span></tt> only runs the command once, <tt class="docutils literal"><span class="pre">%timeit</span></tt> tries to
+return a more meaningful value over several runs.</p>
+<p>For more information see <tt class="docutils literal"><span class="pre">%timeit?</span></tt> or <a class="reference external" href="https://ipython.org/ipython-doc/dev/interactive/magics.html#magic-timeit">this page</a>.</p>
+<p>Note that Sage provides a <a class="reference external" href="../reference/misc/sage/misc/sage_timeit_class.html#sage.misc.sage_timeit_class.SageTimeit" title="(in Sage Reference Manual: Utilities v6.7)"><tt class="xref py py-class docutils literal"><span class="pre">timeit</span></tt></a> function which also runs in the Sage
+notebook.</p>
+</div>
+<div class="section" id="python-level-function-calls-prun">
+<h2><a class="toc-backref" href="#id3">Python-level function calls: %prun</a><a class="headerlink" href="#python-level-function-calls-prun" title="Permalink to this headline">¶</a></h2>
+<p>With <tt class="docutils literal"><span class="pre">%prun</span></tt>, you can obtain the list of all Python functions involved in a
+computation, as well as the time spent on each of them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="o">%</span><span class="n">prun</span>  <span class="n">_</span><span class="o">=</span><span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">500</span><span class="p">)</span>
+<span class="go">      468 function calls in 0.439 seconds</span>
+
+<span class="go">Ordered by: internal time</span>
+
+<span class="go">ncalls  tottime  percall  cumtime  percall filename:lineno(function)</span>
+<span class="go">    32    0.438    0.014    0.438    0.014 {method &#39;is_prime&#39; of &#39;sage.rings.integer.Integer&#39; objects}</span>
+<span class="go">    32    0.001    0.000    0.439    0.014 arith.py:407(is_prime)</span>
+<span class="go">    32    0.000    0.000    0.001    0.000 random.py:175(randrange)</span>
+<span class="go">    32    0.000    0.000    0.000    0.000 random.py:244(_randbelow)</span>
+<span class="go"> ...</span>
+</pre></div>
+</div>
+<p>The most time-consuming functions should appear on the top. A description of the
+different columns is <a class="reference external" href="https://docs.python.org/2/library/profile.html#instant-user-s-manual">available here</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You may want to sort this list differently, e.g: use <tt class="docutils literal"><span class="pre">%prun</span> <span class="pre">-s</span> <span class="pre">cumulative</span></tt>
+for decreasing cumulative time.</p>
+</div>
+<p>Alternatively, you can &#8220;save&#8221; this data to a <a class="reference external" href="http://docs.python.org/library/profile.html#pstats.Stats" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">Stats</span></tt></a> object for
+further inspection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="o">%</span><span class="n">prun</span> <span class="o">-</span><span class="n">r</span> <span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">500</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">stats_object</span> <span class="o">=</span> <span class="n">_</span>
+<span class="gp">sage: </span><span class="n">stats_object</span><span class="o">.</span><span class="n">total_calls</span>
+<span class="go">2547</span>
+</pre></div>
+</div>
+<p>For more information see <tt class="docutils literal"><span class="pre">%prun?</span></tt> or <a class="reference external" href="http://ipython.org/ipython-doc/dev/interactive/magics.html#magic-prun">this page</a>.</p>
+<p><strong>Visualize the statistics:</strong> you can obtain a more graphical output with
+<a class="reference external" href="http://www.vrplumber.com/programming/runsnakerun/">RunSnake</a> and Sage&#8217;s
+function <a class="reference external" href="../reference/misc/sage/misc/dev_tools.html#sage.misc.dev_tools.runsnake" title="(in Sage Reference Manual: Utilities v6.7)"><tt class="xref py py-func docutils literal"><span class="pre">runsnake()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">runsnake</span><span class="p">(</span><span class="s">&#39;random_prime(2**500)&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="python-level-line-by-line-profiling-lprun">
+<h2><a class="toc-backref" href="#id4">Python-level line-by-line profiling: %lprun</a><a class="headerlink" href="#python-level-line-by-line-profiling-lprun" title="Permalink to this headline">¶</a></h2>
+<p>With <a class="reference external" href="https://pypi.python.org/pypi/line_profiler/">line_profiler</a> and its
+<tt class="docutils literal"><span class="pre">%lprun</span></tt> magic, you can find out which lines of one (or many) functions are
+the most time-consuming. The syntax is the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>%lprun -f function1 -f function2 code_to_run
+</pre></div>
+</div>
+<p>This will display the line-by-line analysis of <tt class="docutils literal"><span class="pre">function1</span></tt> and <tt class="docutils literal"><span class="pre">function2</span></tt>
+when <tt class="docutils literal"><span class="pre">code_to_run</span></tt> is executed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="o">%</span><span class="n">lprun</span> <span class="o">-</span><span class="n">f</span> <span class="n">random_prime</span> <span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">500</span><span class="p">)</span>
+<span class="go">Line #      Hits         Time  Per Hit   % Time  Line Contents</span>
+<span class="go">==============================================================</span>
+<span class="go">1193                                           def random_prime(n, proof=None, lbound=2):</span>
+<span class="gp">... </span>                                               <span class="o">...</span>
+<span class="go">1251                                               # since we don&#39;t want current_randstate to get</span>
+<span class="go">1252                                               # pulled when you say &quot;from sage.arith import *&quot;.</span>
+<span class="go">1253         1           11     11.0      0.0      from sage.misc.randstate import current_randstate</span>
+<span class="go">1254         1            7      7.0      0.0      from sage.structure.proof.proof import get_flag</span>
+<span class="go">1255         1            6      6.0      0.0      proof = get_flag(proof, &quot;arithmetic&quot;)</span>
+<span class="go">1256         1           17     17.0      0.0      n = ZZ(n)</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>In order to install <tt class="docutils literal"><span class="pre">line_profiler</span></tt> you must first run the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost ~] sage -pip install &quot;line_profiler&quot;
+</pre></div>
+</div>
+</div>
+<div class="section" id="c-level-function-calls-crun">
+<h2><a class="toc-backref" href="#id5">C-level function calls: %crun</a><a class="headerlink" href="#c-level-function-calls-crun" title="Permalink to this headline">¶</a></h2>
+<p>With <tt class="docutils literal"><span class="pre">%crun</span></tt>, you can obtain the list of all C functions involved in a
+computation, as well as the time spent on each of them. You will need to have
+<a class="reference external" href="https://code.google.com/p/gperftools/">the Google performance analysis tools</a>
+installed on your system:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="o">%</span><span class="n">crun</span> <span class="n">p</span><span class="o">=</span><span class="n">random_prime</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">500</span><span class="p">)</span>
+<span class="go">PROFILE: interrupts/evictions/bytes = 45/0/18344</span>
+<span class="go">Total: 45 samples</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% PyEval_EvalCode</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% PyEval_EvalCodeEx</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% PyEval_EvalFrameEx</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% PyObject_Call</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% PyRun_StringFlags</span>
+<span class="go">       0   0.0%   0.0%       35  77.8% __Pyx_PyObject_Call.constprop.73</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>For more information on <tt class="docutils literal"><span class="pre">%crun</span></tt>, see <a class="reference external" href="../reference/misc/sage/misc/gperftools.html#module-sage.misc.gperftools" title="(in Sage Reference Manual: Utilities v6.7)"><tt class="xref py py-mod docutils literal"><span class="pre">sage.misc.gperftools</span></tt></a>.</p>
+</div>
+<div class="section" id="c-level-line-by-line-profiling-perf-linux-only">
+<h2><a class="toc-backref" href="#id6">C-level line-by-line profiling: perf (Linux only)</a><a class="headerlink" href="#c-level-line-by-line-profiling-perf-linux-only" title="Permalink to this headline">¶</a></h2>
+<p>If your code is written in C or in Cython, you can find out line-by-line which
+are the most costly using <a class="reference external" href="https://perf.wiki.kernel.org/index.php/Main_Page">perf</a> (included in the Ubuntu
+package <tt class="docutils literal"><span class="pre">linux-tools</span></tt>).</p>
+<p>The easiest way to use it is to run some (very long) computation in Sage, and to
+type in a console:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost ~] sudo perf top
+</pre></div>
+</div>
+<p>Select the entry that interests you, and press <tt class="docutils literal"><span class="pre">Enter</span></tt>. The <tt class="docutils literal"><span class="pre">annotate</span></tt>
+command will show you:</p>
+<ul class="simple">
+<li>the CPU instructions</li>
+<li>the source code</li>
+<li>the associated time</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre>      │     *         cdef unsigned long word = (&lt;unsigned long&gt;1) &lt;&lt; (v &amp; self.radix_mod_mask)
+      │     *         return (self.edges[place] &amp; word) &gt;&gt; (v &amp; self.radix_mod_mask)             # &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+      │     *
+      │     *     cpdef bint has_arc(self, int u, int v) except -1:
+      │     */
+      │      __pyx_r = (((__pyx_v_self-&gt;edges[__pyx_v_place]) &amp; __pyx_v_word) &gt;&gt; (__pyx_v_v &amp; __pyx_v_self-&gt;radix_mod_mask));
+10.88 │      movslq %esi,%rsi
+ 6.52 │      and    (%rdi,%rsi,8),%rax
+12.84 │      shr    %cl,%rax
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>press <tt class="docutils literal"><span class="pre">s</span></tt> to toggle source code view</li>
+<li>press <tt class="docutils literal"><span class="pre">H</span></tt> to cycle through hottest instructions</li>
+<li>press <tt class="docutils literal"><span class="pre">h</span></tt> for help</li>
+</ul>
+</div>
+<p>Alternatively, or if you have no <tt class="docutils literal"><span class="pre">sudo</span></tt> privileges, you can record the statistics
+of a specific process into a file <tt class="docutils literal"><span class="pre">perf.data</span></tt> from its PID. Then, visualize
+the result using <tt class="docutils literal"><span class="pre">perf</span> <span class="pre">report</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost ~] perf record -p PID
+[user@localhost ~] perf report --vmlinux vmlinux
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Profiling in Sage</a><ul>
+<li><a class="reference internal" href="#how-long-does-it-take-time-and-timeit">How long does it take? %time and %timeit</a></li>
+<li><a class="reference internal" href="#python-level-function-calls-prun">Python-level function calls: %prun</a></li>
+<li><a class="reference internal" href="#python-level-line-by-line-profiling-lprun">Python-level line-by-line profiling: %lprun</a></li>
+<li><a class="reference internal" href="#c-level-function-calls-crun">C-level function calls: %crun</a></li>
+<li><a class="reference internal" href="#c-level-line-by-line-profiling-perf-linux-only">C-level line-by-line profiling: perf (Linux only)</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="sws2rst.html"
+                                  title="previous chapter">Creating a Tutorial from a Worksheet</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/profiling.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="sws2rst.html" title="Creating a Tutorial from a Worksheet"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Thematic Tutorials v6.7</a> &raquo;</li>
+
+          <li><a href="toctree.html" >Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

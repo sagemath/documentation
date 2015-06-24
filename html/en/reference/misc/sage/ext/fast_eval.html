@@ -1,0 +1,802 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Fast Numerical Evaluation &mdash; Sage Reference Manual v6.7: Utilities</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.7: Utilities" href="../../index.html" />
+    <link rel="next" title="On-the-fly generation of compiled extensions" href="../misc/cython_c.html" />
+    <link rel="prev" title="Fast Expression Evaluation" href="fast_callable.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../misc/cython_c.html" title="On-the-fly generation of compiled extensions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fast_callable.html" title="Fast Expression Evaluation"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Utilities</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="fast-numerical-evaluation">
+<span id="sage-ext-fast-eval"></span><h1>Fast Numerical Evaluation<a class="headerlink" href="#fast-numerical-evaluation" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.ext.fast_eval"></span><p>For many applications such as numerical integration, differential
+equation approximation, plotting a 3d surface, optimization problems,
+monte-carlo simulations, etc., one wishes to pass around and evaluate
+a single algebraic expression many, many times at various floating
+point values. Doing this via recursive calls over a python
+representation of the object (even if Maxima or other outside packages
+are not involved) is extremely inefficient.</p>
+<p>Up until now the solution has been to use lambda expressions, but this
+is neither intuitive, Sage-like, nor efficient (compared to operating
+on raw C doubles).  This module provides a representation of algebraic
+expression in Reverse Polish Notation, and provides an efficient
+interpreter on C double values as a callable python object. It does
+what it can in C, and will call out to Python if necessary.</p>
+<p>Essential to the understanding of this class is the distinction
+between symbolic expressions and callable symbolic expressions (where
+the latter binds argument names to argument positions). The
+<tt class="docutils literal"><span class="pre">*vars</span></tt> parameter passed around encapsulates this information.</p>
+<p>See the function <tt class="docutils literal"><span class="pre">fast_float(f,</span> <span class="pre">*vars)</span></tt> to create a fast-callable
+version of f.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Sage temporarily has two implementations of this functionality ;
+one in this file, which will probably be deprecated soon, and one in
+fast_callable.pyx.  The following instructions are for the old
+implementation; you probably want to be looking at fast_callable.pyx
+instead.</p>
+</div>
+<p>To provide this interface for a class, implement <tt class="docutils literal"><span class="pre">fast_float_(self,</span> <span class="pre">*vars)</span></tt>.  The basic building blocks are
+provided by the functions <tt class="docutils literal"><span class="pre">fast_float_constant</span></tt> (returns a
+constant function), <tt class="docutils literal"><span class="pre">fast_float_arg</span></tt> (selects the <tt class="docutils literal"><span class="pre">n</span></tt>-th value
+when called with <tt class="docutils literal"><span class="pre">\ge_n</span></tt> arguments), and <tt class="docutils literal"><span class="pre">fast_float_func</span></tt> which
+wraps a callable Python function. These may be combined with the
+standard Python arithmetic operators, and support many of the basic
+math functions such <tt class="docutils literal"><span class="pre">sqrt</span></tt>, <tt class="docutils literal"><span class="pre">exp</span></tt>, and trig functions.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">7</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">old</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1.4142135623730951</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 0&#39;, &#39;push 7.0&#39;, &#39;pow&#39;, &#39;push 1.0&#39;, &#39;add&#39;, &#39;call sqrt(1)&#39;]</span>
+</pre></div>
+</div>
+<p>To interpret that last line, we load argument 0 (<tt class="docutils literal"><span class="pre">x</span></tt> in this case) onto
+the stack, push the constant 2.0 onto the stack, call the pow function
+(which takes 2 arguments from the stack), push the constant 1.0, add the
+top two arguments of the stack, and then call sqrt.</p>
+<p>Here we take <tt class="docutils literal"><span class="pre">sin</span></tt> of the first argument and add it to <tt class="docutils literal"><span class="pre">f</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">f</span><span class="o">+</span><span class="n">g</span><span class="p">)</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 0&#39;, &#39;push 7.0&#39;, &#39;pow&#39;, &#39;push 1.0&#39;, &#39;add&#39;, &#39;call sqrt(1)&#39;, &#39;load 0&#39;, &#39;call sin(1)&#39;, &#39;add&#39;]</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>This used to segfault because of an assumption that assigning None to a
+variable would raise a TypeError:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span><span class="p">,</span> <span class="n">fast_float</span>
+<span class="gp">sage: </span><span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Robert Bradshaw (2008-10): Initial version</li>
+</ul>
+<dl class="class">
+<dt id="sage.ext.fast_eval.FastDoubleFunc">
+<em class="property">class </em><tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">FastDoubleFunc</tt><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class is for fast evaluation of algebraic expressions over
+the real numbers (e.g. for plotting). It represents an expression
+as a stack-based series of operations.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">FastDoubleFunc</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">FastDoubleFunc</span><span class="p">(</span><span class="s">&#39;const&#39;</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)</span> <span class="c"># the constant function</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">()</span>
+<span class="go">1.5</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">FastDoubleFunc</span><span class="p">(</span><span class="s">&#39;arg&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># the first argument</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">5.0</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">f</span><span class="o">+</span><span class="n">g</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="go">18.5</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="go">1.0</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+<span class="go">[&#39;push 1.5&#39;, &#39;load 0&#39;, &#39;add&#39;, &#39;call sin(1)&#39;]</span>
+</pre></div>
+</div>
+<p>We can wrap Python functions too:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">FastDoubleFunc</span><span class="p">(</span><span class="s">&#39;callable&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">998.5</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+<span class="go">[&#39;load 0&#39;, &#39;push 1.5&#39;, &#39;py_call &lt;function &lt;lambda&gt; at 0x...&gt;(2)&#39;]</span>
+</pre></div>
+</div>
+<p>Here&#8217;s a more complicated expression:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_constant</span><span class="p">,</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">fast_float_constant</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">fast_float_constant</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">fast_float_constant</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">y</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">c</span> <span class="o">-</span> <span class="n">y</span><span class="o">/</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sin</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">16.846610528508116</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">max_height</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">[&#39;push 1.5&#39;, &#39;load 0&#39;, &#39;dup&#39;, &#39;mul&#39;, &#39;mul&#39;, &#39;push 3.14&#39;, &#39;load 0&#39;, &#39;mul&#39;, &#39;add&#39;, &#39;push 7.0&#39;, &#39;add&#39;, &#39;load 1&#39;, &#39;load 1&#39;, &#39;call sin(1)&#39;, &#39;dup&#39;, &#39;mul&#39;, &#39;push 1.5&#39;, &#39;add&#39;, &#39;call sqrt(1)&#39;, &#39;div&#39;, &#39;sub&#39;]</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Robert Bradshaw</li>
+</ul>
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.abs">
+<tt class="descname">abs</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">3.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arccos">
+<tt class="descname">arccos</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arccos" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arccos</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0.5235987755982989...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arccosh">
+<tt class="descname">arccosh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arccosh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arccosh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">cosh</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">5.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arcsin">
+<tt class="descname">arcsin</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arcsin" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arcsin</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="go">0.523598775598298...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arcsinh">
+<tt class="descname">arcsinh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arcsinh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arcsinh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">sinh</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">5.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arctan">
+<tt class="descname">arctan</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arctan" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arctan</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0.785398163397448...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.arctanh">
+<tt class="descname">arctanh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.arctanh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">arctanh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">abs</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">tanh</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.0000001</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.ceil">
+<tt class="descname">ceil</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.ceil" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">ceil</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="go">2.0</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="go">-1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.cos">
+<tt class="descname">cos</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.cos" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cos</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.cosh">
+<tt class="descname">cosh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.cosh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cosh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">1.25</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.cot">
+<tt class="descname">cot</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.cot" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cot</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">1.0...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.csc">
+<tt class="descname">csc</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.csc" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">csc</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.exp">
+<tt class="descname">exp</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2.718281828459045...</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">2.6881171418161356e+43</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.floor">
+<tt class="descname">floor</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.floor" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mf">11.5</span><span class="p">)</span>
+<span class="go">11.0</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="o">-</span><span class="mf">11.5</span><span class="p">)</span>
+<span class="go">-12.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.is_pure_c">
+<tt class="descname">is_pure_c</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.is_pure_c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if this function can be evaluated without
+any python calls (at any level).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_constant</span><span class="p">,</span> <span class="n">fast_float_arg</span><span class="p">,</span> <span class="n">fast_float_func</span>
+<span class="gp">sage: </span><span class="n">fast_float_constant</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">fast_float_func</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">is_pure_c</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.log">
+<tt class="descname">log</tt><big>(</big><em>base=None</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0.693147180559945...</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1.0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="go">2.0...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.max_height">
+<tt class="descname">max_height</tt><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.max_height" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.nargs">
+<tt class="descname">nargs</tt><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.nargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.nops">
+<tt class="descname">nops</tt><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.nops" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.op_list">
+<tt class="descname">op_list</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.op_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of string representations of the
+operations that make up this expression.</p>
+<p>Python and C function calls may be only available by function
+pointer addresses.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_constant</span><span class="p">,</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">fast_float_constant</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;push 17.0&#39;]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 0&#39;]</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;push 17.0&#39;, &#39;load 0&#39;, &#39;mul&#39;]</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="n">a</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;push 17.0&#39;, &#39;push 17.0&#39;, &#39;load 0&#39;, &#39;dup&#39;, &#39;mul&#39;, &#39;mul&#39;, &#39;add&#39;, &#39;call sqrt(1)&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.python_calls">
+<tt class="descname">python_calls</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.python_calls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all python calls used by function.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_func</span><span class="p">,</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_func</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 0&#39;, &#39;call sqrt(1)&#39;, &#39;py_call &lt;built-in function hash&gt;(1)&#39;]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">python_calls</span><span class="p">()</span>
+<span class="go">[&lt;built-in function hash&gt;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.sec">
+<tt class="descname">sec</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.sec" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sec</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+<span class="go">-1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.sin">
+<tt class="descname">sin</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.sin" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.sinh">
+<tt class="descname">sinh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.sinh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sinh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">0.75</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.sqrt">
+<tt class="descname">sqrt</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.sqrt" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">2.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.tan">
+<tt class="descname">tan</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.tan" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">tan</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">1.73205080756887...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.ext.fast_eval.FastDoubleFunc.tanh">
+<tt class="descname">tanh</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.FastDoubleFunc.tanh" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">tanh</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.ext.fast_eval.fast_float">
+<tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">fast_float</tt><big>(</big><em>f</em>, <em>old=None</em>, <em>expect_one_var=False</em>, <em>*vars</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.fast_float" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to create a function that evaluates f quickly using
+floating-point numbers, if possible.  There are two implementations
+of fast_float in Sage; by default we use the newer, which is
+slightly faster on most tests.</p>
+<p>On failure, returns the input unchanged.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt>    &#8211; an expression</li>
+<li><tt class="docutils literal"><span class="pre">vars</span></tt> &#8211; the names of the arguments</li>
+<li><tt class="docutils literal"><span class="pre">old</span></tt>  &#8211; use the original algorithm for fast_float</li>
+<li><tt class="docutils literal"><span class="pre">expect_one_var</span></tt> &#8211; don&#8217;t give deprecation warning if <tt class="docutils literal"><span class="pre">vars</span></tt> is
+omitted, as long as expression has only one var</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">var</span><span class="p">(</span><span class="s">&#39;x,y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="p">),</span> <span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">5.0</span>
+</pre></div>
+</div>
+<p>Specifying the argument names is essential, as fast_float objects
+only distinguish between arguments by order.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="p">,</span> <span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">-1.0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.ext.fast_eval.fast_float_arg">
+<tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">fast_float_arg</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.fast_float_arg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a fast-to-evaluate argument selector.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">n</span></tt> &#8211; the (zero-indexed) argument to select</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1.0</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">2.0</span>
+</pre></div>
+</div>
+<p>This is all that goes on under the hood:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 10&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.ext.fast_eval.fast_float_constant">
+<tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">fast_float_constant</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.fast_float_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a fast-to-evaluate constant function.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_constant</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_constant</span><span class="p">(</span><span class="o">-</span><span class="mf">2.75</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">()</span>
+<span class="go">-2.75</span>
+</pre></div>
+</div>
+<p>This is all that goes on under the hood:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fast_float_constant</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;push 3.14159265359&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.ext.fast_eval.fast_float_func">
+<tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">fast_float_func</tt><big>(</big><em>f</em>, <em>*args</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.fast_float_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a wrapper around a python function.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> &#8211; a callable python object</li>
+<li><tt class="docutils literal"><span class="pre">args</span></tt> &#8211; a list of FastDoubleFunc inputs</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.ext.fast_eval</span> <span class="kn">import</span> <span class="n">fast_float_func</span><span class="p">,</span> <span class="n">fast_float_arg</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">fast_float_arg</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">fast_float_func</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="go">-5.0</span>
+</pre></div>
+</div>
+<p>This is all that goes on under the hood:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">op_list</span><span class="p">()</span>
+<span class="go">[&#39;load 0&#39;, &#39;load 1&#39;, &#39;py_call &lt;function &lt;lambda&gt; at 0x...&gt;(2)&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.ext.fast_eval.is_fast_float">
+<tt class="descclassname">sage.ext.fast_eval.</tt><tt class="descname">is_fast_float</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.ext.fast_eval.is_fast_float" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="fast_callable.html"
+                                  title="previous chapter">Fast Expression Evaluation</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../misc/cython_c.html"
+                                  title="next chapter">On-the-fly generation of compiled extensions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/ext/fast_eval.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../misc/cython_c.html" title="On-the-fly generation of compiled extensions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fast_callable.html" title="Fast Expression Evaluation"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Utilities</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

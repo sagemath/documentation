@@ -1,0 +1,724 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Canonical forms and automorphism group computation for linear codes over finite fields. &mdash; Sage Reference Manual v6.7: Coding Theory</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.7: Coding Theory" href="../../../index.html" />
+    <link rel="next" title="Canonical forms and automorphisms for linear codes over finite fields." href="autgroup_can_label.html" />
+    <link rel="prev" title="Bounds for Parameters of Codes" href="../code_bounds.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="autgroup_can_label.html" title="Canonical forms and automorphisms for linear codes over finite fields."
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../code_bounds.html" title="Bounds for Parameters of Codes"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Coding Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="canonical-forms-and-automorphism-group-computation-for-linear-codes-over-finite-fields">
+<span id="sage-coding-codecan-codecan"></span><h1>Canonical forms and automorphism group computation for linear codes over finite fields.<a class="headerlink" href="#canonical-forms-and-automorphism-group-computation-for-linear-codes-over-finite-fields" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.coding.codecan.codecan"></span><p>We implemented the algorithm described in <a class="reference internal" href="autgroup_can_label.html#feu2009" id="id1">[Feu2009]</a> which computes the unique
+semilinearly isometric code (canonical form) in the equivalence class of a given
+linear code <tt class="docutils literal"><span class="pre">C</span></tt>. Furthermore, this algorithm will return the automorphism
+group of <tt class="docutils literal"><span class="pre">C</span></tt>, too.</p>
+<p>The algorithm should be started via a further class
+<a class="reference internal" href="autgroup_can_label.html#sage.coding.codecan.autgroup_can_label.LinearCodeAutGroupCanLabel" title="sage.coding.codecan.autgroup_can_label.LinearCodeAutGroupCanLabel"><tt class="xref py py-class docutils literal"><span class="pre">LinearCodeAutGroupCanLabel</span></tt></a>.
+This class removes duplicated columns (up to multiplications
+by units) and zero columns. Hence, we can suppose that the input for the algorithm
+developed here is a set of points in <span class="math">\(PG(k-1, q)\)</span>.</p>
+<p>The implementation is based on the class
+<tt class="xref py py-class docutils literal"><span class="pre">sage.groups.perm_gps.partn_ref2.refinement_generic.PartitionRefinement_generic</span></tt>.
+See the description of this algorithm in
+<tt class="xref py py-mod docutils literal"><span class="pre">sage.groups.perm_gps.partn_ref2.refinement_generic</span></tt>.
+In the language given there, we have to implement the group action of
+<span class="math">\(G = (GL(k,q) \times {\GF{q}^*}^n ) \rtimes Aut(\GF{q})\)</span> on the set <span class="math">\(X =
+(\GF{q}^k)^n\)</span> of <span class="math">\(k \times n\)</span> matrices over <span class="math">\(\GF{q}\)</span> (with the above
+restrictions).</p>
+<p>The derived class here implements the stabilizers
+<span class="math">\(G_{\Pi^{(I)}(x)}\)</span> of the projections <span class="math">\(\Pi^{(I)}(x)\)</span> of <span class="math">\(x\)</span> to
+the coordinates specified in the sequence <span class="math">\(I\)</span>. Furthermore, we implement
+the inner minimization, i.e. the computation of a canonical form of
+the projection <span class="math">\(\Pi^{(I)}(x)\)</span> under the action of <span class="math">\(G_{\Pi^{(I^{(i-1)})}(x)}\)</span> .
+Finally, we provide suitable homomorphisms of group actions for the refinements
+and methods to compute the applied group elements in <span class="math">\(G \rtimes S_n\)</span>.</p>
+<p>The algorithm also uses Jeffrey Leon&#8217;s idea of maintaining an
+invariant set of codewords which is computed in the beginning, see
+<tt class="xref py py-meth docutils literal"><span class="pre">_init_point_hyperplane_incidence()</span></tt>.
+An example for such a set is the set of all codewords of weight <span class="math">\(\leq w\)</span> for
+some uniquely defined <span class="math">\(w\)</span>. In our case, we interpret the codewords as a set of
+hyperplanes (via the corresponding information word) and compute invariants of
+the bipartite, colored derived subgraph of the point-hyperplane incidence graph,
+see <tt class="xref py py-meth docutils literal"><span class="pre">PartitionRefinementLinearCode._point_refine()</span></tt> and
+<tt class="xref py py-meth docutils literal"><span class="pre">PartitionRefinementLinearCode._hyp_refine()</span></tt>.</p>
+<p>Since we are interested in subspaces (linear codes) instead of matrices, our
+group elements returned in
+<a class="reference internal" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_transporter" title="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_transporter"><tt class="xref py py-meth docutils literal"><span class="pre">PartitionRefinementLinearCode.get_transporter()</span></tt></a> and
+<a class="reference internal" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_gens" title="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_gens"><tt class="xref py py-meth docutils literal"><span class="pre">PartitionRefinementLinearCode.get_autom_gens()</span></tt></a>
+will be elements in the group
+<span class="math">\(({\GF{q}^*}^n  \rtimes Aut(\GF{q})) \rtimes S_n =
+({\GF{q}^*}^n  \rtimes (Aut(\GF{q}) \times S_n)\)</span>.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Thomas Feulner (2012-11-15): initial version</li>
+</ul>
+<p>REFERENCES:</p>
+<p><a class="reference internal" href="autgroup_can_label.html#feu2009" id="id2">[Feu2009]</a></p>
+<p>EXAMPLES:</p>
+<p>Get the canonical form of the Simplex code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cf</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_canonical_form</span><span class="p">();</span> <span class="n">cf</span>
+<span class="go">[1 0 0 0 0 1 1 1 1 1 1 1 1]</span>
+<span class="go">[0 1 0 1 1 0 0 1 1 2 2 1 2]</span>
+<span class="go">[0 0 1 1 2 1 2 1 2 1 2 0 0]</span>
+</pre></div>
+</div>
+<p>The transporter element is a group element which maps the input
+to its canonical form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cf</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">get_transporter</span><span class="p">()</span> <span class="o">*</span> <span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The automorphism group of the input, i.e. the stabilizer under this group action,
+is returned by generators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">get_autom_order_permutation</span><span class="p">()</span> <span class="o">==</span> <span class="n">GL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">order</span><span class="p">()</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_autom_gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span> <span class="p">[(</span><span class="n">a</span><span class="o">*</span><span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="n">mat</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.coding.codecan.codecan.InnerGroup">
+<em class="property">class </em><tt class="descclassname">sage.coding.codecan.codecan.</tt><tt class="descname">InnerGroup</tt><a class="headerlink" href="#sage.coding.codecan.codecan.InnerGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>This class implements the stabilizers <span class="math">\(G_{\Pi^{(I)}(x)}\)</span> described in
+<tt class="xref py py-mod docutils literal"><span class="pre">sage.groups.perm_gps.partn_ref2.refinement_generic</span></tt> with
+<span class="math">\(G = (GL(k,q) \times \GF{q}^n ) \rtimes Aut(\GF{q})\)</span>.</p>
+<p>Those stabilizers can be stored as triples:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">rank</span></tt> - an integer in <span class="math">\(\{0, \ldots, k\}\)</span></p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">row_partition</span></tt> - a partition of <span class="math">\(\{0, \ldots, k-1\}\)</span> with</dt>
+<dd><p class="first last">discrete cells for all integers <span class="math">\(i \geq rank\)</span>.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">frob_pow</span></tt> an integer in <span class="math">\(\{0, \ldots, r-1\}\)</span> if <span class="math">\(q = p^r\)</span></p>
+</li>
+</ul>
+<p>The group <span class="math">\(G_{\Pi^{(I)}(x)}\)</span> contains all elements <span class="math">\((A, \varphi, \alpha) \in G\)</span>,
+where</p>
+<ul>
+<li><p class="first"><span class="math">\(A\)</span> is a <span class="math">\(2 \times 2\)</span> blockmatrix, whose upper left matrix
+is a <span class="math">\(k \times k\)</span> diagonal matrix whose entries <span class="math">\(A_{i,i}\)</span> are constant
+on the cells of the partition <tt class="docutils literal"><span class="pre">row_partition</span></tt>.
+The lower left matrix is zero.
+And the right part is arbitrary.</p>
+</li>
+<li><p class="first">The support of the columns given by <span class="math">\(i \in I\)</span> intersect exactly one
+cell of the partition. The entry <span class="math">\(\varphi_i\)</span> is equal to the entries
+of the corresponding diagonal entry of <span class="math">\(A\)</span>.</p>
+</li>
+<li><dl class="first docutils">
+<dt><span class="math">\(\alpha\)</span> is a power of <span class="math">\(\tau^{frob_pow}\)</span>, where <span class="math">\(\tau\)</span> denotes the</dt>
+<dd><p class="first last">Frobenius automorphism of the finite field <span class="math">\(\GF{q}\)</span>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>See <a class="reference internal" href="autgroup_can_label.html#feu2009" id="id3">[Feu2009]</a> for more details.</p>
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.InnerGroup.column_blocks">
+<tt class="descname">column_blocks</tt><big>(</big><em>mat</em><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.InnerGroup.column_blocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Let <tt class="docutils literal"><span class="pre">mat</span></tt> be a matrix which is stabilized by <tt class="docutils literal"><span class="pre">self</span></tt> having no zero
+columns. We know that for each column of <tt class="docutils literal"><span class="pre">mat</span></tt> there is a uniquely
+defined cell in <tt class="docutils literal"><span class="pre">self.row_partition</span></tt> having a nontrivial intersection
+with the support of this particular column.</p>
+<p>This function returns a partition (as list of lists) of the columns
+indices according to the partition of the rows given by <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">InnerGroup</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">InnerGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">column_blocks</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+<span class="go">[[1], [0], [2]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.InnerGroup.get_frob_pow">
+<tt class="descname">get_frob_pow</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.InnerGroup.get_frob_pow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the power of the Frobenius automorphism which generates
+the corresponding component of <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">InnerGroup</span>
+<span class="gp">sage: </span><span class="n">I</span> <span class="o">=</span> <span class="n">InnerGroup</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">I</span><span class="o">.</span><span class="n">get_frob_pow</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.coding.codecan.codecan.OP_represent">
+<tt class="descclassname">sage.coding.codecan.codecan.</tt><tt class="descname">OP_represent</tt><big>(</big><em>n</em>, <em>merges</em>, <em>perm</em><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.OP_represent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demonstration and testing.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.groups.perm_gps.partn_ref.automorphism_group_canonical_label</span> <span class="kn">import</span> <span class="n">OP_represent</span>
+<span class="gp">sage: </span><span class="n">OP_represent</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<span class="go">Allocating OrbitPartition...</span>
+<span class="go">Allocation passed.</span>
+<span class="go">Checking that each element reports itself as its root.</span>
+<span class="go">Each element reports itself as its root.</span>
+<span class="go">Merging:</span>
+<span class="go">Merged 0 and 1.</span>
+<span class="go">Merged 2 and 3.</span>
+<span class="go">Merged 3 and 4.</span>
+<span class="go">Done merging.</span>
+<span class="go">Finding:</span>
+<span class="go">0 -&gt; 0, root: size=2, mcr=0, rank=1</span>
+<span class="go">1 -&gt; 0</span>
+<span class="go">2 -&gt; 2, root: size=3, mcr=2, rank=1</span>
+<span class="go">3 -&gt; 2</span>
+<span class="go">4 -&gt; 2</span>
+<span class="go">5 -&gt; 5, root: size=1, mcr=5, rank=0</span>
+<span class="go">6 -&gt; 6, root: size=1, mcr=6, rank=0</span>
+<span class="go">7 -&gt; 7, root: size=1, mcr=7, rank=0</span>
+<span class="go">8 -&gt; 8, root: size=1, mcr=8, rank=0</span>
+<span class="go">Allocating array to test merge_perm.</span>
+<span class="go">Allocation passed.</span>
+<span class="go">Merging permutation: [1, 2, 0, 4, 3, 6, 7, 5, 8]</span>
+<span class="go">Done merging.</span>
+<span class="go">Finding:</span>
+<span class="go">0 -&gt; 0, root: size=5, mcr=0, rank=2</span>
+<span class="go">1 -&gt; 0</span>
+<span class="go">2 -&gt; 0</span>
+<span class="go">3 -&gt; 0</span>
+<span class="go">4 -&gt; 0</span>
+<span class="go">5 -&gt; 5, root: size=3, mcr=5, rank=1</span>
+<span class="go">6 -&gt; 5</span>
+<span class="go">7 -&gt; 5</span>
+<span class="go">8 -&gt; 8, root: size=1, mcr=8, rank=0</span>
+<span class="go">Deallocating OrbitPartition.</span>
+<span class="go">Done.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.coding.codecan.codecan.PS_represent">
+<tt class="descclassname">sage.coding.codecan.codecan.</tt><tt class="descname">PS_represent</tt><big>(</big><em>partition</em>, <em>splits</em><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.PS_represent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demonstration and testing.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.groups.perm_gps.partn_ref.automorphism_group_canonical_label</span> <span class="kn">import</span> <span class="n">PS_represent</span>
+<span class="gp">sage: </span><span class="n">PS_represent</span><span class="p">([[</span><span class="mi">6</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">7</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">5</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">Allocating PartitionStack...</span>
+<span class="go">Allocation passed:</span>
+<span class="go">(0 1 2 3 4 5 6 7 8 9)</span>
+<span class="go">Checking that entries are in order and correct level.</span>
+<span class="go">Everything seems in order, deallocating.</span>
+<span class="go">Deallocated.</span>
+<span class="go">Creating PartitionStack from partition [[6], [3, 4, 8, 7], [1, 9, 5], [0, 2]].</span>
+<span class="go">PartitionStack&#39;s data:</span>
+<span class="go">entries -&gt; [6, 3, 4, 8, 7, 1, 9, 5, 0, 2]</span>
+<span class="go">levels -&gt; [0, 10, 10, 10, 0, 10, 10, 0, 10, -1]</span>
+<span class="go">depth = 0, degree = 10</span>
+<span class="go">(6|3 4 8 7|1 9 5|0 2)</span>
+<span class="go">Checking PS_is_discrete:</span>
+<span class="go">False</span>
+<span class="go">Checking PS_num_cells:</span>
+<span class="go">4</span>
+<span class="go">Checking PS_is_mcr, min cell reps are:</span>
+<span class="go">[6, 3, 1, 0]</span>
+<span class="go">Checking PS_is_fixed, fixed elements are:</span>
+<span class="go">[6]</span>
+<span class="go">Copying PartitionStack:</span>
+<span class="go">(6|3 4 8 7|1 9 5|0 2)</span>
+<span class="go">Checking for consistency.</span>
+<span class="go">Everything is consistent.</span>
+<span class="go">Clearing copy:</span>
+<span class="go">(0 3 4 8 7 1 9 5 6 2)</span>
+<span class="go">Splitting point 6 from original:</span>
+<span class="go">0</span>
+<span class="go">(6|3 4 8 7|1 9 5|0 2)</span>
+<span class="go">Splitting point 1 from original:</span>
+<span class="go">5</span>
+<span class="go">(6|3 4 8 7|1|5 9|0 2)</span>
+<span class="go">Splitting point 8 from original:</span>
+<span class="go">1</span>
+<span class="go">(6|8|3 4 7|1|5 9|0 2)</span>
+<span class="go">Splitting point 2 from original:</span>
+<span class="go">8</span>
+<span class="go">(6|8|3 4 7|1|5 9|2|0)</span>
+<span class="go">Getting permutation from PS2-&gt;PS:</span>
+<span class="go">[6, 1, 0, 8, 3, 9, 2, 7, 4, 5]</span>
+<span class="go">Finding first smallest:</span>
+<span class="go">Minimal element is 5, bitset is:</span>
+<span class="go">0000010001</span>
+<span class="go">Finding element 1:</span>
+<span class="go">Location is: 5</span>
+<span class="go">Bitset is:</span>
+<span class="go">0100000000</span>
+<span class="go">Deallocating PartitionStacks.</span>
+<span class="go">Done.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.coding.codecan.codecan.PartitionRefinementLinearCode">
+<em class="property">class </em><tt class="descclassname">sage.coding.codecan.codecan.</tt><tt class="descname">PartitionRefinementLinearCode</tt><a class="headerlink" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">sage.groups.perm_gps.partn_ref2.refinement_generic.PartitionRefinement_generic</span></tt></p>
+<p>See <a class="reference internal" href="#module-sage.coding.codecan.codecan" title="sage.coding.codecan.codecan"><tt class="xref py py-mod docutils literal"><span class="pre">sage.coding.codecan.codecan</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cf</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_canonical_form</span><span class="p">();</span> <span class="n">cf</span>
+<span class="go">[1 0 0 0 0 1 1 1 1 1 1 1 1]</span>
+<span class="go">[0 1 0 1 1 0 0 1 1 2 2 1 2]</span>
+<span class="go">[0 0 1 1 2 1 2 1 2 1 2 0 0]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cf</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">get_transporter</span><span class="p">()</span> <span class="o">*</span> <span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">get_autom_order_permutation</span><span class="p">()</span> <span class="o">==</span> <span class="n">GL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">order</span><span class="p">()</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_autom_gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span> <span class="p">[(</span><span class="n">a</span><span class="o">*</span><span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="n">mat</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_gens">
+<tt class="descname">get_autom_gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return generators of the automorphism group of the initial matrix.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_autom_gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span> <span class="p">[(</span><span class="n">a</span><span class="o">*</span><span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="n">mat</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_order_inner_stabilizer">
+<tt class="descname">get_autom_order_inner_stabilizer</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_autom_order_inner_stabilizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the order of the stabilizer of the initial matrix under
+the action of the inner group <span class="math">\(G\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">get_autom_order_inner_stabilizer</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">mat2</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">),</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">P2</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat2</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P2</span><span class="o">.</span><span class="n">get_autom_order_inner_stabilizer</span><span class="p">()</span>
+<span class="go">6</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_canonical_form">
+<tt class="descname">get_canonical_form</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_canonical_form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the canonical form for this matrix.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P1</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">CF1</span> <span class="o">=</span> <span class="n">P1</span><span class="o">.</span><span class="n">get_canonical_form</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">SemimonomialTransformationGroup</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">())</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P2</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">s</span><span class="o">*</span><span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">CF1</span> <span class="o">==</span> <span class="n">P2</span><span class="o">.</span><span class="n">get_canonical_form</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_transporter">
+<tt class="descname">get_transporter</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.PartitionRefinementLinearCode.get_transporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the transporter element, mapping the initial matrix to its
+canonical form.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.codecan.codecan</span> <span class="kn">import</span> <span class="n">PartitionRefinementLinearCode</span>
+<span class="gp">sage: </span><span class="n">mat</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">HammingCode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">PartitionRefinementLinearCode</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">ncols</span><span class="p">(),</span> <span class="n">mat</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">CF</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_canonical_form</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">get_transporter</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">mat</span><span class="p">)</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span> <span class="o">==</span> <span class="n">CF</span><span class="o">.</span><span class="n">echelon_form</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.coding.codecan.codecan.SC_test_list_perms">
+<tt class="descclassname">sage.coding.codecan.codecan.</tt><tt class="descname">SC_test_list_perms</tt><big>(</big><em>L</em>, <em>n</em>, <em>limit</em>, <em>gap</em>, <em>limit_complain</em>, <em>test_contains</em><big>)</big><a class="headerlink" href="#sage.coding.codecan.codecan.SC_test_list_perms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test that the permutation group generated by list perms in L of degree n
+is of the correct order, by comparing with GAP. Don&#8217;t test if the group is
+of size greater than limit.</p>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.groups.perm_gps.partn_ref.automorphism_group_canonical_label</span> <span class="kn">import</span> <span class="n">SC_test_list_perms</span>
+<span class="gp">sage: </span><span class="n">limit</span> <span class="o">=</span> <span class="mi">10</span><span class="o">^</span><span class="mi">7</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_Sn_on_m_points</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perm1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span>
+<span class="gp">... </span>    <span class="n">perm2</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">n</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="n">n</span> <span class="p">)]</span> <span class="o">+</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)[</span><span class="n">n</span><span class="p">:]</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">([</span><span class="n">perm1</span><span class="p">,</span> <span class="n">perm2</span><span class="p">],</span> <span class="n">m</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_Sn_on_m_points</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_Sn_on_m_points</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>           <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_Sn_on_m_points</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_Sn_on_m_points</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_1</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perm1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)],</span> <span class="p">[])</span>
+<span class="gp">... </span>    <span class="n">perm2</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="p">)]</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">([</span><span class="n">perm1</span><span class="p">,</span> <span class="n">perm2</span><span class="p">],</span> <span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_1</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_1</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>              <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_1</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_1</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_2</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">e</span> <span class="ow">in</span> <span class="n">factor</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">perm1</span> <span class="o">=</span> <span class="p">[(</span><span class="n">p</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">//</span><span class="n">p</span><span class="p">))</span> <span class="o">+</span> <span class="p">((</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+<span class="gp">... </span>        <span class="n">perms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perm1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">(</span><span class="n">perms</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_2</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_2</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span>            <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_2</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_2</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_3</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perm1</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">i</span><span class="p">)</span><span class="o">%</span><span class="n">n</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="n">n</span> <span class="p">)]</span>
+<span class="gp">... </span>    <span class="n">perm2</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">n</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="n">n</span> <span class="p">)]</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">([</span><span class="n">perm1</span><span class="p">,</span> <span class="n">perm2</span><span class="p">],</span> <span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">20</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_3</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">20</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_3</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">14</span><span class="p">):</span>            <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_3</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_3</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">perm</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">shuffle</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">perms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">(</span><span class="n">perms</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>                <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">):</span>                <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_4</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_5</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="n">m</span> <span class="o">=</span> <span class="n">n</span><span class="o">//</span><span class="mi">3</span>
+<span class="gp">... </span>    <span class="n">perm1</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">shuffle</span><span class="p">(</span><span class="n">perm1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">perm1</span> <span class="o">+=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">perm2</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">shuffle</span><span class="p">(</span><span class="n">perm2</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">perm2</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="n">perm2</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">([</span><span class="n">perm1</span><span class="p">,</span> <span class="n">perm2</span><span class="p">],</span> <span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">4.</span><span class="o">.</span><span class="mi">9</span><span class="p">]:</span>                     <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>                 <span class="c"># long time</span>
+<span class="gp">... </span>        <span class="n">test_stab_chain_fns_5</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">4.</span><span class="o">.</span><span class="mi">8</span><span class="p">]:</span>                     <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_5</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>     <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">4.</span><span class="o">.</span><span class="mi">9</span><span class="p">]:</span>                     <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_5</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>     <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">random_perm</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">shuffle</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_6</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">k</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">perm</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">random_perm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">//</span><span class="n">m</span><span class="p">),</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">//</span><span class="n">m</span><span class="p">))))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)],</span> <span class="p">[])</span>
+<span class="gp">... </span>        <span class="n">perms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">(</span><span class="n">perms</span><span class="p">,</span> <span class="n">m</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">//</span><span class="n">m</span><span class="p">),</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">):</span>                         <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="mi">3</span><span class="o">*</span><span class="n">m</span><span class="p">):</span>                     <span class="c"># long time</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>                   <span class="c"># long time</span>
+<span class="gp">... </span>            <span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="mi">4</span><span class="o">*</span><span class="n">m</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+<span class="gp">... </span>            <span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">36</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_6</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">cop</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">contains</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">perms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">p</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
+<span class="gp">... </span>        <span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">cop</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">perms</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">p</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">perms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">SC_test_list_perms</span><span class="p">(</span><span class="n">perms</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contains</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">6.</span><span class="o">.</span><span class="mi">14</span><span class="p">]:</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">6.</span><span class="o">.</span><span class="mi">30</span><span class="p">]:</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">6.</span><span class="o">.</span><span class="mi">14</span><span class="p">]:</span>                   <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">... </span>    <span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c"># long time</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">test_stab_chain_fns_7</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../code_bounds.html"
+                                  title="previous chapter">Bounds for Parameters of Codes</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="autgroup_can_label.html"
+                                  title="next chapter">Canonical forms and automorphisms for linear codes over finite fields.</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/coding/codecan/codecan.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="autgroup_can_label.html" title="Canonical forms and automorphisms for linear codes over finite fields."
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../code_bounds.html" title="Bounds for Parameters of Codes"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Coding Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

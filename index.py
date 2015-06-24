@@ -35,6 +35,7 @@ title="SageMath Mathematical Software">
 """
 
 filter_ref = ["graph-", "generic-graph-"]
+filter_html = [("en","website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
 
@@ -59,11 +60,13 @@ for what in sorted(pages.keys()):
     output.append("<h2>%s</h2>" % what.upper())
     output.append("<ul>")
     for lang, entries in sorted(pages[what].iteritems()):
-        output.append("<li>%s</li>" % LANG.get(lang, lang))
+        output.append("<li><a href='%s/%s'>%s</a></li>" % (what, lang, LANG.get(lang, lang)))
         output.append("<ul>")
         for entry in sorted(entries):
             entries = entry.split("/")
             if what == "html":
+                if tuple(entries[-3:-1]) in filter_html:
+                    continue
                 fn = entries[-2].replace("_", " ").title()
                 subcat = ""
             elif what == "pdf":

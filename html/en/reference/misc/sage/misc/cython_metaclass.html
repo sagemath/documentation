@@ -1,0 +1,337 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Metaclasses for Cython extension types &mdash; Sage Reference Manual v6.7: Utilities</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.7: Utilities" href="../../index.html" />
+    <link rel="next" title="Base Class to Support Method Decorators" href="method_decorator.html" />
+    <link rel="prev" title="Special Methods for Classes" href="classcall_metaclass.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="method_decorator.html" title="Base Class to Support Method Decorators"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="classcall_metaclass.html" title="Special Methods for Classes"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Utilities</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="metaclasses-for-cython-extension-types">
+<span id="sage-misc-cython-metaclass"></span><h1>Metaclasses for Cython extension types<a class="headerlink" href="#metaclasses-for-cython-extension-types" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.misc.cython_metaclass"></span><p>Cython does not support metaclasses, but this module can be used to
+implement metaclasses for extension types.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This module has many caveats and you can easily get segfaults if you
+make a mistake. It relies on undocumented Python and Cython
+behaviour, so things might break in future versions.</p>
+</div>
+<div class="section" id="how-to-use">
+<h2>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this headline">¶</a></h2>
+<p>To enable this metaclass mechanism, you need to put
+<tt class="docutils literal"><span class="pre">cimport</span> <span class="pre">sage.misc.cython_metaclass</span></tt> in your module (in the <tt class="docutils literal"><span class="pre">.pxd</span></tt>
+file if you are using one).</p>
+<p>In the extension type (a.k.a. <tt class="docutils literal"><span class="pre">cdef</span> <span class="pre">class</span></tt>) for which you want to
+define a metaclass, define a method <tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt> with a single
+unused argument. This method should return a type to be used as
+metaclass:</p>
+<div class="highlight-cython"><div class="highlight"><pre><span class="k">cimport</span> <span class="nn">sage.misc.cython_metaclass</span>
+<span class="k">cdef</span> <span class="k">class</span> <span class="nf">MyCustomType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__getmetaclass__</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
+        <span class="k">from</span> <span class="nn">foo</span> <span class="k">import</span> <span class="n">MyMetaclass</span>
+        <span class="k">return</span> <span class="n">MyMetaclass</span>
+</pre></div>
+</div>
+<p>The above <tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt> method is analogous to
+<tt class="docutils literal"><span class="pre">__metaclass__</span> <span class="pre">=</span> <span class="pre">MyMetaclass</span></tt> in Python 2.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last"><tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt> must be defined as an ordinary method taking a
+single argument, but this argument should not be used in the
+method (it will be <tt class="docutils literal"><span class="pre">None</span></tt>).</p>
+</div>
+<p>When a type <tt class="docutils literal"><span class="pre">cls</span></tt> is being constructed with metaclass <tt class="docutils literal"><span class="pre">meta</span></tt>,
+then <tt class="docutils literal"><span class="pre">meta.__init__(cls,</span> <span class="pre">None,</span> <span class="pre">None,</span> <span class="pre">None)</span></tt> is called from Cython.
+In Python, this would be <tt class="docutils literal"><span class="pre">meta.__init__(cls,</span> <span class="pre">name,</span> <span class="pre">bases,</span> <span class="pre">dict)</span></tt>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>The <tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt> method is called while the type is being
+created during the import of the module. Therefore,
+<tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt> should not refer to any global objects,
+including the type being created or other types defined or imported
+in the module (unless you are very careful). Note that non-imported
+<tt class="docutils literal"><span class="pre">cdef</span></tt> functions are not Python objects, so those are safe to call.</p>
+<p class="last">The same warning applies to the <tt class="docutils literal"><span class="pre">__init__</span></tt> method of the
+metaclass.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The <tt class="docutils literal"><span class="pre">__new__</span></tt> method of the metaclass (including the <tt class="docutils literal"><span class="pre">__cinit__</span></tt>
+method for Cython extension types) is never called if you&#8217;re using
+this from Cython. In particular, the metaclass cannot have any
+attributes or virtual methods.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;&#39;&#39;</span>
+<span class="go">....: cimport sage.misc.cython_metaclass</span>
+<span class="go">....: cdef class MyCustomType(object):</span>
+<span class="go">....:     def __getmetaclass__(_):</span>
+<span class="go">....:         class MyMetaclass(type):</span>
+<span class="go">....:             def __init__(*args):</span>
+<span class="go">....:                 print &quot;Calling MyMetaclass.__init__{}&quot;.format(args)</span>
+<span class="go">....:         return MyMetaclass</span>
+<span class="go">....:</span>
+<span class="go">....: cdef class MyDerivedType(MyCustomType):</span>
+<span class="go">....:     pass</span>
+<span class="go">....: &#39;&#39;&#39;)</span>
+<span class="go">Calling MyMetaclass.__init__(&lt;type &#39;...MyCustomType&#39;&gt;, None, None, None)</span>
+<span class="go">Calling MyMetaclass.__init__(&lt;type &#39;...MyDerivedType&#39;&gt;, None, None, None)</span>
+<span class="gp">sage: </span><span class="n">MyCustomType</span><span class="o">.</span><span class="n">__class__</span>
+<span class="go">&lt;class &#39;...MyMetaclass&#39;&gt;</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyPythonType</span><span class="p">(</span><span class="n">MyDerivedType</span><span class="p">):</span>
+<span class="go">....:     pass</span>
+<span class="go">Calling MyMetaclass.__init__(&lt;class &#39;...MyPythonType&#39;&gt;, &#39;MyPythonType&#39;, (&lt;type &#39;...MyDerivedType&#39;&gt;,), {&#39;__module__&#39;: &#39;__main__&#39;})</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="implementation">
+<h2>Implementation<a class="headerlink" href="#implementation" title="Permalink to this headline">¶</a></h2>
+<p>All this is implemented by defining</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#define PyTypeReady(t)  Sage_PyType_Ready(t)</span>
+</pre></div>
+</div>
+<p>and then implementing the function <tt class="docutils literal"><span class="pre">Sage_PyType_Ready(t)</span></tt> which first
+calls <tt class="docutils literal"><span class="pre">PyType_Ready(t)</span></tt> and then handles the metaclass stuff.</p>
+<p>TESTS:</p>
+<p>Check that a proper exception is raised if <tt class="docutils literal"><span class="pre">__getmetaclass__</span></tt>
+returns a non-type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s">&#39;&#39;&#39;</span>
+<span class="go">....: cimport sage.misc.cython_metaclass</span>
+<span class="go">....: cdef class MyCustomType(object):</span>
+<span class="go">....:     def __getmetaclass__(_):</span>
+<span class="go">....:         return 2</span>
+<span class="go">....: &#39;&#39;&#39;)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="nc">TypeError</span>: <span class="n-Identifier">__getmetaclass__ did not return a type</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Metaclasses for Cython extension types</a><ul>
+<li><a class="reference internal" href="#how-to-use">How to use</a></li>
+<li><a class="reference internal" href="#implementation">Implementation</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="classcall_metaclass.html"
+                                  title="previous chapter">Special Methods for Classes</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="method_decorator.html"
+                                  title="next chapter">Base Class to Support Method Decorators</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/misc/cython_metaclass.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="method_decorator.html" title="Base Class to Support Method Decorators"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="classcall_metaclass.html" title="Special Methods for Classes"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Utilities</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
