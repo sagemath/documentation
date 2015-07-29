@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Common Interface Functionality through Pexpect &mdash; Sage Reference Manual v6.7: Interpreter Interfaces</title>
+    <title>Common Interface Functionality through Pexpect &mdash; Sage Reference Manual v6.8: Interpreter Interfaces</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.7',
+        VERSION:     '6.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v6.7: Interpreter Interfaces" href="../../index.html" />
-    <link rel="next" title="Interface to Axiom" href="axiom.html" />
+    <link rel="top" title="Sage Reference Manual v6.8: Interpreter Interfaces" href="../../index.html" />
+    <link rel="next" title="Sage wrapper around pexpect’s spawn class" href="sagespawn.html" />
     <link rel="prev" title="Common Interface Functionality" href="interface.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
 
@@ -43,7 +43,7 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="axiom.html" title="Interface to Axiom"
+          <a href="sagespawn.html" title="Sage wrapper around pexpect’s spawn class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="interface.html" title="Common Interface Functionality"
@@ -92,6 +92,28 @@ synchronisation of the GAP interface.</li>
 <dt id="sage.interfaces.expect.Expect.clear_prompts">
 <tt class="descname">clear_prompts</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.clear_prompts" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="sage.interfaces.expect.Expect.detach">
+<tt class="descname">detach</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.detach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forget the running subprocess: keep it running but pretend that
+it&#8217;s no longer running.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">maxima</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">saved_expect</span> <span class="o">=</span> <span class="n">maxima</span><span class="o">.</span><span class="n">_expect</span>  <span class="c"># Save this to close later</span>
+<span class="gp">sage: </span><span class="n">maxima</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">_check_valid</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">The maxima session in which this object was defined is no longer running.</span>
+<span class="gp">sage: </span><span class="n">saved_expect</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c"># Close child process</span>
+</pre></div>
+</div>
+<p>Calling <tt class="docutils literal"><span class="pre">detach()</span></tt> a second time does nothing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">maxima</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="method">
 <dt id="sage.interfaces.expect.Expect.eval">
@@ -146,7 +168,7 @@ If False, then the whole block of code is evaluated all at once.</p>
 
 <dl class="method">
 <dt id="sage.interfaces.expect.Expect.interrupt">
-<tt class="descname">interrupt</tt><big>(</big><em>tries=20</em>, <em>timeout=0.3</em>, <em>quit_on_fail=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.interrupt" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">interrupt</tt><big>(</big><em>tries=5</em>, <em>timeout=2.0</em>, <em>quit_on_fail=True</em><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.interrupt" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -194,14 +216,25 @@ automatically started.</p>
 
 <dl class="method">
 <dt id="sage.interfaces.expect.Expect.quit">
-<tt class="descname">quit</tt><big>(</big><em>verbose=False</em>, <em>timeout=0.25</em><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.quit" title="Permalink to this definition">¶</a></dt>
-<dd><p>EXAMPLES:</p>
+<tt class="descname">quit</tt><big>(</big><em>verbose=False</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#sage.interfaces.expect.Expect.quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quit the running subprocess.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; (boolean, default <tt class="docutils literal"><span class="pre">False</span></tt>) print a message
+when quitting this process?</li>
+</ul>
+<p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">maxima</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">maxima</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">maxima</span><span class="o">.</span><span class="n">quit</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Exiting Maxima with PID ... running .../local/bin/maxima ...</span>
 <span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">_check_valid</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">The maxima session in which this object was defined is no longer running.</span>
+<span class="gr">ValueError</span>: <span class="n">The maxima session in which this object was defined is no longer running.</span>
+</pre></div>
+</div>
+<p>Calling <tt class="docutils literal"><span class="pre">quit()</span></tt> a second time does nothing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">maxima</span><span class="o">.</span><span class="n">quit</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -249,7 +282,7 @@ interfaced via pexpect is printed to stdout.</p>
 <dl class="class">
 <dt id="sage.interfaces.expect.gc_disabled">
 <em class="property">class </em><tt class="descclassname">sage.interfaces.expect.</tt><tt class="descname">gc_disabled</tt><a class="headerlink" href="#sage.interfaces.expect.gc_disabled" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
 <p>This is a &#8220;with&#8221; statement context manager. Garbage collection is
 disabled within its scope. Nested usage is properly handled.</p>
 <p>EXAMPLES:</p>
@@ -288,8 +321,8 @@ disabled within its scope. Nested usage is properly handled.</p>
             <p class="topless"><a href="interface.html"
                                   title="previous chapter">Common Interface Functionality</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="axiom.html"
-                                  title="next chapter">Interface to Axiom</a></p>
+            <p class="topless"><a href="sagespawn.html"
+                                  title="next chapter">Sage wrapper around pexpect&#8217;s <tt class="docutils literal"><span class="pre">spawn</span></tt> class</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="../../_sources/sage/interfaces/expect.txt"
@@ -326,7 +359,7 @@ disabled within its scope. Nested usage is properly handled.</p>
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="axiom.html" title="Interface to Axiom"
+          <a href="sagespawn.html" title="Sage wrapper around pexpect’s spawn class"
              >next</a> |</li>
         <li class="right" >
           <a href="interface.html" title="Common Interface Functionality"

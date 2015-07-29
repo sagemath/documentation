@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Elliptic curves over the rational numbers &mdash; Sage Reference Manual v6.7: Plane curves</title>
+    <title>Elliptic curves over the rational numbers &mdash; Sage Reference Manual v6.8: Plane curves</title>
     
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '6.7',
+        VERSION:     '6.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v6.7: Plane curves" href="../../../index.html" />
+    <link rel="top" title="Sage Reference Manual v6.8: Plane curves" href="../../../index.html" />
     <link rel="next" title="Tables of elliptic curves of given rank" href="ec_database.html" />
     <link rel="prev" title="Isogenies of small prime degree." href="isogeny_small_degree.html" />
     <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
@@ -84,6 +84,7 @@ separate files.</li>
 parametrization in a separate file</li>
 <li>Simon Spicer (2013-03): Added code for modular degrees and congruence
 numbers of higher level</li>
+<li>Simon Spicer (2014-08): Added new analytic rank computatation functionality</li>
 </ul>
 <dl class="class">
 <dt id="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field">
@@ -144,7 +145,7 @@ points over number fields.</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">CPS_height_bound</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">curve must be minimal.</span>
+<span class="gr">RuntimeError</span>: <span class="n">curve must be minimal.</span>
 <span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">quadratic_twist</span><span class="p">(</span><span class="o">-</span><span class="mi">19</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">F</span>
 <span class="go">Elliptic Curve defined by y^2 + x*y + y = x^3 - x^2 + 1376*x - 130 over Rational Field</span>
@@ -352,29 +353,41 @@ this elliptic curve, where n is a positive integer.</p>
 <dt id="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.analytic_rank">
 <tt class="descname">analytic_rank</tt><big>(</big><em>algorithm='pari'</em>, <em>leading_coefficient=False</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.analytic_rank" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return an integer that is <em>probably</em> the analytic rank of this
-elliptic curve.  If leading_coefficient is <tt class="docutils literal"><span class="pre">True</span></tt> (only implemented
-for PARI), return a tuple <span class="math">\((rank, lead)\)</span> where <span class="math">\(lead\)</span> is the value of
-the first non-zero derivative of the L-function of the elliptic
-curve.</p>
+elliptic curve.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li>algorithm -<ul>
-<li>&#8216;pari&#8217; (default) - use the PARI library function.</li>
-<li>&#8216;sympow&#8217; -use Watkins&#8217;s program sympow</li>
-<li>&#8216;rubinstein&#8217; - use Rubinstein&#8217;s L-function C++ program lcalc.</li>
-<li>&#8216;magma&#8217; - use MAGMA</li>
-<li>&#8216;all&#8217; - compute with all other free algorithms, check that
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8216;pari&#8217;), String<ul>
+<li><tt class="docutils literal"><span class="pre">'pari'</span></tt> &#8211; use the PARI library function.</li>
+<li><tt class="docutils literal"><span class="pre">'sympow'</span></tt> &#8211; use Watkins&#8217;s program sympow</li>
+<li><tt class="docutils literal"><span class="pre">'rubinstein'</span></tt> &#8211; use Rubinstein&#8217;s L-function C++ program lcalc.</li>
+<li><tt class="docutils literal"><span class="pre">'magma'</span></tt> &#8211; use MAGMA</li>
+<li><tt class="docutils literal"><span class="pre">'zero_sum'</span></tt> &#8211; Use the rank bounding zero sum method implemented
+in self.analytic_rank_upper_bound()</li>
+<li><tt class="docutils literal"><span class="pre">'all'</span></tt> &#8211; compute with PARI, sympow and lcalc, check that
 the answers agree, and return the common answer.</li>
 </ul>
 </li>
+<li><tt class="docutils literal"><span class="pre">leading_coefficient</span></tt> &#8211; (default: False) Boolean; if set to
+True, return a tuple <span class="math">\((rank, lead)\)</span> where <span class="math">\(lead\)</span> is the value of
+the first non-zero derivative of the L-function of the elliptic
+curve. Only implemented for algorithm=&#8217;pari&#8217;.</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">If the curve is loaded from the large Cremona database,
 then the modular degree is taken from the database.</p>
 </div>
-<p>Of the three above, probably Rubinstein&#8217;s is the most
-efficient (in some limited testing I&#8217;ve done).</p>
+<p>Of the first three algorithms above, probably Rubinstein&#8217;s is the
+most efficient (in some limited testing done). The zero sum method
+is often <em>much</em> faster, but can return a value which is strictly
+larger than the analytic rank. For curves with conductor &lt;=10^9
+using default parameters, testing indicates that for 99.75% of
+curves the returned rank bound is the true rank.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you use set_verbose(1), extra information about the computation
+will be printed when algorithm=&#8217;zero_sum&#8217;.</p>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">It is an open problem to <em>prove</em> that <em>any</em> particular
@@ -390,13 +403,15 @@ elliptic curve has analytic rank <span class="math">\(\geq 4\)</span>.</p>
 <span class="go">2</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;magma&#39;</span><span class="p">)</span>    <span class="c"># optional - magma</span>
 <span class="go">2</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;zero_sum&#39;</span><span class="p">)</span>
+<span class="go">2</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;all&#39;</span><span class="p">)</span>
 <span class="go">2</span>
 </pre></div>
 </div>
 <p>With the optional parameter leading_coefficient set to <tt class="docutils literal"><span class="pre">True</span></tt>, a
 tuple of both the analytic rank and the leading term of the
-L-series at <span class="math">\(s = 1\)</span> is returned:</p>
+L-series at <span class="math">\(s = 1\)</span> is returned. This only works for algorithm==&#8217;pari&#8217;:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="o">-</span><span class="mi">20</span><span class="p">])</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">leading_coefficient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">(0, 0.25384186085591068...)</span>
 <span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">leading_coefficient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -414,13 +429,196 @@ L-series at <span class="math">\(s = 1\)</span> is returned:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1234567</span><span class="p">,</span><span class="mi">89101112</span><span class="p">])</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;rubinstein&#39;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">unable to compute analytic rank using rubinstein algorithm (unable to convert &#39; 6.19283e+19 and is too large&#39; to an integer)</span>
+<span class="gr">RuntimeError</span>: <span class="n">unable to compute analytic rank using rubinstein algorithm (unable to convert &#39; 6.19283e+19 and is too large&#39; to an integer)</span>
 <span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1234567</span><span class="p">,</span><span class="mi">89101112</span><span class="p">])</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;sympow&#39;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">failed to compute analytic rank</span>
+<span class="gr">RuntimeError</span>: <span class="n">failed to compute analytic rank</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.analytic_rank_upper_bound">
+<tt class="descname">analytic_rank_upper_bound</tt><big>(</big><em>max_Delta=None</em>, <em>adaptive=True</em>, <em>N=None</em>, <em>root_number='compute'</em>, <em>bad_primes=None</em>, <em>ncpus=None</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.analytic_rank_upper_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an upper bound for the analytic rank of self, conditional on
+the Generalized Riemann Hypothesis, via computing
+the zero sum <span class="math">\(\sum_{\gamma} f(\Delta\gamma),\)</span> where <span class="math">\(\gamma\)</span>
+ranges over the imaginary parts of the zeros of <span class="math">\(L(E,s)\)</span>
+along the critical strip, <span class="math">\(f(x) = (\sin(\pi x)/(\pi x))^2\)</span>,
+and <span class="math">\(\Delta\)</span> is the tightness parameter whose maximum value is specified
+by <tt class="docutils literal"><span class="pre">max_Delta</span></tt>. This computation can be run on curves with very large
+conductor (so long as the conductor is known or quickly computable)
+when <span class="math">\(\Delta\)</span> is not too large (see below).
+Uses Bober&#8217;s rank bounding method as described in [Bob13].</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">max_Delta</span></tt> &#8211; (default: None) If not None, a positive real value
+specifying the maximum Delta value used in the zero sum; larger
+values of Delta yield better bounds - but runtime is exponential in
+Delta. If left as None, Delta is set
+to <span class="math">\(\min\{\frac{1}{\pi}(\log(N+1000)/2-\log(2\pi)-\eta), 2.5\}\)</span>,
+where <span class="math">\(N\)</span> is the conductor of the curve attached to self, and <span class="math">\(\eta\)</span>
+is the Euler-Mascheroni constant <span class="math">\(= 0.5772...\)</span>; the crossover
+point is at conductor around <span class="math">\(8.3 \cdot 10^8\)</span>. For the former value,
+empirical results show that for about 99.7% of all curves the returned
+value is the actual analytic rank.</li>
+<li><tt class="docutils literal"><span class="pre">adaptive</span></tt> &#8211; (default: True) Boolean<ul>
+<li><tt class="docutils literal"><span class="pre">True</span></tt> &#8211; the computation is first run with small and then
+successively larger <span class="math">\(\Delta\)</span> values up to max_Delta. If at any
+point the computed bound is 0 (or 1 when when root_number is -1
+or True), the computation halts and that value is returned;
+otherwise the minimum of the computed bounds is returned.</li>
+<li><tt class="docutils literal"><span class="pre">False</span></tt> &#8211; the computation is run a single time with <span class="math">\(\Delta\)</span>
+equal to <tt class="docutils literal"><span class="pre">max_Delta</span></tt>, and the resulting bound returned.</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">N</span></tt> &#8211; (default: None) If not None, a positive integer equal to
+the conductor of self. This is passable so that rank estimation
+can be done for curves whose (large) conductor has been precomputed.</li>
+<li><tt class="docutils literal"><span class="pre">root_number</span></tt> &#8211; (default: &#8220;compute&#8221;) String or integer<ul>
+<li><tt class="docutils literal"><span class="pre">&quot;compute&quot;</span></tt> &#8211; the root number of self is computed and used to
+(possibly) lower ther analytic rank estimate by 1.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;ignore&quot;</span></tt> &#8211; the above step is omitted</li>
+<li><tt class="docutils literal"><span class="pre">1</span></tt> &#8211; this value is assumed to be the root number of
+self. This is passable so that rank estimation can be done for
+curves whose root number has been precomputed.</li>
+<li><tt class="docutils literal"><span class="pre">-1</span></tt> &#8211; this value is assumed to be the root number of
+self. This is passable so that rank estimation can be done for
+curves whose root number has been precomputed.</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">bad_primes</span></tt> &#8211; (default: None) If not None, a list of the primes
+of bad reduction for the curve attached to self. This is passable
+so that rank estimation can be done for curves of large conductor
+whose bad primes have been precomputed.</li>
+<li><tt class="docutils literal"><span class="pre">ncpus</span></tt> - (default: None) If not None, a positive integer
+defining the maximum number of CPUs to be used for the computation.
+If left as None, the maximum available number of CPUs will be used.
+Note: Due to parallelization overhead, multiple processors will
+only be used for Delta values <span class="math">\(\ge 1.75\)</span>.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Output will be incorrect if the incorrect conductor or root number
+is specified.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Zero sum computation time is exponential in the tightness
+parameter <span class="math">\(\Delta\)</span>, roughly doubling for every increase of 0.1
+thereof. Using <span class="math">\(\Delta=1\)</span> (and adaptive=False) will yield a runtime
+of a few milliseconds; <span class="math">\(\Delta=2\)</span> takes a few seconds, and <span class="math">\(\Delta=3\)</span>
+may take upwards of an hour. Increase beyond this at your own risk!</p>
+</div>
+<p>OUTPUT:</p>
+<p>A non-negative integer greater than or equal to the analytic rank of
+self.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you use set_verbose(1), extra information about the computation
+will be printed.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="../../../../lfunctions/sage/lfunctions/zero_sums.html#sage.lfunctions.zero_sums.LFunctionZeroSum" title="(in Sage Reference Manual: L-Functions v6.8)"><tt class="xref py py-func docutils literal"><span class="pre">LFunctionZeroSum()</span></tt></a>
+<a class="reference internal" href="#sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.root_number" title="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.root_number"><tt class="xref py py-meth docutils literal"><span class="pre">root_number()</span></tt></a>
+<a class="reference external" href="../../../../misc/sage/misc/misc.html#sage.misc.misc.set_verbose" title="(in Sage Reference Manual: Utilities v6.8)"><tt class="xref py py-func docutils literal"><span class="pre">set_verbose()</span></tt></a></p>
+</div>
+<p>EXAMPLES:</p>
+<p>For most elliptic curves with small conductor the central zero(s)
+of <span class="math">\(L_E(s)\)</span> are fairly isolated, so small values of <span class="math">\(\Delta\)</span>
+will yield tight rank estimates.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&quot;11a&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">adaptive</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="o">-</span><span class="mi">39</span><span class="p">,</span><span class="mi">123</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">adaptive</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>This is especially true for elliptic curves with large rank.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+<span class="go">....:     E = elliptic_curves.rank(r)[0]</span>
+<span class="go">....:     print(r,E.analytic_rank_upper_bound(max_Delta=1,</span>
+<span class="go">....:     adaptive=False,root_number=&quot;ignore&quot;))</span>
+<span class="go">....:</span>
+<span class="go">(0, 0)</span>
+<span class="go">(1, 1)</span>
+<span class="go">(2, 2)</span>
+<span class="go">(3, 3)</span>
+<span class="go">(4, 4)</span>
+<span class="go">(5, 5)</span>
+<span class="go">(6, 6)</span>
+<span class="go">(7, 7)</span>
+<span class="go">(8, 8)</span>
+</pre></div>
+</div>
+<p>However, some curves have <span class="math">\(L\)</span>-functions with low-lying zeroes, and for these
+larger values of <span class="math">\(\Delta\)</span> must be used to get tight estimates.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&quot;974b1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">rank</span><span class="p">();</span> <span class="n">r</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">root_number</span><span class="o">=</span><span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span><span class="n">root_number</span><span class="o">=</span><span class="s">&quot;ignore&quot;</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>Knowing the root number of <span class="math">\(E\)</span> allows us to use smaller Delta values
+to get tight bounds, thus speeding up runtime considerably.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span><span class="n">root_number</span><span class="o">=</span><span class="s">&quot;compute&quot;</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>The are a small number of curves which have pathalogically low-lying
+zeroes. For these curves, this method will produce a bound that is
+strictly larger than the analytic rank, unless very large values of
+Delta are used. The following curve (&#8220;256944c1&#8221; in the Cremona tables)
+is a rank 0 curve with a zero at 0.0256...; the smallest Delta value
+for which the zero sum is strictly less than 2 is ~2.815.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">7460362000712</span><span class="p">,</span> <span class="o">-</span><span class="mi">7842981500851012704</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">N</span><span class="p">,</span><span class="n">r</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">conductor</span><span class="p">(),</span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank</span><span class="p">();</span> <span class="n">N</span><span class="p">,</span> <span class="n">r</span>
+<span class="go">(256944, 0)</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">adaptive</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">adaptive</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>This method is can be called on curves with large conductor.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="o">-</span><span class="mi">2934</span><span class="p">,</span><span class="mi">19238</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>And it can bound rank on curves with <em>very</em> large conductor, so long as
+you know beforehand/can easily compute the conductor and primes of bad
+reduction less than <span class="math">\(e^{2\pi\Delta}\)</span>. The example below is of the rank
+28 curve discovered by Elkies that is the elliptic curve of (currently)
+largest known rank.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a4</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20067762415575526585033208209338542750930230312178956502</span>
+<span class="gp">sage: </span><span class="n">a6</span> <span class="o">=</span> <span class="mi">34481611795030556467032985690390720374855944359319180361266008296291939448732243429</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">a4</span><span class="p">,</span><span class="n">a6</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">bad_primes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">13</span><span class="p">,</span><span class="mi">17</span><span class="p">,</span><span class="mi">19</span><span class="p">,</span><span class="mi">48463</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">N</span> <span class="o">=</span> <span class="mi">3455601108357547341532253864901605231198511505793733138900595189472144724781456635380154149870961231592352897621963802238155192936274322687070</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">analytic_rank_upper_bound</span><span class="p">(</span><span class="n">max_Delta</span><span class="o">=</span><span class="mf">2.37</span><span class="p">,</span><span class="n">adaptive</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="c"># long time</span>
+<span class="go">....: N=N,root_number=1,bad_primes=bad_primes,ncpus=2)           # long time</span>
+<span class="go">32</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="bob13" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Bob13]</td><td>J.W. Bober. Conditionally bounding analytic ranks of elliptic curves.
+ANTS 10. <a class="reference external" href="http://msp.org/obs/2013/1-1/obs-v1-n1-p07-s.pdf">http://msp.org/obs/2013/1-1/obs-v1-n1-p07-s.pdf</a></td></tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -483,7 +681,7 @@ is raised.</li>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">antilogarithm</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">approximated point not on the curve</span>
+<span class="gr">ValueError</span>: <span class="n">approximated point not on the curve</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">antilogarithm</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">max_denominator</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="go">(0 : -1 : 1)</span>
 
@@ -556,7 +754,7 @@ function <a class="reference internal" href="#sage.schemes.elliptic_curves.ell_r
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">cm_discriminant</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field does not have CM</span>
+<span class="gr">ValueError</span>: <span class="n">Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field does not have CM</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -608,7 +806,7 @@ checks that both systems compute the same answer.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">conductor</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;bogus&quot;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">algorithm &#39;bogus&#39; is not known</span>
+<span class="gr">ValueError</span>: <span class="n">algorithm &#39;bogus&#39; is not known</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -711,7 +909,7 @@ contains many more curves.</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">cremona_label</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">Cremona label not known for Elliptic Curve defined by y^2 + y = x^3 - 79*x + 342 over Rational Field.</span>
+<span class="gr">RuntimeError</span>: <span class="n">Cremona label not known for Elliptic Curve defined by y^2 + y = x^3 - 79*x + 342 over Rational Field.</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -739,7 +937,7 @@ database, a <tt class="docutils literal"><span class="pre">RuntimeError</span></
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">database_attributes</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">no database entry for Elliptic Curve defined by y^2 + 8*x*y + 21*y = x^3 + 13*x^2 + 34*x + 55 over Rational Field</span>
+<span class="gr">RuntimeError</span>: <span class="n">no database entry for Elliptic Curve defined by y^2 + 8*x*y + 21*y = x^3 + 13*x^2 + 34*x + 55 over Rational Field</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1132,7 +1330,7 @@ extension of <span class="math">\(\QQ\)</span>, i.e., not of characteristic <spa
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">has_rational_cm</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError: Error in has_rational_cm</span>: <span class="n-Identifier">Finite Field of size 2 is not an extension field of QQ</span>
+<span class="gr">ValueError</span>: <span class="n">Error in has_rational_cm: Finite Field of size 2 is not an extension field of QQ</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1233,7 +1431,7 @@ computing the Mordell-Weil rank directly.</li>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">heegner_index</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ArithmeticError</span>: <span class="n-Identifier">Discriminant (=-3) must not be -3 or -4.</span>
+<span class="gr">ArithmeticError</span>: <span class="n">Discriminant (=-3) must not be -3 or -4.</span>
 </pre></div>
 </div>
 <p>The curve 681b returns the true index, which is <span class="math">\(3\)</span>:</p>
@@ -1254,7 +1452,7 @@ the regulator of the twist:</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">heegner_index</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">...</span>
+<span class="gr">RuntimeError</span>: <span class="n">...</span>
 </pre></div>
 </div>
 <p>However when we search higher, we find the points we need:</p>
@@ -1328,20 +1526,15 @@ quadratic imaginary field <span class="math">\(K=\QQ(\sqrt{D})\)</span>.</p>
 <p>If the optional parameter <span class="math">\(c\)</span> is given, returns the higher Heegner
 point associated to the order of conductor <span class="math">\(c\)</span>.</p>
 <p>INPUT:</p>
-<div class="highlight-python"><div class="highlight"><pre>- `D`        -- a Heegner discriminant
-
-- `c`        -- (default: 1) conductor, must be coprime to `DN`
-
-- `f`        -- binary quadratic form or 3-tuple `(A,B,C)` of coefficients
-                of `AX^2 + BXY + CY^2`
-
-- ``check``  -- bool (default: ``True``)
-</pre></div>
-</div>
+<ul class="simple">
+<li><span class="math">\(D\)</span>        &#8211; a Heegner discriminant</li>
+<li><span class="math">\(c\)</span>        &#8211; (default: 1) conductor, must be coprime to <span class="math">\(DN\)</span></li>
+<li><span class="math">\(f\)</span>        &#8211; binary quadratic form or 3-tuple <span class="math">\((A,B,C)\)</span> of coefficients
+of <span class="math">\(AX^2 + BXY + CY^2\)</span></li>
+<li><tt class="docutils literal"><span class="pre">check</span></tt>  &#8211; bool (default: <tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
 <p>OUTPUT:</p>
-<div class="highlight-python"><div class="highlight"><pre>The Heegner point `y_c`.
-</pre></div>
-</div>
+<p>The Heegner point <span class="math">\(y_c\)</span>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;37a&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">heegner_discriminants_list</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
@@ -1372,7 +1565,7 @@ point associated to the order of conductor <span class="math">\(c\)</span>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;389a&#39;</span><span class="p">);</span> <span class="n">P</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">heegner_point</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">);</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">N (=389) and D (=-5) must satisfy the Heegner hypothesis</span>
+<span class="gr">ValueError</span>: <span class="n">N (=389) and D (=-5) must satisfy the Heegner hypothesis</span>
 </pre></div>
 </div>
 <p>We can specify the quadratic form:</p>
@@ -1727,7 +1920,7 @@ are <span class="math">\(x\)</span>-coordinates of rational points on the ellipt
 <span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">is_good</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">p must be prime</span>
+<span class="gr">ValueError</span>: <span class="n">p must be prime</span>
 <span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">is_good</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
@@ -1903,7 +2096,8 @@ coefficients.</p>
 <dt id="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.is_p_minimal">
 <tt class="descname">is_p_minimal</tt><big>(</big><em>p</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.is_p_minimal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests if curve is p-minimal at a given prime p.</p>
-<p>INPUT: p - a primeOUTPUT: True - if curve is p-minimal</p>
+<p>INPUT: p - a prime</p>
+<p>OUTPUT: True - if curve is p-minimal</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">False</span></tt> - if curve isn&#8217;t p-minimal</li>
 </ul>
@@ -2037,7 +2231,7 @@ curves defined over <span class="math">\(\QQ\)</span>.</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">4 is not prime.</span>
+<span class="gr">ValueError</span>: <span class="n">4 is not prime.</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2447,7 +2641,7 @@ contains many more curves.</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">cremona_label</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">Cremona label not known for Elliptic Curve defined by y^2 + y = x^3 - 79*x + 342 over Rational Field.</span>
+<span class="gr">RuntimeError</span>: <span class="n">Cremona label not known for Elliptic Curve defined by y^2 + y = x^3 - 79*x + 342 over Rational Field.</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2480,6 +2674,52 @@ the L-series.</p>
 <span class="go">Complex L-series of the Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.lseries_gross_zagier">
+<tt class="descname">lseries_gross_zagier</tt><big>(</big><em>A</em><big>)</big><a class="headerlink" href="#sage.schemes.elliptic_curves.ell_rational_field.EllipticCurve_rational_field.lseries_gross_zagier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Gross-Zagier L-series attached to <tt class="docutils literal"><span class="pre">self</span></tt>
+and an ideal class <span class="math">\(A\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">A</span></tt> &#8211; an ideal class in an imaginary quadratic number field <span class="math">\(K\)</span></li>
+</ul>
+<p>This L-series <span class="math">\(L(E,A,s)\)</span> is defined as the product of a shifted L-function of the
+quadratic character associated to <span class="math">\(K\)</span> and the Dirichlet series whose <span class="math">\(n\)</span>-th
+coefficient is the product of the <span class="math">\(n\)</span>-th factor of the L-series of <span class="math">\(E\)</span> and
+the number of integral ideal in <span class="math">\(A\)</span> of norm <span class="math">\(n\)</span>. For any character <span class="math">\(\chi\)</span>
+on the class group of <span class="math">\(K\)</span>, one gets <span class="math">\(L_K(E,\chi,s) = \sum_{A} \chi(A) L(E,A,s)\)</span>
+where <span class="math">\(A\)</span> runs through the class group of <span class="math">\(K\)</span>.</p>
+<p>For the exact definition see section IV of <a class="reference internal" href="#grosszagier" id="id2">[GrossZagier]</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;37a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">class_group</span><span class="p">()</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">A</span>
+<span class="go">Fractional ideal class (2, 1/2*a)</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">lseries_gross_zagier</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>  <span class="p">;</span> <span class="n">L</span>
+<span class="go">Gross Zagier L-series attached to Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field with ideal class Fractional ideal class (2, 1/2*a)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0.000000000000000</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.</span><span class="n">taylor_series</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="go">0.000000000000000 - 5.51899839494458*z + 13.6297841350649*z^2 - 16.2292417817675*z^3 + 7.94788823722712*z^4 + O(z^5)</span>
+</pre></div>
+</div>
+<p>These should be equal:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">E</span><span class="o">.</span><span class="n">lseries_gross_zagier</span><span class="p">(</span><span class="n">A</span><span class="o">^</span><span class="mi">2</span><span class="p">)(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0.502803417587467</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">lseries</span><span class="p">()(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span><span class="o">.</span><span class="n">quadratic_twist</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">)</span><span class="o">.</span><span class="n">lseries</span><span class="p">()(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0.502803417587467</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="grosszagier" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[GrossZagier]</a></td><td>B. Gross and D. Zagier, <em>Heegner points and
+derivatives of L-series.</em> Invent. Math. 84 (1986), no. 2, 225-320.</td></tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -2800,7 +3040,7 @@ a map from <span class="math">\(X_0(N)\)</span> to self, where <span class="math
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;15a&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">phi</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_parametrization</span><span class="p">();</span> <span class="n">phi</span>
 <span class="go">Modular parameterization from the upper half plane to Elliptic Curve defined by y^2 + x*y + y = x^3 + x^2 - 10*x - 10 over Rational Field</span>
-<span class="gp">sage: </span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.2</span><span class="n">j</span>
+<span class="gp">sage: </span><span class="n">z</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.2j</span>
 <span class="gp">sage: </span><span class="n">phi</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
 <span class="go">(8.20822465478531 - 13.1562816054682*I : -8.79855099049364 + 69.4006129342200*I : 1.00000000000000)</span>
 </pre></div>
@@ -2904,7 +3144,7 @@ it after computing it won&#8217;t be any faster.</li>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;period&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">no normalization &#39;period&#39; known for modular symbols using John Cremona&#39;s eclib</span>
+<span class="gr">ValueError</span>: <span class="n">no normalization &#39;period&#39; known for modular symbols using John Cremona&#39;s eclib</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;L_ratio&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
 <span class="go">1</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
@@ -2921,7 +3161,7 @@ it after computing it won&#8217;t be any faster.</li>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;period&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">no normalization &#39;period&#39; known for modular symbols using John Cremona&#39;s eclib</span>
+<span class="gr">ValueError</span>: <span class="n">no normalization &#39;period&#39; known for modular symbols using John Cremona&#39;s eclib</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;L_ratio&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
 <span class="go">1/25</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">use_eclib</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
@@ -4148,6 +4388,13 @@ groups. Algebraic geometry, 94&#8211;121, Lecture Notes in Math., 1479,
 Springer, Berlin, 1991.</td></tr>
 </tbody>
 </table>
+<table class="docutils citation" frame="void" id="lawsonwuthrich" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[LawsonWuthrich]</td><td>T. Lawson and C. Wuthrich, Vanishing of some Galois
+cohomology groups for elliptic curves, <a class="reference external" href="http://arxiv.org/abs/1505.02940">http://arxiv.org/abs/1505.02940</a></td></tr>
+</tbody>
+</table>
 <table class="docutils citation" frame="void" id="lumstein" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -4191,10 +4438,19 @@ Math. Comp. 78 (2009), no. 268, 2397&#8211;2425.</td></tr>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;11a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">p = 2: True by 2-descent</span>
 <span class="go">True for p not in {2, 5} by Kolyvagin.</span>
-<span class="go">Kato further implies that #Sha[5] is trivial.</span>
+<span class="go">Kolyvagin&#39;s bound for p = 5 applies by Lawson-Wuthrich</span>
+<span class="go">True for p = 5 by Kolyvagin bound</span>
 <span class="go">[]</span>
 
 <span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;14a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">p = 2: True by 2-descent</span>
+<span class="go">True for p not in {2, 3} by Kolyvagin.</span>
+<span class="go">Kolyvagin&#39;s bound for p = 3 applies by Lawson-Wuthrich</span>
+<span class="go">True for p = 3 by Kolyvagin bound</span>
+<span class="go">[]</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&quot;20a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">p = 2: True by 2-descent</span>
 <span class="go">True for p not in {2, 3} by Kolyvagin.</span>
 <span class="go">Kato further implies that #Sha[3] is trivial.</span>
@@ -4204,7 +4460,7 @@ Math. Comp. 78 (2009), no. 268, 2397&#8211;2425.</td></tr>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">p = 2: True by 2-descent</span>
 <span class="go">True for p not in {2, 3, 5} by Kolyvagin.</span>
-<span class="go">Kolyvagin&#39;s bound for p = 3 applies by Stein et al.</span>
+<span class="go">Kolyvagin&#39;s bound for p = 3 applies by Lawson-Wuthrich</span>
 <span class="go">True for p = 3 by Kolyvagin bound</span>
 <span class="go">Remaining primes:</span>
 <span class="go">p = 5: reducible, not surjective, additive, divides a Tamagawa number</span>
@@ -4234,7 +4490,8 @@ Math. Comp. 78 (2009), no. 268, 2397&#8211;2425.</td></tr>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">p = 2: True by 2-descent</span>
 <span class="go">True for p not in {2, 3} by Kolyvagin.</span>
-<span class="go">Kato further implies that #Sha[3] is trivial.</span>
+<span class="go">Kolyvagin&#39;s bound for p = 3 applies by Lawson-Wuthrich</span>
+<span class="go">True for p = 3 by Kolyvagin bound</span>
 <span class="go">[]</span>
 
 <span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;37a&#39;</span><span class="p">)</span>
@@ -4246,7 +4503,7 @@ Math. Comp. 78 (2009), no. 268, 2397&#8211;2425.</td></tr>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">It seems that the rank conjecture does not hold for this curve (Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field)! This may be a counterexample to BSD, but is more likely a bug.</span>
+<span class="gr">RuntimeError</span>: <span class="n">It seems that the rank conjecture does not hold for this curve (Elliptic Curve defined by y^2 + y = x^3 - x over Rational Field)! This may be a counterexample to BSD, but is more likely a bug.</span>
 </pre></div>
 </div>
 <p>We test the consistency check for the 2-part of Sha:</p>
@@ -4259,7 +4516,7 @@ Math. Comp. 78 (2009), no. 268, 2397&#8211;2425.</td></tr>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">prove_BSD</span><span class="p">()</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError: Apparent contradiction</span>: <span class="n-Identifier">0 &lt;= rank(sha[2]) &lt;= 0, but ord_2(sha_an) = 2</span>
+<span class="gr">RuntimeError</span>: <span class="n">Apparent contradiction: 0 &lt;= rank(sha[2]) &lt;= 0, but ord_2(sha_an) = 2</span>
 </pre></div>
 </div>
 <p>An example with a Tamagawa number at 5:</p>
@@ -4389,18 +4646,28 @@ curve by D.</p>
 <p>If we fail to provably compute the rank, raises a RuntimeError
 exception.</p>
 <p>INPUT:</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">use_database</span> <span class="pre">(bool)</span></tt> - (default: False), if
-True, try to look up the regulator in the Cremona database.</li>
-<li><tt class="docutils literal"><span class="pre">verbose</span></tt> - (default: None), if specified changes
-the verbosity of mwrank computations. algorithm -</li>
-<li><tt class="docutils literal"><span class="pre">-</span> <span class="pre">'mwrank_shell'</span></tt> - call mwrank shell command</li>
-<li><tt class="docutils literal"><span class="pre">-</span> <span class="pre">'mwrank_lib'</span></tt> - call mwrank c library</li>
-<li><tt class="docutils literal"><span class="pre">only_use_mwrank</span></tt> - (default: True) if False try
-using analytic rank methods first.</li>
-<li><tt class="docutils literal"><span class="pre">proof</span></tt> - bool or None (default: None, see
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">use_database</span> <span class="pre">(bool)</span></tt> - (default: False), if
+True, try to look up the regulator in the Cremona database.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">verbose</span></tt> - (default: False), if specified changes
+the verbosity of mwrank computations.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">algorithm</span></tt> - (default: &#8216;mwrank_lib&#8217;), one of:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">'mwrank_shell'</span></tt> - call mwrank shell command</li>
+<li><tt class="docutils literal"><span class="pre">'mwrank_lib'</span></tt> - call mwrank c library</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">only_use_mwrank</span></tt> - (default: True) if False try
+using analytic rank methods first.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">proof</span></tt> - bool or None (default: None, see
 proof.elliptic_curve or sage.structure.proof). Note that results
-obtained from databases are considered proof = True</li>
+obtained from databases are considered proof = True</p>
+</li>
 </ul>
 <p>OUTPUT:</p>
 <ul class="simple">
@@ -4441,7 +4708,7 @@ obtained from databases are considered proof = True</li>
 <span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">37455</span><span class="p">])</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">proof</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">RuntimeError</span>: <span class="n-Identifier">Rank not provably correct.</span>
+<span class="gr">RuntimeError</span>: <span class="n">Rank not provably correct.</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -4532,11 +4799,11 @@ is minimal at p.</p>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">reduction</span><span class="p">(</span><span class="mi">38</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">AttributeError</span>: <span class="n-Identifier">p must be prime.</span>
+<span class="gr">AttributeError</span>: <span class="n">p must be prime.</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">reduction</span><span class="p">(</span><span class="mi">389</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">AttributeError</span>: <span class="n-Identifier">The curve must have good reduction at p.</span>
+<span class="gr">AttributeError</span>: <span class="n">The curve must have good reduction at p.</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">=</span><span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">5</span><span class="o">^</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="o">^</span><span class="mi">6</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">reduction</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 <span class="go">Elliptic Curve defined by y^2 = x^3 + x + 1 over Finite Field of size 5</span>
@@ -4587,10 +4854,10 @@ precision in bits of the result (default real precision if None)</li>
 <p>This is 1 if the order of vanishing of the L-function L(E,s) at 1
 is even, and -1 if it is odd.</p>
 <p>INPUT:</p>
-<div class="highlight-python"><div class="highlight"><pre>- `p` -- optional, default (None); if given, return the local
-         root number at `p`
-</pre></div>
-</div>
+<ul class="simple">
+<li><span class="math">\(p\)</span> &#8211; optional, default (None); if given, return the local
+root number at <span class="math">\(p\)</span></li>
+</ul>
 <p>EXAMPLES:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">EllipticCurve</span><span class="p">(</span><span class="s">&#39;11a1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">root_number</span><span class="p">()</span>
 <span class="go">1</span>
@@ -5082,7 +5349,7 @@ reduction</li>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">tate_curve</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
-<span class="nc">ValueError</span>: <span class="n-Identifier">The elliptic curve must have multiplicative reduction at 3</span>
+<span class="gr">ValueError</span>: <span class="n">The elliptic curve must have multiplicative reduction at 3</span>
 </pre></div>
 </div>
 <p>We compute with <span class="math">\(p=5\)</span>:</p>

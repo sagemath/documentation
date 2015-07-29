@@ -33,6 +33,14 @@ MathJax.Ajax.Preloading(
   "[MathJax]/extensions/CHTML-preview.js"
 );
 
+//  This extends the limit on the size of the string being processed by MathJax
+//  (whose aim is to avoid infinite loops) up to 50KB, see
+//  http://docs.mathjax.org/en/latest/options/TeX.html#the-tex-input-processor
+//
+//  See trac ticket #18577.
+//
+MathJax.Hub.Config({TeX: {MAXBUFFER: 50*1024,},});
+
 MathJax.Hub.Config({"v1.0-compatible":false});
 
 MathJax.InputJax.TeX=MathJax.InputJax({id:"TeX",version:"2.5.0",directory:MathJax.InputJax.directory+"/TeX",extensionDir:MathJax.InputJax.extensionDir+"/TeX",config:{TagSide:"right",TagIndent:"0.8em",MultLineWidth:"85%",equationNumbers:{autoNumber:"none",formatNumber:function(a){return a},formatTag:function(a){return"("+a+")"},formatID:function(a){return"mjx-eqn-"+String(a).replace(/[:"'<>&]/g,"")},formatURL:function(a){return"#"+escape(a)},useLabelIds:true}}});MathJax.InputJax.TeX.Register("math/tex");MathJax.InputJax.TeX.loadComplete("config.js");
