@@ -20,8 +20,19 @@ intro = """\
 <head>
 <link rel="stylesheet" href="/html/en/website/_static/sage.css" type="text/css" />
 <style>
-html {margin: 20px; }
+html {margin: 20px; font-family: sans-serif; }
 body { background-color: white; }
+h2 { margin: 0;}
+a {text-decoration: none;}
+a:hover {text-decoration: underline; }
+div.table { display: table; }
+div.row { display: table-row; margin: 0.5em 0; }
+div.row:hover {background: #eef; }
+div.cell { display: table-cell; padding: 0 2em 0 0; line-height: 2em;}
+div.lang {font-weight: bold; }
+div.row.en {border: 1px solid #ccf;}
+div.row.last {height: 3em;}
+div.entry {margin: 1em 1em 1em 0; display: inline; white-space: nowrap;}
 </style>
 <link rel="shortcut icon" href="/html/en/website/_static/favicon.ico"/>
 </head>
@@ -56,12 +67,18 @@ for path in glob("*/*"):
 output = [intro]
 output.append("<h1>Documentation</h1>")
 
+output.append('<div class="table">')
 for what in sorted(pages.keys()):
-    output.append("<h2>%s</h2>" % what.upper())
-    output.append("<ul>")
+    output.append('<div class="row first">')
+    output.append("<div class='cell'><h2>%s</h2></div>" % what.upper())
+    first_row = True
     for lang, entries in sorted(pages[what].iteritems()):
-        output.append("<li><a href='%s/%s'>%s</a></li>" % (what, lang, LANG.get(lang, lang)))
-        output.append("<ul>")
+        if not first_row:
+            output.append('<div class="row %s"><div class="cell"></div>' % lang)
+        else:
+            first_row = False
+        output.append('<div class="cell lang"><a href="%s/%s">%s</a></div>' % (what, lang, LANG.get(lang, lang)))
+        output.append('<div class="cell doc">')
         for entry in sorted(entries):
             entries = entry.split("/")
             if what == "html":
@@ -74,17 +91,17 @@ for what in sorted(pages.keys()):
                     continue
                 fn = entries[-1][:-4] \
                     .replace("_", " ") \
-                    .title() + " (pdf)"
-                subcat = (entries[2].title() + ": ") if len(
-                    entries) >= 5 else ""
-            output.append("<li><a href='{path}'>{subcat}{fn}</a></li>".format(
+                    .title()# + " (pdf)"
+                subcat = (entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
+            output.append("<div class='entry'><a href='{path}'>{subcat}{fn}</a></div>".format(
                           path=entry,
                           lang=LANG.get(lang, lang),
                           subcat=subcat,
                           fn=fn))
-        output.append("</ul>")
-    output.append("</ul>")
-    output.append("</body></html>")
+        output.append("</div></div>")
+    output.append('<div class="row last"></div>')
+output.append("</div>")
+output.append("</body></html>")
 
 with open("index.html", "w") as index:
     index.write("\n".join(output))
