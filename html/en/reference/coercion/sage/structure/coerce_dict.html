@@ -1,0 +1,725 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Containers for storing coercion data &mdash; Sage Reference Manual v6.9: Coercion</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.9',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.9: Coercion" href="../../index.html" />
+    <link rel="next" title="Exceptions raised by the coercion model" href="coerce_exceptions.html" />
+    <link rel="prev" title="Group, ring, etc. actions on objects." href="../categories/action.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coerce_exceptions.html" title="Exceptions raised by the coercion model"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../categories/action.html" title="Group, ring, etc. actions on objects."
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Coercion</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="containers-for-storing-coercion-data">
+<span id="sage-structure-coerce-dict"></span><h1>Containers for storing coercion data<a class="headerlink" href="#containers-for-storing-coercion-data" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.structure.coerce_dict"></span><p>This module provides <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a> and <a class="reference internal" href="#sage.structure.coerce_dict.MonoDict" title="sage.structure.coerce_dict.MonoDict"><tt class="xref py py-class docutils literal"><span class="pre">MonoDict</span></tt></a>. These are
+structures similar to <a class="reference external" href="https://docs.python.org/library/weakref.html#weakref.WeakKeyDictionary" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">WeakKeyDictionary</span></tt></a> in Python&#8217;s weakref
+module, and are optimized for lookup speed. The keys for <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a>
+consist of triples (k1,k2,k3) and are looked up by identity rather than
+equality. The keys are stored by weakrefs if possible. If any one of the
+components k1, k2, k3 gets garbage collected, then the entry is removed from
+the <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a>.</p>
+<p>Key components that do not allow for weakrefs are stored via a normal
+refcounted reference. That means that any entry stored using a triple
+(k1,k2,k3) so that none of the k1,k2,k3 allows a weak reference behaves
+as an entry in a normal dictionary: Its existence in <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a>
+prevents it from being garbage collected.</p>
+<p>That container currently is used to store coercion and conversion maps between
+two parents (<a class="reference external" href="http://trac.sagemath.org/715">trac ticket #715</a>) and to store homsets of pairs of objects of a
+category (<a class="reference external" href="http://trac.sagemath.org/11521">trac ticket #11521</a>). In both cases, it is essential that the parent
+structures remain garbage collectable, it is essential that the data access is
+faster than with a usual <a class="reference external" href="https://docs.python.org/library/weakref.html#weakref.WeakKeyDictionary" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">WeakKeyDictionary</span></tt></a>, and we enforce
+the &#8220;unique parent condition&#8221; in Sage (parent structures should be identical
+if they are equal).</p>
+<p><a class="reference internal" href="#sage.structure.coerce_dict.MonoDict" title="sage.structure.coerce_dict.MonoDict"><tt class="xref py py-class docutils literal"><span class="pre">MonoDict</span></tt></a> behaves similarly, but it takes a single item as a key. It
+is used for caching the parents which allow a coercion map into a fixed other
+parent (<a class="reference external" href="http://trac.sagemath.org/12313">trac ticket #12313</a>).</p>
+<p>By <a class="reference external" href="http://trac.sagemath.org/14159">trac ticket #14159</a>, <a class="reference internal" href="#sage.structure.coerce_dict.MonoDict" title="sage.structure.coerce_dict.MonoDict"><tt class="xref py py-class docutils literal"><span class="pre">MonoDict</span></tt></a> and <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a> can be optionally
+used with weak references on the values.</p>
+<dl class="class">
+<dt id="sage.structure.coerce_dict.MonoDict">
+<em class="property">class </em><tt class="descclassname">sage.structure.coerce_dict.</tt><tt class="descname">MonoDict</tt><a class="headerlink" href="#sage.structure.coerce_dict.MonoDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<blockquote>
+<div><p>This is a hashtable specifically designed for (read) speed in
+the coercion model.</p>
+<p>It differs from a python WeakKeyDictionary in the following important ways:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Comparison is done using the &#8216;is&#8217; rather than &#8216;==&#8217; operator.</li>
+<li>Only weak references to the keys are stored if at all possible.
+Keys that do not allow for weak references are stored with a normal
+refcounted reference.</li>
+<li>The callback of the weak references is safe against recursion, see below.</li>
+</ul>
+</div></blockquote>
+<p>There are special cdef set/get methods for faster access.
+It is bare-bones in the sense that not all dictionary methods are
+implemented.</p>
+<p>IMPLEMENTATION:</p>
+<p>It is implemented as a hash table with open addressing, similar to python&#8217;s
+dict.</p>
+<p>If ki supports weak references then ri is a weak reference to ki with a
+callback to remove the entry from the dictionary if ki gets garbage
+collected. If ki is does not support weak references then ri is identical to ki.
+In the latter case the presence of the key in the dictionary prevents it from
+being garbage collected.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">size</span></tt> &#8211; unused parameter, present for backward compatibility.</li>
+<li><tt class="docutils literal"><span class="pre">data</span></tt> &#8211; optional iterable defining initial data.</li>
+<li><tt class="docutils literal"><span class="pre">threshold</span></tt> &#8211; unused parameter, present for backward compatibility.</li>
+<li><tt class="docutils literal"><span class="pre">weak_values</span></tt> &#8211; optional bool (default False). If it is true, weak references
+to the values in this dictionary will be used, when possible.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">MonoDict</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">MonoDict</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="s">&#39;a&#39;</span><span class="p">;</span> <span class="n">b</span> <span class="o">=</span> <span class="s">&#39;ab&#39;</span><span class="p">;</span> <span class="n">c</span> <span class="o">=</span> <span class="s">&#39;-15&#39;</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>The key is expected to be a unique object. Hence, the item stored for <tt class="docutils literal"><span class="pre">c</span></tt>
+can not be obtained by providing another equal string:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="s">&#39;-15&#39;</span><span class="p">]</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;-15&#39;</span>
+</pre></div>
+</div>
+<p>Not all features of Python dictionaries are available, but iteration over
+the dictionary items is possible:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="c"># for some reason the following failed in &quot;make ptest&quot;</span>
+<span class="gp">sage: </span><span class="c"># on some installations, see #12313 for details</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span> <span class="c"># random layout</span>
+<span class="go">[(&#39;-15&#39;, 3), (&#39;a&#39;, 1), (&#39;ab&#39;, 2)]</span>
+<span class="gp">sage: </span><span class="c"># the following seems to be more consistent</span>
+<span class="gp">sage: </span><span class="nb">set</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+<span class="go">{(&#39;-15&#39;, 3), (&#39;a&#39;, 1), (&#39;ab&#39;, 2)}</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">L</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+<span class="go">[(&#39;a&#39;, 1), (&#39;ab&#39;, 2)]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">1002</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">]</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="s">&#39;c&#39;</span><span class="p">]</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;c&#39;</span>
+</pre></div>
+</div>
+<p>Note that this kind of dictionary is also used for caching actions
+and coerce maps. In previous versions of Sage, the cache was by
+strong references and resulted in a memory leak in the following
+example. However, this leak was fixed by <a class="reference external" href="http://trac.sagemath.org/715">trac ticket #715</a>, using
+weak references:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">55</span><span class="p">,</span><span class="s">&#39;t&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">random_element</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">P</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">random_point</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">Q</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">P</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.ell_finite_field</span> <span class="kn">import</span> <span class="n">EllipticCurve_finite_field</span>
+<span class="gp">sage: </span><span class="n">LE</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">gc</span><span class="o">.</span><span class="n">get_objects</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">EllipticCurve_finite_field</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">LE</span><span class="p">)</span>    <span class="c"># indirect doctest</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Here, we demonstrate the use of weak values.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">MonoDict</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">MW</span> <span class="o">=</span> <span class="n">MonoDict</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="n">weak_values</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">MW</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="n">a</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">MW</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="ow">in</span> <span class="n">M</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="ow">in</span> <span class="n">MW</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>While <tt class="docutils literal"><span class="pre">M</span></tt> uses a strong reference to <tt class="docutils literal"><span class="pre">a</span></tt>, <tt class="docutils literal"><span class="pre">MW</span></tt> uses a <em>weak</em>
+reference to <tt class="docutils literal"><span class="pre">b</span></tt>, and after deleting <tt class="docutils literal"><span class="pre">b</span></tt>, the corresponding item of
+<tt class="docutils literal"><span class="pre">MW</span></tt> will be removed during the next garbage collection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="ow">in</span> <span class="n">M</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="ow">in</span> <span class="n">MW</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">MW</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Note that <tt class="docutils literal"><span class="pre">MW</span></tt> also accepts values that do not allow for weak references:</p>
+<div class="highlight-python"><div class="highlight"><pre>    sage: MW[k] = int(5)
+    sage: MW[k]
+    5
+
+The following demonstrates that :class:`MonoDict` is safer than
+:class:`~weakref.WeakKeyDictionary` against recursions created by nested
+callbacks; compare :trac:`15069` (the mechanism used now is different, though)::
+
+    sage: M = MonoDict(11)
+    sage: class A: pass
+    sage: a = A()
+    sage: prev = a
+    sage: for i in range(1000):
+    ....:     newA = A()
+    ....:     M[prev] = newA
+    ....:     prev = newA
+    sage: len(M)
+    1000
+    sage: del a
+    sage: len(M)
+    0
+
+The corresponding example with a Python :class:`weakref.WeakKeyDictionary`
+would result in a too deep recursion during deletion of the dictionary
+items::
+
+    sage: import weakref
+    sage: M = weakref.WeakKeyDictionary()
+    sage: a = A()
+    sage: prev = a
+    sage: for i in range(1000):
+    ....:     newA = A()
+    ....:     M[prev] = newA
+    ....:     prev = newA
+    sage: len(M)
+    1000
+    sage: del a
+    Exception RuntimeError: &#39;maximum recursion depth exceeded while calling a Python object&#39; in &lt;function remove at ...&gt; ignored
+    sage: len(M)&gt;0
+    True
+
+Check that also in the presence of circular references, :class:`MonoDict`
+gets properly collected::
+
+    sage: import gc
+    sage: def count_type(T):
+    ....:     return len([c for c in gc.get_objects() if isinstance(c,T)])
+    sage: _=gc.collect()
+    sage: N=count_type(MonoDict)
+    sage: for i in range(100):
+    ....:     V = [ MonoDict(11,{&quot;id&quot;:j+100*i}) for j in range(100)]
+    ....:     n= len(V)
+    ....:     for i in range(n): V[i][V[(i+1)%n]]=(i+1)%n
+    ....:     del V
+    ....:     _=gc.collect()
+    ....:     assert count_type(MonoDict) == N
+    sage: count_type(MonoDict) == N
+    True
+
+AUTHORS:
+
+- Simon King (2012-01)
+- Nils Bruin (2012-08)
+- Simon King (2013-02)
+- Nils Bruin (2013-11)
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.structure.coerce_dict.MonoDict.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.coerce_dict.MonoDict.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">MonoDict</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">MonoDict</span><span class="p">(</span><span class="mi">31</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()))</span>
+<span class="go">[(1, None), (2, True)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.coerce_dict.MonoDictEraser">
+<em class="property">class </em><tt class="descclassname">sage.structure.coerce_dict.</tt><tt class="descname">MonoDictEraser</tt><a class="headerlink" href="#sage.structure.coerce_dict.MonoDictEraser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Erase items from a <a class="reference internal" href="#sage.structure.coerce_dict.MonoDict" title="sage.structure.coerce_dict.MonoDict"><tt class="xref py py-class docutils literal"><span class="pre">MonoDict</span></tt></a> when a weak reference becomes
+invalid.</p>
+<p>This is of internal use only. Instances of this class will be passed as a
+callback function when creating a weak reference.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">MonoDict</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">MonoDict</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>    <span class="c"># indirect doctest</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Simon King (2012-01)</li>
+<li>Nils Bruin (2013-11)</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.coerce_dict.TripleDict">
+<em class="property">class </em><tt class="descclassname">sage.structure.coerce_dict.</tt><tt class="descname">TripleDict</tt><a class="headerlink" href="#sage.structure.coerce_dict.TripleDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>This is a hashtable specifically designed for (read) speed in
+the coercion model.</p>
+<p>It differs from a python dict in the following important ways:</p>
+<blockquote>
+<div><ul class="simple">
+<li>All keys must be sequence of exactly three elements. All sequence
+types (tuple, list, etc.) map to the same item.</li>
+<li>Comparison is done using the &#8216;is&#8217; rather than &#8216;==&#8217; operator.</li>
+</ul>
+</div></blockquote>
+<p>There are special cdef set/get methods for faster access.
+It is bare-bones in the sense that not all dictionary methods are
+implemented.</p>
+<p>It is implemented as a list of lists (hereafter called buckets). The bucket is
+chosen according to a very simple hash based on the object pointer, and each
+bucket is of the form [id(k1), id(k2), id(k3), r1, r2, r3, value, id(k1),
+id(k2), id(k3), r1, r2, r3, value, ...], on which a linear search is performed.
+If a key component ki supports weak references then ri is a weak reference to
+ki; otherwise ri is identical to ki.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">size</span></tt> &#8211; an integer, the initial number of buckets. To spread objects
+evenly, the size should ideally be a prime, and certainly not divisible
+by 2.</li>
+<li><tt class="docutils literal"><span class="pre">data</span></tt> &#8211; optional iterable defining initial data.</li>
+<li><tt class="docutils literal"><span class="pre">threshold</span></tt> &#8211; optional number, default <span class="math">\(0.7\)</span>. It determines how frequently
+the dictionary will be resized (large threshold implies rare resizing).</li>
+<li><tt class="docutils literal"><span class="pre">weak_values</span></tt> &#8211; optional bool (default False). If it is true, weak references
+to the values in this dictionary will be used, when possible.</li>
+</ul>
+<p>If any of the key components k1,k2,k3 (this can happen for a key component
+that supports weak references) gets garbage collected then the entire
+entry disappears. In that sense this structure behaves like a nested
+<a class="reference external" href="https://docs.python.org/library/weakref.html#weakref.WeakKeyDictionary" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">WeakKeyDictionary</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">TripleDict</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="s">&#39;a&#39;</span><span class="p">;</span> <span class="n">b</span> <span class="o">=</span> <span class="s">&#39;b&#39;</span><span class="p">;</span> <span class="n">c</span> <span class="o">=</span> <span class="s">&#39;c&#39;</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">]</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">c</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>     <span class="c"># random order of output.</span>
+<span class="go">[((&#39;c&#39;, &#39;b&#39;, &#39;a&#39;), -1), ((&#39;a&#39;, &#39;b&#39;, &#39;c&#39;), 1)]</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+<span class="go">[((&#39;c&#39;, &#39;b&#39;, &#39;a&#39;), -1)]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+<span class="gp">... </span>      <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">1001</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">c</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">]</span>
+<span class="go">-1</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">]</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;a&#39;</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;a&#39;</span>
+</pre></div>
+</div>
+<p>Note that this kind of dictionary is also used for caching actions
+and coerce maps. In previous versions of Sage, the cache was by
+strong references and resulted in a memory leak in the following
+example. However, this leak was fixed by <a class="reference external" href="http://trac.sagemath.org/715">trac ticket #715</a>, using weak
+references:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">55</span><span class="p">,</span><span class="s">&#39;t&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">random_element</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="n">j</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">P</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">random_point</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">Q</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">P</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.ell_finite_field</span> <span class="kn">import</span> <span class="n">EllipticCurve_finite_field</span>
+<span class="gp">sage: </span><span class="n">LE</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">gc</span><span class="o">.</span><span class="n">get_objects</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">EllipticCurve_finite_field</span><span class="p">)]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">LE</span><span class="p">)</span>    <span class="c"># indirect doctest</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Here, we demonstrate the use of weak values.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">TW</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="n">weak_values</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">a</span><span class="p">]</span><span class="o">=</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="n">a</span>
+<span class="gp">sage: </span><span class="n">TW</span><span class="p">[</span><span class="n">b</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">TW</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">TW</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">b</span><span class="p">]</span><span class="o">=</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">TW</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="n">b</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">TW</span><span class="p">)</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="n">T</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="ow">in</span> <span class="n">TW</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="n">a</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">TW</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Now, <tt class="docutils literal"><span class="pre">T</span></tt> holds a strong reference to <tt class="docutils literal"><span class="pre">a</span></tt>, namely in <tt class="docutils literal"><span class="pre">T[k,k,k]</span></tt>. Hence,
+when we delete <tt class="docutils literal"><span class="pre">a</span></tt>, <em>all</em> items of <tt class="docutils literal"><span class="pre">T</span></tt> survive:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>Only when we remove the strong reference, the items become collectable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">T</span><span class="p">[</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">k</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>The situation is different for <tt class="docutils literal"><span class="pre">TW</span></tt>, since it only holds <em>weak</em>
+references to <tt class="docutils literal"><span class="pre">a</span></tt>. Therefore, all items become collectable after
+deleting <tt class="docutils literal"><span class="pre">a</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">TW</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The index <span class="math">\(h\)</span> corresponding to the key [k1, k2, k3] is computed as a
+value of unsigned type size_t as follows:</p>
+<div class="math">
+\[h = id(k1) + 13*id(k2) xor 503 id(k3)\]</div>
+<p>The natural type for this quantity is Py_ssize_t, which is a signed
+quantity with the same length as size_t. Storing it in a signed way gives the most
+efficient storage into PyInt, while preserving sign information.</p>
+<p class="last">In previous situations there were some problems with ending up with negative
+indices, which required casting to an unsigned type, i.e.,
+(&lt;size_t&gt; h)% N
+since C has a sign-preserving % operation This caused problems on 32 bits systems,
+see <a class="reference external" href="http://trac.sagemath.org/715">trac ticket #715</a> for details. This is irrelevant for the current implementation.</p>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Robert Bradshaw, 2007-08</li>
+<li>Simon King, 2012-01</li>
+<li>Nils Bruin, 2012-08</li>
+<li>Simon King, 2013-02</li>
+<li>Nils Bruin, 2013-11</li>
+</ul>
+<dl class="method">
+<dt id="sage.structure.coerce_dict.TripleDict.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.structure.coerce_dict.TripleDict.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">TripleDict</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">(</span><span class="mi">31</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+<span class="go">[((1, 2, 3), None)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.structure.coerce_dict.TripleDictEraser">
+<em class="property">class </em><tt class="descclassname">sage.structure.coerce_dict.</tt><tt class="descname">TripleDictEraser</tt><a class="headerlink" href="#sage.structure.coerce_dict.TripleDictEraser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Erases items from a <a class="reference internal" href="#sage.structure.coerce_dict.TripleDict" title="sage.structure.coerce_dict.TripleDict"><tt class="xref py py-class docutils literal"><span class="pre">TripleDict</span></tt></a> when a weak reference becomes
+invalid.</p>
+<p>This is of internal use only. Instances of this class will be passed as a
+callback function when creating a weak reference.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">TripleDict</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">ZZ</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">ZZ</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">ZZ</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="k">del</span> <span class="n">a</span>
+<span class="gp">sage: </span><span class="kn">import</span> <span class="nn">gc</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="c"># indirect doctest</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li>Simon King (2012-01)</li>
+<li>Nils Bruin (2013-11)</li>
+</ul>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../categories/action.html"
+                                  title="previous chapter">Group, ring, etc. actions on objects.</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="coerce_exceptions.html"
+                                  title="next chapter">Exceptions raised by the coercion model</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/structure/coerce_dict.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coerce_exceptions.html" title="Exceptions raised by the coercion model"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../categories/action.html" title="Group, ring, etc. actions on objects."
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Coercion</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

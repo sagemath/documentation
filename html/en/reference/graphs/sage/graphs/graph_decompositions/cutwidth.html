@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Cutwidth &mdash; Sage Reference Manual v6.8: Graph Theory</title>
+    <title>Cutwidth &mdash; Sage Reference Manual v6.9: Graph Theory</title>
     
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '6.8',
+        VERSION:     '6.9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v6.8: Graph Theory" href="../../../index.html" />
+    <link rel="top" title="Sage Reference Manual v6.9: Graph Theory" href="../../../index.html" />
     <link rel="next" title="Products of graphs" href="graph_products.html" />
     <link rel="prev" title="Bandwidth of undirected graphs" href="bandwidth.html" />
     <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
@@ -91,7 +91,10 @@ vertices.</p>
 <tr class="row-even"><td><a class="reference internal" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth_dyn" title="sage.graphs.graph_decompositions.cutwidth.cutwidth_dyn"><tt class="xref py py-meth docutils literal"><span class="pre">cutwidth_dyn()</span></tt></a></td>
 <td>Compute the cutwidth of <span class="math">\(G\)</span> using an exponential time and space algorithm based on dynamic programming</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#sage.graphs.graph_decompositions.cutwidth.width_of_cut_decomposition" title="sage.graphs.graph_decompositions.cutwidth.width_of_cut_decomposition"><tt class="xref py py-meth docutils literal"><span class="pre">width_of_cut_decomposition()</span></tt></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP" title="sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP"><tt class="xref py py-meth docutils literal"><span class="pre">cutwidth_MILP()</span></tt></a></td>
+<td>Compute the cutwidth of <span class="math">\(G\)</span> and the optimal ordering of its vertices using an MILP formulation</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.graphs.graph_decompositions.cutwidth.width_of_cut_decomposition" title="sage.graphs.graph_decompositions.cutwidth.width_of_cut_decomposition"><tt class="xref py py-meth docutils literal"><span class="pre">width_of_cut_decomposition()</span></tt></a></td>
 <td>Return the width of the cut decomposition induced by the linear ordering <span class="math">\(L\)</span> of the vertices of <span class="math">\(G\)</span></td>
 </tr>
 </tbody>
@@ -151,6 +154,42 @@ on strictly less than 32 vertices. This can be changed to 64 if necessary,
 but 32 vertices already require 4GB of memory.</p>
 </div>
 </div>
+<div class="section" id="milp-formulation-for-the-cutwidth">
+<h2>MILP formulation for the cutwidth<a class="headerlink" href="#milp-formulation-for-the-cutwidth" title="Permalink to this headline">¶</a></h2>
+<p>We describe a mixed integer linear program (MILP) for determining an
+optimal layout for the cutwidth of <span class="math">\(G\)</span>.</p>
+<p><strong>Variables:</strong></p>
+<ul class="simple">
+<li><span class="math">\(x_v^k\)</span> &#8211; Variable set to 1 if vertex <span class="math">\(v\)</span> is placed in the ordering at
+position <span class="math">\(i\)</span> with <span class="math">\(i\leq k\)</span>, and 0 otherwise.</li>
+<li><span class="math">\(y_{u,v}^{k}\)</span> &#8211; Variable set to 1 if one of <span class="math">\(u\)</span> or <span class="math">\(v\)</span> is at a position
+<span class="math">\(i\leq k\)</span> and the other is at a position <span class="math">\(j&gt;k\)</span>, and so we have to count edge
+<span class="math">\(uv\)</span> at position <span class="math">\(k\)</span>. Otherwise, <span class="math">\(y_{u,v}^{k}=0\)</span>. The value of <span class="math">\(y_{u,v}^{k}\)</span>
+is a xor of the values of <span class="math">\(x_u^k\)</span> and <span class="math">\(x_v^k\)</span>.</li>
+<li><span class="math">\(z\)</span> &#8211; Objective value to minimize. It is equal to the maximum over all
+position <span class="math">\(k\)</span> of the number of edges with one extremity at position at most <span class="math">\(k\)</span>
+and the other at position stricly more than <span class="math">\(k\)</span>, that is <span class="math">\(\sum_{uv\in
+E}y_{u,v}^{k}\)</span>.</li>
+</ul>
+<p><strong>MILP formulation:</strong></p>
+<div class="math">
+\[\begin{alignat*}{2}
+\intertext{Minimize:}
+&z&\\
+\intertext{Subject to:}
+\sum_{i=0}^{k-1}x_v^i &\leq k*x_v^{k} & \forall v\in V,\ k\in[1,n-1] \quad(1)\\
+x_v^n & =1  & \quad \forall v\in V \quad(2)\\
+\sum_{v\in V}x_v^k & = k+1 &\quad  \forall k\in[0,n-1] \quad(3)\\
+x_u^k - x_v^k & \leq y_{u,v}^k &\quad  \forall uv\in E,\ \forall k\in[0,n-1]  \quad(4)\\
+x_v^k - x_u^k & \leq y_{u,v}^k &\quad  \forall uv\in E,\ \forall k\in[0,n-1] \quad(5)\\
+\sum_{uv\in E}y_{u,v}^k &\leq z &\quad  \forall k\in[0,n-1] \quad(6)\\
+0 \leq z &\leq |E|
+\end{alignat*}\]</div><p>Constraints (1)-(3) ensure that all vertices have a distinct position.
+Constraints (4)-(5) force variable <span class="math">\(y_{u,v}^k\)</span> to 1 if the edge is in the cut.
+Constraint (6) count the number of edges starting at position at most <span class="math">\(k\)</span> and
+ending at a position stricly larger than <span class="math">\(k\)</span>.</p>
+<p>This formulation corresponds to method <a class="reference internal" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP" title="sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP"><tt class="xref py py-meth docutils literal"><span class="pre">cutwidth_MILP()</span></tt></a>.</p>
+</div>
 <div class="section" id="authors">
 <h2>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -161,7 +200,7 @@ but 32 vertices already require 4GB of memory.</p>
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="sage.graphs.graph_decompositions.cutwidth.cutwidth">
-<tt class="descclassname">sage.graphs.graph_decompositions.cutwidth.</tt><tt class="descname">cutwidth</tt><big>(</big><em>G</em>, <em>algorithm='exponential'</em>, <em>cut_off=0</em><big>)</big><a class="headerlink" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">sage.graphs.graph_decompositions.cutwidth.</tt><tt class="descname">cutwidth</tt><big>(</big><em>G</em>, <em>algorithm='exponential'</em>, <em>cut_off=0</em>, <em>solver=None</em>, <em>verbose=False</em><big>)</big><a class="headerlink" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the cutwidth of the graph and the corresponding vertex ordering.</p>
 <p>INPUT:</p>
 <ul class="simple">
@@ -171,11 +210,22 @@ among<ul>
 <li><tt class="docutils literal"><span class="pre">exponential</span></tt> &#8211; Use an exponential time and space algorithm based on
 dynamic programming. This algorithm only works on graphs with strictly
 less than 32 vertices.</li>
+<li><tt class="docutils literal"><span class="pre">MILP</span></tt> &#8211; Use a mixed integer linear programming formulation. This
+algorithm has no size restriction but could take a very long time.</li>
 </ul>
 </li>
 <li><tt class="docutils literal"><span class="pre">cut_off</span></tt> &#8211; (default: 0) This parameter is used to stop the search as
 soon as a solution with width at most <tt class="docutils literal"><span class="pre">cut_off</span></tt> is found, if any. If
 this bound cannot be reached, the best solution found is returned.</li>
+<li><tt class="docutils literal"><span class="pre">solver</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">None</span></tt>) Specify a Linear Program (LP) solver to
+be used. If set to <tt class="docutils literal"><span class="pre">None</span></tt>, the default one is used. This parameter is
+used only when <tt class="docutils literal"><span class="pre">algorithm='MILP'</span></tt>. For more information on LP solvers
+and which default solver is used, see the method
+<a class="reference external" href="../../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v6.9)"><tt class="xref py py-meth docutils literal"><span class="pre">solve</span></tt></a> of the
+class
+<a class="reference external" href="../../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v6.9)"><tt class="xref py py-class docutils literal"><span class="pre">MixedIntegerLinearProgram</span></tt></a>.</li>
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> (boolean) &#8211; whether to display information on the
+computations.</li>
 </ul>
 <p>OUTPUT:</p>
 <p>A pair <tt class="docutils literal"><span class="pre">(cost,</span> <span class="pre">ordering)</span></tt> representing the optimal ordering of the
@@ -184,29 +234,39 @@ vertices and its cost.</p>
 <p>Cutwidth of a Complete Graph:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth</span>
 <span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;exponential&quot;</span><span class="p">);</span> <span class="n">cw</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
 <span class="go">6</span>
 <span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;exponential&quot;</span><span class="p">);</span> <span class="n">cw</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">K</span><span class="p">);</span> <span class="n">cw</span>
 <span class="go">9</span>
-<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">K</span><span class="o">+</span><span class="n">K</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;exponential&quot;</span><span class="p">);</span> <span class="n">cw</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">K</span><span class="o">+</span><span class="n">K</span><span class="p">);</span> <span class="n">cw</span>
 <span class="go">9</span>
 </pre></div>
 </div>
 <p>The cutwidth of a <span class="math">\(p\times q\)</span> Grid Graph with <span class="math">\(p\leq q\)</span> is <span class="math">\(p+1\)</span>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth</span>
 <span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">Grid2dGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;exponential&quot;</span><span class="p">);</span> <span class="n">cw</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
 <span class="go">4</span>
 <span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">Grid2dGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;exponential&quot;</span><span class="p">);</span> <span class="n">cw</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span><span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
 <span class="go">4</span>
 </pre></div>
 </div>
 <p>TESTS:</p>
+<p>Comparison of algorithms:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c"># long test</span>
+<span class="go">....:     G = graphs.RandomGNP(7, 0.3)</span>
+<span class="go">....:     ve, le = cutwidth(G, algorithm=&quot;exponential&quot;)</span>
+<span class="go">....:     vm, lm = cutwidth(G, algorithm=&quot;MILP&quot;, solver=&#39;GLPK&#39;)</span>
+<span class="go">....:     if ve != vm:</span>
+<span class="go">....:        print &quot;Something goes wrong!&quot;</span>
+</pre></div>
+</div>
 <p>Given a wrong algorithm:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth</span>
-<span class="gp">sage: </span><span class="n">cutwidth</span><span class="p">(</span><span class="n">Graph</span><span class="p">(),</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;SuperFast&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cutwidth</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&quot;SuperFast&quot;</span><span class="p">)</span>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
 <span class="gr">ValueError</span>: <span class="n">Algorithm &quot;SuperFast&quot; has not been implemented yet. Please contribute.</span>
@@ -226,6 +286,93 @@ vertices and its cost.</p>
 <span class="gt">Traceback (most recent call last):</span>
 <span class="c">...</span>
 <span class="gr">ValueError</span>: <span class="n">The specified cut off parameter must be an integer.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP">
+<tt class="descclassname">sage.graphs.graph_decompositions.cutwidth.</tt><tt class="descname">cutwidth_MILP</tt><big>(</big><em>G</em>, <em>lower_bound=0</em>, <em>solver=None</em>, <em>verbose=0</em><big>)</big><a class="headerlink" href="#sage.graphs.graph_decompositions.cutwidth.cutwidth_MILP" title="Permalink to this definition">¶</a></dt>
+<dd><p>MILP formulation for the cutwidth of a Graph.</p>
+<p>This method uses a mixed integer linear program (MILP) for determining an
+optimal layout for the cutwidth of <span class="math">\(G\)</span>. See the <a class="reference internal" href="#module-sage.graphs.graph_decompositions.cutwidth" title="sage.graphs.graph_decompositions.cutwidth"><tt class="xref py py-mod docutils literal"><span class="pre">module's</span> <span class="pre">documentation</span></tt></a> for more details on this MILP
+formulation.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">G</span></tt> &#8211; a Graph</li>
+<li><tt class="docutils literal"><span class="pre">lower_bound</span></tt> &#8211; (default: 0) the algorithm searches for a solution with
+cost larger or equal to <tt class="docutils literal"><span class="pre">lower_bound</span></tt>. If the given bound is larger than
+the optimal solution the returned solution might not be optimal. If the
+given bound is too high, the algorithm might not be able to find a
+feasible solution.</li>
+<li><tt class="docutils literal"><span class="pre">solver</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">None</span></tt>) Specify a Linear Program (LP) solver to
+be used. If set to <tt class="docutils literal"><span class="pre">None</span></tt>, the default one is used. For more information
+on LP solvers and which default solver is used, see the method
+<a class="reference external" href="../../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v6.9)"><tt class="xref py py-meth docutils literal"><span class="pre">solve</span></tt></a> of the
+class
+<a class="reference external" href="../../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v6.9)"><tt class="xref py py-class docutils literal"><span class="pre">MixedIntegerLinearProgram</span></tt></a>.</li>
+<li><tt class="docutils literal"><span class="pre">verbose</span></tt> &#8211; integer (default: <tt class="docutils literal"><span class="pre">0</span></tt>). Sets the level of verbosity. Set
+to 0 by default, which means quiet.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A pair <tt class="docutils literal"><span class="pre">(cost,</span> <span class="pre">ordering)</span></tt> representing the optimal ordering of the
+vertices and its cost.</p>
+<p>EXAMPLE:</p>
+<p>Cutwidth of a Cycle graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions</span> <span class="kn">import</span> <span class="n">cutwidth</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">cutwidth_MILP</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">cw</span> <span class="o">==</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">width_of_cut_decomposition</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">cwe</span><span class="p">,</span> <span class="n">Le</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">cutwidth_dyn</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cwe</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>Cutwidth of a Complete graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions</span> <span class="kn">import</span> <span class="n">cutwidth</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">cutwidth_MILP</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">cw</span> <span class="o">==</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">width_of_cut_decomposition</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Cutwidth of a Path graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions</span> <span class="kn">import</span> <span class="n">cutwidth</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PathGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cw</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">cutwidth_MILP</span><span class="p">(</span><span class="n">G</span><span class="p">);</span> <span class="n">cw</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">cw</span> <span class="o">==</span> <span class="n">cutwidth</span><span class="o">.</span><span class="n">width_of_cut_decomposition</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Comparison with exponential algorithm:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions</span> <span class="kn">import</span> <span class="n">cutwidth</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c"># long test</span>
+<span class="go">....:     G = graphs.RandomGNP(7, 0.3)</span>
+<span class="go">....:     ve, le = cutwidth.cutwidth_dyn(G)</span>
+<span class="go">....:     vm, lm = cutwidth.cutwidth_MILP(G, solver=&#39;GLPK&#39;)</span>
+<span class="go">....:     if ve != vm:</span>
+<span class="go">....:        print &quot;The solution is not optimal!&quot;</span>
+</pre></div>
+</div>
+<p>Giving a too large lower bound:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth_MILP</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cutwidth_MILP</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">lower_bound</span><span class="o">=</span><span class="n">G</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">MIPSolverException</span>: <span class="n">...</span>
+</pre></div>
+</div>
+<p>Giving anything else than a Graph:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.graph_decompositions.cutwidth</span> <span class="kn">import</span> <span class="n">cutwidth_MILP</span>
+<span class="gp">sage: </span><span class="n">cutwidth_MILP</span><span class="p">([])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">The first input parameter must be a Graph.</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -339,6 +486,7 @@ ordering <span class="math">\(L\)</span> of the vertices of <span class="math">\
             <ul>
 <li><a class="reference internal" href="#">Cutwidth</a><ul>
 <li><a class="reference internal" href="#exponential-algorithm-for-cutwidth">Exponential algorithm for cutwidth</a></li>
+<li><a class="reference internal" href="#milp-formulation-for-the-cutwidth">MILP formulation for the cutwidth</a></li>
 <li><a class="reference internal" href="#authors">Authors</a></li>
 <li><a class="reference internal" href="#methods">Methods</a></li>
 </ul>

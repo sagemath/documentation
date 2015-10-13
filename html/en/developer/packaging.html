@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Packaging Third-Party Code &mdash; Sage Developer&#39;s Guide v6.8</title>
+    <title>Packaging Third-Party Code &mdash; Sage Developer&#39;s Guide v6.9</title>
     
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.8',
+        VERSION:     '6.9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="Sage Developer&#39;s Guide v6.8" href="index.html" />
+    <link rel="top" title="Sage Developer&#39;s Guide v6.9" href="index.html" />
     <link rel="next" title="Packaging Old-Style SPKGs" href="packaging_old_spkgs.html" />
     <link rel="prev" title="Using External Libraries and Interfaces" href="coding_in_other.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
@@ -55,7 +55,7 @@
     
   
   
-        <li><a href="index.html">Developer&#39;s Guide v6.8</a> &raquo;</li>
+        <li><a href="index.html">Developer&#39;s Guide v6.9</a> &raquo;</li>
  
       </ul>
     </div>  
@@ -71,7 +71,7 @@
 an algorithm is already implemented in a well-tested library then
 consider incorporating that library into Sage. The current list of
 available packages are the subdirectories of <tt class="docutils literal"><span class="pre">SAGE_ROOT/build/pkgs/</span></tt>.
-The management of packages is done through a bash script located in
+The installation of packages is done through a bash script located in
 <tt class="docutils literal"><span class="pre">SAGE_ROOT/build/bin/sage-spkg</span></tt>. This script is typically invoked by
 giving the command:</p>
 <div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -i &lt;options&gt; &lt;package name&gt;...
@@ -79,61 +79,98 @@ giving the command:</p>
 </div>
 <p>options can be:</p>
 <ul class="simple">
-<li>f: install a package even if the same version is already installed</li>
-<li>s: do not delete temporary build directory</li>
-<li>c: after installing, run the test suite for the spkg. This should
+<li>-f: install a package even if the same version is already installed</li>
+<li>-s: do not delete temporary build directory</li>
+<li>-c: after installing, run the test suite for the spkg. This should
 override the settings of <tt class="docutils literal"><span class="pre">SAGE_CHECK</span></tt> and <tt class="docutils literal"><span class="pre">SAGE_CHECK_PACKAGES</span></tt>.</li>
-<li>d: only download the package</li>
+<li>-d: only download the package</li>
 </ul>
-<p>Not all packages are built by default, they are divided into standard,
-optional and experimental ones. Standard packages are built by default
-and have much more stringent quality requirements.</p>
 <p>The section <a class="reference internal" href="#section-directory-structure"><em>Directory Structure</em></a> describes the structure
 of each individual package in <tt class="docutils literal"><span class="pre">SAGE_ROOT/build/pkgs</span></tt>. In section
-<a class="reference internal" href="#section-manual-build"><em>Manual package build and installation</em></a> we see how you can install and test a new
+<a class="reference internal" href="#section-manual-build"><em>Building the package</em></a> we see how you can install and test a new
 spkg that you or someone else wrote. Finally,
 <a class="reference internal" href="#section-inclusion-procedure"><em>Inclusion Procedure for New and Updated Packages</em></a> explains how to submit a new package
 for inclusion in the Sage source code.</p>
+<div class="section" id="package-types">
+<span id="section-package-types"></span><h2>Package types<a class="headerlink" href="#package-types" title="Permalink to this headline">¶</a></h2>
+<p>Not all packages are built by default, they are divided into standard,
+optional and experimental ones:</p>
+<ul class="simple">
+<li><strong>standard</strong> packages are built by default. They have stringent quality
+requirements: they should work on all supported platforms. In order
+for a new standard package to be accepted, it should have been
+optional for a while, see <a class="reference internal" href="#section-inclusion-procedure"><em>Inclusion Procedure for New and Updated Packages</em></a>.</li>
+<li><strong>optional</strong> packages are subject to the same requirements, they
+should also work on all supported platforms. If there are
+<a class="reference internal" href="doctesting.html#section-optional-doctest-flag"><em>optional doctests</em></a> in the Sage
+library, those tests must pass.
+Note that optional packages are not tested as much as standard
+packages, so in practice they might break more often than standard
+packages.</li>
+<li>for <strong>experimental</strong> packages, the bar is much lower: even if there are
+some problems, the package can still be accepted.</li>
+</ul>
+</div>
 <div class="section" id="directory-structure">
 <span id="section-directory-structure"></span><h2>Directory Structure<a class="headerlink" href="#directory-structure" title="Permalink to this headline">¶</a></h2>
 <p>Third-party packages in Sage consists of two parts:</p>
 <ol class="arabic simple">
 <li>The tarball as it is distributed by the third party, or as close as
 possible. Valid reasons for modifying the tarball are deleting
-unnecessary files to keep the download size manageable or
-regenerating auto-generated files if necessary. But the actual code
-must be unmodified. See also <a class="reference internal" href="#section-spkg-src"><em>Modified Tarballs</em></a>.</li>
+unnecessary files to keep the download size manageable,
+regenerating auto-generated files or changing the directory structure
+if necessary. In certain cases, you may need to (additionally) change
+the filename of the tarball.
+In any case, the actual code must be unmodified: if you need to
+change the sources, add a <a class="reference internal" href="#section-spkg-patching"><em>patch</em></a>
+instead. See also <a class="reference internal" href="#section-spkg-src"><em>Modified Tarballs</em></a> for automating the
+modifications to the upstream tarball.</li>
 <li>The build scripts and associated files are in a subdirectory
-<tt class="docutils literal"><span class="pre">SAGE_ROOT/build/pkgs/package</span></tt>, where you replace <tt class="docutils literal"><span class="pre">package</span></tt>
-with a lower-case version of the upstream project name.</li>
+<tt class="docutils literal"><span class="pre">SAGE_ROOT/build/pkgs/&lt;package&gt;</span></tt>, where you replace <tt class="docutils literal"><span class="pre">&lt;package&gt;</span></tt>
+with a lower-case version of the upstream project name. If the
+project name contains characters which are not alphanumeric
+and are not an underscore, those characters should be removed
+or replaced by an underscore. For example, the project
+<tt class="docutils literal"><span class="pre">FFLAS-FFPACK</span></tt> is called <tt class="docutils literal"><span class="pre">fflas_ffpack</span></tt> in Sage and <tt class="docutils literal"><span class="pre">path.py</span></tt>
+is renamed <tt class="docutils literal"><span class="pre">pathpy</span></tt> in Sage.</li>
 </ol>
 <p>As an example, let us consider a hypothetical FoO project. They
-(upstream) distribute a tarball <tt class="docutils literal"><span class="pre">foo-1.3.tar.gz</span></tt> (that will be
+(upstream) distribute a tarball <tt class="docutils literal"><span class="pre">FoO-1.3.tar.gz</span></tt> (that will be
 automatically placed in <tt class="docutils literal"><span class="pre">SAGE_ROOT/upstream</span></tt> during the installation
-process). To package it in Sage, we create a subdirectory containing the
-following:</p>
+process). To package it in Sage, we create a subdirectory containing as
+a minimum the following files:</p>
+<div class="highlight-python"><div class="highlight"><pre>SAGE_ROOT/build/pkgs/foo
+|-- checksums.ini
+|-- dependencies
+|-- package-version.txt
+|-- spkg-install
+|-- SPKG.txt
+`-- type
+</pre></div>
+</div>
+<p>The following are some additional files which can be added:</p>
 <div class="highlight-python"><div class="highlight"><pre>SAGE_ROOT/build/pkgs/foo
 |-- patches
 |   |-- bar.patch
 |   `-- baz.patch
-|-- checksums.ini
-|-- package-version.txt
 |-- spkg-check
-|-- spkg-install
-|-- spkg-src
-`-- SPKG.txt
+`-- spkg-src
 </pre></div>
 </div>
-<p>When installing Sage these files are used to patch the tarball and to
-start the build and install process of the package.</p>
-<p>We discuss the individual files in the following.</p>
+<p>We discuss the individual files in the following sections.</p>
+<div class="section" id="package-type">
+<h3>Package type<a class="headerlink" href="#package-type" title="Permalink to this headline">¶</a></h3>
+<p>The file <tt class="docutils literal"><span class="pre">type</span></tt> should contain a single word, which is either
+<tt class="docutils literal"><span class="pre">standard</span></tt>, <tt class="docutils literal"><span class="pre">optional</span></tt> or <tt class="docutils literal"><span class="pre">experimental</span></tt>.
+See <a class="reference internal" href="#section-package-types"><em>Package types</em></a> for the meaning of these types.</p>
+</div>
 <div class="section" id="install-script">
 <span id="section-spkg-install"></span><h3>Install Script<a class="headerlink" href="#install-script" title="Permalink to this headline">¶</a></h3>
-<p>The <tt class="docutils literal"><span class="pre">spkg-install</span></tt> file is a shell script installing the package,
-with <tt class="docutils literal"><span class="pre">PACKAGE_NAME</span></tt> replaced by the the package name. In the best
-case, the upstream project can simply be installed by the usual
-configure / make / make install steps. In that case, the build script
-would simply consist of:</p>
+<p>The <tt class="docutils literal"><span class="pre">spkg-install</span></tt> file is a shell script or Python script which
+installs the package.
+In the best case, the upstream project can simply be installed by the
+usual configure / make / make install steps. In that case, the build
+script would simply consist of:</p>
 <div class="highlight-python"><div class="highlight"><pre>#!/usr/bin/env bash
 
 cd src
@@ -150,7 +187,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-$MAKE -j1 install
+$MAKE install
 if [ $? -ne 0 ]; then
     echo &gt;&amp;2 &quot;Error installing PACKAGE_NAME.&quot;
     exit 1
@@ -190,21 +227,6 @@ $MAKE check
 </pre></div>
 </div>
 </div>
-<div class="section" id="package-versioning">
-<span id="section-spkg-versioning"></span><h3>Package Versioning<a class="headerlink" href="#package-versioning" title="Permalink to this headline">¶</a></h3>
-<p>The <tt class="docutils literal"><span class="pre">package-version.txt</span></tt> file containts just the version. So if
-upstream is <tt class="docutils literal"><span class="pre">foo-1.3.tar.gz</span></tt> then the package version file would only
-contain <tt class="docutils literal"><span class="pre">1.3</span></tt>.</p>
-<p>If the upstream package is taken from some revision other than a stable
-version, you should use the date at which the revision is made, e.g. the
-Singular package <tt class="docutils literal"><span class="pre">20090818</span></tt> is made with the revision as of
-2009-08-18.</p>
-<p>If you made any changes to the upstream tarball (see
-<a class="reference internal" href="#section-directory-structure"><em>Directory Structure</em></a> for allowable changes) then you
-should append a <tt class="docutils literal"><span class="pre">.p1</span></tt> to the version. If you make further changes,
-increase the patch level as necessary. So the different versions would
-be <tt class="docutils literal"><span class="pre">1.3</span></tt>, <tt class="docutils literal"><span class="pre">1.3.p1</span></tt>, <tt class="docutils literal"><span class="pre">1.3.p2</span></tt>, ...</p>
-</div>
 <div class="section" id="the-spkg-txt-file">
 <span id="section-spkg-spkg-txt"></span><h3>The SPKG.txt File<a class="headerlink" href="#the-spkg-txt-file" title="Permalink to this headline">¶</a></h3>
 <p>The <tt class="docutils literal"><span class="pre">SPKG.txt</span></tt> file should follow this pattern:</p>
@@ -217,12 +239,6 @@ What does the package do?
 == License ==
 
 What is the license? If non-standard, is it GPLv3+ compatible?
-
-== SPKG Maintainers ==
-
-* Mary Smith
-* Bill Jones
-* Leonhard Euler
 
 == Upstream Contact ==
 
@@ -244,6 +260,56 @@ script, describe what was changed.
 <p>with <tt class="docutils literal"><span class="pre">PACKAGE_NAME</span></tt> replaced by the the package name. Legacy
 <tt class="docutils literal"><span class="pre">SPKG.txt</span></tt> files have an additional changelog section, but this
 information is now kept in the git repository.</p>
+</div>
+<div class="section" id="package-dependencies">
+<span id="section-dependencies"></span><h3>Package dependencies<a class="headerlink" href="#package-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>Many packages depend on other packages. Consider for example the
+<tt class="docutils literal"><span class="pre">eclib</span></tt> package for elliptic curves. This package uses the libraries
+PARI, NTL and FLINT. So the following is the <tt class="docutils literal"><span class="pre">dependencies</span></tt> file
+for <tt class="docutils literal"><span class="pre">eclib</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>$(INST)/$(PARI) $(INST)/$(NTL) $(INST)/$(FLINT)
+
+----------
+All lines of this file are ignored except the first.
+It is copied by SAGE_ROOT/build/make/install into SAGE_ROOT/build/make/Makefile.
+</pre></div>
+</div>
+<p>If there are no dependencies, you can use</p>
+<div class="highlight-python"><div class="highlight"><pre># no dependencies
+
+----------
+All lines of this file are ignored except the first.
+It is copied by SAGE_ROOT/build/make/install into SAGE_ROOT/build/make/Makefile.
+</pre></div>
+</div>
+<p>There are actually two kinds of dependencies: there are normal
+dependencies and order-only dependencies, which are weaker. The syntax
+for the <tt class="docutils literal"><span class="pre">dependencies</span></tt> file is</p>
+<div class="highlight-python"><div class="highlight"><pre>normal dependencies | order-only dependencies
+</pre></div>
+</div>
+<p>If there is no <tt class="docutils literal"><span class="pre">|</span></tt>, then all dependencies are normal.</p>
+<ul class="simple">
+<li>If package A has an <strong>order-only dependency</strong> on B, it simply means
+that B must be built before A can be built. The version of B does not
+matter, only the fact that B is installed matters.
+This should be used if the dependency is purely a build-time
+dependency (for example, a dependency on Python simply because the
+<tt class="docutils literal"><span class="pre">spkg-install</span></tt> file is written in Python).</li>
+<li>If A has a <strong>normal dependency</strong> on B, it means additionally that A
+should be rebuilt every time that B gets updated. This is the most
+common kind of dependency. A normal dependency is what you need for
+libraries: if we upgrade NTL, we should rebuild everything which
+uses NTL.</li>
+</ul>
+<p>In order to check that the dependencies of your package are likely
+correct, the following command should work without errors:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ make distclean &amp;&amp; make base &amp;&amp; make PACKAGE_NAME
+</pre></div>
+</div>
+<p>Finally, note that standard packages should only depend on standard
+packages and optional packages should only depend on standard or
+optional packages.</p>
 </div>
 <div class="section" id="patching-sources">
 <span id="section-spkg-patching"></span><h3>Patching Sources<a class="headerlink" href="#patching-sources" title="Permalink to this headline">¶</a></h3>
@@ -297,33 +363,73 @@ recommended that you write a script, called <tt class="docutils literal"><span c
 changes. This not only serves as documentation but also makes it easier
 to apply the same modifications to future versions.</p>
 </div>
+<div class="section" id="package-versioning">
+<span id="section-spkg-versioning"></span><h3>Package Versioning<a class="headerlink" href="#package-versioning" title="Permalink to this headline">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">package-version.txt</span></tt> file containts just the version. So if
+upstream is <tt class="docutils literal"><span class="pre">FoO-1.3.tar.gz</span></tt> then the package version file would only
+contain <tt class="docutils literal"><span class="pre">1.3</span></tt>.</p>
+<p>If the upstream package is taken from some revision other than a stable
+version or if upstream doesn&#8217;t have a version number, you should use the
+date at which the revision is made. For example, the
+<tt class="docutils literal"><span class="pre">database_stein_watkins</span></tt> package with version <tt class="docutils literal"><span class="pre">20110713</span></tt> contains
+the database as of 2011-07-13. Note that the date should refer to the
+<em>contents</em> of the tarball, not to the day it was packaged for Sage.
+This particular Sage package for <tt class="docutils literal"><span class="pre">database_stein_watkins</span></tt> was created
+in 2014, but the data it contains was last updated in 2011.</p>
+<p>If you apply any patches, or if you made changes to the upstream tarball
+(see <a class="reference internal" href="#section-directory-structure"><em>Directory Structure</em></a> for allowable changes),
+then you should append a <tt class="docutils literal"><span class="pre">.p0</span></tt> to the version to indicate that it&#8217;s
+not a vanilla package.</p>
+<p>Additionally, whenever you make changes to a package <em>without</em> changing
+the upstream tarball (for example, you add an additional patch or you
+fix something in the <tt class="docutils literal"><span class="pre">spkg-install</span></tt> file), you should also add or
+increase the patch level. So the different versions would
+be <tt class="docutils literal"><span class="pre">1.3</span></tt>, <tt class="docutils literal"><span class="pre">1.3.p0</span></tt>, <tt class="docutils literal"><span class="pre">1.3.p1</span></tt>, ...
+The change in version number or patch level will trigger
+re-installation of the package, such that the changes are taken into
+account.</p>
+</div>
 <div class="section" id="checksums">
-<h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
+<span id="section-spkg-checksums"></span><h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
 <p>The <tt class="docutils literal"><span class="pre">checksums.ini</span></tt> file contains checksums of the upstream tarball.
 It is autogenerated, so you just have to place the upstream tarball in
 the <tt class="docutils literal"><span class="pre">SAGE_ROOT/upstream/</span></tt> directory and run:</p>
-<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -sh sage-fix-pkg-checksums
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage --fix-pkg-checksums
 </pre></div>
 </div>
 </div>
 </div>
-<div class="section" id="manual-package-build-and-installation">
-<span id="section-manual-build"></span><h2>Manual package build and installation<a class="headerlink" href="#manual-package-build-and-installation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="building-the-package">
+<span id="section-manual-build"></span><h2>Building the package<a class="headerlink" href="#building-the-package" title="Permalink to this headline">¶</a></h2>
 <p>At this stage you have a new tarball that is not yet distributed with
-Sage (<tt class="docutils literal"><span class="pre">foo-1.3.tar.gz</span></tt> in the example of section
+Sage (<tt class="docutils literal"><span class="pre">FoO-1.3.tar.gz</span></tt> in the example of section
 <a class="reference internal" href="#section-directory-structure"><em>Directory Structure</em></a>). Now you need to manually place it
-in the <tt class="docutils literal"><span class="pre">SAGE_ROOT/upstream/</span></tt> directory. Then you can run the
-installation via:</p>
+in the <tt class="docutils literal"><span class="pre">SAGE_ROOT/upstream/</span></tt> directory and run
+<tt class="docutils literal"><span class="pre">sage</span> <span class="pre">--fix-pkg-checksums</span></tt> if you have not done that yet.</p>
+<p>In order to update <tt class="docutils literal"><span class="pre">build/make/Makefile</span></tt>, which contains the rules
+to build all packages, you need to run the following command from
+<tt class="docutils literal"><span class="pre">SAGE_ROOT</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ ./configure
+</pre></div>
+</div>
+<p>You need to re-run <tt class="docutils literal"><span class="pre">./configure</span></tt> whenever you change any package
+metadata: if you add or remove a package or if you change the version,
+type or dependencies of a package.</p>
+<p>Now you can install the package using:</p>
 <div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -i package_name
 </pre></div>
 </div>
 <p>or:</p>
-<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -i -f package_name
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -f package_name
 </pre></div>
 </div>
 <p>to force a reinstallation. If your package contains a <tt class="docutils literal"><span class="pre">spkg-check</span></tt>
 script (see <a class="reference internal" href="#section-spkg-check"><em>Self-Tests</em></a>) it can be run with:</p>
 <div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -i -c package_name
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre>[user@localhost]$ sage -f -c package_name
 </pre></div>
 </div>
 <p>If all went fine, open a ticket, put a link to the original tarball in
@@ -344,10 +450,8 @@ requirements are described in the following sections.</p>
 <p>After the ticket was reviewed and included, optional packages stay in
 that status for at least a year, after which they can be proposed to be
 included as standard packages in Sage. For this a trac ticket is opened
-with the <tt class="docutils literal"><span class="pre">Component:</span></tt> field set to <tt class="docutils literal"><span class="pre">packages:standard</span></tt>. Note that
-the script in <tt class="docutils literal"><span class="pre">SAGE_ROOT/build/make/deps</span></tt> is called when building Sage so
-please include the build command for your standard package there. Then
-make a proposal in the Google Group <tt class="docutils literal"><span class="pre">sage-devel</span></tt>.</p>
+with the <tt class="docutils literal"><span class="pre">Component:</span></tt> field set to <tt class="docutils literal"><span class="pre">packages:standard</span></tt>. Then make
+a proposal in the Google Group <tt class="docutils literal"><span class="pre">sage-devel</span></tt>.</p>
 <p>Upgrading packages to new upstream versions or with additional patches
 includes opening a ticket in the respective category too, as described
 above.</p>
@@ -413,17 +517,20 @@ this is not possible.</p>
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference internal" href="#">Packaging Third-Party Code</a><ul>
+<li><a class="reference internal" href="#package-types">Package types</a></li>
 <li><a class="reference internal" href="#directory-structure">Directory Structure</a><ul>
+<li><a class="reference internal" href="#package-type">Package type</a></li>
 <li><a class="reference internal" href="#install-script">Install Script</a></li>
 <li><a class="reference internal" href="#self-tests">Self-Tests</a></li>
-<li><a class="reference internal" href="#package-versioning">Package Versioning</a></li>
 <li><a class="reference internal" href="#the-spkg-txt-file">The SPKG.txt File</a></li>
+<li><a class="reference internal" href="#package-dependencies">Package dependencies</a></li>
 <li><a class="reference internal" href="#patching-sources">Patching Sources</a></li>
 <li><a class="reference internal" href="#modified-tarballs">Modified Tarballs</a></li>
+<li><a class="reference internal" href="#package-versioning">Package Versioning</a></li>
 <li><a class="reference internal" href="#checksums">Checksums</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#manual-package-build-and-installation">Manual package build and installation</a></li>
+<li><a class="reference internal" href="#building-the-package">Building the package</a></li>
 <li><a class="reference internal" href="#inclusion-procedure-for-new-and-updated-packages">Inclusion Procedure for New and Updated Packages</a><ul>
 <li><a class="reference internal" href="#license-information">License Information</a></li>
 <li><a class="reference internal" href="#prerequisites-for-new-standard-packages">Prerequisites for New Standard Packages</a></li>
@@ -486,7 +593,7 @@ this is not possible.</p>
     
   
   
-        <li><a href="index.html">Developer&#39;s Guide v6.8</a> &raquo;</li>
+        <li><a href="index.html">Developer&#39;s Guide v6.9</a> &raquo;</li>
  
       </ul>
     </div>
