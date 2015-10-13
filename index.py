@@ -147,12 +147,12 @@ for subdir in ["html", "pdf"]:
 
 import sys
 if len(sys.argv) > 1 and sys.argv[1] == "fix":
-            # fixes the static links in sphinx
-            # !!! ONLY RUN THIS ONCE !!!
+    print ' fix the static links in sphinx _static files '.center(100, "#")
+    print ' ONLY RUN THIS ONCE '.center(100, "!")
 
     import os
     import subprocess as sp
-    os.chdir(os.path.expanduser("~/documentation/html/"))
+    os.chdir(os.path.join(os.path.dirname(__file__), "html"))
     ROOT = os.path.abspath(os.curdir)
 
     for link in sp.Popen("find -type l -name _static".split(), stdout=sp.PIPE).stdout:
