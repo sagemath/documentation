@@ -33,6 +33,7 @@ div.lang {font-weight: bold; }
 div.row.en {border: 1px solid #ccf;}
 div.row.last {height: 3em;}
 div.entry {margin: 1em 1em 1em 0; display: inline; white-space: nowrap;}
+div.entry.lang-en {font-weight: bold;}
 </style>
 <link rel="shortcut icon" href="/html/en/website/_static/favicon.ico"/>
 </head>
@@ -93,9 +94,10 @@ for what in sorted(pages.keys()):
                     .replace("_", " ") \
                     .title()# + " (pdf)"
                 subcat = (entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
-            output.append("<div class='entry'><a href='{path}'>{subcat}{fn}</a></div>".format(
+            output.append("<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>".format(
                           path=entry,
-                          lang=LANG.get(lang, lang),
+                          lang=lang,
+                          # lang=LANG.get(lang, lang),
                           subcat=subcat,
                           fn=fn))
         output.append("</div></div>")
