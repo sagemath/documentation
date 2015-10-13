@@ -18,6 +18,7 @@ LANG = {
 intro = """\
 <!DOCTYPE html>
 <head>
+<title>SageMath Documentation %(path)s</title>
 <link rel="stylesheet" href="/html/en/website/_static/sage.css" type="text/css" />
 <style>
 html {margin: 20px; font-family: sans-serif; }
@@ -46,7 +47,7 @@ title="SageMath Mathematical Software">
 </a>
 """
 
-filter_ref = ["graph-", "generic-graph-"]
+filter_ref = ["graph-", "generic-graph-", "fully_packed_loop"]
 filter_html = [("en","website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
@@ -65,7 +66,7 @@ for path in glob("*/*"):
                     pages[what][lang].append(fn)
 
 
-output = [intro]
+output = [intro % {"path" : ""}]
 output.append("<h1>Documentation</h1>")
 
 output.append('<div class="table">')
@@ -123,7 +124,7 @@ for subdir in ["html", "pdf"]:
         if "index.html" not in filenames or IDX_TOKEN in open(idxfn, "r").read():
             # now we have to write our index.html file
             print "%r >>> %s" % (root_dirs, idxfn)
-            index = [intro]
+            index = [intro % {"path" : root}]
             index.append(IDX_TOKEN)
             if len(root_dirs) > 1:
                 index.append('<p><a href="%s">Home</a></p>' % '/'.join([".."] * (len(root_dirs) - 1)))
