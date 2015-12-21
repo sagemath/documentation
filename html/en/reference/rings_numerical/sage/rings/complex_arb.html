@@ -1,0 +1,973 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Arbitrary precision complex balls using Arb &mdash; Sage Reference Manual v6.10: Fixed and Arbitrary Precision Numerical Fields</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '6.10',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.10: Fixed and Arbitrary Precision Numerical Fields" href="../../index.html" />
+    <link rel="next" title="Lazy real and complex numbers" href="real_lazy.html" />
+    <link rel="prev" title="Arbitrary precision real balls using Arb" href="real_arb.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="real_lazy.html" title="Lazy real and complex numbers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="real_arb.html" title="Arbitrary precision real balls using Arb"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Fixed and Arbitrary Precision Numerical Fields</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="arbitrary-precision-complex-balls-using-arb">
+<span id="sage-rings-complex-arb"></span><h1>Arbitrary precision complex balls using Arb<a class="headerlink" href="#arbitrary-precision-complex-balls-using-arb" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.complex_arb"></span><p>This is a binding to the <a class="reference external" href="http://fredrikj.net/arb/">Arb library</a>; it
+may be useful to refer to its documentation for more details.</p>
+<p>Parts of the documentation for this module are copied or adapted from
+Arb&#8217;s own documentation, licenced under the GNU General Public License
+version 2, or later.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><a class="reference internal" href="real_arb.html#module-sage.rings.real_arb" title="sage.rings.real_arb"><tt class="xref py py-mod docutils literal"><span class="pre">Real</span> <span class="pre">balls</span> <span class="pre">using</span> <span class="pre">Arb</span></tt></a></li>
+<li><a class="reference internal" href="complex_interval_field.html#module-sage.rings.complex_interval_field" title="sage.rings.complex_interval_field"><tt class="xref py py-mod docutils literal"><span class="pre">Complex</span> <span class="pre">interval</span> <span class="pre">field</span> <span class="pre">(using</span> <span class="pre">MPFI)</span></tt></a></li>
+<li><a class="reference internal" href="complex_interval.html#module-sage.rings.complex_interval" title="sage.rings.complex_interval"><tt class="xref py py-mod docutils literal"><span class="pre">Complex</span> <span class="pre">intervals</span> <span class="pre">(using</span> <span class="pre">MPFI)</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="data-structure">
+<h2>Data Structure<a class="headerlink" href="#data-structure" title="Permalink to this headline">¶</a></h2>
+<p>A <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a> represents a complex number with error bounds. It wraps
+an Arb object of type <tt class="docutils literal"><span class="pre">acb_t</span></tt>, which  consists of a pair of real number balls
+representing the real and imaginary part with separate error bounds. (See the
+documentation of <a class="reference internal" href="real_arb.html#module-sage.rings.real_arb" title="sage.rings.real_arb"><tt class="xref py py-mod docutils literal"><span class="pre">sage.rings.real_arb</span></tt></a> for more information.)</p>
+<p>A <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a> thus represents a rectangle <span class="math">\([m_1-r_1, m_1+r_1] +
+[m_2-r_2, m_2+r_2] i\)</span> in the complex plane. This is used in Arb instead of a
+disk or square representation (consisting of a complex floating-point midpoint
+with a single radius), since it allows implementing many operations more
+conveniently by splitting into ball operations on the real and imaginary parts.
+It also allows tracking when complex numbers have an exact (for example exactly
+zero) real part and an inexact imaginary part, or vice versa.</p>
+</div>
+<div class="section" id="comparison">
+<h2>Comparison<a class="headerlink" href="#comparison" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">In accordance with the semantics of Arb, identical <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a>
+objects are understood to give permission for algebraic simplification.
+This assumption is made to improve performance. For example, setting <tt class="docutils literal"><span class="pre">z</span> <span class="pre">=</span>
+<span class="pre">x*x</span></tt> sets <span class="math">\(z\)</span> to a ball enclosing the set <span class="math">\(\{t^2 : t \in x\}\)</span> and not the
+(generally larger) set <span class="math">\(\{tu : t \in x, u \in x\}\)</span>.</p>
+</div>
+<p>Two elements are equal if and only if they are the same object
+or if both are exact and equal:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>A ball is non-zero in the sense of usual comparison if and only if it does not
+contain zero:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">!=</span> <span class="mi">0</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>However, <tt class="docutils literal"><span class="pre">bool(b)</span></tt> returns <tt class="docutils literal"><span class="pre">False</span></tt> for a ball <tt class="docutils literal"><span class="pre">b</span></tt> only if <tt class="docutils literal"><span class="pre">b</span></tt> is exactly
+zero:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">CBF</span><span class="o">.</span><span class="n">zero</span><span class="p">())</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="coercion">
+<h2>Coercion<a class="headerlink" href="#coercion" title="Permalink to this headline">¶</a></h2>
+<p>Automatic coercions work as expected:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">bpol</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="o">*</span><span class="n">CBF</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="n">AA</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">polygen</span><span class="p">(</span><span class="n">RealBallField</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="s">&#39;x&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">QQbar</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">bpol</span>
+<span class="go">x + [1.41421 +/- 5.09e-6] + [1.33333 +/- 3.97e-6]*I</span>
+<span class="gp">sage: </span><span class="n">bpol</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in x over Complex ball field with 20 bits precision</span>
+<span class="gp">sage: </span><span class="n">bpol</span><span class="o">/</span><span class="mi">3</span>
+<span class="go">([0.333333 +/- 4.93e-7])*x + [0.47140 +/- 5.39e-6] + [0.44444 +/- 4.98e-6]*I</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">polygen</span><span class="p">(</span><span class="n">CBF</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">3</span>
+<span class="go">x^3</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="classes-and-methods">
+<h2>Classes and Methods<a class="headerlink" href="#classes-and-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sage.rings.complex_arb.ComplexBall">
+<em class="property">class </em><tt class="descclassname">sage.rings.complex_arb.</tt><tt class="descname">ComplexBall</tt><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.RingElement" title="(in Sage Reference Manual: Basic Structures v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.RingElement</span></tt></a></p>
+<p>Hold one <tt class="docutils literal"><span class="pre">acb_t</span></tt> of the <a class="reference external" href="http://fredrikj.net/arb/">Arb library</a></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">1.000000000000000 + 1.000000000000000*I</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.above_abs">
+<tt class="descname">above_abs</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.above_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an upper bound for the absolute value of this complex ball.</p>
+<p>OUTPUT:</p>
+<p>A ball with zero radius</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">(</span><span class="mi">8</span><span class="p">)(</span><span class="mi">1</span><span class="o">+</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">above_abs</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span>
+<span class="go">[1.4 +/- 0.0219]</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">QQ</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="mi">128</span>
+<span class="go">182</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.below_abs" title="sage.rings.complex_arb.ComplexBall.below_abs"><tt class="xref py py-meth docutils literal"><span class="pre">below_abs()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.accuracy">
+<tt class="descname">accuracy</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.accuracy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the effective relative accuracy of this ball measured in bits.</p>
+<p>This is computed as if calling
+<a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBall.accuracy" title="sage.rings.real_arb.RealBall.accuracy"><tt class="xref py py-meth docutils literal"><span class="pre">accuracy()</span></tt></a>
+on the real ball whose midpoint is the larger out of the real and
+imaginary midpoints of this complex ball, and whose radius is the
+larger out of the real and imaginary radii of this complex ball.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">accuracy</span><span class="p">()</span>
+<span class="go">51</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">I</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">accuracy</span><span class="p">()</span> <span class="o">==</span> <span class="n">CBF</span><span class="o">.</span><span class="n">base</span><span class="p">()</span><span class="o">.</span><span class="n">maximal_accuracy</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">,</span> <span class="s">&#39;inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">accuracy</span><span class="p">()</span> <span class="o">==</span> <span class="o">-</span><span class="n">CBF</span><span class="o">.</span><span class="n">base</span><span class="p">()</span><span class="o">.</span><span class="n">maximal_accuracy</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBallField.maximal_accuracy" title="sage.rings.real_arb.RealBallField.maximal_accuracy"><tt class="xref py py-meth docutils literal"><span class="pre">maximal_accuracy()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.add_error">
+<tt class="descname">add_error</tt><big>(</big><em>ampl</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.add_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increase the radii of the real and imaginary parts by (an upper bound
+on) <tt class="docutils literal"><span class="pre">ampl</span></tt>.</p>
+<p>If <tt class="docutils literal"><span class="pre">ampl</span></tt> is negative, the radii remain unchanged.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ampl</span></tt> - A <strong>real</strong> ball (or an object that can be coerced to a
+real ball).</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A new complex ball.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span><span class="mi">10</span><span class="o">^-</span><span class="mi">16</span><span class="p">)</span>
+<span class="go">[1.000000000000000 +/- 1.01e-16] + [1.000000000000000 +/- 1.01e-16]*I</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.arg">
+<tt class="descname">arg</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.arg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the argument of this complex ball.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">arg</span><span class="p">()</span>
+<span class="go">[0.785398163397448 +/- 3.91e-16]</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">arg</span><span class="p">()</span>
+<span class="go">[3.141592653589793 +/- 5.61e-16]</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">arg</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Real ball field with 53 bits precision</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.below_abs">
+<tt class="descname">below_abs</tt><big>(</big><em>test_zero=False</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.below_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a lower bound for the absolute value of this complex ball.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">test_zero</span></tt> (boolean, default <tt class="docutils literal"><span class="pre">False</span></tt>) &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt>,
+make sure that the returned lower bound is positive, raising
+an error if the ball contains zero.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A ball with zero radius</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">(</span><span class="mi">8</span><span class="p">)(</span><span class="mi">1</span><span class="o">+</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">below_abs</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span>
+<span class="go">[1.4 +/- 0.0141]</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">QQ</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="mi">128</span>
+<span class="go">181</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">below_abs</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">below_abs</span><span class="p">(</span><span class="n">test_zero</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">ball contains zero</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.above_abs" title="sage.rings.complex_arb.ComplexBall.above_abs"><tt class="xref py py-meth docutils literal"><span class="pre">above_abs()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.conjugate">
+<tt class="descname">conjugate</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.conjugate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the complex conjugate of this ball.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">+</span> <span class="n">I</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span>
+<span class="go">-2.000000000000000 + [-0.3333333333333333 +/- 7.04e-17]*I</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.contains_exact">
+<tt class="descname">contains_exact</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.contains_exact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> <em>iff</em> <tt class="docutils literal"><span class="pre">other</span></tt> is contained in <tt class="docutils literal"><span class="pre">self</span></tt>.</p>
+<p>Use <tt class="docutils literal"><span class="pre">other</span> <span class="pre">in</span> <span class="pre">self</span></tt> for a test that works for a wider range of inputs
+but may return false negatives.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a>,
+<a class="reference external" href="../../../rings_standard/sage/rings/integer.html#sage.rings.integer.Integer" title="(in Sage Reference Manual: Standard Commutative Rings v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">Integer</span></tt></a>,
+or <a class="reference external" href="../../../rings_standard/sage/rings/rational.html#sage.rings.rational.Rational" title="(in Sage Reference Manual: Standard Commutative Rings v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">Rational</span></tt></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">RealBallField</span><span class="p">(</span><span class="mi">100</span><span class="p">)(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">contains_exact</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contains_exact</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contains_exact</span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">contains_exact</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported type: &lt;type &#39;sage.symbolic.expression.Expression&#39;&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.contains_zero">
+<tt class="descname">contains_zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.contains_zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff this ball contains zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">contains_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">contains_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">contains_zero</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.identical">
+<tt class="descname">identical</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.identical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">other</span></tt> represent the same ball.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; a <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a>.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>Return True iff <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">other</span></tt> are equal as sets, i.e. if their
+real and imaginary parts each have the same midpoint and radius.</p>
+<p>Note that this is not the same thing as testing whether both <tt class="docutils literal"><span class="pre">self</span></tt>
+and <tt class="docutils literal"><span class="pre">other</span></tt> certainly represent the complex real number, unless
+either <tt class="docutils literal"><span class="pre">self</span></tt> or <tt class="docutils literal"><span class="pre">other</span></tt> is exact (and neither contains NaN). To
+test whether both operands might represent the same mathematical
+quantity, use <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.overlaps" title="sage.rings.complex_arb.ComplexBall.overlaps"><tt class="xref py py-meth docutils literal"><span class="pre">overlaps()</span></tt></a> or <tt class="docutils literal"><span class="pre">in</span></tt>, depending on the
+circumstance.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">identical</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">identical</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.imag">
+<tt class="descname">imag</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.imag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the imaginary part of this ball.</p>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBall" title="sage.rings.real_arb.RealBall"><tt class="xref py py-class docutils literal"><span class="pre">RealBall</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">imag</span><span class="p">()</span>
+<span class="go">[0.2000000000000000 +/- 4.45e-17]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.is_exact">
+<tt class="descname">is_exact</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.is_exact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff the radius of this ball is zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.is_nonzero">
+<tt class="descname">is_nonzero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.is_nonzero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff zero is not contained in the interval represented
+by this ball.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>This method is not the negation of <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.is_zero" title="sage.rings.complex_arb.ComplexBall.is_zero"><tt class="xref py py-meth docutils literal"><span class="pre">is_zero()</span></tt></a>: it only
+returns <tt class="docutils literal"><span class="pre">True</span></tt> if zero is known not to be contained in the ball.</p>
+<p class="last">Use <tt class="docutils literal"><span class="pre">bool(b)</span></tt> (or, equivalently, <tt class="docutils literal"><span class="pre">not</span> <span class="pre">b.is_zero()</span></tt>) to check if
+a ball&nbsp;<tt class="docutils literal"><span class="pre">b</span></tt> <strong>may</strong> represent a nonzero number (for instance, to
+determine the “degree” of a polynomial with ball coefficients).</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_nonzero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">is_nonzero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span><span class="o">.</span><span class="n">is_nonzero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span><span class="o">.</span><span class="n">is_nonzero</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.is_zero" title="sage.rings.complex_arb.ComplexBall.is_zero"><tt class="xref py py-meth docutils literal"><span class="pre">is_zero()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.is_real">
+<tt class="descname">is_real</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.is_real" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff the imaginary part of this ball is exactly zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">is_real</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="n">i</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">is_real</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">is_real</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.is_zero">
+<tt class="descname">is_zero</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.is_zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff the midpoint and radius of this ball are both zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">RIF</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span><span class="o">.</span><span class="n">is_zero</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.is_nonzero" title="sage.rings.complex_arb.ComplexBall.is_nonzero"><tt class="xref py py-meth docutils literal"><span class="pre">is_nonzero()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.mid">
+<tt class="descname">mid</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.mid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the midpoint of this ball.</p>
+<p>OUTPUT:</p>
+<p><a class="reference internal" href="complex_number.html#sage.rings.complex_number.ComplexNumber" title="sage.rings.complex_number.ComplexNumber"><tt class="xref py py-class docutils literal"><span class="pre">ComplexNumber</span></tt></a>, floating-point
+complex number formed by the centers of the real and imaginary parts of
+this ball.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">0.333333333333333 + 1.00000000000000*I</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Complex Field with 53 bits of precision</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">,</span> <span class="s">&#39;nan&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">+infinity - NaN*I</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">,</span> <span class="s">&#39;inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">NaN + +infinity*I</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">NaN</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">+infinity</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">+infinity*I</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.squash" title="sage.rings.complex_arb.ComplexBall.squash"><tt class="xref py py-meth docutils literal"><span class="pre">squash()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.overlaps">
+<tt class="descname">overlaps</tt><big>(</big><em>other</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True iff <tt class="docutils literal"><span class="pre">self</span></tt> and <tt class="docutils literal"><span class="pre">other</span></tt> have some point in common.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">other</span></tt> &#8211; a <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">overlaps</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">overlaps</span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;nan&#39;</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">overlaps</span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;nan&#39;</span><span class="p">))</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.rad">
+<tt class="descname">rad</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.rad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an upper bound for the error radius of this ball.</p>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="real_mpfr.html#sage.rings.real_mpfr.RealNumber" title="sage.rings.real_mpfr.RealNumber"><tt class="xref py py-class docutils literal"><span class="pre">RealNumber</span></tt></a> of the same precision as
+the radii of real balls.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Unlike a <a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBall" title="sage.rings.real_arb.RealBall"><tt class="xref py py-class docutils literal"><span class="pre">RealBall</span></tt></a>,
+a <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a> is <em>not</em> defined
+by its midpoint and radius. (Instances of <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a> are
+actually rectangles, not balls.)</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">rad</span><span class="p">()</span>
+<span class="go">0.00000000</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">i</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">rad</span><span class="p">()</span>
+<span class="go">1.1102230e-16</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="n">i</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">rad</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Real Field with 30 bits of precision</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="p">(</span><span class="n">CBF</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">64</span><span class="p">))</span><span class="o">.</span><span class="n">rad</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">RuntimeError</span>: <span class="n">unable to convert the radius to MPFR (exponent out of range?)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.real">
+<tt class="descname">real</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.real" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the real part of this ball.</p>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBall" title="sage.rings.real_arb.RealBall"><tt class="xref py py-class docutils literal"><span class="pre">RealBall</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">real</span><span class="p">()</span>
+<span class="go">[0.3333333333333333 +/- 7.04e-17]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.round">
+<tt class="descname">round</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.round" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of this ball rounded to the precision of the parent.</p>
+<p>EXAMPLES:</p>
+<p>It is possible to create balls whose midpoint is more precise that
+their parent&#8217;s nominal precision (see <a class="reference internal" href="real_arb.html#module-sage.rings.real_arb" title="sage.rings.real_arb"><tt class="xref py py-mod docutils literal"><span class="pre">real_arb</span></tt></a> for
+more information):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">I</span><span class="o">*</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">0.50000000000000000000000000000 + 0.86602540378443864676372317075*I</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">round()</span></tt> method rounds such a ball to its parent&#8217;s precision:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">round</span><span class="p">()</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">0.500000000000000 + 0.866025403784439*I</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.trim" title="sage.rings.complex_arb.ComplexBall.trim"><tt class="xref py py-meth docutils literal"><span class="pre">trim()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.squash">
+<tt class="descname">squash</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.squash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an exact ball with the same midpoint as this ball.</p>
+<p>OUTPUT:</p>
+<p>A <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mid</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">squash</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">mid</span>
+<span class="go">[0.3333333333333333 +/- 1.49e-17] + [0.09999999999999999 +/- 1.68e-18]*I</span>
+<span class="gp">sage: </span><span class="n">mid</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Complex ball field with 53 bits precision</span>
+<span class="gp">sage: </span><span class="n">mid</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.mid" title="sage.rings.complex_arb.ComplexBall.mid"><tt class="xref py py-meth docutils literal"><span class="pre">mid()</span></tt></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBall.trim">
+<tt class="descname">trim</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBall.trim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a trimmed copy of this ball.</p>
+<p>Return a copy of this ball with both the real and imaginary parts
+trimmed (see <a class="reference internal" href="real_arb.html#sage.rings.real_arb.RealBall.trim" title="sage.rings.real_arb.RealBall.trim"><tt class="xref py py-meth docutils literal"><span class="pre">trim()</span></tt></a>).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">RBF</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">rad</span><span class="o">=.</span><span class="mo">01</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">0.333333333333333 + 0.333333333333333*I</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">trim</span><span class="p">()</span><span class="o">.</span><span class="n">mid</span><span class="p">()</span>
+<span class="go">0.333333333333333 + 0.333333015441895*I</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.rings.complex_arb.ComplexBall.round" title="sage.rings.complex_arb.ComplexBall.round"><tt class="xref py py-meth docutils literal"><span class="pre">round()</span></tt></a></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.rings.complex_arb.ComplexBallField">
+<em class="property">class </em><tt class="descclassname">sage.rings.complex_arb.</tt><tt class="descname">ComplexBallField</tt><big>(</big><em>precision</em>, <em>category</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.unique_representation.UniqueRepresentation</span></tt></a>, <a class="reference external" href="../../../rings/sage/rings/ring.html#sage.rings.ring.Field" title="(in Sage Reference Manual: General Rings, Ideals, and Morphisms v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.ring.Field</span></tt></a></p>
+<p>An approximation of the field of complex numbers using pairs of mid-rad
+intervals.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">precision</span></tt> &#8211; an integer <span class="math">\(\ge 2\)</span>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span> <span class="o">=</span> <span class="n">ComplexBallField</span><span class="p">()</span> <span class="c"># indirect doctest</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1.000000000000000</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">Precision must be at least 2.</span>
+<span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">Precision must be at least 2.</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.rings.complex_arb.ComplexBallField.Element">
+<tt class="descname">Element</tt><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#sage.rings.complex_arb.ComplexBall" title="sage.rings.complex_arb.ComplexBall"><tt class="xref py py-class docutils literal"><span class="pre">ComplexBall</span></tt></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.characteristic">
+<tt class="descname">characteristic</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.characteristic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complex ball fields have characteristic zero.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">()</span><span class="o">.</span><span class="n">characteristic</span><span class="p">()</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.complex_field">
+<tt class="descname">complex_field</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.complex_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the complex ball field with the same precision, i.e. <tt class="docutils literal"><span class="pre">self</span></tt></p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">complex_field</span><span class="p">()</span> <span class="ow">is</span> <span class="n">CBF</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.construction">
+<tt class="descname">construction</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.construction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the construction of a complex ball field as the algebraic
+closure of the real ball field with the same precision.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">functor</span><span class="p">,</span> <span class="n">base</span> <span class="o">=</span> <span class="n">CBF</span><span class="o">.</span><span class="n">construction</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">functor</span><span class="p">,</span> <span class="n">base</span>
+<span class="go">(AlgebraicClosureFunctor, Real ball field with 53 bits precision)</span>
+<span class="gp">sage: </span><span class="n">functor</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="ow">is</span> <span class="n">CBF</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.gen">
+<tt class="descname">gen</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>For i = 0, return the imaginary unit in this complex ball field.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="mi">0</span>
+<span class="go">1.000000000000000*I</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">only one generator</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.gens">
+<tt class="descname">gens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the tuple of generators of this complex ball field, i.e.
+<tt class="docutils literal"><span class="pre">(i,)</span></tt>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(1.000000000000000*I,)</span>
+<span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">gens_dict</span><span class="p">()</span>
+<span class="go">{&#39;1.000000000000000*I&#39;: 1.000000000000000*I}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.is_exact">
+<tt class="descname">is_exact</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.is_exact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complex ball fields are not exact.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">()</span><span class="o">.</span><span class="n">is_exact</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.is_finite">
+<tt class="descname">is_finite</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.is_finite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complex ball fields are infinite.</p>
+<p>They already specify it via their category, but we currently need to
+re-implement this method due to the legacy implementation in
+<a class="reference external" href="../../../rings/sage/rings/ring.html#sage.rings.ring.Ring" title="(in Sage Reference Manual: General Rings, Ideals, and Morphisms v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.rings.ring.Ring</span></tt></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">()</span><span class="o">.</span><span class="n">is_finite</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.ngens">
+<tt class="descname">ngens</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.ngens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return 1 as the only generator is the imaginary unit.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">ngens</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.precision">
+<tt class="descname">precision</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.precision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bit precision used for operations on elements of this field.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ComplexBallField</span><span class="p">()</span><span class="o">.</span><span class="n">precision</span><span class="p">()</span>
+<span class="go">53</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.complex_arb.ComplexBallField.some_elements">
+<tt class="descname">some_elements</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.rings.complex_arb.ComplexBallField.some_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complex ball fields contain elements with exact, inexact, infinite, or
+undefined real and imaginary parts.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">CBF</span><span class="o">.</span><span class="n">some_elements</span><span class="p">()</span>
+<span class="go">[1.000000000000000,</span>
+<span class="go"> -0.5000000000000000*I,</span>
+<span class="go"> 1.000000000000000 + [0.3333333333333333 +/- 1.49e-17]*I,</span>
+<span class="go"> [-0.3333333333333333 +/- 1.49e-17] + 0.2500000000000000*I,</span>
+<span class="go"> [-2.175556475109056e+181961467118333366510562 +/- 1.29e+181961467118333366510545],</span>
+<span class="go"> [+/- inf],</span>
+<span class="go"> [0.3333333333333333 +/- 1.49e-17] + [+/- inf]*I,</span>
+<span class="go"> [+/- inf] + [+/- inf]*I,</span>
+<span class="go"> nan,</span>
+<span class="go"> nan + nan*I,</span>
+<span class="go"> [+/- inf] + nan*I]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Arbitrary precision complex balls using Arb</a><ul>
+<li><a class="reference internal" href="#data-structure">Data Structure</a></li>
+<li><a class="reference internal" href="#comparison">Comparison</a></li>
+<li><a class="reference internal" href="#coercion">Coercion</a></li>
+<li><a class="reference internal" href="#classes-and-methods">Classes and Methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="real_arb.html"
+                                  title="previous chapter">Arbitrary precision real balls using Arb</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="real_lazy.html"
+                                  title="next chapter">Lazy real and complex numbers</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/rings/complex_arb.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="real_lazy.html" title="Lazy real and complex numbers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="real_arb.html" title="Arbitrary precision real balls using Arb"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Fixed and Arbitrary Precision Numerical Fields</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

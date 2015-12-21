@@ -1,0 +1,503 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ペアレント，型変換および型強制 &mdash; Sage チュートリアル v6.10</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '6.10',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Sage チュートリアル v6.10" href="index.html" />
+    <link rel="up" title="Sage観光ツアー" href="tour.html" />
+    <link rel="next" title="有限群，アーベル群" href="tour_groups.html" />
+    <link rel="prev" title="多項式" href="tour_polynomial.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="総合索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Pythonモジュール索引"
+             >モジュール</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="有限群，アーベル群"
+             accesskey="N">次へ</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="多項式"
+             accesskey="P">前へ</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Sage チュートリアル v6.10</a> &raquo;</li>
+
+          <li><a href="tour.html" accesskey="U">Sage観光ツアー</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="section-coercion">
+<span id="id1"></span><h1>ペアレント，型変換および型強制<a class="headerlink" href="#section-coercion" title="このヘッドラインへのパーマリンク">¶</a></h1>
+<p>この節の内容はこれまでと比べるとテクニカルな感じがするかもしれない．
+しかし，ペアレントと型強制の意味について理解しておかないと，Sageにおける環その他の代数構造を有効かつ効率的に利用することができないのである．</p>
+<p>以下で試みるのは概念の解説であって，それをどうやって実現するかまでは示すことはできない．
+実装法に関するチュートリアルは <a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">Sage thematic tutorial</a> にある．</p>
+<div class="section" id="id2">
+<h2>元<a class="headerlink" href="#id2" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>ある環をPythonを使って実装する場合，その第一歩は目的の環の元 <tt class="docutils literal"><span class="pre">X</span></tt> を表すクラスを作り， <tt class="docutils literal"><span class="pre">__add__</span></tt> ， <tt class="docutils literal"><span class="pre">__sub__</span></tt> ， <tt class="docutils literal"><span class="pre">__mul__</span></tt> のようなダブルアンダースコア メソッド(フックメソッド)によって環の公理を保証する演算を実現することだ．</p>
+<p>Pythonは(ダイナミックではあっても)強い型付けがなされる言語なので，最初のうちは環それぞれを一つのPythonクラスで実装すべきだろうと思うかもしれない．
+なんと言っても，Pythonは整数については <tt class="docutils literal"><span class="pre">&lt;int&gt;</span></tt> ，実数については <tt class="docutils literal"><span class="pre">&lt;float&gt;</span></tt> といった具合に型を一つづつ備えているわけだし．
+しかし，このやり方はすぐに行き詰まらないわけにはいかない．
+環の種類が無限だからと言って，対応するクラスを無限に実装することはできないからだ．</p>
+<p>代りに，群，環，斜体(加除環)，可換環，体，代数系などという順で，普遍的な代数構造の実装を目的とするクラスの階層を作りあげようとする人もいるかもしれない．</p>
+<p>しかし，これは明確に異なる環に属する元が同じ型を持ちうることを意味する．</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">==</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>一方，数学的には同等の構造物に対して，(例えば密行列と疎行列に対するように)別々のPythonクラスが異なった形で実装されることもありうる．</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s">&#39;NTL&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_flint.Polynomial_integer_dense_flint&#39;&gt;</span>
+<span class="go">&lt;class &#39;sage.rings.polynomial.polynomial_element_generic.Polynomial_generic_sparse&#39;&gt;</span>
+<span class="go">&lt;type &#39;sage.rings.polynomial.polynomial_integer_dense_ntl.Polynomial_integer_dense_ntl&#39;&gt;</span>
+</pre></div>
+</div>
+<p>以上から，解決すべき問題は二系統あることが分る．
+ある二つの元が同じPythonクラス由来のインスタンスであるとすると，付随する <tt class="docutils literal"><span class="pre">__add__</span></tt> メソッドによる加算が可能になっているはずだ．
+しかし，これら二つが数学的には非常に異なる環に属しているのならば，加算は不能にしておきたい．
+一方，数学的に同一の環に属している元に対しては，異なる実装に由来していてもそれらの元の加算は可能であるべきだろう．
+異なるPythonクラスに由来する限り，これは簡単に実現できることではない．</p>
+<p>これらの問題に対する解は「型強制」(coercion)と呼ばれており，以降で解説する．</p>
+<p>しかし，まず肝心なのは，全ての元が自分の帰属先を知っていることだ．
+これを可能にするのが <tt class="docutils literal"><span class="pre">parent()</span></tt> メソッドである:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">b</span><span class="o">.</span><span class="n">parent</span><span class="p">();</span> <span class="n">c</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Univariate Polynomial Ring in a over Integer Ring</span>
+<span class="go">Sparse Univariate Polynomial Ring in b over Integer Ring</span>
+<span class="go">Univariate Polynomial Ring in c over Integer Ring (using NTL)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2>ペアレントとカテゴリー<a class="headerlink" href="#id3" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>Pythonが代数構造の元に対応するクラス階層を備えているように，Sageもそれらの元を含む代数構造に対応するクラス群を提供している．
+Sageでは元が属する構造物のことを「ペアレント構造」(parent structure)と呼び，基底となるクラスを持つ．
+そうしたクラス群は，おおむね数学的概念に沿った形で，集合，環，体などといった順の階層を形成している．</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="n">Field</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">Ring</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>代数学では，同じ種類の代数構造を共有する物を，いわゆる「圏」(category)と呼ばれるものに集約して扱う．
+Sageのクラス階層と圏の階層構造にはそれなりに類似が見られないでもない．
+しかし，Pythonクラスについては圏との類似はあまり強調すべきものでもなさそうだ．
+いずれにせよ，数学的な意味における圏はSageでも実装されている:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">Rings</span><span class="p">()</span>
+<span class="go">Category of rings</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Join of Category of euclidean domains</span>
+<span class="go">    and Category of infinite enumerated sets</span>
+<span class="go">    and Category of metric spaces</span>
+<span class="gp">sage: </span><span class="n">ZZ</span><span class="o">.</span><span class="n">category</span><span class="p">()</span><span class="o">.</span><span class="n">is_subcategory</span><span class="p">(</span><span class="n">Rings</span><span class="p">())</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Rings</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">ZZ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">QQ</span> <span class="ow">in</span> <span class="n">Fields</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Sageにおけるクラス階層は具体的実装に焦点が当てられている一方，Sageの圏フレームワークではより数学的な構造が重視されている．
+圏に対する個々の実装からは独立した，包括的なメソッドとテストを構成することが可能である．</p>
+<p>Sageにおけるペアレント構造は，Pythonオブジェクトとして唯一のものであると仮定されている．
+例えば，いったんある基底環上の多項式環が生成元と共に作成されると，その結果は実記憶上に配置される:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">RR</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>型とペアレント<a class="headerlink" href="#id4" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">RingElement</span></tt> 型は数学的概念としての「環の元」に完璧に対応しているわけではない．
+例えば，正方行列は一つの環に属していると見なしうるにもかかわらず， <tt class="docutils literal"><span class="pre">RingElement</span></tt> のインスタンスにはならない:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="n">M</span>
+<span class="go">[0 0]</span>
+<span class="go">[0 0]</span>
+<span class="gp">sage: </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">RingElement</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p><em>ペアレント</em> が唯一のものであるとしても，同じSageのペアレントに由来する対等な <em>元</em> までが同一になるとは限らない．
+この辺りはPythonの(全てではないにしても)整数の振舞いとは違っている．</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c"># Pythonのint型</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="ow">is</span> <span class="mi">1</span>           <span class="c"># Sageの整数</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>重要なのは，異なる環に由来する元は，一般にその型ではなくペアレントによって判別されることである:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Finite Field of size 2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="go">Finite Field of size 5</span>
+</pre></div>
+</div>
+<p>とういうわけで，代数学的な立場からすると <strong>元のペアレントはその型より重要である</strong> ことになる．</p>
+</div>
+<div class="section" id="id5">
+<h2>型変換と型強制<a class="headerlink" href="#id5" title="このヘッドラインへのパーマリンク">¶</a></h2>
+<p>場合によっては，あるペアレント構造に由来する元を，異なるペアレント構造の元へ変換することができる．
+そうした変換は明示的に，あるいは暗黙的に行なうことが可能で，後者を <em>型強制</em> (coercion)と呼ぶ．</p>
+<p>読者は，例えばC言語における <em>型変換</em> (type conversion)と <em>型強制</em> (type coercion)の概念をご存知かもしれない．
+Sageにも <em>型変換</em> と <em>型強制</em> の考えは取り込まれている．
+しかし，Sageでは主たる対象が型ではなくペアレントになっているので，Cの型変換とSageにおける変換を混同しないよう注意していただきたい．</p>
+<p>以下の説明はかなり簡略化されているので，詳しい解説と実装情報についてはSageレファレンスマニュアルの型強制に関する節と <a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">thematic tutorial</a> を参照されたい．</p>
+<p><em>異なる</em> 環に属する元同士の演算実行については，両極をなす二つの立場がある:</p>
+<ul class="simple">
+<li>異なる環はそれぞれが異なる世界を形作っており，何であれ異なる環由来の元同士で和や積を作ることは意味をなさない．
+<tt class="docutils literal"><span class="pre">1</span></tt> は整数であるのに <tt class="docutils literal"><span class="pre">1/2</span></tt> が有理数なのだから， <tt class="docutils literal"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">1/2</span></tt> ですら意味をもちえない．</li>
+</ul>
+<p>という立場もあるし</p>
+<ul class="simple">
+<li>環 <tt class="docutils literal"><span class="pre">R1</span></tt> の元 <tt class="docutils literal"><span class="pre">r1</span></tt> が何とか他の環 <tt class="docutils literal"><span class="pre">R2</span></tt> の元と見なしうるなら， <tt class="docutils literal"><span class="pre">r1</span></tt> と <tt class="docutils literal"><span class="pre">R2</span></tt> の任意の元に対する全ての算術演算が許される．単位元は全ての体と多くの環に存在し，全て等価と見なしうる．</li>
+</ul>
+<p>と考える立場もありうる．</p>
+<p>Sageが宗とするのは歩み寄りだ．
+<tt class="docutils literal"><span class="pre">P1</span></tt> と <tt class="docutils literal"><span class="pre">P2</span></tt> がペアレント構造で <tt class="docutils literal"><span class="pre">p1</span></tt> が <tt class="docutils literal"><span class="pre">P1</span></tt> の元であるとき， <tt class="docutils literal"><span class="pre">p1</span></tt> が <tt class="docutils literal"><span class="pre">P2</span></tt> に帰属するとする解釈をユーザが明示的に求めることがあるかもしれない．
+この解釈があらゆる状況で有意であるとは限らないし， <tt class="docutils literal"><span class="pre">P1</span></tt> の全ての元に対して適用可能とも言えない．
+その解釈が意味を持つかどうかはユーザの判断にかかっているのである．
+我々はこうした解釈の要求を， <strong>変換</strong> (conversion) と呼ぶことにする:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">a</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>しかし， <em>暗黙的</em> (自動的) 変換については，変換が <em>全面的</em> かつ <em>無矛盾</em> に行ないうる場合にのみ実行される．
+こちらで重視されているのは数学的な厳密さである．</p>
+<p>そうした暗黙的変換は <strong>型強制</strong> (coercion)と呼ばれる．
+型強制が定義できるのならば，結果は型変換と一致しなければならない．
+型強制の定義に際して満足されるべき条件は二つある:</p>
+<ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">P1</span></tt> から <tt class="docutils literal"><span class="pre">P2</span></tt> への型強制は構造保存写像(すなわち環準同形写像)になっていなければならない．
+<tt class="docutils literal"><span class="pre">P1</span></tt> の要素が <tt class="docutils literal"><span class="pre">P2</span></tt> に写像されるだけでは不十分で，その写像は <tt class="docutils literal"><span class="pre">P1</span></tt> の代数構造を反映している必要がある．</li>
+<li>型強制は無矛盾に構成されなければならない．
+<tt class="docutils literal"><span class="pre">P3</span></tt> を３つ目のペアレント構造として， <tt class="docutils literal"><span class="pre">P1</span></tt> から <tt class="docutils literal"><span class="pre">P2</span></tt> への型強制と
+<tt class="docutils literal"><span class="pre">P2</span></tt> から <tt class="docutils literal"><span class="pre">P3</span></tt> への型強制を合成すると， <tt class="docutils literal"><span class="pre">P1</span></tt> から <tt class="docutils literal"><span class="pre">P3</span></tt> への型強制に一致しなければならない．
+特に <tt class="docutils literal"><span class="pre">P1</span></tt> から <tt class="docutils literal"><span class="pre">P2</span></tt> へと <tt class="docutils literal"><span class="pre">P2</span></tt> から <tt class="docutils literal"><span class="pre">P1</span></tt> への型強制が存在する場合，この2つの変換を合成すると <tt class="docutils literal"><span class="pre">P1</span></tt> への恒等写像にならねばならない．</li>
+</ol>
+<p>したがって， <tt class="docutils literal"><span class="pre">GF(2)</span></tt> の全ての元は <tt class="docutils literal"><span class="pre">GF(5)</span></tt> 上へ変換可能であるにも関わらず，型強制は成立しない．
+<tt class="docutils literal"><span class="pre">GF(2)</span></tt> と <tt class="docutils literal"><span class="pre">GF(5)</span></tt> の間には環準同形写像が存在しないからである．</p>
+<p>二つ目の条件 &#8212; 無矛盾性 &#8212; については，いくぶん説明が難しいところがある．
+多変数多項式環を例にとって説明してみたい．
+実用上，変数名を維持しない型強制はまず使いものにならないはずだ．であれば:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R1</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">R2</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">y</span>
+</pre></div>
+</div>
+<p>変数名を維持する環準同形写像が定義できなければ，型強制も成立しない．
+しかし，対象とする環の生成元を生成元リスト上の順序に応じて写像してやれば，型変換の方はまだ定義の可能性が残る:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">R1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">z</span>
+<span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="go">x</span>
+</pre></div>
+</div>
+<p>ところが，そうした順序依存の変換は型強制としては満足すべきものにならない．
+<tt class="docutils literal"><span class="pre">ZZ['x','y']</span></tt> から <tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt> への変数名維持写像と <tt class="docutils literal"><span class="pre">ZZ['y','x']</span></tt> から <tt class="docutils literal"><span class="pre">ZZ['a','b']</span></tt> への順序依存写像を合成すると，結果は変数名も順序も保存しない写像となって無矛盾性が破れてしまうからである．</p>
+<p>型強制が成立するなら，異なる環に由来する元同士の比較や算術演算の際に利用されるはずである．
+これはたしかに便利なのだが，ペアレントの違いを越えた <tt class="docutils literal"><span class="pre">==</span></tt> 型関係の適用には無理が生じがちなことには注意を要する．
+<tt class="docutils literal"><span class="pre">==</span></tt> は <em>同一の</em> 環上の元同士の等価関係を表わすが，これは <em>異なる</em> 環の元が関わると必ずしも有効なわけではない．
+例えば， <tt class="docutils literal"><span class="pre">ZZ</span></tt> 上の <tt class="docutils literal"><span class="pre">1</span></tt> と，何か有限体上にあるとした <tt class="docutils literal"><span class="pre">1</span></tt> は等価であると見なすことができる．
+というのは，整数から任意の有限体へは型強制が成り立つからだ．
+しかし，一般には二つの異なる有限体環の間に型強制は成立しない．
+以下を見ていただきたい:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>同様にして</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R3</span><span class="p">(</span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">==</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">R1</span><span class="o">.</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">R3</span><span class="o">.</span><span class="mi">1</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>さらに無矛盾性の条件から帰結するのは，厳密な環(例えば有理数 <tt class="docutils literal"><span class="pre">QQ</span></tt>)から厳密ではない環(例えば有限精度の実数 <tt class="docutils literal"><span class="pre">RR</span></tt>)への型強制は成立するが，逆方向は成立しないことである．
+<tt class="docutils literal"><span class="pre">QQ</span></tt> から <tt class="docutils literal"><span class="pre">RR</span></tt> への型強制と <tt class="docutils literal"><span class="pre">RR</span></tt> から <tt class="docutils literal"><span class="pre">QQ</span></tt> への変換を合成すると <tt class="docutils literal"><span class="pre">QQ</span></tt> 上の恒等写像になるはずだが，これは不可能である．
+と言うのは，有理数の中には，以下で示すように <tt class="docutils literal"><span class="pre">RR</span></tt> 上で問題なく扱えるものがあるからだ:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span> <span class="o">==</span> <span class="n">RR</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">200</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span> <span class="o">==</span> <span class="mi">1</span><span class="o">/</span><span class="mi">10</span><span class="o">^</span><span class="mi">100</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>型強制が成立しない環 <tt class="docutils literal"><span class="pre">P1</span></tt> と <tt class="docutils literal"><span class="pre">P2</span></tt> の二つのペアレント由来の元を比較するとき，基準となるペアレント <tt class="docutils literal"><span class="pre">P3</span></tt> が選択できて <tt class="docutils literal"><span class="pre">P1</span></tt> と <tt class="docutils literal"><span class="pre">P2</span></tt> を <tt class="docutils literal"><span class="pre">P3</span></tt> へ型強制できる場合がある．
+そうした状況では型強制がうまく成立するはずだ．
+典型的な例は有理数と整数係数の多項式の和の計算で，結果は有理係数の多項式になる．</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">P1</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ZZ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="mi">3</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">p</span><span class="o">+</span><span class="n">q</span><span class="p">)</span>
+<span class="go">Univariate Polynomial Ring in x over Rational Field</span>
+</pre></div>
+</div>
+<p>この結果は，原則的には <tt class="docutils literal"><span class="pre">ZZ['x']</span></tt> の有理数体上でも成立する．
+しかし，Sageは最も自然に見える <em>正準</em> な共通のペアレントを選択しようとする(ここでは <tt class="docutils literal"><span class="pre">QQ['x']</span></tt>)．
+共通のペアレント候補が複数あってどれも同じく有望そうな場合，Sageは中の一つをランダムに選択するということは <em>しない</em> ．
+これは再現性の高い結果を求めるためで，選択の手段については <a class="reference external" href="http://sagemath.org/doc/thematic_tutorials/coercion_and_categories.html">thematic tutorial</a>
+に解説がある．</p>
+<p>以下に示すのは，共通のペアレントへの型強制が成立しない例である:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">+</span><span class="n">y</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;Univariate Polynomial Ring in x over Rational Field&#39; and &#39;Univariate Polynomial Ring in y over Rational Field&#39;</span>
+</pre></div>
+</div>
+<p>だめな理由は，Sageが有望そうな候補 <tt class="docutils literal"><span class="pre">QQ['x']['y']</span></tt> ， <tt class="docutils literal"><span class="pre">QQ['y']['x']</span></tt> ， <tt class="docutils literal"><span class="pre">QQ['x','y']</span></tt> あるいは <tt class="docutils literal"><span class="pre">QQ['y','x']</span></tt> のどれも選択できないことである．
+と言うのも，これら4つの相異なる構造はどれも共通なペアレントとして相応しく，基準となるべき選択肢にならないからだ．</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">目次</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">ペアレント，型変換および型強制</a><ul>
+<li><a class="reference internal" href="#id2">元</a></li>
+<li><a class="reference internal" href="#id3">ペアレントとカテゴリー</a></li>
+<li><a class="reference internal" href="#id4">型とペアレント</a></li>
+<li><a class="reference internal" href="#id5">型変換と型強制</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>前のトピックへ</h4>
+            <p class="topless"><a href="tour_polynomial.html"
+                                  title="前の章へ">多項式</a></p>
+            <h4>次のトピックへ</h4>
+            <p class="topless"><a href="tour_groups.html"
+                                  title="次の章へ">有限群，アーベル群</a></p>
+            <h3>このページ</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tour_coercion.txt"
+                     rel="nofollow">ソースコードを表示</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>クイック検索</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="検索" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              モジュール、クラス、または関数名を入力してください
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="総合索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Pythonモジュール索引"
+             >モジュール</a> |</li>
+        <li class="right" >
+          <a href="tour_groups.html" title="有限群，アーベル群"
+             >次へ</a> |</li>
+        <li class="right" >
+          <a href="tour_polynomial.html" title="多項式"
+             >前へ</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Sage チュートリアル v6.10</a> &raquo;</li>
+
+          <li><a href="tour.html" >Sage観光ツアー</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      このドキュメントは <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2 で生成しました。
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

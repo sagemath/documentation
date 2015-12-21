@@ -1,0 +1,1462 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rijndael-GF &mdash; Sage Reference Manual v6.10: Cryptography</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '6.10',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v6.10: Cryptography" href="../../../index.html" />
+    <link rel="next" title="Hard Lattice Generator" href="../lattice.html" />
+    <link rel="prev" title="S-Boxes and Their Algebraic Representations" href="sbox.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../lattice.html" title="Hard Lattice Generator"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sbox.html" title="S-Boxes and Their Algebraic Representations"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Cryptography</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="rijndael-gf">
+<span id="sage-crypto-mq-rijndael-gf"></span><h1>Rijndael-GF<a class="headerlink" href="#rijndael-gf" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.crypto.mq.rijndael_gf"></span><p>Rijndael-GF is an algebraic implementation of the AES cipher which seeks to
+provide a fully generalized algebraic representation of both the whole AES
+cipher as well as its individual components.</p>
+<p>This class is an algebraic implementation of the Rijndael-GF extension of the
+AES cipher, as described in <a class="reference internal" href="#dr02" id="id1">[DR02]</a>. The AES cipher itself is defined to
+operate on a state in <span class="math">\((\GF{2})^{8 n_t}\)</span> where
+<span class="math">\(n_t \in \{16, 20, 24, 28, 32\}\)</span>. Rijndael-GF is a generalization of AES which
+allows for operations in <span class="math">\((\GF{2^8})^{n_t}\)</span>, enabling more algebraically
+sophisticated study of AES and its variants. This implementation of
+Rijndael-GF is suitable for learning purposes, for comparison to other
+algebraic ciphers, and for studying various techniques of algebraic
+cryptanalysis of AES. This cipher is different from
+<a class="reference internal" href="../block_cipher/miniaes.html#module-sage.crypto.block_cipher.miniaes" title="sage.crypto.block_cipher.miniaes"><tt class="xref py py-mod docutils literal"><span class="pre">Mini-AES</span></tt></a>, which is a
+teaching tool for beginners to understand the basic structure of AES.</p>
+<p>An algebraic implementation of Rijndael-GF is achieved by recognizing that
+for each round component function <span class="math">\(\phi\)</span> of AES (SubBytes, ShiftRows, etc.)
+operating on state matrices, every entry of the output matrix <span class="math">\(B = \phi(A)\)</span> is
+representable as a polynomial with variables being the entries of the input
+state matrix <span class="math">\(A\)</span>. Correspondingly, this implementation of Rijndael-GF provides
+a <tt class="docutils literal"><span class="pre">RijndaelGF.Round_Component_Poly_Constr</span></tt> class which allows for creation
+of these such polynomials. For each round component function <span class="math">\(\phi\)</span> of
+Rijndael-GF there exists a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object with a
+<tt class="docutils literal"><span class="pre">__call__</span></tt> method of the form <tt class="docutils literal"><span class="pre">__call__(i,</span> <span class="pre">j)</span></tt> which returns a polynomial
+representing <span class="math">\(\phi(A)_{i,j}\)</span> in terms of the entries of <span class="math">\(A\)</span>.
+There additionally are various methods provided which allow for easy polynomial
+evaluation and for simple creation of <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects
+representing more complex aspects of the cipher.</p>
+<p>This approach to implementing Rijndael-GF bears some similarity to the
+multivariate quadratic (MQ) systems utilized in <a class="reference internal" href="sr.html#module-sage.crypto.mq.sr" title="sage.crypto.mq.sr"><tt class="xref py py-mod docutils literal"><span class="pre">SR</span></tt></a>,
+in that the MQ systems also seek to describe the AES cipher as a system of
+algebraic equations. Despite this initial similarity though, Rijndael-GF and
+<a class="reference internal" href="sr.html#module-sage.crypto.mq.sr" title="sage.crypto.mq.sr"><tt class="xref py py-mod docutils literal"><span class="pre">SR</span></tt></a> are quite different as this implementation
+seeks to provide a fully generalized algebraic representation of both the
+whole AES cipher as well as its individual components, while
+<a class="reference internal" href="sr.html#module-sage.crypto.mq.sr" title="sage.crypto.mq.sr"><tt class="xref py py-mod docutils literal"><span class="pre">SR</span></tt></a> is instead a family of parameterizable variants
+of the AES suitable as a framework for comparing different cryptanalytic
+techniques that can be brought to bear on the AES.</p>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Thomas Gagne (2015-06): initial version</li>
+</ul>
+<p>EXAMPLES</p>
+<p>We build Rijndael-GF with a block length of 4 and a key length of 6:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can encrypt plaintexts and decrypt and ciphertexts by calling the
+<tt class="docutils literal"><span class="pre">encrypt</span></tt> and <tt class="docutils literal"><span class="pre">decrypt</span></tt> methods or by calling the Rijndael-GF object
+explicitly. Note that the default input format is a hex string.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">plaintext</span> <span class="o">=</span> <span class="s">&#39;00112233445566778899aabbccddeeff&#39;</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;000102030405060708090a0b0c0d0e0f1011121314151617&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">plaintext</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<span class="go">&#39;dda97ca4864cdfe06eaf70a0ec0d7191&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="s">&#39;dda97ca4864cdfe06eaf70a0ec0d7191&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<span class="go">&#39;00112233445566778899aabbccddeeff&#39;</span>
+</pre></div>
+</div>
+<p>We can also use binary strings as input and output.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">plain</span> <span class="o">=</span> <span class="s">&#39;11101011100111110000000111001100&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;01100010111101101000110010111010&#39;</span> <span class="o">*</span> <span class="mi">6</span>
+<span class="gp">sage: </span><span class="n">ciphertext</span> <span class="o">=</span> <span class="n">rgf</span><span class="p">(</span><span class="n">plain</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ciphertext</span>
+<span class="go">&#39;11010011000010011010110001000011101110110100110100110010011011111100011011100111110011100111010011001110110100011100000011111011&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">plain</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="#dr02" id="id2">[DR02]</a> demonstrates an example of encryption which takes the plaintext
+&#8216;3243f6a8885a308d313198a2e0370734&#8217; and the key
+&#8216;2b7e151628aed2a6abf7158809cf4f3c&#8217; and returns the ciphertext
+&#8216;3902dc1925dc116a8409850b1dfb9732&#8217;. We can use this example to demonstrate
+the correctness of this implementation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="c"># change dimensions for this example</span>
+<span class="gp">sage: </span><span class="n">plain</span> <span class="o">=</span> <span class="s">&#39;3243f6a8885a308d313198a2e0370734&#39;</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;2b7e151628aed2a6abf7158809cf4f3c&#39;</span>
+<span class="gp">sage: </span><span class="n">expected_ciphertext</span> <span class="o">=</span> <span class="s">&#39;3925841d02dc09fbdc118597196a0b32&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">plain</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_ciphertext</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="c"># revert to previous dimensions</span>
+</pre></div>
+</div>
+<p>To build polynomials representing entries of the output matrix <span class="math">\(B = \phi(A)\)</span>
+for any round component function <span class="math">\(\phi\)</span>, each of the round component functions
+(SubBytes, ShiftRows, and MixColumns) have a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt>
+object associated with it for building polynomials. These objects can be
+accessed by calling their getter functions: <tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()</span></tt>,
+<tt class="docutils literal"><span class="pre">rgf.shift_rows_poly()</span></tt>, and <tt class="docutils literal"><span class="pre">rgf.mix_columns_poly()</span></tt>. Each returned
+object has a <tt class="docutils literal"><span class="pre">__call__</span></tt> method which takes an index <tt class="docutils literal"><span class="pre">i,j</span></tt> and an
+<tt class="docutils literal"><span class="pre">algorithm</span></tt> flag (&#8216;encrypt&#8217; or &#8216;decrypt&#8217;) and returns a polynomial
+representing <span class="math">\(\phi(A)_{i,j}\)</span> in terms of the entries of <span class="math">\(A\)</span>, where <span class="math">\(A\)</span> is an
+arbitrary state matrix and <span class="math">\(\phi\)</span> is the round component function associated
+with that particular <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object. Some of these
+objects&#8217; <tt class="docutils literal"><span class="pre">__call__</span></tt> methods also have additional keywords to modify their
+behavior, and so we describe the usage of each object below.</p>
+<p><tt class="docutils literal"><span class="pre">rgf.shift_rows_poly()</span></tt> and <tt class="docutils literal"><span class="pre">rgf.mix_columns_poly()</span></tt> do not have any
+additional keywords for their <tt class="docutils literal"><span class="pre">__call__</span></tt> methods and we can call them as
+such:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sr_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sr_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a13</span>
+<span class="gp">sage: </span><span class="n">sr_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">a21</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">mc_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a02 + (x)*a12 + (x + 1)*a22 + a32</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">(x^3 + x^2 + 1)*a03 + (x^3 + 1)*a13 + (x^3 + x^2 + x)*a23 + (x^3 + x + 1)*a33</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()</span></tt> has a single keyword <tt class="docutils literal"><span class="pre">no_inversion=False</span></tt>, which
+when set to <tt class="docutils literal"><span class="pre">True</span></tt> returns only the affine transformation step of SubBytes.
+Below describes the usage of <tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sb_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sb_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">(x^2 + 1)*a12^254 +</span>
+<span class="go">(x^3 + 1)*a12^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a12^251 +</span>
+<span class="go">(x^5 + x^2 + 1)*a12^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a12^239 +</span>
+<span class="go">a12^223 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a12^191 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a12^127 +</span>
+<span class="go">(x^6 + x^5 + x + 1)</span>
+<span class="gp">sage: </span><span class="n">sb_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">no_inversion</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a23^128 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a23^64 +</span>
+<span class="go">a23^32 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a23^16 +</span>
+<span class="go">(x^5 + x^2 + 1)*a23^8 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a23^4 +</span>
+<span class="go">(x^3 + 1)*a23^2 +</span>
+<span class="go">(x^2 + 1)*a23 +</span>
+<span class="go">(x^6 + x^5 + x + 1)</span>
+</pre></div>
+</div>
+<p>Because of the order of the affine transformation and the inversion step in
+SubBytes, calling <tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()(i,</span> <span class="pre">j,</span> <span class="pre">algorithm='decrypt')</span></tt> results
+in a polynomial with thousands of terms which takes a very long time to
+compute. Hence, when using the decryption version of <tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()</span></tt>
+with the intention of evaluating the polynomials it constructs, it is
+recommended to first call <tt class="docutils literal"><span class="pre">rgf.sub_bytes_poly()(i,</span> <span class="pre">j,</span> <span class="pre">algorithm='decrypt',</span>
+<span class="pre">no_inversion=True)</span></tt> to get a polynomial representing only the inverse affine
+transformation, evaluate this polynomial for a particular input block, then
+finally perform the inversion step after the affine transformation polynomial
+has been evaluated.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">inv_affine</span> <span class="o">=</span> <span class="n">sb_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">,</span>
+<span class="go">....: no_inversion=True)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;ff87968431d86a51645151fa773ad009&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">evaluated</span> <span class="o">=</span> <span class="n">inv_affine</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">evaluated</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;79&#39;</span>
+</pre></div>
+</div>
+<p>We can see how the variables of these polynomials are organized in <span class="math">\(A\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span>
+<span class="go">[a00 a01 a02 a03]</span>
+<span class="go">[a10 a11 a12 a13]</span>
+<span class="go">[a20 a21 a22 a23]</span>
+<span class="go">[a30 a31 a32 a33]</span>
+</pre></div>
+</div>
+<p>The final <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object we have not discussed yet is
+<tt class="docutils literal"><span class="pre">add_round_key_poly</span></tt>, which corresponds to the AddRoundKey round component
+function. This object differs from the other <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt>
+objects in that it returns polynomials with variables being entries of an
+input state <span class="math">\(A\)</span> as well as entries of various subkeys. Since there are <span class="math">\(N_r\)</span>
+subkeys to choose from, <tt class="docutils literal"><span class="pre">add_round_key_poly</span></tt> has a keyword of <tt class="docutils literal"><span class="pre">round=0</span></tt> to
+select which subkey to use variables from.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ark_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a12 + k012</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">a12 + k012</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="nb">round</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">a23 + k723</span>
+</pre></div>
+</div>
+<p>We can see how key variables are organized in the original key (the key used
+to build the rest of the subkeys) below. Note that because key variables are
+subkey entries, if the key length is longer than the block length we will have
+entries from multiple subkeys in the original key matrix.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">key_vrs</span>
+<span class="go">[k000 k001 k002 k003 k100 k101]</span>
+<span class="go">[k010 k011 k012 k013 k110 k111]</span>
+<span class="go">[k020 k021 k022 k023 k120 k121]</span>
+<span class="go">[k030 k031 k032 k033 k130 k131]</span>
+</pre></div>
+</div>
+<p>We can evaluate any of these constructed polynomials for a particular input
+state (in essence, calculate <span class="math">\(\phi(A)_{i,j}\)</span>) as such:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;fe7b5170fe7c8e93477f7e4bf6b98071&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">mc_pc</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">poly</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+<span class="go">x^7 + x^6 + x^5 + x^2 + x</span>
+</pre></div>
+</div>
+<p>We can use the <tt class="docutils literal"><span class="pre">apply_poly</span></tt> method to build a matrix whose <span class="math">\(i,j\)</span> th
+entry equals the polynomial <tt class="docutils literal"><span class="pre">phi_poly(i,</span> <span class="pre">j)</span></tt> evaluated for a particular input
+state, where <tt class="docutils literal"><span class="pre">phi_poly</span></tt> is the <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object
+associated with the round component function <span class="math">\(\phi\)</span>. Essentially,
+<tt class="docutils literal"><span class="pre">apply_poly</span></tt> calculates <span class="math">\(\phi(A)\)</span>, where <span class="math">\(A\)</span> is our input state.
+Calling <tt class="docutils literal"><span class="pre">apply_poly</span></tt> is equivalent to applying the round component function
+associated this <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object to <span class="math">\(A\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;c4cedcabe694694e4b23bfdd6fb522fa&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;1c8b86628e22f92fb32608c1a8d5932d&#39;</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Alternatively, we can pass a matrix of polynomials as input to <tt class="docutils literal"><span class="pre">apply_poly</span></tt>,
+which will then return another matrix of polynomials. For example,
+<tt class="docutils literal"><span class="pre">rgf.state_vrs</span></tt> can be used as input to make each <tt class="docutils literal"><span class="pre">i,j</span></tt> th entry of the
+output matrix equal <tt class="docutils literal"><span class="pre">phi_poly_constr(i,</span> <span class="pre">j)</span></tt>, where <tt class="docutils literal"><span class="pre">phi_poly_constr</span></tt> is
+our inputted <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object. This matrix can then be
+passed through again and so on, demonstrating how one could potentially build
+a matrix of polynomials representing the entire cipher.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">state</span>
+<span class="go">[a00 a01 a02 a03]</span>
+<span class="go">[a11 a12 a13 a10]</span>
+<span class="go">[a22 a23 a20 a21]</span>
+<span class="go">[a33 a30 a31 a32]</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">())</span>
+<span class="go">[a00 + k000 a01 + k001 a02 + k002 a03 + k003]</span>
+<span class="go">[a11 + k010 a12 + k011 a13 + k012 a10 + k013]</span>
+<span class="go">[a22 + k020 a23 + k021 a20 + k022 a21 + k023]</span>
+<span class="go">[a33 + k030 a30 + k031 a31 + k032 a32 + k033]</span>
+</pre></div>
+</div>
+<p>For any of these <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects, we can change the
+keywords of its <tt class="docutils literal"><span class="pre">__call__</span></tt> method when <tt class="docutils literal"><span class="pre">apply_poly</span></tt> invokes it by passing
+<tt class="docutils literal"><span class="pre">apply_poly</span></tt> a dictionary mapping keywords to their values.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">(),</span>
+<span class="go">....: poly_constr_attr={&#39;round&#39; : 5})</span>
+<span class="go">[a00 + k500 a01 + k501 a02 + k502 a03 + k503]</span>
+<span class="go">[a10 + k510 a11 + k511 a12 + k512 a13 + k513]</span>
+<span class="go">[a20 + k520 a21 + k521 a22 + k522 a23 + k523]</span>
+<span class="go">[a30 + k530 a31 + k531 a32 + k532 a33 + k533]</span>
+</pre></div>
+</div>
+<p>We can build our own <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects which correspond
+to the composition of multiple round component functions with the <tt class="docutils literal"><span class="pre">compose</span></tt>
+method. To do this, if we pass two <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects
+to <tt class="docutils literal"><span class="pre">compose</span></tt> where the first object corresponds to the round component
+function <span class="math">\(f\)</span> and the second to the round component function <span class="math">\(g\)</span>, <tt class="docutils literal"><span class="pre">compose</span></tt>
+will return a new <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to the
+function <span class="math">\(g \circ f\)</span>. This returned <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object
+will have the arguments of <tt class="docutils literal"><span class="pre">__call__(row,</span> <span class="pre">col,</span> <span class="pre">algorithm='encrypt')</span></tt> and
+when passed an index <tt class="docutils literal"><span class="pre">i,j</span></tt> will return <span class="math">\(g(f(A))_{i,j}\)</span> in terms of the
+entries of <span class="math">\(A\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.mix_columns_poly_constr())</span>
+<span class="gp">sage: </span><span class="n">rcpc</span>
+<span class="go">A polynomial constructor of a round component of Rijndael-GF block cipher with block length 4, key length 6, and 12 rounds.</span>
+<span class="gp">sage: </span><span class="n">rcpc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">a01 + a12 + (x)*a23 + (x + 1)*a30</span>
+
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;afb73eeb1cd1b85162280f27fb20d585&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rcpc</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">new_state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">new_state</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.shift_rows_poly_constr())</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rcpc</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">==</span> <span class="n">result</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Alternatively, we can use <tt class="docutils literal"><span class="pre">compose</span></tt> to build the polynomial output of
+a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to the composition of
+multiple round functions like above without having to explicitly build our
+own <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object. To do this, we simply make the
+first input a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to a
+round component function <span class="math">\(f\)</span> and make the second input a polynomial
+representing <span class="math">\(g(A)_{i,j}\)</span> for a round component function <span class="math">\(g\)</span>. Given this,
+<tt class="docutils literal"><span class="pre">compose</span></tt> will return a polynomial representing <span class="math">\(g(f(A))_{i,j}\)</span> in terms
+of the entries of <span class="math">\(A\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">()(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">poly</span>
+<span class="go">(x)*a03 + (x + 1)*a13 + a23 + a33</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span> <span class="n">poly</span><span class="p">)</span>
+<span class="go">(x^3 + x)*a03^254 +</span>
+<span class="go">(x^3 + x^2 + x + 1)*a13^254 +</span>
+<span class="go">(x^2 + 1)*a23^254 +</span>
+<span class="go">(x^2 + 1)*a33^254 +</span>
+<span class="go">(x^4 + x)*a03^253 +</span>
+<span class="go">(x^4 + x^3 + x + 1)*a13^253 +</span>
+<span class="go">(x^3 + 1)*a23^253 +</span>
+<span class="go">(x^3 + 1)*a33^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^3 + 1)*a03^251 +</span>
+<span class="go">(x^4)*a13^251 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a23^251 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a33^251 +</span>
+<span class="go">(x^6 + x^3 + x)*a03^247 +</span>
+<span class="go">(x^6 + x^5 + x^3 + x^2 + x + 1)*a13^247 +</span>
+<span class="go">(x^5 + x^2 + 1)*a23^247 +</span>
+<span class="go">(x^5 + x^2 + 1)*a33^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x + 1)*a03^239 +</span>
+<span class="go">(x^2 + x + 1)*a13^239 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a23^239 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a33^239 +</span>
+<span class="go">(x)*a03^223 +</span>
+<span class="go">(x + 1)*a13^223 +</span>
+<span class="go">a23^223 +</span>
+<span class="go">a33^223 +</span>
+<span class="go">(x^6 + x^5 + x^4 + 1)*a03^191 +</span>
+<span class="go">(x^7 + x^6 + x^2)*a13^191 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a23^191 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a33^191 +</span>
+<span class="go">(x^2 + 1)*a03^127 +</span>
+<span class="go">(x^7 + x^3 + x)*a13^127 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a23^127 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a33^127 +</span>
+<span class="go">(x^6 + x^5 + x + 1)</span>
+</pre></div>
+</div>
+<p>If we use <tt class="docutils literal"><span class="pre">algorithm='decrypt'</span></tt> as an argument to <tt class="docutils literal"><span class="pre">compose</span></tt>, then the
+value of <tt class="docutils literal"><span class="pre">algorithm</span></tt> will be passed directly to the first argument of
+<tt class="docutils literal"><span class="pre">compose</span></tt> (a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object) when it is called,
+provided the second argument is a polynomial. Setting this flag does nothing
+if both arguments are <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects, since the
+returned <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method must have
+its own <tt class="docutils literal"><span class="pre">algorithm</span></tt> keyword defaulted to &#8216;encrypt&#8217;.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">()(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">(),</span> <span class="n">poly</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">(x^3 + x^2 + 1)*a03 + (x^3 + 1)*a13 + (x^3 + x^2 + x)*a23 + (x^3 + x + 1)*a33</span>
+
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;80121e0776fd1d8a8d8c31bc965d1fee&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">with_decrypt</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.shift_rows_poly_constr(), algorithm=&#39;decrypt&#39;)</span>
+<span class="gp">sage: </span><span class="n">result_wd</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">with_decrypt</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">no_decrypt</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.shift_rows_poly_constr())</span>
+<span class="gp">sage: </span><span class="n">result_nd</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">no_decrypt</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result_wd</span> <span class="o">==</span> <span class="n">result_nd</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can also pass keyword dictionaries of <tt class="docutils literal"><span class="pre">f_attr</span></tt> and <tt class="docutils literal"><span class="pre">g_attr</span></tt> to
+<tt class="docutils literal"><span class="pre">compose</span></tt> to make <tt class="docutils literal"><span class="pre">f</span></tt> and <tt class="docutils literal"><span class="pre">g</span></tt> use those keywords during polynomial
+creation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.add_round_key_poly_constr(),</span>
+<span class="go">....: f_attr={&#39;round&#39; : 4}, g_attr={&#39;round&#39; : 7})</span>
+<span class="gp">sage: </span><span class="n">rcpc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a12 + k412 + k712</span>
+</pre></div>
+</div>
+<p>In addition to building polynomial representations of state matrices, we can
+also build polynomial representations of elements of the expanded key with the
+<tt class="docutils literal"><span class="pre">expand_key_poly</span></tt> method. However, since the key schedule is defined
+recursively, it is impossible to build polynomials for the key schedule in
+the same manner as we do for the round component functions. Consequently,
+<tt class="docutils literal"><span class="pre">expand_round_key_poly()</span></tt> is not a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object.
+Instead, <tt class="docutils literal"><span class="pre">expand_key_poly</span></tt> is a method which takes an index <tt class="docutils literal"><span class="pre">i,j</span></tt> and a
+round number <tt class="docutils literal"><span class="pre">round</span></tt>, and returns a polynomial representing the <span class="math">\(i,j\)</span> th
+entry of the <tt class="docutils literal"><span class="pre">round</span></tt> th round key. This polynomial&#8217;s variables are entries
+of the original key we built above.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">k012</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">k111</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(x^2 + 1)*k121^254 +</span>
+<span class="go">(x^3 + 1)*k121^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*k121^251 +</span>
+<span class="go">(x^5 + x^2 + 1)*k121^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*k121^239 +</span>
+<span class="go">k121^223 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*k121^191 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*k121^127 +</span>
+<span class="go">k010 +</span>
+<span class="go">(x^6 + x^5 + x)</span>
+</pre></div>
+</div>
+<p>Since <tt class="docutils literal"><span class="pre">expand_key_poly</span></tt> is not actually a
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object, we cannot use it as input to
+<tt class="docutils literal"><span class="pre">apply_poly</span></tt> or <tt class="docutils literal"><span class="pre">compose</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">keyword &#39;poly_constr&#39; must be a Round_Component_Poly_Constr</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">())</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">keyword &#39;f&#39; must be a Round_Component_Poly_Constr</span>
+</pre></div>
+</div>
+<p>REFERENCES:</p>
+<table class="docutils citation" frame="void" id="dr02" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[DR02]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>)</em> Joan Daemen, Vincent Rijmen. The Design of Rijndael.
+Springer-Verlag Berlin Heidelberg, 2002.</td></tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF">
+<em class="property">class </em><tt class="descclassname">sage.crypto.mq.rijndael_gf.</tt><tt class="descname">RijndaelGF</tt><big>(</big><em>Nb</em>, <em>Nk</em>, <em>state_chr='a'</em>, <em>key_chr='k'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>An algebraically generalized version of the AES cipher.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Nb</span></tt> &#8211; The block length of this instantiation. Must be between 4
+and 8.</li>
+<li><tt class="docutils literal"><span class="pre">Nk</span></tt> &#8211; The key length of this instantion. Must be between 4 and 8.</li>
+<li><tt class="docutils literal"><span class="pre">state_chr</span></tt> &#8211; The variable name for polynomials representing
+elements from state matrices.</li>
+<li><tt class="docutils literal"><span class="pre">key_chr</span></tt> &#8211; The variable name for polynomials representing
+elements of the key schedule.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span>
+<span class="go">Rijndael-GF block cipher with block length 6, key length 8, and 14 rounds.</span>
+</pre></div>
+</div>
+<p>By changing <tt class="docutils literal"><span class="pre">state_chr</span></tt> we can alter the names of variables in
+polynomials representing elements from state matrices.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">state_chr</span><span class="o">=</span><span class="s">&#39;myChr&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">()(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">(x + 1)*myChr02 + myChr12 + myChr22 + (x)*myChr32</span>
+</pre></div>
+</div>
+<p>We can also alter the name of variables in polynomials representing
+elements from round keys by changing <tt class="docutils literal"><span class="pre">key_chr</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">key_chr</span><span class="o">=</span><span class="s">&#39;myKeyChr&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(x^2 + 1)*myKeyChr121^254 +</span>
+<span class="go">(x^3 + 1)*myKeyChr121^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*myKeyChr121^251 +</span>
+<span class="go">(x^5 + x^2 + 1)*myKeyChr121^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*myKeyChr121^239 +</span>
+<span class="go">myKeyChr121^223 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*myKeyChr121^191 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*myKeyChr121^127 +</span>
+<span class="go">myKeyChr010 +</span>
+<span class="go">(x^6 + x^5 + x)</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.Round_Component_Poly_Constr">
+<em class="property">class </em><tt class="descname">Round_Component_Poly_Constr</tt><big>(</big><em>polynomial_constr</em>, <em>rgf</em>, <em>round_component_name=None</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.Round_Component_Poly_Constr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v6.10)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>An object which constructs polynomials representing round
+component functions of a RijndaelGF object.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">polynomial_constr</span></tt> &#8211; A function which takes an index
+<tt class="docutils literal"><span class="pre">row,col</span></tt> and returns a polynomial representing the <tt class="docutils literal"><span class="pre">row,col</span></tt>
+th entry of a matrix after a specific round component function
+has been applied to it. This polynomial must be in terms of
+entries of the input matrix to that round component function and
+of entries of various subkeys. <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt> must have
+arguments of the form <tt class="docutils literal"><span class="pre">polynomial_constr(row,</span> <span class="pre">col,</span>
+<span class="pre">algorithm='encrypt',</span> <span class="pre">**kwargs)</span></tt> and  must be able to be called
+as <tt class="docutils literal"><span class="pre">polynomial_constr(row,</span> <span class="pre">col)</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">rgf</span></tt> &#8211; The RijndaelGF object whose state entries are
+represented by polynomials returned from <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">round_component_name</span></tt> &#8211; The name of the round component
+function this object corresponds to as a string. Used solely
+for display purposes.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> \
+<span class="go">....: RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="o">.</span><span class="n">Round_Component_Poly_Constr</span><span class="p">(</span>
+<span class="go">....: rgf._shift_rows_pc, rgf, &quot;Shift Rows&quot;)</span>
+<span class="gp">sage: </span><span class="n">rcpc</span>
+<span class="go">A polynomial constructor for the function &#39;Shift Rows&#39; of Rijndael-GF block cipher with block length 4, key length 4, and 10 rounds.</span>
+</pre></div>
+</div>
+<p>If <span class="math">\(\phi\)</span> is the round component function to which this object
+corresponds to, then <tt class="docutils literal"><span class="pre">__call__(i,j)</span></tt> <span class="math">\(= \phi(A)_{i,j}\)</span>, where
+<span class="math">\(A\)</span> is an arbitrary input matrix. Note that the polynomial returned
+by <tt class="docutils literal"><span class="pre">__call__(i,j)</span></tt> will be in terms of the entries of <span class="math">\(A\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="o">.</span><span class="n">Round_Component_Poly_Constr</span><span class="p">(</span>
+<span class="go">....: rgf._mix_columns_pc, rgf, &quot;Mix Columns&quot;)</span>
+<span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">rcpc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span> <span class="n">poly</span>
+<span class="go">a02 + (x)*a12 + (x + 1)*a22 + a32</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;d1876c0f79c4300ab45594add66ff41f&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">poly</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Invoking this objects <tt class="docutils literal"><span class="pre">__call__</span></tt> method passes its arguments
+directly to <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt> and returns the result. In a
+sense, <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> acts as a wrapper for
+the <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt> method and helps ensure that each
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object will act similarly.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">all</span><span class="p">([</span><span class="n">rgf</span><span class="o">.</span><span class="n">_mix_columns_pc</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="n">rcpc</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+<span class="go">....: for i in range(4) for j in range(4)])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Since all keyword arguments of <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt> must have a
+default value except for <tt class="docutils literal"><span class="pre">row</span></tt> and <tt class="docutils literal"><span class="pre">col</span></tt>, we can always call
+a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object by <tt class="docutils literal"><span class="pre">__call__(row,</span> <span class="pre">col)</span></tt>.
+Because of this, methods such as <tt class="docutils literal"><span class="pre">apply_poly</span></tt> and <tt class="docutils literal"><span class="pre">compose</span></tt>
+will only call <tt class="docutils literal"><span class="pre">__call__(row,</span> <span class="pre">col)</span></tt> when passed a
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object. In order to change this
+object&#8217;s behavior and force methods such as <tt class="docutils literal"><span class="pre">apply_poly</span></tt> to use
+non-default values for keywords we can pass dictionaries mapping
+keywords to non-default values as input to <tt class="docutils literal"><span class="pre">apply_poly</span></tt> and
+<tt class="docutils literal"><span class="pre">compose</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span><span class="p">,</span>
+<span class="go">....: rgf.add_round_key_poly_constr(),</span>
+<span class="go">....: poly_constr_attr={&#39;round&#39; : 9})</span>
+<span class="go">[a00 + k900 a01 + k901 a02 + k902 a03 + k903]</span>
+<span class="go">[a10 + k910 a11 + k911 a12 + k912 a13 + k913]</span>
+<span class="go">[a20 + k920 a21 + k921 a22 + k922 a23 + k923]</span>
+<span class="go">[a30 + k930 a31 + k931 a32 + k932 a33 + k933]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.add_round_key_poly_constr(),</span>
+<span class="go">....: f_attr={&#39;round&#39; : 3}, g_attr={&#39;round&#39; : 7})</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">a23 + k323 + k723</span>
+</pre></div>
+</div>
+<p>Because all <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> objects are callable
+as <tt class="docutils literal"><span class="pre">__call__(row,</span> <span class="pre">col,</span> <span class="pre">algorithm)</span></tt>, <tt class="docutils literal"><span class="pre">__call__</span></tt> will check
+the validity of these three arguments automatically. Any other
+keywords, however, must be checked in <tt class="docutils literal"><span class="pre">polynomial_constr</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">my_poly_constr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;encrypt&#39;</span><span class="p">):</span>
+<span class="go">....:     return x * rgf._F.one() # example body with no checks</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="o">.</span><span class="n">Round_Component_Poly_Constr</span><span class="p">(</span>
+<span class="go">....: my_poly_constr, rgf, &quot;My Poly Constr&quot;)</span>
+<span class="gp">sage: </span><span class="n">rcpc</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">keyword &#39;row&#39; must be in range 0 - 3</span>
+<span class="gp">sage: </span><span class="n">rcpc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">keyword &#39;algorithm&#39; must be either &#39;encrypt&#39; or &#39;decrypt&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.add_round_key">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">add_round_key</tt><big>(</big><em>state</em>, <em>round_key</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.add_round_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the round-key addition of matrices <tt class="docutils literal"><span class="pre">state</span></tt> and <tt class="docutils literal"><span class="pre">round_key</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> &#8211; The state matrix to have <tt class="docutils literal"><span class="pre">round_key</span></tt> added to.</li>
+<li><tt class="docutils literal"><span class="pre">round_key</span></tt> &#8211; The round key to add to <tt class="docutils literal"><span class="pre">state</span></tt>.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A state matrix which is the round key addition of <tt class="docutils literal"><span class="pre">state</span></tt> and
+<tt class="docutils literal"><span class="pre">round_key</span></tt>. This transformation is simply the entrywise addition
+of these two matrices.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;36339d50f9b539269f2c092dc4406d23&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;7CC78D0E22754E667E24573F454A6531&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key_schedule</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">key_schedule</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;4af4105edbc07740e1085e12810a0812&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.add_round_key_poly_constr">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">add_round_key_poly_constr</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.add_round_key_poly_constr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+AddRoundKey.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span>
+<span class="go">A polynomial constructor for the function &#39;Add Round Key&#39; of Rijndael-GF block cipher with block length 4, key length 4, and 10 rounds.</span>
+<span class="gp">sage: </span><span class="n">ark_pc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">a01 + k001</span>
+</pre></div>
+</div>
+<p>When invoking the returned object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method, changing the
+value of <tt class="docutils literal"><span class="pre">algorithm='encrypt'</span></tt> does nothing, since the AddRoundKey
+round component function is its own inverse.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">with_encrypt</span> <span class="o">=</span> <span class="n">ark_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;encrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">with_decrypt</span> <span class="o">=</span> <span class="n">ark_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">with_encrypt</span> <span class="o">==</span> <span class="n">with_decrypt</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>When invoking the returned object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method, one can change
+the round subkey used in the returned polynomial by changing the
+<tt class="docutils literal"><span class="pre">round=0</span></tt> keyword.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">ark_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">round</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">a21 + k721</span>
+</pre></div>
+</div>
+<p>When passing the returned object to methods such as <tt class="docutils literal"><span class="pre">apply_poly</span></tt> and
+<tt class="docutils literal"><span class="pre">compose</span></tt>, we can make these methods use a non-default value for
+<tt class="docutils literal"><span class="pre">round=0</span></tt> by passing in a dictionary mapping <tt class="docutils literal"><span class="pre">round</span></tt> to a different
+value.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span><span class="p">,</span> <span class="n">ark_pc</span><span class="p">,</span>
+<span class="go">....: poly_constr_attr={&#39;round&#39; : 6})</span>
+<span class="go">[a00 + k600 a01 + k601 a02 + k602 a03 + k603]</span>
+<span class="go">[a10 + k610 a11 + k611 a12 + k612 a13 + k613]</span>
+<span class="go">[a20 + k620 a21 + k621 a22 + k622 a23 + k623]</span>
+<span class="go">[a30 + k630 a31 + k631 a32 + k632 a33 + k633]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">ark_pc</span><span class="p">,</span> <span class="n">ark_pc</span><span class="p">,</span>
+<span class="go">....: f_attr={&#39;round&#39; : 3}, g_attr={&#39;round&#39; : 5})</span>
+<span class="gp">sage: </span><span class="n">rcpc</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">a31 + k331 + k531</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.apply_poly">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">apply_poly</tt><big>(</big><em>state</em>, <em>poly_constr</em>, <em>algorithm='encrypt'</em>, <em>keys=None</em>, <em>poly_constr_attr=None</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.apply_poly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a state matrix where <tt class="docutils literal"><span class="pre">poly_method</span></tt> is applied to each entry.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> &#8211; The state matrix over <span class="math">\(\GF{2^8}\)</span> to which
+<tt class="docutils literal"><span class="pre">poly_method</span></tt> is applied to.</li>
+<li><tt class="docutils literal"><span class="pre">poly_constr</span></tt> &#8211; The <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object to
+build polynomials during evaluation.</li>
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8220;encrypt&#8221;) Passed directly to
+<tt class="docutils literal"><span class="pre">rcpc</span></tt> to select encryption or decryption. The
+encryption flag is &#8220;encrypt&#8221; and the decrypt flag is &#8220;decrypt&#8221;.</li>
+<li><tt class="docutils literal"><span class="pre">keys</span></tt> &#8211; (default: None) An array of <span class="math">\(N_r\)</span> subkey matrices to
+replace any key variables in any polynomials returned by
+<tt class="docutils literal"><span class="pre">poly_method</span></tt>. Must be identical to the format returned by
+<tt class="docutils literal"><span class="pre">expand_key</span></tt>. If any polynomials have key variables and <tt class="docutils literal"><span class="pre">keys</span></tt>
+is not supplied, the key variables will remain as-is.</li>
+<li><tt class="docutils literal"><span class="pre">poly_constr_attr</span></tt> &#8211; (default:None) A dictionary of keyword
+attributes to pass to <tt class="docutils literal"><span class="pre">rcpc</span></tt> when it is called.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A state matrix in <span class="math">\(\GF{2^8}\)</span> whose <span class="math">\(i,j\)</span> th entry equals the
+polynomial <tt class="docutils literal"><span class="pre">poly_constr(i,</span> <span class="pre">j,</span> <span class="pre">algorithm,</span> <span class="pre">**poly_constr_attr)</span></tt>
+evaluated by setting its variables equal to the corresponding
+entries of <tt class="docutils literal"><span class="pre">state</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;3b59cb73fcd90ee05774222dc067fb68&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;3bd92268fc74fb735767cbe0c0590e2d&#39;</span>
+</pre></div>
+</div>
+<p>Calling <tt class="docutils literal"><span class="pre">apply_poly</span></tt> with the <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object
+of a round component (e.g. <tt class="docutils literal"><span class="pre">sub_bytes_poly</span></tt>) is identical to
+calling that round component function itself.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;4915598f55e5d7a0daca94fa1f0a63f7&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">apply_poly_result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
+<span class="go">....: rgf.sub_bytes_poly_constr())</span>
+<span class="gp">sage: </span><span class="n">direct_result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">direct_result</span> <span class="o">==</span> <span class="n">apply_poly_result</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>If the <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method
+returns a polynomial with state variables as well as key variables, we
+can supply a list of <span class="math">\(N_r\)</span> round keys <tt class="docutils literal"><span class="pre">keys</span></tt> whose elements are
+evaluated as the key variables. If this is not provided, the key
+variables will remain as is.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;14f9701ae35fe28c440adf4d4ea9c026&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;54d990a16ba09ab596bbf40ea111702f&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">keys</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
+<span class="go">....: rgf.add_round_key_poly_constr(), keys=keys)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">())[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">k000 + (x^4 + x^2)</span>
+</pre></div>
+</div>
+<p>We can change the value of the keywords of <tt class="docutils literal"><span class="pre">poly_constr</span></tt> &#8216;s
+<tt class="docutils literal"><span class="pre">__call__</span></tt> method when <tt class="docutils literal"><span class="pre">apply_poly</span></tt> calls it by passing in a
+dictionary <tt class="docutils literal"><span class="pre">poly_constr_attr</span></tt> mapping keywords to their values.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">state_vrs</span><span class="p">,</span>
+<span class="go">....: rgf.add_round_key_poly_constr(),</span>
+<span class="go">....: poly_constr_attr={&#39;round&#39; : 5})</span>
+<span class="go">[a00 + k500 a01 + k501 a02 + k502 a03 + k503]</span>
+<span class="go">[a10 + k510 a11 + k511 a12 + k512 a13 + k513]</span>
+<span class="go">[a20 + k520 a21 + k521 a22 + k522 a23 + k523]</span>
+<span class="go">[a30 + k530 a31 + k531 a32 + k532 a33 + k533]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.block_length">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">block_length</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.block_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the block length of this instantiation of Rijndael-GF.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">block_length</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.compose">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">compose</tt><big>(</big><em>f</em>, <em>g</em>, <em>algorithm='encrypt'</em>, <em>f_attr=None</em>, <em>g_attr=None</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.compose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+<span class="math">\(g \circ f\)</span> or the polnyomial output of this object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt>
+method.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">f</span></tt> &#8211; A <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+a round component function <span class="math">\(f\)</span>.</li>
+<li><tt class="docutils literal"><span class="pre">g</span></tt> &#8211; A <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+a round component function <span class="math">\(g\)</span> or a polynomial output of this
+object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method.</li>
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8220;encrypt&#8221;) Whether <tt class="docutils literal"><span class="pre">f</span></tt> and <tt class="docutils literal"><span class="pre">g</span></tt>
+should use their encryption transformations or their decryption
+transformations. Does nothing if <tt class="docutils literal"><span class="pre">g</span></tt> is a
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object. The encryption flag is
+&#8220;encrypt&#8221; and the decryption flag is &#8220;decrypt&#8221;.</li>
+<li><tt class="docutils literal"><span class="pre">f_attr</span></tt> &#8211; (default: None) A dictionary of keyword attributes to
+pass to <tt class="docutils literal"><span class="pre">f</span></tt> when it is called.</li>
+<li><tt class="docutils literal"><span class="pre">g_attr</span></tt> &#8211; (default: None) A dictionary of keyword attributes to
+pass to <tt class="docutils literal"><span class="pre">g</span></tt> when it is called. Does nothing if <tt class="docutils literal"><span class="pre">g</span></tt> is a
+polynomial.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>If <tt class="docutils literal"><span class="pre">g</span></tt> is a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding
+to a round component function <span class="math">\(g\)</span>, then <tt class="docutils literal"><span class="pre">compose</span></tt> returns a
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> corresponding to the round
+component function <span class="math">\(g \circ f\)</span>, where <span class="math">\(f\)</span> is the round component
+function corresponding to the first argument <tt class="docutils literal"><span class="pre">f</span></tt>. On the other
+hand, if <tt class="docutils literal"><span class="pre">g</span></tt> <span class="math">\(= g(A)_{i,j}\)</span> for a round component function <span class="math">\(g\)</span>,
+then <tt class="docutils literal"><span class="pre">compose</span></tt> returns <span class="math">\(g(f(A))_{i,j}\)</span>, where <span class="math">\(A\)</span> is an
+arbitrary input state matrix.</li>
+</ul>
+<p>EXAMPLES</p>
+<p>This function allows us to determine the polynomial representations
+of entries across multiple round functions. For example, if we
+wanted a polynomial representing the <tt class="docutils literal"><span class="pre">1,3</span></tt> entry of a matrix after
+we first apply ShiftRows and then MixColumns to that matrix, we do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mcp</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">()(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="n">mcp</span>
+<span class="go">a03 + (x)*a13 + (x + 1)*a23 + a33</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">(),</span> <span class="n">mcp</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span>
+<span class="go">a03 + (x)*a10 + (x + 1)*a21 + a32</span>
+</pre></div>
+</div>
+<p>We can test the correctness of this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;fa636a2825b339c940668a3157244d17&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">new_state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">list</span><span class="p">())</span> <span class="o">==</span> <span class="n">new_state</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can also use <tt class="docutils literal"><span class="pre">compose</span></tt> to build a new
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to the composition
+of multiple round functions as such:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.mix_columns_poly_constr())</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">a03 + (x)*a10 + (x + 1)*a21 + a32</span>
+</pre></div>
+</div>
+<p>If we use <tt class="docutils literal"><span class="pre">compose</span></tt> to make a new <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt>
+object, we can use that object as input to <tt class="docutils literal"><span class="pre">apply_poly</span></tt> and
+<tt class="docutils literal"><span class="pre">compose</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;36400926f9336d2d9fb59d23c42c3950&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;f4bcd45432e554d075f1d6c51dd03b3c&#39;</span>
+
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">new_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">new_state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">new_state</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn2</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span> <span class="n">fn</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the second argument is a polynomial, then the value of <tt class="docutils literal"><span class="pre">algorithm</span></tt>
+is passed directly to the first argument <span class="math">\(f\)</span> during evaluation.
+However, if the second argument is a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt>
+object, changing <tt class="docutils literal"><span class="pre">algorithm</span></tt> does nothing since the returned object
+has its own <tt class="docutils literal"><span class="pre">algorithm='encrypt'</span></tt> keyword.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.mix_columns_poly_constr(), algorithm=&#39;decrypt&#39;)</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.mix_columns_poly_constr())</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">([</span><span class="n">f</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="n">g</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can change the keyword attributes of the <tt class="docutils literal"><span class="pre">__call__</span></tt> methods of
+<tt class="docutils literal"><span class="pre">f</span></tt> and <tt class="docutils literal"><span class="pre">g</span></tt> by passing dictionaries <tt class="docutils literal"><span class="pre">f_attr</span></tt> and <tt class="docutils literal"><span class="pre">g_attr</span></tt> to
+<tt class="docutils literal"><span class="pre">compose</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">fn</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">add_round_key_poly_constr</span><span class="p">(),</span>
+<span class="go">....: rgf.add_round_key_poly_constr(),</span>
+<span class="go">....: f_attr={&#39;round&#39; : 4}, g_attr={&#39;round&#39; : 7})</span>
+<span class="gp">sage: </span><span class="n">fn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a12 + k412 + k712</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.decrypt">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">decrypt</tt><big>(</big><em>ciphertext</em>, <em>key</em>, <em>format='hex'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.decrypt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the ciphertext <tt class="docutils literal"><span class="pre">ciphertext</span></tt> decrypted with the key <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ciphertext</span></tt> &#8211; The ciphertext to be decrypted.</li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; The key to decrypt <tt class="docutils literal"><span class="pre">ciphertext</span></tt> with.</li>
+<li><tt class="docutils literal"><span class="pre">format</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">hex</span></tt>) The string format that both
+<tt class="docutils literal"><span class="pre">ciphertext</span></tt> and <tt class="docutils literal"><span class="pre">key</span></tt> must be in, either &#8220;hex&#8221; or &#8220;binary&#8221;.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A string in the format <tt class="docutils literal"><span class="pre">format</span></tt> of <tt class="docutils literal"><span class="pre">ciphertext</span></tt> decrypted with
+key <tt class="docutils literal"><span class="pre">key</span></tt>.</li>
+</ul>
+<p>EXAMPLES</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;2dfb02343f6d12dd09337ec75b36e3f0&#39;</span>
+<span class="gp">sage: </span><span class="n">ciphertext</span> <span class="o">=</span> <span class="s">&#39;54d990a16ba09ab596bbf40ea111702f&#39;</span>
+<span class="gp">sage: </span><span class="n">expected_plaintext</span> <span class="o">=</span> <span class="s">&#39;1e1d913b7274ad9b5a4ab1a5f9133b93&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_plaintext</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can also decrypt messages using binary strings.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;00011010000011100011000000111101&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">ciphertext</span> <span class="o">=</span> <span class="s">&#39;00110010001110000111110110000001&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">expected_plaintext</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;101111111010011100111100101010100111&#39;</span>
+<span class="go">....: &#39;1111010000101101100001101000000000000000010000000100111011&#39;</span>
+<span class="go">....: &#39;0100001111100011010001101101001011&#39;)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">expected_plaintext</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.encrypt">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">encrypt</tt><big>(</big><em>plain</em>, <em>key</em>, <em>format='hex'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.encrypt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the plaintext <tt class="docutils literal"><span class="pre">plain</span></tt> encrypted with the key <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">plain</span></tt> &#8211; The plaintext to be encrypted.</li>
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; The key to encrypt <tt class="docutils literal"><span class="pre">plain</span></tt> with.</li>
+<li><tt class="docutils literal"><span class="pre">format</span></tt> &#8211; (default: <tt class="docutils literal"><span class="pre">hex</span></tt>) The string format of <tt class="docutils literal"><span class="pre">key</span></tt> and
+<tt class="docutils literal"><span class="pre">plain</span></tt>, either &#8220;hex&#8221; or &#8220;binary&#8221;.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A string of the plaintext <tt class="docutils literal"><span class="pre">plain</span></tt> encrypted with the key <tt class="docutils literal"><span class="pre">key</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;c81677bc9b7ac93b25027992b0261996&#39;</span>
+<span class="gp">sage: </span><span class="n">plain</span> <span class="o">=</span> <span class="s">&#39;fde3bad205e5d0d73547964ef1fe37f1&#39;</span>
+<span class="gp">sage: </span><span class="n">expected_ciphertext</span> <span class="o">=</span> <span class="s">&#39;e767290ddfc6414e3c50a444bec081f0&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">plain</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_ciphertext</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can encrypt binary strings as well.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;10010111110000011111011011010001&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">plain</span> <span class="o">=</span> <span class="s">&#39;00000000101000000000000001111011&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">expected_ciphertext</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;11010111100100001010001011110010111&#39;</span>
+<span class="go">....: &#39;1110011000000011111100100011011100101000000001000111000010&#39;</span>
+<span class="go">....: &#39;00100111011011001000111101111110100&#39;)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">plain</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;binary&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">==</span> <span class="n">expected_ciphertext</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.expand_key">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">expand_key</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.expand_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the expanded key schedule from <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">key</span></tt> &#8211; The key to build a key schedule from. Must be a matrix
+over <span class="math">\(\GF{2^8}\)</span> of dimensions <span class="math">\(4 \times N_k\)</span>.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A length <span class="math">\(Nr\)</span> list of <span class="math">\(4 \times N_b\)</span> matrices corresponding to the
+expanded key. The <span class="math">\(n\)</span> th entry of the list corresponds to the matrix
+used in the <tt class="docutils literal"><span class="pre">add_round_key</span></tt> step of the <span class="math">\(n\)</span> th round.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key</span> <span class="o">=</span> <span class="s">&#39;331D0084B176C3FB59CAA0EDA271B565BB5D9A2D1E4B2892&#39;</span>
+<span class="gp">sage: </span><span class="n">key_state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">key_schedule</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key</span><span class="p">(</span><span class="n">key_state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">key_schedule</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">&#39;331d0084b176c3fb59caa0eda271b565&#39;</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">key_schedule</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+<span class="go">&#39;5c5d51c4121f018d0f4f3e408ae9f78c&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.expand_key_poly">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">expand_key_poly</tt><big>(</big><em>row</em>, <em>col</em>, <em>round</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.expand_key_poly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a polynomial representing the <tt class="docutils literal"><span class="pre">row,col</span></tt> th entry of the
+<tt class="docutils literal"><span class="pre">round</span></tt> th round key.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">row</span></tt> &#8211; The row position of the element represented by this
+polynomial.</li>
+<li><tt class="docutils literal"><span class="pre">col</span></tt> &#8211; The column position of the element represented by this
+polynomial.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A polynomial representing the <tt class="docutils literal"><span class="pre">row,col</span></tt> th entry of the <tt class="docutils literal"><span class="pre">round</span></tt>
+th round key in terms of entries of the input key.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">k012</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">(x^2 + 1)*k023^254 +</span>
+<span class="go">(x^3 + 1)*k023^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*k023^251 +</span>
+<span class="go">(x^5 + x^2 + 1)*k023^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*k023^239 +</span>
+<span class="go">k023^223 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*k023^191 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*k023^127 +</span>
+<span class="go">k010 +</span>
+<span class="go">k011 +</span>
+<span class="go">k012 +</span>
+<span class="go">(x^6 + x^5 + x)</span>
+</pre></div>
+</div>
+<p>It should be noted that <tt class="docutils literal"><span class="pre">expand_key_poly</span></tt> cannot be used with
+<tt class="docutils literal"><span class="pre">apply_poly</span></tt> or <tt class="docutils literal"><span class="pre">compose</span></tt>, since <tt class="docutils literal"><span class="pre">expand_key_poly</span></tt> is not a
+<tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">(),</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">keyword &#39;g&#39; must be a Round_Component_Poly_Constr or a polynomial over Finite Field in x of size 2^8</span>
+
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;00000000000000000000000000000000&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">expand_key_poly</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">keyword &#39;poly_constr&#39; must be a Round_Component_Poly_Constr</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.key_length">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">key_length</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.key_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the key length of this instantiation of Rijndael-GF.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">key_length</span><span class="p">()</span>
+<span class="go">8</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.mix_columns">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">mix_columns</tt><big>(</big><em>state</em>, <em>algorithm='encrypt'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.mix_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the application of MixColumns to the state matrix <tt class="docutils literal"><span class="pre">state</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> &#8211; The state matrix to apply MixColumns to.</li>
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8220;encrypt&#8221;) Whether to perform the
+encryption version of MixColumns, or its decryption inverse. The
+encryption flag is &#8220;encrypt&#8221; and the decryption flag is &#8220;decrypt&#8221;.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>The state matrix over <span class="math">\(\GF{2^8}\)</span> which is the result of applying
+MixColumns to <tt class="docutils literal"><span class="pre">state</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;cd54c7283864c0c55d4c727e90c9a465&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;921f748fd96e937d622d7725ba8ba50c&#39;</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">==</span> <span class="n">state</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.mix_columns_poly_constr">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">mix_columns_poly_constr</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.mix_columns_poly_constr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+MixColumns.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">mix_columns_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span>
+<span class="go">A polynomial constructor for the function &#39;Mix Columns&#39; of Rijndael-GF block cipher with block length 4, key length 4, and 10 rounds.</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">a02 + (x)*a12 + (x + 1)*a22 + a32</span>
+<span class="gp">sage: </span><span class="n">mc_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">(x^3 + 1)*a00 + (x^3 + x^2 + x)*a10 + (x^3 + x + 1)*a20 + (x^3 + x^2 + 1)*a30</span>
+</pre></div>
+</div>
+<p>The returned object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method has no additional keywords,
+unlike <tt class="docutils literal"><span class="pre">sub_bytes_poly_constr()</span></tt> and <tt class="docutils literal"><span class="pre">add_round_key_poly_constr()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.number_rounds">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">number_rounds</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.number_rounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of rounds used in this instantiation of Rijndael-GF.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">number_rounds</span><span class="p">()</span>
+<span class="go">11</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.shift_rows">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">shift_rows</tt><big>(</big><em>state</em>, <em>algorithm='encrypt'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.shift_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the application of ShiftRows to the state matrix <tt class="docutils literal"><span class="pre">state</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> &#8211; A state matrix over <span class="math">\(\GF{2^8}\)</span> to which ShiftRows is
+applied to.</li>
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8220;encrypt&#8221;) Whether to perform the
+encryption version of ShiftRows or its decryption inverse. The
+encryption flag is &#8220;encrypt&#8221; and the decryption flag is &#8220;decrypt&#8221;.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>A state matrix over <span class="math">\(\GF{2^8}\)</span> which is the application of ShiftRows
+to <tt class="docutils literal"><span class="pre">state</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;adcb0f257e9c63e0bc557e951c15ef01&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;ad9c7e017e55ef25bc150fe01ccb6395&#39;</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">==</span> <span class="n">state</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.shift_rows_poly_constr">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">shift_rows_poly_constr</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.shift_rows_poly_constr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+ShiftRows.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sr_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sr_pc</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">a33</span>
+<span class="gp">sage: </span><span class="n">sr_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="go">a23</span>
+</pre></div>
+</div>
+<p>The returned object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method has no additional keywords,
+unlike <tt class="docutils literal"><span class="pre">sub_bytes_poly_constr()</span></tt> and <tt class="docutils literal"><span class="pre">add_round_key_poly_constr</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.sub_bytes">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">sub_bytes</tt><big>(</big><em>state</em>, <em>algorithm='encrypt'</em><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.sub_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the application of SubBytes to the state matrix <tt class="docutils literal"><span class="pre">state</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state</span></tt> &#8211; The state matrix to apply SubBytes to.</li>
+<li><tt class="docutils literal"><span class="pre">algorithm</span></tt> &#8211; (default: &#8220;encrypt&#8221;) Whether to apply the
+encryption step of SubBytes or its decryption inverse. The encryption
+flag is &#8220;encrypt&#8221; and the decryption flag is &#8220;decrypt&#8221;.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>The state matrix over <span class="math">\(\GF{2^8}\)</span> where SubBytes has been applied
+to every entry of <tt class="docutils literal"><span class="pre">state</span></tt>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;d1c4941f7955f40fb46f6c0ad68730ad&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;3e1c22c0b6fcbf768da85067f6170495&#39;</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">decryption</span> <span class="o">==</span> <span class="n">state</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.crypto.mq.rijndael_gf.RijndaelGF.sub_bytes_poly_constr">
+<tt class="descclassname">RijndaelGF.</tt><tt class="descname">sub_bytes_poly_constr</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.crypto.mq.rijndael_gf.RijndaelGF.sub_bytes_poly_constr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <tt class="docutils literal"><span class="pre">Round_Component_Poly_Constr</span></tt> object corresponding to
+SubBytes.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.crypto.mq.rijndael_gf</span> <span class="kn">import</span> <span class="n">RijndaelGF</span>
+<span class="gp">sage: </span><span class="n">rgf</span> <span class="o">=</span> <span class="n">RijndaelGF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sb_pc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">sub_bytes_poly_constr</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sb_pc</span>
+<span class="go">A polynomial constructor for the function &#39;SubBytes&#39; of Rijndael-GF block cipher with block length 4, key length 4, and 10 rounds.</span>
+<span class="gp">sage: </span><span class="n">sb_pc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">(x^2 + 1)*a23^254 +</span>
+<span class="go">(x^3 + 1)*a23^253 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a23^251 +</span>
+<span class="go">(x^5 + x^2 + 1)*a23^247 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a23^239 +</span>
+<span class="go">a23^223 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a23^191 +</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a23^127 +</span>
+<span class="go">(x^6 + x^5 + x + 1)</span>
+</pre></div>
+</div>
+<p>The returned object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method has an additional keyword
+of <tt class="docutils literal"><span class="pre">no_inversion=False</span></tt>, which causes the returned polynomial to
+represent only the affine transformation step of SubBytes.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sb_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">no_inversion</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">(x^7 + x^3 + x^2 + x + 1)*a10^128 +</span>
+<span class="go">(x^7 + x^5 + x^4 + x^2 + 1)*a10^64 +</span>
+<span class="go">a10^32 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^2)*a10^16 +</span>
+<span class="go">(x^5 + x^2 + 1)*a10^8 +</span>
+<span class="go">(x^7 + x^6 + x^5 + x^4 + x^3 + 1)*a10^4 +</span>
+<span class="go">(x^3 + 1)*a10^2 +</span>
+<span class="go">(x^2 + 1)*a10 +</span>
+<span class="go">(x^6 + x^5 + x + 1)</span>
+</pre></div>
+</div>
+<p>We can build a polynomial representing the inverse transformation
+by setting the keyword <tt class="docutils literal"><span class="pre">algorithm='decrypt'</span></tt>. However, the order of
+the affine transformation and the inversion step in SubBytes means that
+this polynomial has thousands of terms and is very slow to compute.
+Hence, if one wishes to build the decryption polynomial with the
+intention of evaluating that polynomial for a particular input, it is
+strongly recommended to first call
+<tt class="docutils literal"><span class="pre">sb_pc(i,</span> <span class="pre">j,</span> <span class="pre">algorithm='decrypt',</span> <span class="pre">no_inversion=True)</span></tt> to build a
+polynomial representing only the inverse affine transformation,
+evaluate this polynomial for your intended input, then finally
+calculate the inverse of the result.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">poly</span> <span class="o">=</span> <span class="n">sb_pc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s">&#39;decrypt&#39;</span><span class="p">,</span> <span class="n">no_inversion</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">state</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">_hex_to_GF</span><span class="p">(</span><span class="s">&#39;39daee38f4f1a82aaf432410c36d45b9&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">poly</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">&#39;49&#39;</span>
+</pre></div>
+</div>
+<p>When passing the returned object to <tt class="docutils literal"><span class="pre">apply_poly</span></tt> and <tt class="docutils literal"><span class="pre">compose</span></tt>, we
+can make those methods change the keyword <tt class="docutils literal"><span class="pre">no_inversion</span></tt> of this
+object&#8217;s <tt class="docutils literal"><span class="pre">__call__</span></tt> method by passing the dictionary
+<tt class="docutils literal"><span class="pre">{'no_inversion'</span> <span class="pre">:</span> <span class="pre">True}</span></tt> to them.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">result</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">apply_poly</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">sb_pc</span><span class="p">,</span>
+<span class="go">....: poly_constr_attr={&#39;no_inversion&#39; : True})</span>
+<span class="gp">sage: </span><span class="n">rgf</span><span class="o">.</span><span class="n">_GF_to_hex</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="go">&#39;961c72894526f746aa85fc920adcc719&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">rcpc</span> <span class="o">=</span> <span class="n">rgf</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">sb_pc</span><span class="p">,</span> <span class="n">rgf</span><span class="o">.</span><span class="n">shift_rows_poly_constr</span><span class="p">(),</span>
+<span class="go">....: f_attr={&#39;no_inversion&#39; : True})</span>
+</pre></div>
+</div>
+<p>Note that if we set <tt class="docutils literal"><span class="pre">algorithm='decrypt'</span></tt> for <tt class="docutils literal"><span class="pre">apply_poly</span></tt>, it
+will perform the necessary performance enhancement described above
+automatically. The structure of <tt class="docutils literal"><span class="pre">compose</span></tt>, however, unfortunately
+does not allow this enhancement to be employed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="sbox.html"
+                                  title="previous chapter">S-Boxes and Their Algebraic Representations</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../lattice.html"
+                                  title="next chapter">Hard Lattice Generator</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/crypto/mq/rijndael_gf.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../lattice.html" title="Hard Lattice Generator"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sbox.html" title="S-Boxes and Their Algebraic Representations"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Cryptography</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2015, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
