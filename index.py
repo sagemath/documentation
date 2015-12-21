@@ -1,5 +1,19 @@
 #!/usr/bin/env python
-# index for the documentation
+# Custom index for the SageMath Documentation
+#
+# Usage run this script to generate the index files.
+# Run it only **once** (!) with the argument "fix" to repair all those
+# relative static links. That's necessary to work well with the CDN
+# network at GitHub.
+#
+# Note: the script assumes the html and pdf files are copied after
+# running `make doc-html && make doc-pdf` like this:
+# $ cp -aR $SAGE_ROOT/src/doc/output/pdf .
+# $ cp -aR $SAGE_ROOT/src/doc/output/html .
+#
+# License: Apache 2.0
+# Author: Harald Schilly <harald.schilly@gmail.com>
+
 from glob import glob
 from collections import defaultdict
 
