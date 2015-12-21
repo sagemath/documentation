@@ -26,7 +26,8 @@ LANG = {
     "fr": "French",
     "it": "Italian",
     "ca": "Catalan",
-    "tr": "Turkish"
+    "tr": "Turkish",
+    "ja": "Japanese",
 }
 
 intro = """\
