@@ -1,0 +1,948 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>How to write your own classes for coding theory &mdash; Thematic Tutorials v7.0</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v7.0" href="index.html" />
+    <link rel="up" title="Thematic tutorial document tree" href="toctree.html" />
+    <link rel="next" title="A Brief Introduction to Polytopes in Sage" href="polytutorial.html" />
+    <link rel="prev" title="Sage and Coding Theory" href="coding_theory.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polytutorial.html" title="A Brief Introduction to Polytopes in Sage"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coding_theory.html" title="Sage and Coding Theory"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Thematic Tutorials v7.0</a> &raquo;</li>
+
+          <li><a href="toctree.html" accesskey="U">Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="how-to-write-your-own-classes-for-coding-theory">
+<span id="structures-in-coding-theory"></span><h1><a class="toc-backref" href="#id1">How to write your own classes for coding theory</a><a class="headerlink" href="#how-to-write-your-own-classes-for-coding-theory" title="Permalink to this headline">¶</a></h1>
+<p><em>Author: David Lucas</em></p>
+<p>This tutorial, designed for advanced users who want to build their own classes,
+will explain step by step what you need to do to write code which integrates
+well in the framework of coding theory.
+During this tutorial, we will cover the following parts:</p>
+<ul class="simple">
+<li>how to write a new <strong>code family</strong></li>
+<li>how to write a new <strong>encoder</strong></li>
+<li>how to write a new <strong>decoder</strong></li>
+<li>how to write a new <strong>channel</strong></li>
+</ul>
+<p>Through all this tutorial, we will follow the same example, namely the
+implementation of repetition code. At the end of each part, we will summarize
+every important step of the implementation. If one just wants
+a quick access to the implementation of one of the objects cited above, one can
+jump directly to the end of related part,
+which presents a summary of what to do.</p>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#how-to-write-your-own-classes-for-coding-theory" id="id1">How to write your own classes for coding theory</a><ul>
+<li><a class="reference internal" href="#i-the-repetition-code" id="id2">I. The repetition code</a></li>
+<li><a class="reference internal" href="#ii-write-a-new-code-class" id="id3">II. Write a new code class</a></li>
+<li><a class="reference internal" href="#iii-write-a-new-encoder-class" id="id4">III. Write a new encoder class</a></li>
+<li><a class="reference internal" href="#iv-write-a-new-decoder-class" id="id5">IV. Write a new decoder class</a></li>
+<li><a class="reference internal" href="#v-write-a-new-channel-class" id="id6">V. Write a new channel class</a></li>
+<li><a class="reference internal" href="#vi-sort-our-new-elements" id="id7">VI. Sort our new elements</a></li>
+<li><a class="reference internal" href="#vii-complete-code-of-this-tutorial" id="id8">VII. Complete code of this tutorial</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="i-the-repetition-code">
+<h2><a class="toc-backref" href="#id2">I. The repetition code</a><a class="headerlink" href="#i-the-repetition-code" title="Permalink to this headline">¶</a></h2>
+<p>We want to implement in Sage the well-known repetition code.
+Its definition follows:</p>
+<p>the <span class="math">\((n, 1)\)</span>-repetition code over <span class="math">\(\GF{q}\)</span> is the code formed
+by all the vectors of <span class="math">\(\GF{q}^{n}\)</span> of the form
+<span class="math">\((i, i, i, \dots, i)\)</span> for all <span class="math">\(i \in \GF{q}\)</span>.</p>
+<p>For example, the <span class="math">\((3, 1)\)</span>-repetition code over <span class="math">\(\GF{2}\)</span> is:
+<span class="math">\(C = \{(0, 0, 0), (1, 1, 1)\}\)</span>.</p>
+<p>The encoding is very simple, it only consists in repeating <span class="math">\(n\)</span>
+times the input symbol and pick the vector thus formed.</p>
+<p>The decoding uses majority voting to select the right symbol
+(over <span class="math">\(\GF{2}\)</span>). If we receive the word <span class="math">\((1, 0, 1)\)</span>
+(example cont&#8217;d), we deduce that the original word was <span class="math">\((1)\)</span>.
+It can correct up to <span class="math">\(\left\lceil \frac{n-1}{2} \right\rceil\)</span> errors.</p>
+<p>Through all this tutorial, we will illustrate the implementation of the
+<span class="math">\((n, 1)\)</span>-repetition code over <span class="math">\(\GF{2}\)</span>.</p>
+</div>
+<div class="section" id="ii-write-a-new-code-class">
+<h2><a class="toc-backref" href="#id3">II. Write a new code class</a><a class="headerlink" href="#ii-write-a-new-code-class" title="Permalink to this headline">¶</a></h2>
+<p>The first thing to do to write a new code class is to identify
+the following elements:</p>
+<ul class="simple">
+<li>the length of the code,</li>
+<li>the base field of the code,</li>
+<li>the default encoder for the code,</li>
+<li>the default decoder for the code and</li>
+<li>any other useful argument we want to set at construction time.</li>
+</ul>
+<p>For our code, we know its length, its dimension, its base field, one encoder
+and one decoder.</p>
+<p>Now we isolated the parameters of the code, we can write the
+constructor of our class.
+Every linear code class must inherit from
+<a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode</span></tt></a>.
+This class provide a lot of useful methods and, as we illustrate thereafter,
+a default constructor which sets the <em>length</em>, the <em>base field</em>,
+the <em>default encoder</em> and the <em>default decoder</em> as class parameters.
+We also need to create the dictionary of known encoders and decoders
+for the class.</p>
+<p>Let us now write the constructor for our code class,
+that we store in some file called <tt class="docutils literal"><span class="pre">repetition_code.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.linear_code</span> <span class="kn">import</span> <span class="n">AbstractLinearCode</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">BinaryRepetitionCode</span><span class="p">(</span><span class="n">AbstractLinearCode</span><span class="p">):</span>
+<span class="go">....:     _registered_encoders = {}</span>
+<span class="go">....:     _registered_decoders = {}</span>
+<span class="go">....:     def __init__(self, length):</span>
+<span class="go">....:         super(BinaryRepetitionCode, self).__init__(GF(2), length,</span>
+<span class="go">....:           &quot;RepetitionGeneratorMatrixEncoder&quot;, &quot;MajorityVoteDecoder&quot;)</span>
+<span class="go">....:         self._dimension = 1</span>
+</pre></div>
+</div>
+<p>As you notice, the constructor is really simple. Most of the work is indeed
+managed by the topclass through the <tt class="docutils literal"><span class="pre">super</span></tt> statement.
+Note that the dimension is not set by the abstract class, because for some
+code families the exact dimension is hard to compute.
+If the exact dimension is known, set it using <tt class="docutils literal"><span class="pre">_dimension</span></tt>
+as a class parameter.</p>
+<p>We can now write representation methods for our code class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;Binary repetition code of length %s&quot; % self.length()</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;\textnormal{Binary repetition code of length } %s&quot; % self.length()</span>
+</pre></div>
+</div>
+<p>We also write a method to check equality:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="go">....:     return (isinstance(other, BinaryRepetitionCode)</span>
+<span class="go">....:             and self.length() == other.length()</span>
+<span class="go">....:             and self.dimension() == other.dimension())</span>
+</pre></div>
+</div>
+<p>After these examples, you probably noticed that we use two methods,
+namely <tt class="docutils literal"><span class="pre">length()</span></tt> and <tt class="docutils literal"><span class="pre">dimension()</span></tt> without defining them.
+That is because their implementation is provided in
+<a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode</span></tt></a>.
+The abstract class provides default implantation of the
+following getter methods:</p>
+<ul class="simple">
+<li><a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode.dimension" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode.dimension()</span></tt></a></li>
+<li><a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode.length" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode.length()</span></tt></a>,</li>
+<li><a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode.base_field" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode.base_field()</span></tt></a> and</li>
+<li><a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode.ambient_space" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode.ambient_space()</span></tt></a>.</li>
+</ul>
+<p>It also provides an implementation of <tt class="docutils literal"><span class="pre">__ne__</span></tt> which returns the inverse
+of <tt class="docutils literal"><span class="pre">__eq__</span></tt> and several other very useful methods, like <tt class="docutils literal"><span class="pre">__contains__</span></tt>.
+Note that a lot of these other methods rely on the computation of a generator
+matrix. It is thus highly recommended to set an encoder which
+knows how to compute such a matrix as default encoder.
+As default encoder will be used by all these methods which expect a
+generator matrix, if one provides a default encoder which does not have a
+<tt class="docutils literal"><span class="pre">generator_matrix</span></tt> method, a lot of generic methods will fail.</p>
+<p>As our code family is really simple, we do not need anything else,
+and the code provided above is enough to describe properly a repetition code.</p>
+<div class="section" id="summary-of-the-implementation-for-linear-codes">
+<h3>Summary of the implementation for linear codes<a class="headerlink" href="#summary-of-the-implementation-for-linear-codes" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Inherit from <a class="reference external" href="../reference/coding/sage/coding/linear_code.html#sage.coding.linear_code.AbstractLinearCode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.linear_code.AbstractLinearCode</span></tt></a>.</p>
+</li>
+<li><p class="first">Add <tt class="docutils literal"><span class="pre">_registered_encoders</span> <span class="pre">=</span>&nbsp; <span class="pre">{}</span></tt> and <tt class="docutils literal"><span class="pre">_registered_decoders</span> <span class="pre">=</span> <span class="pre">{}</span></tt>
+as class variables.</p>
+</li>
+<li><p class="first">Add this line in the class&#8217; constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">super</span><span class="p">(</span><span class="n">ClassName</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">base_field</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="s">&quot;DefaultEncoder&quot;</span><span class="p">,</span> <span class="s">&quot;DefaultDecoder&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Implement representation methods (not mandatory, but highly advised)
+<tt class="docutils literal"><span class="pre">_repr_</span></tt> and <tt class="docutils literal"><span class="pre">_latex_</span></tt>.</p>
+</li>
+<li><p class="first">Implement <tt class="docutils literal"><span class="pre">__eq__</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">__ne__</span></tt>, <tt class="docutils literal"><span class="pre">length</span></tt> and <tt class="docutils literal"><span class="pre">dimension</span></tt> come with the abstract class.</p>
+</li>
+</ol>
+<p>Please note that <tt class="docutils literal"><span class="pre">dimension</span></tt> will not work is there is no field
+<tt class="docutils literal"><span class="pre">_dimension</span></tt> as class parameter.</p>
+<p>We now know how to write a new code class.
+Let us see how to write a new encoder and a new decoder.</p>
+</div>
+</div>
+<div class="section" id="iii-write-a-new-encoder-class">
+<h2><a class="toc-backref" href="#id4">III. Write a new encoder class</a><a class="headerlink" href="#iii-write-a-new-encoder-class" title="Permalink to this headline">¶</a></h2>
+<p>Let us continue our example. We ask the same question as before:
+what do we need to describe the encoder?
+For most of the cases (this one included), we only need the associated code.
+In that case, writing the constructor is really straightforward
+(we store the code in the same <tt class="docutils literal"><span class="pre">.py</span></tt> file as the code class):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.encoder</span> <span class="kn">import</span> <span class="n">Encoder</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">BinaryRepetitionCodeGeneratorMatrixEncoder</span><span class="p">(</span><span class="n">Encoder</span><span class="p">):</span>
+<span class="go">....:     def __init__(self, code):</span>
+<span class="go">....:         super(BinaryRepetitionCodeGeneratorMatrixEncoder, self).__init__(code)</span>
+</pre></div>
+</div>
+<p>Same thing as before, as an encoder always needs to know its associated code,
+the work can be done by the base class.
+Remember to inherit from <a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.encoder.Encoder</span></tt></a>!</p>
+<p>We also want to override representation methods <tt class="docutils literal"><span class="pre">_repr_</span></tt> and <tt class="docutils literal"><span class="pre">_latex_</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;Binary repetition encoder for the %s&quot; % self.code()</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;\textnormal{Binary repetition encoder for the } %s&quot; % self.code()</span>
+</pre></div>
+</div>
+<p>And we want to have an equality check too:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="go">....:     return (isinstance(other, BinaryRepetitionCodeGeneratorMatrixEncoder)</span>
+<span class="go">....:             and self.code() == other.code())</span>
+</pre></div>
+</div>
+<p>As before, default getter method is provided by the topclass,
+namely <a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder.code" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.encoder.Encoder.code()</span></tt></a>.</p>
+<p>All we have to do is to implement the methods related to the encoding.
+This implementation changes quite a lot whether
+we have a generator matrix or not.</p>
+<div class="section" id="we-have-a-generator-matrix">
+<h3>We have a generator matrix<a class="headerlink" href="#we-have-a-generator-matrix" title="Permalink to this headline">¶</a></h3>
+<p>In that case, the message space is a vector space, and it is especially easy:
+the only method you need to implement is <tt class="docutils literal"><span class="pre">generator_matrix</span></tt>.</p>
+<p>Continuing our example, it will be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">generator_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     n = self.code().length()</span>
+<span class="go">....:     return Matrix(GF(2), 1, n, [GF(2).one()] * n)</span>
+</pre></div>
+</div>
+<p>As the topclass provides default implementation for encode and the inverse
+operation, that we call <em>unencode</em>
+(see: <a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder.encode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.encoder.Encoder.encode()</span></tt></a> and
+<a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder.unencode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.encoder.Encoder.unencode()</span></tt></a>), alongside
+with a default implementation of
+<a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder.message_space" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.encoder.Encoder.message_space()</span></tt></a>, our work here is done.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Default <tt class="docutils literal"><span class="pre">encode</span></tt> method multiplies the provide word by the generator
+matrix, while default <tt class="docutils literal"><span class="pre">unencode</span></tt> computes an information set for
+the generator matrix, inverses it and performs a matrix-vector
+multiplication to recover the original message.
+If one has a better implementation for one&#8217;s specific code family,
+one should obviously override the default <tt class="docutils literal"><span class="pre">encode</span></tt> and <tt class="docutils literal"><span class="pre">unencode</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="we-do-not-have-any-generator-matrix">
+<h3>We do not have any generator matrix<a class="headerlink" href="#we-do-not-have-any-generator-matrix" title="Permalink to this headline">¶</a></h3>
+<p>In that case, we need to override several methods, namely <tt class="docutils literal"><span class="pre">encode</span></tt>,
+<tt class="docutils literal"><span class="pre">unencode_nocheck</span></tt> and probably <tt class="docutils literal"><span class="pre">message_space</span></tt> (in the case where
+the message space is not a vector space). Note that the default
+implementation of <a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder.unencode" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.encoder.Encoder.unencode()</span></tt></a> relies on
+<tt class="docutils literal"><span class="pre">unencode_nocheck</span></tt>, so reimplementing the former is not necessary.</p>
+<p>In our example, it is easy to create an encoder which does not need
+a generator matrix to perform the encoding and the unencoding.
+We propose the following implementation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="go">....:     return vector(GF(2), [message] * self.code().length())</span>
+
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">unencode_nocheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+<span class="go">....:     return word[0]</span>
+
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">message_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return GF(2)</span>
+</pre></div>
+</div>
+<p>Our work here is done.</p>
+<p>We need to do one extra thing: set this encoder in the dictionary
+of known encoders for the associated code class.
+To do that, just add the following line at the end of your file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_registered_encoders</span><span class="p">[</span><span class="s">&quot;RepetitionGeneratorMatrixEncoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BinaryRepetitionCodeGeneratorMatrixEncoder</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="summary-of-the-implementation-for-encoders">
+<h3>Summary of the implementation for encoders<a class="headerlink" href="#summary-of-the-implementation-for-encoders" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Inherit from <a class="reference external" href="../reference/coding/sage/coding/encoder.html#sage.coding.encoder.Encoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.encoder.Encoder</span></tt></a>.</p>
+</li>
+<li><p class="first">Add this line in the class&#8217; constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">super</span><span class="p">(</span><span class="n">ClassName</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">associated_code</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Implement representation methods (not mandatory) <tt class="docutils literal"><span class="pre">_repr_</span></tt>
+and <tt class="docutils literal"><span class="pre">_latex_</span></tt>.</p>
+</li>
+<li><p class="first">Implement <tt class="docutils literal"><span class="pre">__eq__</span></tt></p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">__ne__</span></tt>, <tt class="docutils literal"><span class="pre">code</span></tt> come with the abstract class.</p>
+</li>
+<li><p class="first">If a generator matrix is known, override <tt class="docutils literal"><span class="pre">generator_matrix</span></tt>.</p>
+</li>
+<li><p class="first">Else override <tt class="docutils literal"><span class="pre">encode</span></tt>, <tt class="docutils literal"><span class="pre">unencode_nocheck</span></tt> and if needed
+<tt class="docutils literal"><span class="pre">message_space</span></tt>.</p>
+</li>
+<li><p class="first">Add the encoder to <tt class="docutils literal"><span class="pre">CodeClass._registered_encoders</span></tt>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="iv-write-a-new-decoder-class">
+<h2><a class="toc-backref" href="#id5">IV. Write a new decoder class</a><a class="headerlink" href="#iv-write-a-new-decoder-class" title="Permalink to this headline">¶</a></h2>
+<p>Let us continue by writing a decoder. As before, we need to know what is
+required to describe a decoder. We need of course the associated code of
+the decoder. We also want to know which <tt class="docutils literal"><span class="pre">Encoder</span></tt> we should use when we
+try to recover the original message from a received word containing errors.
+We call this encoder <tt class="docutils literal"><span class="pre">connected_encoder</span></tt>.
+As different decoding algorithms do not have the same behaviour
+(e.g. probabilistic decoding vs deterministic), we would like to give a few
+clues about the type of a decoder. So we can store a list of keywords in the
+class parameter <tt class="docutils literal"><span class="pre">_decoder_type</span></tt>.
+Eventually, we also need to know the input space of the decoder.
+As usual, initializing these parameters can be delegated to the topclass,
+and our constructor looks like that:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.decoder</span> <span class="kn">import</span> <span class="n">Decoder</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">BinaryRepetitionCodeMajorityVoteDecoder</span><span class="p">(</span><span class="n">Decoder</span><span class="p">):</span>
+<span class="go">....:     def __init__(self, code):</span>
+<span class="go">....:         super((BinaryRepetitionCodeMajorityVoteDecoder, self).__init__(code,</span>
+<span class="go">....:            code.ambient_space(), &quot;RepetitionGeneratorMatrixEncoder&quot;))</span>
+</pre></div>
+</div>
+<p>Remember to inherit from <a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.decoder.Decoder</span></tt></a>!</p>
+<p>As <tt class="docutils literal"><span class="pre">_decoder_type</span></tt> is actually a class parameter, one should set it
+in the file itself, outside of any method.
+For readability, we suggest to add this statement at the bottom of the file.
+We&#8217;ll get back to this in a moment.</p>
+<p>We also want to override representation methods <tt class="docutils literal"><span class="pre">_repr_</span></tt> and <tt class="docutils literal"><span class="pre">_latex_</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;Majority vote-based decoder for the %s&quot; % self.code()</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return &quot;\textnormal{Majority vote based-decoder for the } %s&quot; % self.code()</span>
+</pre></div>
+</div>
+<p>And we want to have an equality check too:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="go">....:     return isinstance((other, BinaryRepetitionCodeMajorityVoteDecoder)</span>
+<span class="go">....:           and self.code() == other.code())</span>
+</pre></div>
+</div>
+<p>As before, default getter methods are provided by the topclass, namely
+<a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.code" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.code()</span></tt></a>,
+<a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.input_space" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.input_space()</span></tt></a>,
+<a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.decoder_type" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.decoder_type()</span></tt></a> and
+<a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.connected_encoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.connected_encoder()</span></tt></a>.</p>
+<p>All we have to do know is to implement the methods related to the decoding.</p>
+<p>There are two methods, namely
+<a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.decode_to_code" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.decode_to_code()</span></tt></a>
+and <a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.decode_to_message" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.decode_to_message()</span></tt></a>.</p>
+<p>By the magic of default implementation, these two are linked, as
+<tt class="docutils literal"><span class="pre">decode_to_message</span></tt> calls first <tt class="docutils literal"><span class="pre">decode_to_code</span></tt> and then
+<tt class="docutils literal"><span class="pre">unencode</span></tt>, while <tt class="docutils literal"><span class="pre">decode_to_code</span></tt> calls successively
+<tt class="docutils literal"><span class="pre">decode_to_message</span></tt> and <tt class="docutils literal"><span class="pre">encode</span></tt>.
+So we only need to implement one of these two, and we choose
+to override <tt class="docutils literal"><span class="pre">decode_to_code</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">decode_to_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+<span class="go">....:     list_word = word.list()</span>
+<span class="go">....:     count_one = list_word.count(GF(2).one())</span>
+<span class="go">....:     n = self.code().length()</span>
+<span class="go">....:     length = len(list_word)</span>
+<span class="go">....:     F = GF(2)</span>
+<span class="go">....:     if count_one &gt; length / 2:</span>
+<span class="go">....:         return vector(F, [F.one()] * n)</span>
+<span class="go">....:     elif count_one &lt; length / 2:</span>
+<span class="go">....:         return vector(F, [F.zero()] * n)</span>
+<span class="go">....:     else:</span>
+<span class="go">....:         raise DecodingError(&quot;impossible to find a majority&quot;)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">One notices that if default <tt class="docutils literal"><span class="pre">decode_to_code</span></tt> calls default
+<tt class="docutils literal"><span class="pre">decode_to_message</span></tt> and default <tt class="docutils literal"><span class="pre">decode_to_message</span></tt> calls default
+<tt class="docutils literal"><span class="pre">decode_to_code</span></tt>, if none is overriden and one is called,
+it will end up stuck in an infinite loop. We added a trigger guard
+against this, so if none is overriden and one is called,
+an exception will be raised.</p>
+</div>
+<p>Only one method is missing: one to provide to the user the number of
+errors our decoder can decode.
+This is the method <a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder.decoding_radius" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-meth docutils literal"><span class="pre">sage.coding.decoder.Decoder.decoding_radius()</span></tt></a>,
+which we override:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">decoding_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return (self.code().length()-1) // 2</span>
+</pre></div>
+</div>
+<p>As for some cases, the decoding might not be precisely known, its
+implementation is not mandatory in <a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.decoder.Decoder</span></tt></a>&#8216;s
+subclasses.</p>
+<p>We need to do one extra thing: set this encoder in the dictionary of
+known decoders for the associated code class.
+To do that, just add the following line at the end of your file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_registered_decoders</span><span class="p">[</span><span class="s">&quot;MajorityVoteDecoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span>
+</pre></div>
+</div>
+<p>Also put this line to set <tt class="docutils literal"><span class="pre">decoder_type</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_decoder_type</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;hard-decision&quot;</span><span class="p">,</span> <span class="s">&quot;unique&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="section" id="summary-of-the-implementation-for-decoders">
+<h3>Summary of the implementation for decoders<a class="headerlink" href="#summary-of-the-implementation-for-decoders" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Inherit from <a class="reference external" href="../reference/coding/sage/coding/decoder.html#sage.coding.decoder.Decoder" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.decoder.Decoder</span></tt></a>.</p>
+</li>
+<li><p class="first">Add this line in the class&#8217; constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">super</span><span class="p">(</span><span class="n">ClassName</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">associated_code</span><span class="p">,</span> <span class="n">input_space</span><span class="p">,</span> <span class="n">connected_encoder_name</span><span class="p">,</span> <span class="n">decoder_type</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Implement representation methods (not mandatory) <tt class="docutils literal"><span class="pre">_repr_</span></tt> and
+<tt class="docutils literal"><span class="pre">_latex_</span></tt>.</p>
+</li>
+<li><p class="first">Implement <tt class="docutils literal"><span class="pre">__eq__</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">__ne__</span></tt>, <tt class="docutils literal"><span class="pre">code</span></tt>, <tt class="docutils literal"><span class="pre">connected_encoder</span></tt>, <tt class="docutils literal"><span class="pre">decoder_type</span></tt> come with
+the abstract class.</p>
+</li>
+<li><p class="first">Override <tt class="docutils literal"><span class="pre">decode_to_code</span></tt> or <tt class="docutils literal"><span class="pre">decode_to_message</span></tt> and
+<tt class="docutils literal"><span class="pre">decoding_radius</span></tt>.</p>
+</li>
+<li><p class="first">Add the encoder to <tt class="docutils literal"><span class="pre">CodeClass._registered_decoders</span></tt>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="v-write-a-new-channel-class">
+<h2><a class="toc-backref" href="#id6">V. Write a new channel class</a><a class="headerlink" href="#v-write-a-new-channel-class" title="Permalink to this headline">¶</a></h2>
+<p>Alongside all these new structures directly related to codes, we also propose
+a whole new and shiny structure to experiment on codes, and more specifically
+on their decoding.</p>
+<p>Indeed, we implemented a structure to emulate real-world communication
+channels.</p>
+<p>I&#8217;ll propose here a step-by-step implementation of a dummy channel
+for example&#8217;s sake.</p>
+<p>We will implement a very naive channel which works only for words over
+<span class="math">\(\GF{2}\)</span> and flips as many bits as requested by the user.</p>
+<p>As channels are not directly related to code families, but more to
+vectors and words, we have a specific file, <tt class="docutils literal"><span class="pre">channel_constructions.py</span></tt>
+to store them.</p>
+<p>So we will just add our new class in this file.</p>
+<p>For starters, we ask ourselves the eternal question: What do we need to
+describe a channel?
+Well, we mandatorily need its <tt class="docutils literal"><span class="pre">input_space</span></tt> and its <tt class="docutils literal"><span class="pre">output_space</span></tt>.
+Of course, in most of the cases, the user will be able to provide some extra
+information on the channel&#8217;s behaviour.
+In our case, it will be the number of bits to flip (aka the number of errors).</p>
+<p>As you might have guess, there is an abstract class to take care
+of the mandatory arguments!
+Plus, in our case, as this channel only works for vectors
+over <span class="math">\(\GF{2}\)</span>, the input and output spaces are the same.
+Let us write the constructor of our new channel class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.coding.channel_constructions</span> <span class="kn">import</span> <span class="n">Channel</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">BinaryStaticErrorRateChannel</span><span class="p">(</span><span class="n">Channel</span><span class="p">):</span>
+<span class="go">....:     def __init__(self, space, number_errors):</span>
+<span class="go">....:         if space.base_ring() is not GF(2):</span>
+<span class="go">....:             raise ValueError(&quot;Provided space must be a vector space over GF(2)&quot;)</span>
+<span class="go">....:         if number_errors &gt; space.dimension():</span>
+<span class="go">....:             raise ValueErrors(&quot;number_errors cannot be bigger than input space&#39;s dimension&quot;)</span>
+<span class="go">....:         super(BinaryStaticErrorRateChannel, self).__init__(space, space)</span>
+<span class="go">....:         self._number_errors = number_errors</span>
+</pre></div>
+</div>
+<p>Remember to inherit from <a class="reference external" href="../reference/coding/sage/coding/channel_constructions.html#sage.coding.channel_constructions.Channel" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.channel_constructions.Channel</span></tt></a>!</p>
+<p>We also want to override representation methods <tt class="docutils literal"><span class="pre">_repr_</span></tt> and <tt class="docutils literal"><span class="pre">_latex_</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return (&quot;Binary static error rate channel creating %s errors, of input and output space %s&quot;</span>
+<span class="go">....:             % (format_interval(no_err), self.input_space()))</span>
+
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return (&quot;\\textnormal{Static error rate channel creating %s errors, of input and output space %s}&quot;</span>
+<span class="go">....:             % (format_interval(no_err), self.input_space()))</span>
+</pre></div>
+</div>
+<p>We don&#8217;t really see any use case for equality methods
+(<tt class="docutils literal"><span class="pre">__eq__</span></tt> and <tt class="docutils literal"><span class="pre">__ne__</span></tt>) so do not provide any default implementation.
+If one needs these, one can of course override Python&#8217;s default methods.</p>
+<p>We of course want getter methods.
+There is a provided default implementation for <tt class="docutils literal"><span class="pre">input_space</span></tt> and
+<tt class="docutils literal"><span class="pre">output_space</span></tt>, so we only need one for <tt class="docutils literal"><span class="pre">number_errors</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">number_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="go">....:     return self._number_errors</span>
+</pre></div>
+</div>
+<p>So, now we want a method to actually add errors to words.
+As it is the same thing as transmitting messages over a real-world channel,
+we propose two methods, <tt class="docutils literal"><span class="pre">transmit</span></tt> and <tt class="docutils literal"><span class="pre">transmit_unsafe</span></tt>.
+As you can guess, <tt class="docutils literal"><span class="pre">transmit_unsafe</span></tt> tries to transmit the message
+without checking if it is in the input space or not, while <tt class="docutils literal"><span class="pre">transmit</span></tt> checks
+this before the transmission... Which means that <tt class="docutils literal"><span class="pre">transmit</span></tt> has a default
+implementation which calls <tt class="docutils literal"><span class="pre">transmit_unsafe</span></tt>.
+So we only need to override <tt class="docutils literal"><span class="pre">transmit_unsafe</span></tt>! Let us do it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="k">def</span> <span class="nf">transmit_unsafe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="go">....:     w = copy(message)</span>
+<span class="go">....:     number_err = self.number_errors()</span>
+<span class="go">....:     V = self.input_space()</span>
+<span class="go">....:     F = GF(2)</span>
+<span class="go">....:     for i in sample(xrange(V.dimension()), number_err):</span>
+<span class="go">....:         w[i] += F.one()</span>
+<span class="go">....:     return w</span>
+</pre></div>
+</div>
+<p>That is it, we now have our new channel class ready to use!</p>
+<div class="section" id="summary-of-the-implementation-for-channels">
+<h3>Summary of the implementation for channels<a class="headerlink" href="#summary-of-the-implementation-for-channels" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Inherit from <a class="reference external" href="../reference/coding/sage/coding/channel_constructions.html#sage.coding.channel_constructions.Channel" title="(in Sage Reference Manual: Coding Theory v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.coding.channel_constructions.Channel</span></tt></a>.</p>
+</li>
+<li><p class="first">Add this line in the class&#8217; constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">super</span><span class="p">(</span><span class="n">ClassName</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">input_space</span><span class="p">,</span> <span class="n">output_space</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Implement representation methods (not mandatory) <tt class="docutils literal"><span class="pre">_repr_</span></tt> and
+<tt class="docutils literal"><span class="pre">_latex_</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">input_space</span></tt> and <tt class="docutils literal"><span class="pre">output_space</span></tt> getter methods come with the
+abstract class.</p>
+</li>
+<li><p class="first">Override <tt class="docutils literal"><span class="pre">transmit_unsafe</span></tt>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="vi-sort-our-new-elements">
+<h2><a class="toc-backref" href="#id7">VI. Sort our new elements</a><a class="headerlink" href="#vi-sort-our-new-elements" title="Permalink to this headline">¶</a></h2>
+<p>As there is many code families and channels in the coding theory library,
+we do not wish to store all our classes directly in Sage&#8217;s global namespace.</p>
+<p>We propose several catalog files to store our constructions, namely:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">codes_catalog.py</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">encoders_catalog</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">decoders_catalog</span></tt> and</li>
+<li><tt class="docutils literal"><span class="pre">channels_catalog</span></tt>.</li>
+</ul>
+<p>Everytime one creates a new object, it should be added in the dedicated
+catalog file instead of coding theory folder&#8217;s <tt class="docutils literal"><span class="pre">all.py</span></tt>.</p>
+<p>Here it means the following:</p>
+<ul>
+<li><p class="first">add the following in <tt class="docutils literal"><span class="pre">codes_catalog.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">repetition_code</span> <span class="kn">import</span> <span class="n">BinaryRepetitionCode</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">add the following in <tt class="docutils literal"><span class="pre">encoders_catalog.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">repetition_code</span> <span class="kn">import</span> <span class="n">BinaryRepetitionCodeGeneratorMatrixEncoder</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">add the following in <tt class="docutils literal"><span class="pre">decoders_catalog.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">repetition_code</span> <span class="kn">import</span> <span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">add the following in <tt class="docutils literal"><span class="pre">channels_catalog.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">channel_constructions</span> <span class="kn">import</span> <span class="n">BinaryStaticErrorRateChannel</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="vii-complete-code-of-this-tutorial">
+<h2><a class="toc-backref" href="#id8">VII. Complete code of this tutorial</a><a class="headerlink" href="#vii-complete-code-of-this-tutorial" title="Permalink to this headline">¶</a></h2>
+<p>If you need some base code to start from, feel free to copy-paste and
+derive from the one that follows.</p>
+<p><tt class="docutils literal"><span class="pre">repetition_code.py</span></tt> (with two encoders):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">sage.coding.linear_code</span> <span class="kn">import</span> <span class="n">AbstractLinearCode</span>
+<span class="kn">from</span> <span class="nn">sage.coding.encoder</span> <span class="kn">import</span> <span class="n">Encoder</span>
+<span class="kn">from</span> <span class="nn">sage.coding.decoder</span> <span class="kn">import</span> <span class="n">Decoder</span>
+
+<span class="k">class</span> <span class="nc">BinaryRepetitionCode</span><span class="p">(</span><span class="n">AbstractLinearCode</span><span class="p">):</span>
+
+    <span class="n">_registered_encoders</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_registered_decoders</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BinaryRepetitionCode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">length</span><span class="p">,</span> <span class="s">&quot;RepetitionGeneratorMatrixEncoder&quot;</span><span class="p">,</span> <span class="s">&quot;MajorityVoteDecoder&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dimension</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Binary repetition code of length </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">extnormal{Binary repetition code of length } </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BinaryRepetitionCode</span><span class="p">)</span>
+           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dimension</span><span class="p">())</span>
+
+
+
+<span class="k">class</span> <span class="nc">BinaryRepetitionCodeGeneratorMatrixEncoder</span><span class="p">(</span><span class="n">Encoder</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BinaryRepetitionCodeGeneratorMatrixEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Binary repetition encoder for the </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">extnormal{Binary repetition encoder for the } </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BinaryRepetitionCodeGeneratorMatrixEncoder</span><span class="p">)</span>
+           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">generator_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="p">[</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()]</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+
+
+
+<span class="k">class</span> <span class="nc">BinaryRepetitionCodeStraightforwardEncoder</span><span class="p">(</span><span class="n">Encoder</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BinaryRepetitionCodeStraightforwardEncoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Binary repetition encoder for the </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">extnormal{Binary repetition encoder for the } </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BinaryRepetitionCodeStraightforwardEncoder</span><span class="p">)</span>
+           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="n">message</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">length</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">unencode_nocheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">word</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">message_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+
+
+<span class="k">class</span> <span class="nc">BinaryRepetitionCodeMajorityVoteDecoder</span><span class="p">(</span><span class="n">Decoder</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">code</span><span class="o">.</span><span class="n">ambient_space</span><span class="p">(),</span>
+           <span class="s">&quot;RepetitionGeneratorMatrixEncoder&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Majority vote-based decoder for the </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">extnormal{Majority vote based-decoder for the } </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span><span class="p">)</span>
+           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">decode_to_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+        <span class="n">list_word</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+        <span class="n">count_one</span> <span class="o">=</span> <span class="n">list_word</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">())</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_word</span><span class="p">)</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">count_one</span> <span class="o">&gt;</span> <span class="n">length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">vector</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">one</span><span class="p">()]</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">count_one</span> <span class="o">&lt;</span> <span class="n">length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+           <span class="k">return</span> <span class="n">vector</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">zero</span><span class="p">()]</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+           <span class="k">raise</span> <span class="n">DecodingError</span><span class="p">(</span><span class="s">&quot;impossible to find a majority&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decoding_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">()</span><span class="o">.</span><span class="n">length</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+
+
+<span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_registered_encoders</span><span class="p">[</span><span class="s">&quot;RepetitionGeneratorMatrixEncoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BinaryRepetitionCodeGeneratorMatrixEncoder</span>
+<span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_registered_encoders</span><span class="p">[</span><span class="s">&quot;RepetitionStraightforwardEncoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BinaryRepetitionCodeStraightforwardEncoder</span>
+<span class="n">BinaryRepetitionCode</span><span class="o">.</span><span class="n">_registered_decoders</span><span class="p">[</span><span class="s">&quot;MajorityVoteDecoder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span>
+<span class="n">BinaryRepetitionCodeMajorityVoteDecoder</span><span class="o">.</span><span class="n">_decoder_type</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;hard-decision&quot;</span><span class="p">,</span> <span class="s">&quot;unique&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">channel_constructions.py</span></tt> (continued):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">BinaryStaticErrorRateChannel</span><span class="p">(</span><span class="n">Channel</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">number_errors</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">space</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Provided space must be a vector space over GF(2)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">number_errors</span> <span class="o">&gt;</span> <span class="n">space</span><span class="o">.</span><span class="n">dimension</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ValueErrors</span><span class="p">(</span><span class="s">&quot;number_errors cannot be bigger than input space&#39;s dimension&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BinaryStaticErrorRateChannel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">space</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_errors</span> <span class="o">=</span> <span class="n">number_errors</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="p">(</span><span class="s">&quot;Binary static error rate channel creating </span><span class="si">%s</span><span class="s"> errors, of input and output space </span><span class="si">%s</span><span class="s">&quot;</span>
+              <span class="o">%</span> <span class="p">(</span><span class="n">format_interval</span><span class="p">(</span><span class="n">no_err</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">_latex_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\\</span><span class="s">textnormal{Static error rate channel creating </span><span class="si">%s</span><span class="s"> errors, of input and output space </span><span class="si">%s</span><span class="s">}&quot;</span>
+              <span class="o">%</span> <span class="p">(</span><span class="n">format_interval</span><span class="p">(</span><span class="n">no_err</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">number_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_errors</span>
+
+    <span class="k">def</span> <span class="nf">transmit_unsafe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">number_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_errors</span><span class="p">()</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_space</span><span class="p">()</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">V</span><span class="o">.</span><span class="n">dimension</span><span class="p">()),</span> <span class="n">number_err</span><span class="p">):</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">F</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">w</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">codes_catalog.py</span></tt> (continued, do the same in <tt class="docutils literal"><span class="pre">encoders_catalog.py</span></tt>,
+<tt class="docutils literal"><span class="pre">decoders_catalog.py</span></tt> and <tt class="docutils literal"><span class="pre">channels_catalog.py</span></tt>):</p>
+<div class="highlight-python"><div class="highlight"><pre>:class:`repetition_code.BinaryRepetitionCode &lt;sage.coding.repetition_code.BinaryRepetitionCode&gt;`
+#the line above creates a link to the class in the html documentation of coding theory library
+from repetition_code import BinaryRepetitionCode
+from channel_constructions import (ErrorErasureChannel, StaticErrorRateChannel, BinaryStaticErrorRateChannel)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">How to write your own classes for coding theory</a><ul>
+<li><a class="reference internal" href="#i-the-repetition-code">I. The repetition code</a></li>
+<li><a class="reference internal" href="#ii-write-a-new-code-class">II. Write a new code class</a><ul>
+<li><a class="reference internal" href="#summary-of-the-implementation-for-linear-codes">Summary of the implementation for linear codes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iii-write-a-new-encoder-class">III. Write a new encoder class</a><ul>
+<li><a class="reference internal" href="#we-have-a-generator-matrix">We have a generator matrix</a></li>
+<li><a class="reference internal" href="#we-do-not-have-any-generator-matrix">We do not have any generator matrix</a></li>
+<li><a class="reference internal" href="#summary-of-the-implementation-for-encoders">Summary of the implementation for encoders</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#iv-write-a-new-decoder-class">IV. Write a new decoder class</a><ul>
+<li><a class="reference internal" href="#summary-of-the-implementation-for-decoders">Summary of the implementation for decoders</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v-write-a-new-channel-class">V. Write a new channel class</a><ul>
+<li><a class="reference internal" href="#summary-of-the-implementation-for-channels">Summary of the implementation for channels</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vi-sort-our-new-elements">VI. Sort our new elements</a></li>
+<li><a class="reference internal" href="#vii-complete-code-of-this-tutorial">VII. Complete code of this tutorial</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="coding_theory.html"
+                                  title="previous chapter">Sage and Coding Theory</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="polytutorial.html"
+                                  title="next chapter">A Brief Introduction to Polytopes in Sage</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/structures_in_coding_theory.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="polytutorial.html" title="A Brief Introduction to Polytopes in Sage"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coding_theory.html" title="Sage and Coding Theory"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="index.html">Thematic Tutorials v7.0</a> &raquo;</li>
+
+          <li><a href="toctree.html" >Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

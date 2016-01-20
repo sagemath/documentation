@@ -1,0 +1,1070 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SemiDefinite Programming &mdash; Sage Reference Manual v7.0: Numerical Optimization</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.0: Numerical Optimization" href="../../index.html" />
+    <link rel="next" title="Linear Functions and Constraints" href="linear_functions.html" />
+    <link rel="prev" title="Mixed Integer Linear Programming" href="mip.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="linear_functions.html" title="Linear Functions and Constraints"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mip.html" title="Mixed Integer Linear Programming"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Numerical Optimization</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="semidefinite-programming">
+<span id="sage-numerical-sdp"></span><h1>SemiDefinite Programming<a class="headerlink" href="#semidefinite-programming" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.numerical.sdp"></span><p>A semidefinite program (<a class="reference external" href="http://en.wikipedia.org/wiki/Semidefinite_programming">SDP</a>)
+is an <a class="reference external" href="http://en.wikipedia.org/wiki/Optimization_%28mathematics%29">optimization problem</a>
+in the following form</p>
+<div class="math">
+\[\begin{split}\max \sum_{i,j=1}^n c_{ij}x_{ij}\\
+\text{Subject to:} &amp;\sum_{i,j=1}^n a_{ijk}x_{ij} = b_k, \qquad k=1\ldots m\\
+&amp;X \succeq 0\end{split}\]</div>
+<p>where the <span class="math">\(x_{ij}\)</span>, <span class="math">\(i \leq i,j \leq n\)</span> are <span class="math">\(n^2\)</span> variables satisfying the symmetry
+conditions <span class="math">\(x_{ij} = x_{ji}\)</span> for all <span class="math">\(i,j\)</span>, the <span class="math">\(c_{ij}\)</span>, <span class="math">\(a_{ijk}\)</span> and <span class="math">\(b_k\)</span>
+are real coefficients, and <span class="math">\(X\)</span> is positive semidefinite, i.e., all the eigenvalues of <span class="math">\(X\)</span> are nonnegative.</p>
+<p>A wide variety of problems in optimization can be formulated in this standard
+form. Then, solvers are able to calculate a solution.</p>
+<p>For instance, you want to minimize <span class="math">\(x_0 - x_1\)</span> where:</p>
+<div class="math">
+\[\begin{split}\left( \begin{array}{cc} 1 &amp; 2  \\ 2 &amp; 3  \end{array} \right) x_0 +
+\left( \begin{array}{cc} 3 &amp; 4  \\ 4 &amp; 5  \end{array} \right) x_1 \preceq
+\left( \begin{array}{cc} 5 &amp; 6  \\ 6 &amp; 7  \end{array} \right),\quad
+\left( \begin{array}{cc} 1 &amp; 1  \\ 1 &amp; 1  \end{array} \right) x_0 +
+\left( \begin{array}{cc} 2 &amp; 2  \\ 2 &amp; 2  \end{array} \right) x_1 \preceq
+\left( \begin{array}{cc} 3 &amp; 3  \\ 3 &amp; 3  \end{array} \right),
+\quad x_0\geq 0, x_1\geq 0.\end{split}\]</div>
+<p>A semidefinite program can give you an answer
+to the problem above. Here is how it&#8217;s done:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>You have to create an instance of <a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram" title="sage.numerical.sdp.SemidefiniteProgram"><tt class="xref py py-class docutils literal"><span class="pre">SemidefiniteProgram</span></tt></a>. We
+add the parameter maximization=False since we want to minimize <span class="math">\(x_0 - x_1\)</span>.</li>
+<li>Create an dictionary <tt class="docutils literal"><span class="pre">x</span></tt> of integer variables <tt class="docutils literal"><span class="pre">x</span></tt> via <tt class="docutils literal"><span class="pre">x</span> <span class="pre">=</span>
+<span class="pre">p.new_variable()</span></tt> (note that <strong>by default all variables are
+non-negative</strong>, cf <a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.new_variable" title="sage.numerical.sdp.SemidefiniteProgram.new_variable"><tt class="xref py py-meth docutils literal"><span class="pre">new_variable()</span></tt></a>).</li>
+<li>Add those two inequalities as inequality constraints via
+<a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.add_constraint" title="sage.numerical.sdp.SemidefiniteProgram.add_constraint"><tt class="xref py py-meth docutils literal"><span class="pre">add_constraint</span></tt></a>.</li>
+<li>Specify the objective function via <a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.set_objective" title="sage.numerical.sdp.SemidefiniteProgram.set_objective"><tt class="xref py py-meth docutils literal"><span class="pre">set_objective</span></tt></a>.
+In our case it is  <span class="math">\(x_0 - x_1\)</span>. If it
+is a pure constraint satisfaction problem, specify it as <tt class="docutils literal"><span class="pre">None</span></tt>.</li>
+<li>To check if everything is set up correctly, you can print the problem via
+<a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.show" title="sage.numerical.sdp.SemidefiniteProgram.show"><tt class="xref py py-meth docutils literal"><span class="pre">show</span></tt></a>.</li>
+<li><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.solve" title="sage.numerical.sdp.SemidefiniteProgram.solve"><tt class="xref py py-meth docutils literal"><span class="pre">Solve</span></tt></a> it and print the solution.</li>
+</ol>
+</div></blockquote>
+<p>The following example shows all these steps:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">maximization</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">solver_parameter</span><span class="p">(</span><span class="s">&quot;show_progress&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="s">&#39;Objective Value:&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">Objective Value:      pcost       dcost       gap    pres   dres   k/t</span>
+<span class="go">0: -3.00...</span>
+<span class="gp">...</span>
+<span class="go">Optimal solution found.</span>
+<span class="go">-3.0</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">itervalues</span><span class="p">())</span>
+<span class="go">[-1.0, 2.0]</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Minimization:</span>
+<span class="go">  x_0 - x_1</span>
+<span class="go">Constraints:</span>
+<span class="go">  constraint_0: [1.0 2.0][2.0 3.0]x_0 + [3.0 4.0][4.0 5.0]x_1 &lt;=  [5.0 6.0][6.0 7.0]</span>
+<span class="go">  constraint_1: [1.0 1.0][1.0 1.0]x_0 + [2.0 2.0][2.0 2.0]x_1 &lt;=  [3.0 3.0][3.0 3.0]</span>
+<span class="go">Variables:</span>
+<span class="go">   x_0,  x_1</span>
+</pre></div>
+</div>
+<p>More interesting example, the <tt class="xref py py-meth docutils literal"><span class="pre">Lovasz</span> <span class="pre">theta</span></tt> of the 7-gon:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">c</span><span class="o">=</span><span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c2</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">distance_graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c3</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">distance_graph</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.&lt;</span><span class="n">y</span><span class="o">&gt;=</span><span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">((</span><span class="mi">1</span><span class="o">/</span><span class="mi">7</span><span class="p">)</span><span class="o">*</span><span class="n">matrix</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">&gt;=-</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">c2</span><span class="o">-</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">c3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">c2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">trace</span><span class="p">()</span><span class="o">+</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">c3</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">trace</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">();</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span>
+<span class="go">3.31766...</span>
+</pre></div>
+</div>
+<p>The default CVXOPT backend computes with the Real Double Field, for example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Real Double Field</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="mf">0.5</span> <span class="o">+</span> <span class="mi">3</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">0.5 + 1.5*x_0</span>
+</pre></div>
+</div>
+<div class="section" id="linear-variables-and-expressions">
+<h2>Linear Variables and Expressions<a class="headerlink" href="#linear-variables-and-expressions" title="Permalink to this headline">¶</a></h2>
+<p>To make your code more readable, you can construct
+<a class="reference internal" href="#sage.numerical.sdp.SDPVariable" title="sage.numerical.sdp.SDPVariable"><tt class="xref py py-class docutils literal"><span class="pre">SDPVariable</span></tt></a> objects that can be arbitrarily named and
+indexed. Internally, this is then translated back to the <span class="math">\(x_i\)</span>
+variables. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">sdp</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">SDPVariable</span>
+<span class="gp">sage: </span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="go">5 + x_0 + 2*x_1</span>
+</pre></div>
+</div>
+<p>Indices can be any object, not necessarily integers. Multi-indices are
+also allowed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">a</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;string&#39;</span><span class="p">,</span> <span class="n">QQ</span><span class="p">]</span>
+<span class="go">x_2</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;string&#39;</span><span class="p">,</span> <span class="n">QQ</span><span class="p">]</span> <span class="o">-</span> <span class="mi">7</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">x_2 - 7*x_3</span>
+<span class="gp">sage: </span><span class="n">sdp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Maximization:</span>
+
+<span class="go">Constraints:</span>
+<span class="go">Variables:</span>
+<span class="go">  a[1],  b[3],  a[(4, &#39;string&#39;, Rational Field)],  b[2]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="index-of-functions-and-methods">
+<h2>Index of functions and methods<a class="headerlink" href="#index-of-functions-and-methods" title="Permalink to this headline">¶</a></h2>
+<p>Below are listed the methods of <a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram" title="sage.numerical.sdp.SemidefiniteProgram"><tt class="xref py py-class docutils literal"><span class="pre">SemidefiniteProgram</span></tt></a>. This module
+also implements the <a class="reference internal" href="#sage.numerical.sdp.SDPSolverException" title="sage.numerical.sdp.SDPSolverException"><tt class="xref py py-class docutils literal"><span class="pre">SDPSolverException</span></tt></a> exception, as well as the
+<a class="reference internal" href="#sage.numerical.sdp.SDPVariable" title="sage.numerical.sdp.SDPVariable"><tt class="xref py py-class docutils literal"><span class="pre">SDPVariable</span></tt></a> class.</p>
+<table border="1" class="contentstable docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.add_constraint" title="sage.numerical.sdp.SemidefiniteProgram.add_constraint"><tt class="xref py py-meth docutils literal"><span class="pre">add_constraint()</span></tt></a></td>
+<td>Adds a constraint to the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.base_ring" title="sage.numerical.sdp.SemidefiniteProgram.base_ring"><tt class="xref py py-meth docutils literal"><span class="pre">base_ring()</span></tt></a></td>
+<td>Return the base ring</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.get_backend" title="sage.numerical.sdp.SemidefiniteProgram.get_backend"><tt class="xref py py-meth docutils literal"><span class="pre">get_backend()</span></tt></a></td>
+<td>Returns the backend instance used</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.get_values" title="sage.numerical.sdp.SemidefiniteProgram.get_values"><tt class="xref py py-meth docutils literal"><span class="pre">get_values()</span></tt></a></td>
+<td>Return values found by the previous call to <tt class="docutils literal"><span class="pre">solve()</span></tt></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.linear_constraints_parent" title="sage.numerical.sdp.SemidefiniteProgram.linear_constraints_parent"><tt class="xref py py-meth docutils literal"><span class="pre">linear_constraints_parent()</span></tt></a></td>
+<td>Return the parent for all linear constraints</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.linear_function" title="sage.numerical.sdp.SemidefiniteProgram.linear_function"><tt class="xref py py-meth docutils literal"><span class="pre">linear_function()</span></tt></a></td>
+<td>Construct a new linear function</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.linear_functions_parent" title="sage.numerical.sdp.SemidefiniteProgram.linear_functions_parent"><tt class="xref py py-meth docutils literal"><span class="pre">linear_functions_parent()</span></tt></a></td>
+<td>Return the parent for all linear functions</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.new_variable" title="sage.numerical.sdp.SemidefiniteProgram.new_variable"><tt class="xref py py-meth docutils literal"><span class="pre">new_variable()</span></tt></a></td>
+<td>Returns an instance of <tt class="docutils literal"><span class="pre">SDPVariable</span></tt> associated</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.number_of_constraints" title="sage.numerical.sdp.SemidefiniteProgram.number_of_constraints"><tt class="xref py py-meth docutils literal"><span class="pre">number_of_constraints()</span></tt></a></td>
+<td>Returns the number of constraints assigned so far</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.number_of_variables" title="sage.numerical.sdp.SemidefiniteProgram.number_of_variables"><tt class="xref py py-meth docutils literal"><span class="pre">number_of_variables()</span></tt></a></td>
+<td>Returns the number of variables used so far</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.set_objective" title="sage.numerical.sdp.SemidefiniteProgram.set_objective"><tt class="xref py py-meth docutils literal"><span class="pre">set_objective()</span></tt></a></td>
+<td>Sets the objective of the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.set_problem_name" title="sage.numerical.sdp.SemidefiniteProgram.set_problem_name"><tt class="xref py py-meth docutils literal"><span class="pre">set_problem_name()</span></tt></a></td>
+<td>Sets the name of the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.show" title="sage.numerical.sdp.SemidefiniteProgram.show"><tt class="xref py py-meth docutils literal"><span class="pre">show()</span></tt></a></td>
+<td>Displays the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt> in a human-readable</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.solve" title="sage.numerical.sdp.SemidefiniteProgram.solve"><tt class="xref py py-meth docutils literal"><span class="pre">solve()</span></tt></a></td>
+<td>Solves the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.solver_parameter" title="sage.numerical.sdp.SemidefiniteProgram.solver_parameter"><tt class="xref py py-meth docutils literal"><span class="pre">solver_parameter()</span></tt></a></td>
+<td>Return or define a solver parameter</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.sum" title="sage.numerical.sdp.SemidefiniteProgram.sum"><tt class="xref py py-meth docutils literal"><span class="pre">sum()</span></tt></a></td>
+<td>Efficiently computes the sum of a sequence of LinearFunction elements</td>
+</tr>
+</tbody>
+</table>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Ingolfur Edvardsson (2014/08): added extension for exact computation</li>
+<li>Dima Pasechnik      (2014, 2015)    : supervision, minor fixes</li>
+</ul>
+<dl class="exception">
+<dt id="sage.numerical.sdp.SDPSolverException">
+<em class="property">exception </em><tt class="descclassname">sage.numerical.sdp.</tt><tt class="descname">SDPSolverException</tt><a class="headerlink" href="#sage.numerical.sdp.SDPSolverException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/exceptions.html#exceptions.RuntimeError" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">exceptions.RuntimeError</span></tt></a></p>
+<p>Exception raised when the solver fails.</p>
+<p><tt class="docutils literal"><span class="pre">SDPSolverException</span></tt> is the exception raised when the solver fails.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.sdp</span> <span class="kn">import</span> <span class="n">SDPSolverException</span>
+<span class="gp">sage: </span><span class="n">SDPSolverException</span><span class="p">(</span><span class="s">&quot;Error&quot;</span><span class="p">)</span>
+<span class="go">SDPSolverException(&#39;Error&#39;,)</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>No solution:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">=</span><span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&quot;cvxopt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">9</span><span class="p">],[</span><span class="mi">9</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span> <span class="n">a</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span>   <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">SDPSolverException</span>: <span class="n">...</span>
+</pre></div>
+</div>
+<p>The value of the exception:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.numerical.sdp</span> <span class="kn">import</span> <span class="n">SDPSolverException</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">SDPSolverException</span><span class="p">(</span><span class="s">&quot;Error&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">print</span> <span class="n">e</span>
+<span class="go">Error</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.numerical.sdp.SDPVariable">
+<em class="property">class </em><tt class="descclassname">sage.numerical.sdp.</tt><tt class="descname">SDPVariable</tt><a class="headerlink" href="#sage.numerical.sdp.SDPVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element.html#sage.structure.element.Element" title="(in Sage Reference Manual: Basic Structures v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.element.Element</span></tt></a></p>
+<p><tt class="docutils literal"><span class="pre">SDPVariable</span></tt> is a variable used by the class
+<tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You should not instantiate this class directly. Instead, use
+<a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.new_variable" title="sage.numerical.sdp.SemidefiniteProgram.new_variable"><tt class="xref py py-meth docutils literal"><span class="pre">SemidefiniteProgram.new_variable()</span></tt></a>.</p>
+</div>
+<dl class="method">
+<dt id="sage.numerical.sdp.SDPVariable.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SDPVariable.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the pairs (keys,value) contained in the dictionary.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="go">[(0, x_0), (1, x_1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SDPVariable.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SDPVariable.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the keys already defined in the dictionary.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="go">[0, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SDPVariable.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SDPVariable.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the symbolic variables associated to the current dictionary.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">v</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+<span class="go">[x_0, x_1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.numerical.sdp.SDPVariableParent">
+<em class="property">class </em><tt class="descclassname">sage.numerical.sdp.</tt><tt class="descname">SDPVariableParent</tt><a class="headerlink" href="#sage.numerical.sdp.SDPVariableParent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.parent.Parent</span></tt></a></p>
+<p>Parent for <a class="reference internal" href="#sage.numerical.sdp.SDPVariable" title="sage.numerical.sdp.SDPVariable"><tt class="xref py py-class docutils literal"><span class="pre">SDPVariable</span></tt></a>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This class is for internal use. You should not instantiate it
+yourself. Use <a class="reference internal" href="#sage.numerical.sdp.SemidefiniteProgram.new_variable" title="sage.numerical.sdp.SemidefiniteProgram.new_variable"><tt class="xref py py-meth docutils literal"><span class="pre">SemidefiniteProgram.new_variable()</span></tt></a>
+to generate sdp variables.</p>
+</div>
+<dl class="attribute">
+<dt id="sage.numerical.sdp.SDPVariableParent.Element">
+<tt class="descname">Element</tt><a class="headerlink" href="#sage.numerical.sdp.SDPVariableParent.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#sage.numerical.sdp.SDPVariable" title="sage.numerical.sdp.SDPVariable"><tt class="xref py py-class docutils literal"><span class="pre">SDPVariable</span></tt></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.numerical.sdp.SemidefiniteProgram">
+<em class="property">class </em><tt class="descclassname">sage.numerical.sdp.</tt><tt class="descname">SemidefiniteProgram</tt><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v7.0)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></tt></a></p>
+<p>The <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt> class is the link between Sage, semidefinite
+programming (SDP) and semidefinite programming solvers.</p>
+<p>A Semidefinite Programming (SDP) consists of variables, linear
+constraints on these variables, and an objective function which is to be
+maximised or minimised under these constraints.</p>
+<p>See the <a class="reference external" href="https://en.wikipedia.org/wiki/Semidefinite_programming">Wikipedia article Semidefinite_programming</a> for further information on semidefinite
+programming, and the <a class="reference internal" href="#module-sage.numerical.sdp" title="sage.numerical.sdp"><tt class="xref py py-mod docutils literal"><span class="pre">SDP</span> <span class="pre">module</span></tt></a> for its use in
+Sage.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">solver</span></tt> &#8211; selects a solver:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>CVXOPT (<tt class="docutils literal"><span class="pre">solver=&quot;CVXOPT&quot;</span></tt>). See the <a class="reference external" href="http://www.cvxopt.org/">CVXOPT</a></dt>
+<dd><p class="first last">web site.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">If <tt class="docutils literal"><span class="pre">solver=None</span></tt> (default), the default solver is used (see
+<tt class="xref py py-func docutils literal"><span class="pre">default_sdp_solver()</span></tt>)</p>
+</li>
+</ul>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">maximization</span></tt></p>
+<ul class="simple">
+<li>When set to <tt class="docutils literal"><span class="pre">True</span></tt> (default), the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>
+is defined as a maximization.</li>
+<li>When set to <tt class="docutils literal"><span class="pre">False</span></tt>, the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt> is
+defined as a minimization.</li>
+</ul>
+</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><tt class="xref py py-func docutils literal"><span class="pre">default_sdp_solver()</span></tt> &#8211; Returns/Sets the default SDP solver.</li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<p>Computation of a basic Semidefinite Program:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">,</span> <span class="n">maximization</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">-3.0</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.add_constraint">
+<tt class="descname">add_constraint</tt><big>(</big><em>linear_function</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.add_constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a constraint to the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<p>INPUT:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">linear_function</span></tt> &#8211; Two different types of arguments are possible:</dt>
+<dd><ul class="first last simple">
+<li>A linear function. In this case, arguments <tt class="docutils literal"><span class="pre">min</span></tt> or <tt class="docutils literal"><span class="pre">max</span></tt>
+have to be specified.</li>
+<li>A linear constraint of the form <tt class="docutils literal"><span class="pre">A</span> <span class="pre">&lt;=</span> <span class="pre">B</span></tt>, <tt class="docutils literal"><span class="pre">A</span> <span class="pre">&gt;=</span> <span class="pre">B</span></tt>,
+<tt class="docutils literal"><span class="pre">A</span> <span class="pre">&lt;=</span> <span class="pre">B</span> <span class="pre">&lt;=</span> <span class="pre">C</span></tt>, <tt class="docutils literal"><span class="pre">A</span> <span class="pre">&gt;=</span> <span class="pre">B</span> <span class="pre">&gt;=</span> <span class="pre">C</span></tt> or <tt class="docutils literal"><span class="pre">A</span> <span class="pre">==</span> <span class="pre">B</span></tt>. In this
+case, arguments <tt class="docutils literal"><span class="pre">min</span></tt> and <tt class="docutils literal"><span class="pre">max</span></tt> will be ignored.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; A name for the constraint.</p>
+</li>
+</ul>
+<p>EXAMPLE:</p>
+<p>Let&#8217;s solve the following semidefinite program:</p>
+<div class="highlight-python"><div class="highlight"><pre>Maximize:
+  x + 5 * y
+Constraints:
+  [1,2][2,3]x + [1,1][1,1] y       &lt;= [1,-1][-1,1]
+Variables:
+  x, y
+</pre></div>
+</div>
+<p>This SDP can be solved as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">maximization</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">16.2</span>
+</pre></div>
+</div>
+<p>One can also define double-bounds or equality using the symbol
+<tt class="docutils literal"><span class="pre">&gt;=</span></tt> or <tt class="docutils literal"><span class="pre">==</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">maximization</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a3</span> <span class="o">&gt;=</span> <span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">16.2</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Complex constraints:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">],[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">-</span> <span class="n">a1</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a2</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Maximization:</span>
+
+<span class="go">Constraints:</span>
+<span class="go">    constraint_0: [ 0.0  4.0][ 4.0 -1.0]x_0 + [-1.0 -2.0][-2.0 -3.0]x_1 &lt;=  [0 0][0 0]</span>
+<span class="go">Variables:</span>
+<span class="go">  x_0, x_1</span>
+</pre></div>
+</div>
+<p>Empty constraint:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">=</span><span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="nb">sum</span><span class="p">([]))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.base_ring">
+<tt class="descname">base_ring</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.base_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the base ring.</p>
+<p>OUTPUT:</p>
+<p>A ring. The coefficients that the chosen solver supports.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&#39;cvxopt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Real Double Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.gen">
+<tt class="descname">gen</tt><big>(</big><em>i</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the linear variable <span class="math">\(x_i\)</span>.</p>
+<p>OUTPUT:</p>
+<blockquote>
+<div>sage: sdp = SemidefiniteProgram()
+sage: sdp.gen(0)
+x_0
+sage: [sdp.gen(i) for i in range(10)]
+[x_0, x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9]</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.get_backend">
+<tt class="descname">get_backend</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.get_backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the backend instance used.</p>
+<p>This might be useful when acces to additional functions provided by
+the backend is needed.</p>
+<p>EXAMPLE:</p>
+<p>This example prints a matrix coefficient:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">&quot;cvxopt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">get_matrix</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">(</span>
+<span class="go">    [-1.0 -2.0]</span>
+<span class="go">-1, [-2.0 -3.0]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.get_values">
+<tt class="descname">get_values</tt><big>(</big><em>*lists</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.get_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return values found by the previous call to <tt class="docutils literal"><span class="pre">solve()</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li>Any instance of <tt class="docutils literal"><span class="pre">SDPVariable</span></tt> (or one of its elements),
+or lists of them.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>Each instance of <tt class="docutils literal"><span class="pre">SDPVariable</span></tt> is replaced by a dictionary
+containing the numerical values found for each
+corresponding variable in the instance.</li>
+<li>Each element of an instance of a <tt class="docutils literal"><span class="pre">SDPVariable</span></tt> is replaced
+by its corresponding numerical value.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">,</span> <span class="n">maximization</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">-3.0</span>
+</pre></div>
+</div>
+<p>To return  the optimal value of <tt class="docutils literal"><span class="pre">x[3]</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">-1.0</span>
+</pre></div>
+</div>
+<p>To get a dictionary identical to <tt class="docutils literal"><span class="pre">x</span></tt> containing optimal
+values for the corresponding variables</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x_sol</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x_sol</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="go">[3, 5]</span>
+</pre></div>
+</div>
+<p>Obviously, it also works with variables of higher dimension:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">x_sol</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.linear_constraints_parent">
+<tt class="descname">linear_constraints_parent</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.linear_constraints_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the parent for all linear constraints</p>
+<p>See <a class="reference internal" href="linear_functions.html#module-sage.numerical.linear_functions" title="sage.numerical.linear_functions"><tt class="xref py py-mod docutils literal"><span class="pre">linear_functions</span></tt></a> for more
+details.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">linear_constraints_parent</span><span class="p">()</span>
+<span class="go">Linear constraints over Real Double Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.linear_function">
+<tt class="descname">linear_function</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.linear_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new linear function</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">linear_function</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
+<span class="go">x_0 </span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.linear_functions_parent">
+<tt class="descname">linear_functions_parent</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.linear_functions_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the parent for all linear functions</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">linear_functions_parent</span><span class="p">()</span>
+<span class="go">Linear functions over Real Double Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.new_variable">
+<tt class="descname">new_variable</tt><big>(</big><em>name=''</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.new_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an instance of <tt class="docutils literal"><span class="pre">SDPVariable</span></tt> associated
+to the current instance of <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<p>A new variable <tt class="docutils literal"><span class="pre">x</span></tt> is defined by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It behaves exactly as an usual dictionary would. It can use any key
+argument you may like, as <tt class="docutils literal"><span class="pre">x[5]</span></tt> or <tt class="docutils literal"><span class="pre">x[&quot;b&quot;]</span></tt>, and has methods
+<tt class="docutils literal"><span class="pre">items()</span></tt> and <tt class="docutils literal"><span class="pre">keys()</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">dim</span></tt> &#8211; integer. Defines the dimension of the dictionary.
+If <tt class="docutils literal"><span class="pre">x</span></tt> has dimension <span class="math">\(2\)</span>, its fields will be of the form
+<tt class="docutils literal"><span class="pre">x[key1][key2]</span></tt>. Deprecated.</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; string. Associates a name to the variable.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Maximization:</span>
+
+<span class="go">Constraints:</span>
+<span class="go">  constraint_0: [1.0 2.0][2.0 3.0]x_0 + [1.0 2.0][2.0 3.0]x_1 &lt;=  [0 0][0 0]</span>
+<span class="go">Variables:</span>
+<span class="go">   x_0,  x_1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.number_of_constraints">
+<tt class="descname">number_of_constraints</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.number_of_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of constraints assigned so far.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">number_of_constraints</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.number_of_variables">
+<tt class="descname">number_of_variables</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.number_of_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of variables used so far.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="o">*</span><span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span>  <span class="mi">2</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>  <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">number_of_variables</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.set_objective">
+<tt class="descname">set_objective</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.set_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the objective of the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">obj</span></tt> &#8211; A semidefinite function to be optimized.
+( can also be set to <tt class="docutils literal"><span class="pre">None</span></tt> or <tt class="docutils literal"><span class="pre">0</span></tt> when just
+looking for a feasible solution )</li>
+</ul>
+<p>EXAMPLE:</p>
+<p>Let&#8217;s solve the following semidefinite program:</p>
+<div class="highlight-python"><div class="highlight"><pre>Maximize:
+  x + 5 * y
+Constraints:
+  [1,2][2,3]x + [1,1][1,1] y       &lt;= [1,-1][-1,1]
+Variables:
+  x, y
+</pre></div>
+</div>
+<p>This SDP can be solved as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">maximization</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">16.2</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.set_problem_name">
+<tt class="descname">set_problem_name</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.set_problem_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the name of the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; A string representing the name of the
+<tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_problem_name</span><span class="p">(</span><span class="s">&quot;Test program&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span>
+<span class="go">Semidefinite Program &quot;Test program&quot; ( maximization, 0 variables, 0 constraints )</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.show">
+<tt class="descname">show</tt><big>(</big><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt> in a human-readable way.</p>
+<p>EXAMPLES:</p>
+<p>When constraints and variables have names</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;hihi&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Maximization:</span>
+<span class="go">  hihi[0] - hihi[1]</span>
+<span class="go">Constraints:</span>
+<span class="go">  constraint_0: [1.0 2.0][2.0 3.0]hihi[0] + [2.0 3.0][3.0 4.0]hihi[1] &lt;=  [3.0 4.0][4.0 5.0]</span>
+<span class="go">Variables:</span>
+<span class="go">   hihi[0],  hihi[1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.solve">
+<tt class="descname">solve</tt><big>(</big><em>objective_only=False</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the <tt class="docutils literal"><span class="pre">SemidefiniteProgram</span></tt>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">objective_only</span></tt> &#8211; Boolean variable.<ul>
+<li>When set to <tt class="docutils literal"><span class="pre">True</span></tt>, only the objective function is returned.</li>
+<li>When set to <tt class="docutils literal"><span class="pre">False</span></tt> (default), the optimal numerical values
+are stored (takes computational time).</li>
+</ul>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<p>The optimal value taken by the objective function.</p>
+<p>TESTS:</p>
+<p>The SDP from the header of this module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">,</span> <span class="n">maximization</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">-11.0</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">-8.0</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">3.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.solver_parameter">
+<tt class="descname">solver_parameter</tt><big>(</big><em>name</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.solver_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return or define a solver parameter</p>
+<p>The solver parameters are by essence solver-specific, which
+means their meaning heavily depends on the solver used.</p>
+<p>(If you do not know which solver you are using, then you are
+using cvxopt).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt> (string) &#8211; the parameter</li>
+<li><tt class="docutils literal"><span class="pre">value</span></tt> &#8211; the parameter&#8217;s value if it is to be defined,
+or <tt class="docutils literal"><span class="pre">None</span></tt> (default) to obtain its current value.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">(</span><span class="n">solver</span> <span class="o">=</span> <span class="s">&quot;cvxopt&quot;</span><span class="p">,</span> <span class="n">maximization</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">solver_parameter</span><span class="p">(</span><span class="s">&quot;show_progress&quot;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">solver_parameter</span><span class="p">(</span><span class="s">&quot;show_progress&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">set_objective</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">a1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span> <span class="p">[</span><span class="mf">4.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">a3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">6.</span><span class="p">],</span> <span class="p">[</span><span class="mf">6.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b1</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b2</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">b3</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">a3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">b1</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">b3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">solve</span><span class="p">(),</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">     pcost       dcost       gap    pres   dres   k/t</span>
+<span class="go"> 0:  1...</span>
+<span class="gp">...</span>
+<span class="go">Optimal solution found.</span>
+<span class="go">-11.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.numerical.sdp.SemidefiniteProgram.sum">
+<tt class="descname">sum</tt><big>(</big><em>L</em><big>)</big><a class="headerlink" href="#sage.numerical.sdp.SemidefiniteProgram.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Efficiently computes the sum of a sequence of
+<a class="reference internal" href="linear_functions.html#sage.numerical.linear_functions.LinearFunction" title="sage.numerical.linear_functions.LinearFunction"><tt class="xref py py-class docutils literal"><span class="pre">LinearFunction</span></tt></a> elements</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">L</span></tt> &#8211; list of
+<a class="reference internal" href="linear_functions.html#sage.numerical.linear_functions.LinearFunction" title="sage.numerical.linear_functions.LinearFunction"><tt class="xref py py-class docutils literal"><span class="pre">LinearFunction</span></tt></a> instances.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The use of the regular <tt class="docutils literal"><span class="pre">sum</span></tt> function is not recommended
+as it is much less efficient than this one</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">SemidefiniteProgram</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">v</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">new_variable</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The following command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">90</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>is much more efficient than:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">90</span><span class="p">)])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">SemiDefinite Programming</a><ul>
+<li><a class="reference internal" href="#linear-variables-and-expressions">Linear Variables and Expressions</a></li>
+<li><a class="reference internal" href="#index-of-functions-and-methods">Index of functions and methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="mip.html"
+                                  title="previous chapter">Mixed Integer Linear Programming</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="linear_functions.html"
+                                  title="next chapter">Linear Functions and Constraints</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/numerical/sdp.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="linear_functions.html" title="Linear Functions and Constraints"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mip.html" title="Mixed Integer Linear Programming"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Numerical Optimization</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
