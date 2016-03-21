@@ -1,0 +1,459 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Partial cubes &mdash; Sage Reference Manual v7.1: Graph Theory</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '7.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.1: Graph Theory" href="../../index.html" />
+    <link rel="next" title="GenericGraph Cython functions" href="generic_graph_pyx.html" />
+    <link rel="prev" title="Tutte polynomial" href="tutte_polynomial.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="generic_graph_pyx.html" title="GenericGraph Cython functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutte_polynomial.html" title="Tutte polynomial"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="partial-cubes">
+<span id="sage-graphs-partial-cube"></span><h1>Partial cubes<a class="headerlink" href="#partial-cubes" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.graphs.partial_cube"></span><p>The code in this module that recognizes partial cubes is originally
+from the PADS library by David Eppstein, which is available at
+<a class="reference external" href="http://www.ics.uci.edu/~eppstein/PADS/">http://www.ics.uci.edu/~eppstein/PADS/</a> under the MIT license. It has a
+quadratic runtime and has been described in <a class="reference internal" href="#eppstein2008" id="id1">[Eppstein2008]</a>.</p>
+<p>For more information on partial cubes, see the
+<a class="reference external" href="https://en.wikipedia.org/wiki/Partial cube">Wikipedia article Partial cube</a>.</p>
+<p>REFERENCE:</p>
+<table class="docutils citation" frame="void" id="eppstein2008" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Eppstein2008]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id3">3</a>)</em> David Eppstein,
+&#8220;Recognizing partial cubes in quadratic time&#8221;,
+J. Graph Algorithms and Applications 15 (2): 269-293, 2011.
+Available at <a class="reference external" href="http://arxiv.org/abs/0705.1025">http://arxiv.org/abs/0705.1025</a></td></tr>
+</tbody>
+</table>
+<div class="section" id="recognition-algorithm">
+<h2>Recognition algorithm<a class="headerlink" href="#recognition-algorithm" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="definitions">
+<h3>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h3>
+<p>A <strong>partial cube</strong> is an isometric subgraph <span class="math">\(G\)</span> of a
+<a class="reference internal" href="graph_generators.html#sage.graphs.graph_generators.GraphGenerators.CubeGraph" title="sage.graphs.graph_generators.GraphGenerators.CubeGraph"><tt class="xref py py-meth docutils literal"><span class="pre">CubeGraph()</span></tt></a> (of
+possibly high dimension). Consequently, the vertices of <span class="math">\(G\)</span> can be
+labelled with binary sequences in such a way that the distance between
+two vertices <span class="math">\(u,v\in G\)</span> is the Hamming distance between their labels.</p>
+<p><strong>Tokens</strong> and their <strong>action</strong>: in the terminology of
+<a class="reference internal" href="#eppstein2008" id="id2">[Eppstein2008]</a>, a token represents a transition of the form:</p>
+<blockquote>
+<div><em>switch the k-th bit of the binary string from 0 to 1</em></div></blockquote>
+<p>Each token can be matched with a &#8216;reversed&#8217; token that performs the
+same switch in the opposite direction. Alternatively, a token can be
+seen as a set of disjoint (directed) edges of <span class="math">\(G\)</span>, corresponding to
+the transitions. When a vertex <span class="math">\(v\in G\)</span> is the source of such an edge,
+it is said that the token <em>acts</em> on <span class="math">\(v\)</span>.</p>
+</div>
+<div class="section" id="observations">
+<h3>Observations<a class="headerlink" href="#observations" title="Permalink to this headline">¶</a></h3>
+<p><strong>Shortest paths</strong>: in a hypercube, a shortest path between two
+vertices uses each token at most once. Furthermore, it cannot use both
+a token and it reverse.</p>
+<p><strong>Cycles</strong>: a cycle in a partial cube is necessarily even, as
+hypercubes are bipartite. If an edge <span class="math">\(e\)</span> of a cycle <span class="math">\(C\)</span> belongs to a
+token <span class="math">\(T\)</span>, then the edge opposite to <span class="math">\(e\)</span> in <span class="math">\(C\)</span> belongs to the reverse
+of <span class="math">\(T\)</span>.</p>
+<p><strong>Incident edges</strong>: all <span class="math">\(2d_G(v)\)</span> arcs incident to a given vertex
+belong to as many different tokens.</p>
+</div>
+<div class="section" id="algorithm">
+<h3>Algorithm<a class="headerlink" href="#algorithm" title="Permalink to this headline">¶</a></h3>
+<p><strong>Labeling</strong>: Iteratively, the algorithm selects a vertex <span class="math">\(v\in G\)</span>,
+which is naturally associated to <span class="math">\(2d(v)\)</span> tokens. It then performs a
+breadth-first search from <span class="math">\(v\)</span>, applying the previous observation on
+cycles to attribute a token to some of the edges it meets. None of the
+edges whose token remains undecided after this step can belong to one
+of those <span class="math">\(2d(v)\)</span> tokens, by virtue of the observation on shortest
+paths.</p>
+<p>The labeled edges can then be simplified (contracted) if the previous
+step did not lead to a contradiction, and the procedure is applied
+again until the graph is contracted to a single vertex and all edges
+are labeled.</p>
+<p>A partial cube is correctly labeled at this step, but some other
+graphs can also satisfy the procedure.</p>
+<p><strong>Checking the labeling</strong>: once all tokens are defined and the
+vertices are labeled with a binary string, we check that they define
+an isometric subgraph of the hypercube. To ensure that the distance
+<span class="math">\(d(v_0,u)\)</span> is what we expect for any vertex <span class="math">\(u\)</span>, it is sufficient to
+find, for any vertex <span class="math">\(u\)</span>, a neighbor <span class="math">\(n_u\)</span> of <span class="math">\(u\)</span> whose Hamming
+distance with <span class="math">\(v_0\)</span> is strictly less than the Hamming distance between
+<span class="math">\(u\)</span> and <span class="math">\(v_0\)</span>. Here is the algorithm used to check the labeling:</p>
+<ul>
+<li><p class="first">For an initial vertex <span class="math">\(v\)</span>, run a BFS starting from <span class="math">\(v\)</span>, and
+associate to every other vertex <span class="math">\(u\)</span> a token that brings <span class="math">\(u\)</span> closer
+to <span class="math">\(v\)</span>. This yields shortest paths from every vertex to <span class="math">\(v\)</span>.</p>
+</li>
+<li><p class="first">Assuming that the information is computed (and correct) for <span class="math">\(v\)</span>, it
+is easy to update it for a neighbor <span class="math">\(v'\)</span> of <span class="math">\(v\)</span>. Indeed, if we write
+<span class="math">\(T\)</span> the token that turns <span class="math">\(v\)</span> into <span class="math">\(v'\)</span>, only the vertices which were
+associated with the reverse of <span class="math">\(T\)</span> need to select a new neighbour. All
+others can remain as they were previously.</p>
+<p>With this second observation, one can efficiently check that the
+distance between all pairs of vertices are what they should be. In
+the implementation, the sequence of the sources <span class="math">\((v, v', ...)\)</span> is
+given by a depth-first search.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="sage.graphs.partial_cube.breadth_first_level_search">
+<tt class="descclassname">sage.graphs.partial_cube.</tt><tt class="descname">breadth_first_level_search</tt><big>(</big><em>G</em>, <em>start</em><big>)</big><a class="headerlink" href="#sage.graphs.partial_cube.breadth_first_level_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a sequence of dictionaries, each mapping the vertices at
+distance <tt class="docutils literal"><span class="pre">i</span></tt> from <tt class="docutils literal"><span class="pre">start</span></tt> to the set of their neighbours at
+distance <tt class="docutils literal"><span class="pre">i+1</span></tt>.</p>
+<p>Originally written by D. Eppstein for the PADS library
+(<a class="reference external" href="http://www.ics.uci.edu/~eppstein/PADS/">http://www.ics.uci.edu/~eppstein/PADS/</a>).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">G</span></tt> &#8211; a graph to perform the search on.</li>
+<li><tt class="docutils literal"><span class="pre">start</span></tt> &#8211; vertex or list of vertices from which to start the traversal.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">digraphs</span><span class="o">.</span><span class="n">DeBruijn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">partial_cube</span><span class="o">.</span><span class="n">breadth_first_level_search</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">))</span>
+<span class="go">[{&#39;00&#39;: {&#39;01&#39;, &#39;02&#39;}},</span>
+<span class="go"> {&#39;01&#39;: {&#39;10&#39;, &#39;11&#39;, &#39;12&#39;}, &#39;02&#39;: {&#39;20&#39;, &#39;21&#39;, &#39;22&#39;}},</span>
+<span class="go"> {&#39;10&#39;: set(),</span>
+<span class="go">  &#39;11&#39;: set(),</span>
+<span class="go">  &#39;12&#39;: set(),</span>
+<span class="go">  &#39;20&#39;: set(),</span>
+<span class="go">  &#39;21&#39;: set(),</span>
+<span class="go">  &#39;22&#39;: set()}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.partial_cube.depth_first_traversal">
+<tt class="descclassname">sage.graphs.partial_cube.</tt><tt class="descname">depth_first_traversal</tt><big>(</big><em>G</em>, <em>start</em><big>)</big><a class="headerlink" href="#sage.graphs.partial_cube.depth_first_traversal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a sequence of triples (v,w,edgetype) for DFS of graph G.</p>
+<p>Originally written by D. Eppstein for the PADS library
+(<a class="reference external" href="http://www.ics.uci.edu/~eppstein/PADS/">http://www.ics.uci.edu/~eppstein/PADS/</a>).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">G</span></tt> &#8211; a graph to perform the search on.</li>
+<li><tt class="docutils literal"><span class="pre">start</span></tt> &#8211; vertex or list of vertices from which to start the traversal.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>a generator of triples <tt class="docutils literal"><span class="pre">(v,w,edgetype)</span></tt>, where <tt class="docutils literal"><span class="pre">edgetype</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>
+if the algorithm is progressing via the edge <tt class="docutils literal"><span class="pre">vw</span></tt>, or <tt class="docutils literal"><span class="pre">False</span></tt> if the
+algorithm is backtracking via the edge <tt class="docutils literal"><span class="pre">wv</span></tt>.</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">digraphs</span><span class="o">.</span><span class="n">DeBruijn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">graphs</span><span class="o">.</span><span class="n">partial_cube</span><span class="o">.</span><span class="n">depth_first_traversal</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">16</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.graphs.partial_cube.is_partial_cube">
+<tt class="descclassname">sage.graphs.partial_cube.</tt><tt class="descname">is_partial_cube</tt><big>(</big><em>G</em>, <em>certificate=False</em><big>)</big><a class="headerlink" href="#sage.graphs.partial_cube.is_partial_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether the given graph is a partial cube.</p>
+<p>A partial cube is a graph that can be isometrically embedded into a
+hypercube, i.e., its vertices can be labelled with (0,1)-vectors of some
+fixed length such that the distance between any two vertices in the graph
+equals the Hamming distance of their labels.</p>
+<p>Originally written by D. Eppstein for the PADS library
+(<a class="reference external" href="http://www.ics.uci.edu/~eppstein/PADS/">http://www.ics.uci.edu/~eppstein/PADS/</a>), see also
+<a class="reference internal" href="#eppstein2008" id="id3">[Eppstein2008]</a>.  The algorithm runs in <span class="math">\(O(n^2)\)</span> time, where <span class="math">\(n\)</span>
+is the number of vertices. See the documentation of
+<a class="reference internal" href="#module-sage.graphs.partial_cube" title="sage.graphs.partial_cube"><tt class="xref py py-mod docutils literal"><span class="pre">partial_cube</span></tt></a> for an overview of the algorithm.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">certificate</span></tt> (boolean; <tt class="docutils literal"><span class="pre">False</span></tt>) &#8211; The function returns <tt class="docutils literal"><span class="pre">True</span></tt>
+or <tt class="docutils literal"><span class="pre">False</span></tt> according to the graph, when <tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span> <span class="pre">False</span></tt>. When
+<tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span> <span class="pre">True</span></tt> and the graph is a partial cube, the function
+returns <tt class="docutils literal"><span class="pre">(True,</span> <span class="pre">mapping)</span></tt>, where <tt class="docutils literal"><span class="pre">mapping</span></tt> is an isometric mapping of
+the vertices of the graph to the vertices of a hypercube ((0, 1)-strings
+of a fixed length). When <tt class="docutils literal"><span class="pre">certificate</span> <span class="pre">=</span> <span class="pre">True</span></tt> and the graph is not a
+partial cube, <tt class="docutils literal"><span class="pre">(False,</span> <span class="pre">None)</span></tt> is returned.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>The Petersen graph is not a partial cube:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_partial_cube</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>All prisms are partial cubes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">cartesian_product</span><span class="p">(</span><span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">.</span><span class="n">is_partial_cube</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>The returned mapping is an isometric embedding into a hypercube:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">DesarguesGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">_</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">is_partial_cube</span><span class="p">(</span><span class="n">certificate</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="c1"># random</span>
+<span class="go">{0: &#39;00000&#39;,</span>
+<span class="go"> 1: &#39;00001&#39;,</span>
+<span class="go"> 2: &#39;00011&#39;,</span>
+<span class="go"> 3: &#39;01011&#39;,</span>
+<span class="go"> 4: &#39;11011&#39;,</span>
+<span class="go"> 5: &#39;11111&#39;,</span>
+<span class="go"> 6: &#39;11110&#39;,</span>
+<span class="go"> 7: &#39;11100&#39;,</span>
+<span class="go"> 8: &#39;10100&#39;,</span>
+<span class="go"> 9: &#39;00100&#39;,</span>
+<span class="go"> 10: &#39;01000&#39;,</span>
+<span class="go"> 11: &#39;10001&#39;,</span>
+<span class="go"> 12: &#39;00111&#39;,</span>
+<span class="go"> 13: &#39;01010&#39;,</span>
+<span class="go"> 14: &#39;11001&#39;,</span>
+<span class="go"> 15: &#39;10111&#39;,</span>
+<span class="go"> 16: &#39;01110&#39;,</span>
+<span class="go"> 17: &#39;11000&#39;,</span>
+<span class="go"> 18: &#39;10101&#39;,</span>
+<span class="go"> 19: &#39;00110&#39;}</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">u</span><span class="p">]))</span> <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">m</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>A graph without vertices is trivially a partial cube:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">is_partial_cube</span><span class="p">(</span><span class="n">certificate</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="go">(True, {})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Partial cubes</a><ul>
+<li><a class="reference internal" href="#recognition-algorithm">Recognition algorithm</a><ul>
+<li><a class="reference internal" href="#definitions">Definitions</a></li>
+<li><a class="reference internal" href="#observations">Observations</a></li>
+<li><a class="reference internal" href="#algorithm">Algorithm</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="tutte_polynomial.html"
+                                  title="previous chapter">Tutte polynomial</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="generic_graph_pyx.html"
+                                  title="next chapter">GenericGraph Cython functions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/graphs/partial_cube.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="generic_graph_pyx.html" title="GenericGraph Cython functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutte_polynomial.html" title="Tutte polynomial"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../index.html">Graph Theory</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,689 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Finite Fields &mdash; Sage Reference Manual v7.1: Finite Rings</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '7.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.1: Finite Rings" href="../../../index.html" />
+    <link rel="next" title="Base Classes for Finite Fields" href="finite_field_base.html" />
+    <link rel="prev" title="Elements of \(\ZZ/n\ZZ\)" href="integer_mod.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="finite_field_base.html" title="Base Classes for Finite Fields"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="integer_mod.html" title="Elements of \(\ZZ/n\ZZ\)"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Finite Rings</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="finite-fields">
+<span id="sage-rings-finite-rings-finite-field-constructor"></span><h1>Finite Fields<a class="headerlink" href="#finite-fields" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.rings.finite_rings.finite_field_constructor"></span><p>Sage supports arithmetic in finite prime and extension fields.
+Several implementation for prime fields are implemented natively in
+Sage for several sizes of primes <span class="math">\(p\)</span>. These implementations
+are</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">sage.rings.finite_rings.integer_mod.IntegerMod_int</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">sage.rings.finite_rings.integer_mod.IntegerMod_int64</span></tt>, and</li>
+<li><tt class="docutils literal"><span class="pre">sage.rings.finite_rings.integer_mod.IntegerMod_gmp</span></tt>.</li>
+</ul>
+<p>Small extension fields of cardinality <span class="math">\(&lt; 2^{16}\)</span> are
+implemented using tables of Zech logs via the Givaro C++ library
+(<tt class="docutils literal"><span class="pre">sage.rings.finite_rings.finite_field_givaro.FiniteField_givaro</span></tt>).
+While this representation is very fast it is limited to finite
+fields of small cardinality. Larger finite extension fields of
+order <span class="math">\(q &gt;= 2^{16}\)</span> are internally represented as
+polynomials over smaller finite prime fields. If the
+characteristic of such a field is 2 then NTL is used internally to
+represent the field
+(<tt class="docutils literal"><span class="pre">sage.rings.finite_rings.finite_field_ntl_gf2e.FiniteField_ntl_gf2e</span></tt>).
+In all other case the PARI C library is used
+(<tt class="docutils literal"><span class="pre">sage.rings.finite_rings.finite_field_pari_ffelt.FiniteField_pari_ffelt</span></tt>).</p>
+<p>However, this distinction is internal only and the user usually
+does not have to worry about it because consistency across all
+implementations is aimed for. In all extension field
+implementations the user may either specify a minimal polynomial or
+leave the choice to Sage.</p>
+<p>For small finite fields the default choice are Conway polynomials.</p>
+<p>The Conway polynomial <span class="math">\(C_n\)</span> is the lexicographically first
+monic irreducible, primitive polynomial of degree <span class="math">\(n\)</span> over
+<span class="math">\(GF(p)\)</span> with the property that for a root <span class="math">\(\alpha\)</span>
+of <span class="math">\(C_n\)</span> we have that
+<span class="math">\(\beta=
+\alpha^{(p^n - 1)/(p^m - 1)}\)</span> is a root of
+<span class="math">\(C_m\)</span> for all <span class="math">\(m\)</span> dividing <span class="math">\(n\)</span>. Sage
+contains a database of Conway polynomials which also can be queried
+independently of finite field construction.</p>
+<p>A pseudo-Conway polynomial satisfies all of the conditions required
+of a Conway polynomial except the condition that it is lexicographically
+first.  They are therefore not unique.  If no variable name is
+specified for an extension field, Sage will fit the finite field
+into a compatible lattice of field extensions defined by pseudo-Conway
+polynomials. This lattice is stored in an
+<a class="reference internal" href="../algebraic_closure_finite_field.html#sage.rings.algebraic_closure_finite_field.AlgebraicClosureFiniteField" title="sage.rings.algebraic_closure_finite_field.AlgebraicClosureFiniteField"><tt class="xref py py-class docutils literal"><span class="pre">AlgebraicClosureFiniteField</span></tt></a>
+object; different algebraic closure objects can be created by using
+a different <tt class="docutils literal"><span class="pre">prefix</span></tt> keyword to the finite field constructor.</p>
+<p>Note that the computation of pseudo-Conway polynomials is expensive
+when the degree is large and highly composite.  If a variable
+name is specified then a random polynomial is used instead, which
+will be much faster to find.</p>
+<p>While Sage supports basic arithmetic in finite fields some more
+advanced features for computing with finite fields are still not
+implemented. For instance, Sage does not calculate embeddings of
+finite fields yet.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_prime_modn.FiniteField_prime_modn_with_category&#39;&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_givaro.FiniteField_givaro_with_category&#39;&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_ntl_gf2e.FiniteField_ntl_gf2e_with_category&#39;&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;c&#39;</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_pari_ffelt.FiniteField_pari_ffelt_with_category&#39;&gt;</span>
+</pre></div>
+</div>
+<p>Finite Fields support iteration, starting with 0.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>  <span class="k">print</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span>
+<span class="go">0 0</span>
+<span class="go">1 a</span>
+<span class="go">2 a + 1</span>
+<span class="go">3 2*a + 1</span>
+<span class="go">4 2</span>
+<span class="go">5 2*a</span>
+<span class="go">6 2*a + 2</span>
+<span class="go">7 a + 2</span>
+<span class="go">8 1</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="k">print</span> <span class="n">a</span>
+<span class="go">0</span>
+<span class="go">1</span>
+<span class="go">2</span>
+<span class="go">3</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>We output the base rings of several finite fields.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_prime_modn.FiniteField_prime_modn_with_category&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Finite Field of size 3</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="s1">&#39;alpha&#39;</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_givaro.FiniteField_givaro_with_category&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Finite Field of size 3</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">40</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">);</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="go">&lt;class &#39;sage.rings.finite_rings.finite_field_pari_ffelt.FiniteField_pari_ffelt_with_category&#39;&gt;</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Finite Field of size 3</span>
+</pre></div>
+</div>
+<p>Further examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="n">next_prime</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">20</span><span class="p">))</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">19</span><span class="o">^</span><span class="mi">20</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">is_field</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>William Stein: initial version</li>
+<li>Robert Bradshaw: prime field implementation</li>
+<li>Martin Albrecht: Givaro and ntl.GF2E implementations</li>
+</ul>
+<dl class="class">
+<dt id="sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory">
+<em class="property">class </em><tt class="descclassname">sage.rings.finite_rings.finite_field_constructor.</tt><tt class="descname">FiniteFieldFactory</tt><a class="headerlink" href="#sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/factory.html#sage.structure.factory.UniqueFactory" title="(in Sage Reference Manual: Basic Structures v7.1)"><tt class="xref py py-class docutils literal"><span class="pre">sage.structure.factory.UniqueFactory</span></tt></a></p>
+<p>Return the globally unique finite field of given order with
+generator labeled by the given name and possibly with given
+modulus.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">order</span></tt> &#8211; a prime power</li>
+<li><tt class="docutils literal"><span class="pre">name</span></tt> &#8211; string, optional.  Note that there can be a
+substantial speed penalty (in creating extension fields) when
+omitting the variable name, since doing so triggers the
+computation of pseudo-Conway polynomials in order to define a
+coherent lattice of extensions of the prime field.  The speed
+penalty grows with the size of extension degree and with
+the number of factors of the extension degree.</li>
+<li><tt class="docutils literal"><span class="pre">modulus</span></tt> &#8211; (optional) either a defining polynomial for the
+field, or a string specifying an algorithm to use to generate
+such a polynomial.  If <tt class="docutils literal"><span class="pre">modulus</span></tt> is a string, it is passed to
+<tt class="xref py py-meth docutils literal"><span class="pre">irreducible_element()</span></tt> as the
+parameter <tt class="docutils literal"><span class="pre">algorithm</span></tt>; see there for the permissible values of
+this parameter. In particular, you can specify
+<tt class="docutils literal"><span class="pre">modulus=&quot;primitive&quot;</span></tt> to get a primitive polynomial.  You
+may not specify a modulus if you do not specify a variable name.</li>
+<li><tt class="docutils literal"><span class="pre">impl</span></tt> &#8211; (optional) a string specifying the implementation of
+the finite field. Possible values are:<ul>
+<li><tt class="docutils literal"><span class="pre">'modn'</span></tt> &#8211; ring of integers modulo <span class="math">\(p\)</span> (only for prime
+fields).</li>
+<li><tt class="docutils literal"><span class="pre">'givaro'</span></tt> &#8211; Givaro, which uses Zech logs (only for fields
+of at most 65521 elements).</li>
+<li><tt class="docutils literal"><span class="pre">'ntl'</span></tt> &#8211; NTL using GF2X (only in characteristic 2).</li>
+<li><tt class="docutils literal"><span class="pre">'pari_ffelt'</span></tt> &#8211; PARI&#8217;s <tt class="docutils literal"><span class="pre">FFELT</span></tt> type (only for extension
+fields).</li>
+<li><tt class="docutils literal"><span class="pre">'pari_mod'</span></tt> &#8211; Older PARI implementation using <tt class="docutils literal"><span class="pre">POLMOD``s</span>
+<span class="pre">(slower</span> <span class="pre">than</span> <span class="pre">``'pari_ffelt'</span></tt>, only for extension fields).</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">elem_cache</span></tt> &#8211; cache all elements to avoid creation time
+(default: order &lt; 500)</li>
+<li><tt class="docutils literal"><span class="pre">check_irreducible</span></tt> &#8211; verify that the polynomial modulus is
+irreducible</li>
+<li><tt class="docutils literal"><span class="pre">proof</span></tt> &#8211; bool (default: <tt class="docutils literal"><span class="pre">True</span></tt>): if <tt class="docutils literal"><span class="pre">True</span></tt>, use provable
+primality test; otherwise only use pseudoprimality test.</li>
+<li><tt class="docutils literal"><span class="pre">args</span></tt> &#8211; additional parameters passed to finite field
+implementations</li>
+<li><tt class="docutils literal"><span class="pre">kwds</span></tt> &#8211; additional keyword parameters passed to finite field
+implementations</li>
+</ul>
+<p>ALIAS: You can also use <tt class="docutils literal"><span class="pre">GF</span></tt> instead of <tt class="docutils literal"><span class="pre">FiniteField</span></tt> &#8211; they
+are identical.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">9</span><span class="p">);</span> <span class="n">k</span>
+<span class="go">Finite Field in a of size 3^2</span>
+<span class="gp">sage: </span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">Finite Field in a of size 3^2</span>
+<span class="gp">sage: </span><span class="n">charpoly</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+<span class="go">y^2 + 2*y + 2</span>
+</pre></div>
+</div>
+<p>We illustrate the proof flag.  The following example would hang
+for a very long time if we didn&#8217;t use <tt class="docutils literal"><span class="pre">proof=False</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Magma only supports <tt class="docutils literal"><span class="pre">proof=False</span></tt> for making finite fields,
+so falsely appears to be faster than Sage &#8211; see <a class="reference external" href="http://trac.sagemath.org/10975">trac ticket #10975</a>.</p>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">1000</span> <span class="o">+</span> <span class="mi">453</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">((</span><span class="mi">10</span><span class="o">^</span><span class="mi">1000</span> <span class="o">+</span> <span class="mi">453</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>      <span class="c1"># long time -- about 5 seconds</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">5</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span> <span class="o">-</span> <span class="n">x</span> <span class="o">+</span><span class="mi">1</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">modulus</span><span class="p">();</span> <span class="n">f</span>
+<span class="go">x^5 + 4*x + 1</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go"> &lt;type &#39;sage.rings.polynomial.polynomial_zmod_flint.Polynomial_zmod_flint&#39;&gt;</span>
+</pre></div>
+</div>
+<p>By default, the given generator is not guaranteed to be primitive
+(a generator of the multiplicative group), use
+<tt class="docutils literal"><span class="pre">modulus=&quot;primitive&quot;</span></tt> if you need this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">40</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">multiplicative_order</span><span class="p">()</span>
+<span class="go">4547473508864641189575195312</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_square</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">40</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="s2">&quot;primitive&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">multiplicative_order</span><span class="p">()</span>
+<span class="go">9094947017729282379150390624</span>
+</pre></div>
+</div>
+<p>The modulus must be irreducible:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">5</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">finite field modulus must be irreducible but it is not</span>
+</pre></div>
+</div>
+<p>You can&#8217;t accidentally fool the constructor into thinking the
+modulus is irreducible when it is not, since it actually tests
+irreducibility modulo <span class="math">\(p\)</span>.  Also, the modulus has to be of the
+right degree (this is always checked):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">factor</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">x^5 + 2</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">5</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">finite field modulus must be irreducible but it is not</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">5</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">check_irreducible</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the degree of the modulus does not equal the degree of the field</span>
+</pre></div>
+</div>
+<p>Any type which can be converted to the polynomial ring <span class="math">\(GF(p)[x]\)</span>
+is accepted as modulus:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="o">^</span><span class="mi">3</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="o">^</span><span class="mi">10</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">pari</span><span class="p">(</span><span class="s2">&quot;ffinit(13,10)&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">var</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unable to convert sin(x) to an integer</span>
+</pre></div>
+</div>
+<p>If you wish to live dangerously, you can tell the constructor not
+to test irreducibility using <tt class="docutils literal"><span class="pre">check_irreducible=False</span></tt>, but this
+can easily lead to crashes and hangs &#8211; so do not do it unless you
+know that the modulus really is irreducible!</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">check_irreducible</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Even for prime fields, you can specify a modulus. This will not
+change how Sage computes in this field, but it will change the
+result of the <tt class="xref py py-meth docutils literal"><span class="pre">modulus()</span></tt> and <tt class="xref py py-meth docutils literal"><span class="pre">gen()</span></tt> methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="s2">&quot;primitive&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.</span><span class="n">modulus</span><span class="p">()</span>
+<span class="go">x + 3</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>The order of a finite field must be a prime power:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the order of a finite field must be at least 2</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the order of a finite field must be a prime power</span>
+</pre></div>
+</div>
+<p>Finite fields with explicit random modulus are not cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">10</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">n</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">10</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="ow">is</span> <span class="n">k</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">**</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We check that various ways of creating the same finite field yield
+the same object, which is cached:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="ow">is</span> <span class="n">L</span>           <span class="c1"># name is ignored for prime fields</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="ow">is</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">modulus</span><span class="o">=</span><span class="n">K</span><span class="o">.</span><span class="n">modulus</span><span class="p">())</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">K</span><span class="o">.</span><span class="n">modulus</span><span class="p">()</span>
+<span class="go">x^2 + x + 1</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">modulus</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="ow">is</span> <span class="n">L</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">modulus</span><span class="p">()</span><span class="o">.</span><span class="n">change_variable_name</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="ow">is</span> <span class="n">M</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>You may print finite field elements as integers. This currently
+only works if the order of field is <span class="math">\(&lt;2^{16}\)</span>, though:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">8</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>The following demonstrate coercions for finite fields using Conway
+polynomials:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">2</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">5</span><span class="p">);</span> <span class="n">b</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+<span class="go">3*z10^5 + z10^4 + z10^2 + 3*z10 + 1</span>
+</pre></div>
+</div>
+<p>Note that embeddings are compatible in lattices of such finite
+fields:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="o">^</span><span class="mi">3</span><span class="p">);</span> <span class="n">c</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="n">b</span><span class="p">)</span><span class="o">+</span><span class="n">c</span> <span class="o">==</span> <span class="n">a</span><span class="o">+</span><span class="p">(</span><span class="n">b</span><span class="o">+</span><span class="n">c</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">c</span> <span class="o">==</span> <span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">b</span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.categories.pushout</span> <span class="kn">import</span> <span class="n">pushout</span>
+<span class="gp">sage: </span><span class="n">n</span> <span class="o">=</span> <span class="n">pushout</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">o</span> <span class="o">=</span> <span class="n">pushout</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">pushout</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">q</span><span class="p">(</span><span class="n">o</span><span class="p">(</span><span class="n">b</span><span class="p">))</span> <span class="o">==</span> <span class="n">q</span><span class="p">(</span><span class="n">n</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Another check that embeddings are defined properly:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">**</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">**</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">l</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span><span class="o">**</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="n">l</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">gen</span><span class="p">())</span><span class="o">**</span><span class="mi">10</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Using pseudo-Conway polynomials is slow for highly
+composite extension degrees:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">120</span><span class="p">)</span> <span class="c1"># long time -- about 3 seconds</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">40</span><span class="p">)</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span><span class="o">.</span><span class="n">minimal_polynomial</span><span class="p">()(</span><span class="n">k</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span><span class="o">^</span><span class="p">((</span><span class="mi">3</span><span class="o">^</span><span class="mi">120</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">40</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span> <span class="c1"># long time because of previous line</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>Before <a class="reference external" href="http://trac.sagemath.org/17569">trac ticket #17569</a>, the boolean keyword argument <tt class="docutils literal"><span class="pre">conway</span></tt>
+was required when creating finite fields without a variable
+name.  This keyword argument is now deprecated.  You
+can still pass in <tt class="docutils literal"><span class="pre">prefix</span></tt> as an argument, which has the
+effect of changing the variable name of the algebraic closure:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">10</span><span class="p">,</span> <span class="n">conway</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">);</span> <span class="n">L</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">10</span><span class="p">);</span> <span class="n">K</span> <span class="ow">is</span> <span class="n">L</span>
+<span class="go">doctest:...: DeprecationWarning: the &#39;conway&#39; argument is deprecated, pseudo-conway polynomials are now used by default if no variable name is given</span>
+<span class="go">See http://trac.sagemath.org/17569 for details.</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.</span><span class="n">variable_name</span><span class="p">(),</span> <span class="n">L</span><span class="o">.</span><span class="n">variable_name</span><span class="p">()</span>
+<span class="go">(&#39;w10&#39;, &#39;z10&#39;)</span>
+<span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">polynomial</span><span class="p">())</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">polynomial</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Check that <a class="reference external" href="http://trac.sagemath.org/16934">trac ticket #16934</a> has been fixed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k1</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">17</span><span class="o">^</span><span class="mi">14</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s2">&quot;pari_ffelt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">a</span><span class="o">/</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">k2</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">17</span><span class="o">^</span><span class="mi">14</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s2">&quot;pari_ffelt&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k1</span> <span class="ow">is</span> <span class="n">k2</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory.create_key_and_extra_args">
+<tt class="descname">create_key_and_extra_args</tt><big>(</big><em>order</em>, <em>name=None</em>, <em>modulus=None</em>, <em>names=None</em>, <em>impl=None</em>, <em>proof=None</em>, <em>check_irreducible=True</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory.create_key_and_extra_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">GF</span><span class="o">.</span><span class="n">create_key_and_extra_args</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="go">((9, (&#39;a&#39;,), x^2 + 2*x + 2, &#39;givaro&#39;, &#39;{}&#39;, 3, 2, True), {})</span>
+<span class="gp">sage: </span><span class="n">GF</span><span class="o">.</span><span class="n">create_key_and_extra_args</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+<span class="go">((9, (&#39;a&#39;,), x^2 + 2*x + 2, &#39;givaro&#39;, &quot;{&#39;foo&#39;: &#39;value&#39;}&quot;, 3, 2, True), {&#39;foo&#39;: &#39;value&#39;})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory.create_object">
+<tt class="descname">create_object</tt><big>(</big><em>version</em>, <em>key</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#sage.rings.finite_rings.finite_field_constructor.FiniteFieldFactory.create_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="c1"># indirect doctest</span>
+<span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We try to create finite fields with various implementations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;modn&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;givaro&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;ntl&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_ffelt&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the degree must be at least 2</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_mod&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">The size of the finite field must not be prime.</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;supercalifragilisticexpialidocious&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">no such finite field implementation: &#39;supercalifragilisticexpialidocious&#39;</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">15</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;modn&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the &#39;modn&#39; implementation requires a prime order</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">15</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;givaro&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">15</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;ntl&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">15</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_ffelt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="o">^</span><span class="mi">15</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_mod&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">60</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;modn&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">the &#39;modn&#39; implementation requires a prime order</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">60</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;givaro&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">q must be &lt; 2^16</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">60</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;ntl&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">q must be a 2-power</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">60</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_ffelt&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="o">^</span><span class="mi">60</span><span class="p">,</span> <span class="n">impl</span><span class="o">=</span><span class="s1">&#39;pari_mod&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.rings.finite_rings.finite_field_constructor.is_PrimeFiniteField">
+<tt class="descclassname">sage.rings.finite_rings.finite_field_constructor.</tt><tt class="descname">is_PrimeFiniteField</tt><big>(</big><em>x</em><big>)</big><a class="headerlink" href="#sage.rings.finite_rings.finite_field_constructor.is_PrimeFiniteField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if x is a prime finite field.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.rings.finite_rings.finite_field_constructor</span> <span class="kn">import</span> <span class="n">is_PrimeFiniteField</span>
+<span class="gp">sage: </span><span class="n">is_PrimeFiniteField</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">is_PrimeFiniteField</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">is_PrimeFiniteField</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">))</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">is_PrimeFiniteField</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="n">next_prime</span><span class="p">(</span><span class="mi">10</span><span class="o">^</span><span class="mi">90</span><span class="p">,</span><span class="n">proof</span><span class="o">=</span><span class="bp">False</span><span class="p">)))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="integer_mod.html"
+                                  title="previous chapter">Elements of <span class="math">\(\ZZ/n\ZZ\)</span></a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="finite_field_base.html"
+                                  title="next chapter">Base Classes for Finite Fields</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/rings/finite_rings/finite_field_constructor.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="finite_field_base.html" title="Base Classes for Finite Fields"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="integer_mod.html" title="Elements of \(\ZZ/n\ZZ\)"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li><a href="../../../index.html">Finite Rings</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
