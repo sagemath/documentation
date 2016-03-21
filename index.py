@@ -8,8 +8,8 @@
 #
 # Note: the script assumes the html and pdf files are copied after
 # running `make doc-html && make doc-pdf` like this:
-# $ cp -aR $SAGE_ROOT/src/doc/output/pdf .
-# $ cp -aR $SAGE_ROOT/src/doc/output/html .
+# $ cp -aR $SAGE_ROOT/local/share/doc/sage/pdf .
+# $ cp -aR $SAGE_ROOT/local/share/doc/sage/html .
 #
 # License: Apache 2.0
 # Author: Harald Schilly <harald.schilly@gmail.com>
@@ -19,6 +19,7 @@ from collections import defaultdict
 
 LANG = {
     "en": "English",
+    "es": "Spanish",
     "hu": "Hungarian",
     "pt": "Portuguese",
     "de": "German",
@@ -62,7 +63,7 @@ title="SageMath Mathematical Software">
 </a>
 """
 
-filter_ref = ["graph-", "generic-graph-", "fully_packed_loop"]
+filter_ref = ["graph-", "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-", "plot-", "generic_graph-", "fully_packed_loop"]
 filter_html = [("en","website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
