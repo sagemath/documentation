@@ -63,7 +63,9 @@ title="SageMath Mathematical Software">
 </a>
 """
 
-filter_ref = ["graph-", "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-", "plot-", "generic_graph-", "fully_packed_loop"]
+filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-",
+              "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-",
+              "plot-", "generic_graph-", "fully_packed_loop", "link-", "complex_plot-"]
 filter_html = [("en","website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}

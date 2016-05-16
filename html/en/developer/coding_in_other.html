@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using External Libraries and Interfaces &mdash; Sage Developer&#39;s Guide v7.1</title>
+    <title>Using External Libraries and Interfaces &mdash; Sage Developer&#39;s Guide v7.2</title>
     
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '7.1',
+        VERSION:     '7.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,14 +27,14 @@
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="Sage Developer&#39;s Guide v7.1" href="index.html" />
+    <link rel="top" title="Sage Developer&#39;s Guide v7.2" href="index.html" />
     <link rel="next" title="Packaging Third-Party Code" href="packaging.html" />
     <link rel="prev" title="Coding in Cython" href="coding_in_cython.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,7 +55,7 @@
     
   
   
-        <li><a href="index.html">Developer&#39;s Guide v7.1</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.2</a> &raquo;</li>
  
       </ul>
     </div>  
@@ -63,41 +63,41 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="using-external-libraries-and-interfaces">
 <span id="chapter-other"></span><h1>Using External Libraries and Interfaces<a class="headerlink" href="#using-external-libraries-and-interfaces" title="Permalink to this headline">¶</a></h1>
 <p>When writing code for Sage, use Python for the basic structure and
 interface. For speed, efficiency, or convenience, you can implement
-parts of the code using any of the following languages: <a class="reference internal" href="coding_in_cython.html#chapter-cython"><em>Cython</em></a>, C/C++, Fortran 95, GAP, Common Lisp, Singular, and
+parts of the code using any of the following languages: <a class="reference internal" href="coding_in_cython.html#chapter-cython"><span class="std std-ref">Cython</span></a>, C/C++, Fortran 95, GAP, Common Lisp, Singular, and
 PARI/GP. You can also use all C/C++ libraries included with Sage
 <a class="reference internal" href="#sagecomponents" id="id1">[SageComponents]</a>. And if you are okay with your code depending on
 optional Sage packages, you can use Octave, or even Magma,
 Mathematica, or Maple.</p>
-<p>In this chapter, we discuss interfaces between Sage and <a class="reference internal" href="#section-pari-library"><em>PARI</em></a>, <a class="reference internal" href="#section-gap"><em>GAP</em></a> and
-<a class="reference internal" href="#section-singular"><em>Singular</em></a>.</p>
+<p>In this chapter, we discuss interfaces between Sage and <a class="reference internal" href="#section-pari-library"><span class="std std-ref">PARI</span></a>, <a class="reference internal" href="#section-gap"><span class="std std-ref">GAP</span></a> and
+<a class="reference internal" href="#section-singular"><span class="std std-ref">Singular</span></a>.</p>
 <div class="section" id="the-pari-c-library-interface">
 <span id="section-pari-library"></span><h2>The PARI C Library Interface<a class="headerlink" href="#the-pari-c-library-interface" title="Permalink to this headline">¶</a></h2>
 <p>Here is a step-by-step guide to adding new PARI functions to Sage. We
 use the Frobenius form of a matrix as an example. Some heavy lifting
 for matrices over integers is implemented using the PARI library. To
-compute the Frobenius form in PARI, the <tt class="docutils literal"><span class="pre">matfrobenius</span></tt> function is
+compute the Frobenius form in PARI, the <code class="docutils literal"><span class="pre">matfrobenius</span></code> function is
 used.</p>
 <p>There are two ways to interact with the PARI library from Sage. The
 gp interface uses the gp interpreter. The PARI interface uses
 direct calls to the PARI C functions&#8212;this is the preferred way
 as it is much faster. Thus this section focuses on using PARI.</p>
-<p>We will add a new method to the <tt class="docutils literal"><span class="pre">gen</span></tt> class. This is the abstract
+<p>We will add a new method to the <code class="docutils literal"><span class="pre">gen</span></code> class. This is the abstract
 representation of all PARI library objects. That means that once we
 add a method to this class, every PARI object, whether it is a number,
 polynomial or matrix, will have our new method. So you can do
-<tt class="docutils literal"><span class="pre">pari(1).matfrobenius()</span></tt>, but since PARI wants to apply
-<tt class="docutils literal"><span class="pre">matfrobenius</span></tt> to matrices, not numbers, you will receive a
-<tt class="docutils literal"><span class="pre">PariError</span></tt> in this case.</p>
-<p>The <tt class="docutils literal"><span class="pre">gen</span></tt> class is defined in
-<tt class="file docutils literal"><span class="pre">SAGE_ROOT/src/sage/libs/pari/gen.pyx</span></tt>, and this is where we
-add the method <tt class="docutils literal"><span class="pre">matfrobenius</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">matfrobenius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<code class="docutils literal"><span class="pre">pari(1).matfrobenius()</span></code>, but since PARI wants to apply
+<code class="docutils literal"><span class="pre">matfrobenius</span></code> to matrices, not numbers, you will receive a
+<code class="docutils literal"><span class="pre">PariError</span></code> in this case.</p>
+<p>The <code class="docutils literal"><span class="pre">gen</span></code> class is defined in
+<code class="file docutils literal"><span class="pre">SAGE_ROOT/src/sage/libs/pari/gen.pyx</span></code>, and this is where we
+add the method <code class="docutils literal"><span class="pre">matfrobenius</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">matfrobenius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">r&quot;&quot;&quot;</span>
 <span class="sd">    M.matfrobenius(flag=0): Return the Frobenius form of the square</span>
 <span class="sd">    matrix M. If flag is 1, return only the elementary divisors (a list</span>
@@ -121,32 +121,32 @@ add the method <tt class="docutils literal"><span class="pre">matfrobenius</span
 </div>
 <p>Note the use of the
 <a class="reference external" href="http://cysignals.readthedocs.org/en/latest/#using-sig-on-and-sig-off">sig_on() statement</a>.</p>
-<p>The <tt class="docutils literal"><span class="pre">matfrobenius</span></tt> call is just a call to the PARI C library
-function <tt class="docutils literal"><span class="pre">matfrobenius</span></tt> with the appropriate parameters.</p>
-<p>The <tt class="docutils literal"><span class="pre">self.new_gen(GEN</span> <span class="pre">x)</span></tt> call constructs a new Sage <tt class="docutils literal"><span class="pre">gen</span></tt> object
-from a given PARI <tt class="docutils literal"><span class="pre">GEN</span></tt> where the PARI <tt class="docutils literal"><span class="pre">GEN</span></tt> is stored as the
-<tt class="docutils literal"><span class="pre">.g</span></tt> attribute.  Apart from this, <tt class="docutils literal"><span class="pre">self.new_gen()</span></tt> calls a closing
-<tt class="docutils literal"><span class="pre">sig_off()</span></tt> macro and also clears the PARI stack so it is very
-convenient to use in a <tt class="docutils literal"><span class="pre">return</span></tt> statement as illustrated above.  So
-after <tt class="docutils literal"><span class="pre">self.new_gen()</span></tt>, all PARI <tt class="docutils literal"><span class="pre">GEN</span></tt>&#8216;s which are not converted
-to Sage <tt class="docutils literal"><span class="pre">gen</span></tt>&#8216;s are gone.  There is also <tt class="docutils literal"><span class="pre">self.new_gen_noclear(GEN</span>
-<span class="pre">x)</span></tt> which does the same as <tt class="docutils literal"><span class="pre">self.new_gen(GEN</span> <span class="pre">x)</span></tt> except that it
-does <em>not</em> call <tt class="docutils literal"><span class="pre">sig_off()</span></tt> nor clear the PARI stack.</p>
+<p>The <code class="docutils literal"><span class="pre">matfrobenius</span></code> call is just a call to the PARI C library
+function <code class="docutils literal"><span class="pre">matfrobenius</span></code> with the appropriate parameters.</p>
+<p>The <code class="docutils literal"><span class="pre">self.new_gen(GEN</span> <span class="pre">x)</span></code> call constructs a new Sage <code class="docutils literal"><span class="pre">gen</span></code> object
+from a given PARI <code class="docutils literal"><span class="pre">GEN</span></code> where the PARI <code class="docutils literal"><span class="pre">GEN</span></code> is stored as the
+<code class="docutils literal"><span class="pre">.g</span></code> attribute.  Apart from this, <code class="docutils literal"><span class="pre">self.new_gen()</span></code> calls a closing
+<code class="docutils literal"><span class="pre">sig_off()</span></code> macro and also clears the PARI stack so it is very
+convenient to use in a <code class="docutils literal"><span class="pre">return</span></code> statement as illustrated above.  So
+after <code class="docutils literal"><span class="pre">self.new_gen()</span></code>, all PARI <code class="docutils literal"><span class="pre">GEN</span></code>&#8216;s which are not converted
+to Sage <code class="docutils literal"><span class="pre">gen</span></code>&#8216;s are gone.  There is also <code class="docutils literal"><span class="pre">self.new_gen_noclear(GEN</span>
+<span class="pre">x)</span></code> which does the same as <code class="docutils literal"><span class="pre">self.new_gen(GEN</span> <span class="pre">x)</span></code> except that it
+does <em>not</em> call <code class="docutils literal"><span class="pre">sig_off()</span></code> nor clear the PARI stack.</p>
 <p>The information about which function to call and how to call it can be
 retrieved from the PARI user&#8217;s manual (note: Sage includes the
 development version of PARI, so check that version of the user&#8217;s
-manual). Looking for <tt class="docutils literal"><span class="pre">matfrobenius</span></tt> you can find:</p>
+manual). Looking for <code class="docutils literal"><span class="pre">matfrobenius</span></code> you can find:</p>
 <blockquote>
-<div>The library syntax is <tt class="docutils literal"><span class="pre">GEN</span> <span class="pre">matfrobenius(GEN</span> <span class="pre">M,</span> <span class="pre">long</span> <span class="pre">flag,</span> <span class="pre">long</span> <span class="pre">v</span>
-<span class="pre">=</span> <span class="pre">-1)</span></tt>, where <tt class="docutils literal"><span class="pre">v</span></tt> is a variable number.</div></blockquote>
+<div>The library syntax is <code class="docutils literal"><span class="pre">GEN</span> <span class="pre">matfrobenius(GEN</span> <span class="pre">M,</span> <span class="pre">long</span> <span class="pre">flag,</span> <span class="pre">long</span> <span class="pre">v</span>
+<span class="pre">=</span> <span class="pre">-1)</span></code>, where <code class="docutils literal"><span class="pre">v</span></code> is a variable number.</div></blockquote>
 <p>In case you are familiar with gp, please note that the PARI C function
 may have a name that is different from the corresponding gp function
-(for example, see <tt class="docutils literal"><span class="pre">mathnf</span></tt>), so always check the manual.</p>
-<p>We can also add a <tt class="docutils literal"><span class="pre">frobenius(flag)</span></tt> method to the <tt class="docutils literal"><span class="pre">matrix_integer</span></tt>
-class where we call the <tt class="docutils literal"><span class="pre">matfrobenius()</span></tt> method on the PARI object
+(for example, see <code class="docutils literal"><span class="pre">mathnf</span></code>), so always check the manual.</p>
+<p>We can also add a <code class="docutils literal"><span class="pre">frobenius(flag)</span></code> method to the <code class="docutils literal"><span class="pre">matrix_integer</span></code>
+class where we call the <code class="docutils literal"><span class="pre">matfrobenius()</span></code> method on the PARI object
 associated to the matrix after doing some sanity checking. Then we
 convert output from PARI to Sage objects:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">frobenius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">frobenius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the Frobenius form (rational canonical form) of this</span>
 <span class="sd">    matrix.</span>
@@ -209,15 +209,15 @@ hard.</p>
 <p>For example, suppose we want to make a wrapper for the computation of
 the Cartan matrix of a simple Lie algebra. The Cartan matrix of <span class="math">\(G_2\)</span>
 is available in GAP using the commands:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>gap&gt; L:= SimpleLieAlgebra( &quot;G&quot;, 2, Rationals );
-&lt;Lie algebra of dimension 14 over Rationals&gt;
-gap&gt; R:= RootSystem( L );
-&lt;root system of rank 2&gt;
-gap&gt; CartanMatrix( R );
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gap</span><span class="o">&gt;</span> <span class="n">L</span><span class="p">:</span><span class="o">=</span> <span class="n">SimpleLieAlgebra</span><span class="p">(</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">Rationals</span> <span class="p">);</span>
+<span class="o">&lt;</span><span class="n">Lie</span> <span class="n">algebra</span> <span class="n">of</span> <span class="n">dimension</span> <span class="mi">14</span> <span class="n">over</span> <span class="n">Rationals</span><span class="o">&gt;</span>
+<span class="n">gap</span><span class="o">&gt;</span> <span class="n">R</span><span class="p">:</span><span class="o">=</span> <span class="n">RootSystem</span><span class="p">(</span> <span class="n">L</span> <span class="p">);</span>
+<span class="o">&lt;</span><span class="n">root</span> <span class="n">system</span> <span class="n">of</span> <span class="n">rank</span> <span class="mi">2</span><span class="o">&gt;</span>
+<span class="n">gap</span><span class="o">&gt;</span> <span class="n">CartanMatrix</span><span class="p">(</span> <span class="n">R</span> <span class="p">);</span>
 </pre></div>
 </div>
 <p>In Sage, one can access these commands by typing:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">SimpleLieAlgebra</span><span class="p">(</span><span class="s1">&#39;&quot;G&quot;&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Rationals&#39;</span><span class="p">);</span> <span class="n">L</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">SimpleLieAlgebra</span><span class="p">(</span><span class="s1">&#39;&quot;G&quot;&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Rationals&#39;</span><span class="p">);</span> <span class="n">L</span>
 <span class="go">Algebra( Rationals, [ v.1, v.2, v.3, v.4, v.5, v.6, v.7, v.8, v.9, v.10,</span>
 <span class="go">  v.11, v.12, v.13, v.14 ] )</span>
 <span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">RootSystem</span><span class="p">();</span> <span class="n">R</span>
@@ -226,17 +226,17 @@ gap&gt; CartanMatrix( R );
 <span class="go">[ [ 2, -1 ], [ -3, 2 ] ]</span>
 </pre></div>
 </div>
-<p>Note the <tt class="docutils literal"><span class="pre">'&quot;G&quot;'</span></tt> which is evaluated in GAP as the string <tt class="docutils literal"><span class="pre">&quot;G&quot;</span></tt>.</p>
+<p>Note the <code class="docutils literal"><span class="pre">'&quot;G&quot;'</span></code> which is evaluated in GAP as the string <code class="docutils literal"><span class="pre">&quot;G&quot;</span></code>.</p>
 <p>The purpose of this section is to use this example to show how one
-might write a Python/Sage program whose input is, say, <tt class="docutils literal"><span class="pre">('G',2)</span></tt> and
+might write a Python/Sage program whose input is, say, <code class="docutils literal"><span class="pre">('G',2)</span></code> and
 whose output is the matrix above (but as a Sage Matrix&#8212;see the code
-in the directory <tt class="file docutils literal"><span class="pre">SAGE_ROOT/src/sage/matrix/</span></tt> and the
+in the directory <code class="file docutils literal"><span class="pre">SAGE_ROOT/src/sage/matrix/</span></code> and the
 corresponding parts of the Sage reference manual).</p>
 <p>First, the input must be converted into strings consisting of legal
 GAP commands. Then the GAP output, which is also a string, must be
 parsed and converted if possible to a corresponding Sage/Python
 object.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cartan_matrix</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">rank</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cartan_matrix</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">rank</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the Cartan matrix of given Chevalley type and rank.</span>
 
@@ -265,11 +265,11 @@ object.</p>
     <span class="k">return</span> <span class="n">MS</span><span class="p">(</span><span class="n">ans</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The output <tt class="docutils literal"><span class="pre">ans</span></tt> is a Python list. The last two lines convert that
-list to an instance of the Sage class <tt class="docutils literal"><span class="pre">Matrix</span></tt>.</p>
+<p>The output <code class="docutils literal"><span class="pre">ans</span></code> is a Python list. The last two lines convert that
+list to an instance of the Sage class <code class="docutils literal"><span class="pre">Matrix</span></code>.</p>
 <p>Alternatively, one could replace the first line of the above function
 with this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">L</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;SimpleLieAlgebra(&quot;</span><span class="si">%s</span><span class="s1">&quot;, </span><span class="si">%s</span><span class="s1">, Rationals);&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">rank</span><span class="p">))</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">L</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;SimpleLieAlgebra(&quot;</span><span class="si">%s</span><span class="s1">&quot;, </span><span class="si">%s</span><span class="s1">, Rationals);&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">rank</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Defining &#8220;easy&#8221; and &#8220;hard&#8221; is subjective, but here is one definition.
@@ -289,10 +289,10 @@ functions return one of the following data types:</p>
 <p>Sage already has classes for each of these.</p>
 <p>A &#8220;hard&#8221; example is left as an exercise! Here are a few ideas.</p>
 <ul class="simple">
-<li>Write a wrapper for GAP&#8217;s <tt class="docutils literal"><span class="pre">FreeLieAlgebra</span></tt> function (or, more
+<li>Write a wrapper for GAP&#8217;s <code class="docutils literal"><span class="pre">FreeLieAlgebra</span></code> function (or, more
 generally, all the finitely presented Lie algebra functions in
 GAP). This would require creating new Python objects.</li>
-<li>Write a wrapper for GAP&#8217;s <tt class="docutils literal"><span class="pre">FreeGroup</span></tt> function (or, more
+<li>Write a wrapper for GAP&#8217;s <code class="docutils literal"><span class="pre">FreeGroup</span></code> function (or, more
 generally, all the finitely presented groups functions in GAP). This
 would require writing some new Python objects.</li>
 <li>Write a wrapper for GAP&#8217;s character tables. Though this could be
@@ -311,8 +311,8 @@ a shared library has much lower latency and furthermore avoids having
 to convert everything into a string in-between. This is why Sage
 includes a shared library version of the GAP kernel, available as
 <span class="math">\(libgap\)</span> in Sage. The libgap analogue of the first example in
-<a class="reference internal" href="#section-gap"><em>GAP</em></a> is:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">SimpleLieAlgebra</span> <span class="o">=</span> <span class="n">libgap</span><span class="o">.</span><span class="n">function_factory</span><span class="p">(</span><span class="s1">&#39;SimpleLieAlgebra&#39;</span><span class="p">)</span>
+<a class="reference internal" href="#section-gap"><span class="std std-ref">GAP</span></a> is:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">SimpleLieAlgebra</span> <span class="o">=</span> <span class="n">libgap</span><span class="o">.</span><span class="n">function_factory</span><span class="p">(</span><span class="s1">&#39;SimpleLieAlgebra&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">SimpleLieAlgebra</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">RootSystem</span><span class="p">();</span>  <span class="n">R</span>
 <span class="go">&lt;root system of rank 2&gt;</span>
@@ -339,84 +339,84 @@ but a place of degree <span class="math">\(2\)</span> is not since no degree <sp
 contains a degree <span class="math">\(2\)</span> extension. Places of degree <span class="math">\(1\)</span> are also called
 <span class="math">\(F\)</span>-rational points.</p>
 <p>As an example of the Sage/Singular interface, we will explain how to
-wrap Singular&#8217;s <tt class="docutils literal"><span class="pre">NSplaces</span></tt>, which computes places on a curve over a
-finite field. (The command <tt class="docutils literal"><span class="pre">closed_points</span></tt> also does this in some
+wrap Singular&#8217;s <code class="docutils literal"><span class="pre">NSplaces</span></code>, which computes places on a curve over a
+finite field. (The command <code class="docutils literal"><span class="pre">closed_points</span></code> also does this in some
 cases.) This is &#8220;easy&#8221; since no new Python classes are needed in Sage
 to carry this out.</p>
 <p>Here is an example on how to use this command in Singular:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span> A Computer Algebra System for Polynomial Computations   /   version 3-0-0
-                                                       0&lt;
-     by: G.-M. Greuel, G. Pfister, H. Schoenemann        \   May 2005
-FB Mathematik der Universitaet, D-67653 Kaiserslautern    \
-&gt; LIB &quot;brnoeth.lib&quot;;
-[...]
-&gt; ring s=5,(x,y),lp;
-&gt; poly f=y^2-x^9-x;
-&gt; list X1=Adj_div(f);
-Computing affine singular points ...
-Computing all points at infinity ...
-Computing affine singular places ...
-Computing singular places at infinity ...
-Computing non-singular places at infinity ...
-Adjunction divisor computed successfully
+<div class="highlight-default"><div class="highlight"><pre><span></span> <span class="n">A</span> <span class="n">Computer</span> <span class="n">Algebra</span> <span class="n">System</span> <span class="k">for</span> <span class="n">Polynomial</span> <span class="n">Computations</span>   <span class="o">/</span>   <span class="n">version</span> <span class="mi">3</span><span class="o">-</span><span class="mi">0</span><span class="o">-</span><span class="mi">0</span>
+                                                       <span class="mi">0</span><span class="o">&lt;</span>
+     <span class="n">by</span><span class="p">:</span> <span class="n">G</span><span class="o">.-</span><span class="n">M</span><span class="o">.</span> <span class="n">Greuel</span><span class="p">,</span> <span class="n">G</span><span class="o">.</span> <span class="n">Pfister</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span> <span class="n">Schoenemann</span>        \   <span class="n">May</span> <span class="mi">2005</span>
+<span class="n">FB</span> <span class="n">Mathematik</span> <span class="n">der</span> <span class="n">Universitaet</span><span class="p">,</span> <span class="n">D</span><span class="o">-</span><span class="mi">67653</span> <span class="n">Kaiserslautern</span>    \
+<span class="o">&gt;</span> <span class="n">LIB</span> <span class="s2">&quot;brnoeth.lib&quot;</span><span class="p">;</span>
+<span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="o">&gt;</span> <span class="n">ring</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span><span class="n">lp</span><span class="p">;</span>
+<span class="o">&gt;</span> <span class="n">poly</span> <span class="n">f</span><span class="o">=</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="mi">9</span><span class="o">-</span><span class="n">x</span><span class="p">;</span>
+<span class="o">&gt;</span> <span class="nb">list</span> <span class="n">X1</span><span class="o">=</span><span class="n">Adj_div</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+<span class="n">Computing</span> <span class="n">affine</span> <span class="n">singular</span> <span class="n">points</span> <span class="o">...</span>
+<span class="n">Computing</span> <span class="nb">all</span> <span class="n">points</span> <span class="n">at</span> <span class="n">infinity</span> <span class="o">...</span>
+<span class="n">Computing</span> <span class="n">affine</span> <span class="n">singular</span> <span class="n">places</span> <span class="o">...</span>
+<span class="n">Computing</span> <span class="n">singular</span> <span class="n">places</span> <span class="n">at</span> <span class="n">infinity</span> <span class="o">...</span>
+<span class="n">Computing</span> <span class="n">non</span><span class="o">-</span><span class="n">singular</span> <span class="n">places</span> <span class="n">at</span> <span class="n">infinity</span> <span class="o">...</span>
+<span class="n">Adjunction</span> <span class="n">divisor</span> <span class="n">computed</span> <span class="n">successfully</span>
 
-The genus of the curve is 4
-&gt; list X2=NSplaces(1,X1);
-Computing non-singular affine places of degree 1 ...
-&gt; list X3=extcurve(1,X2);
+<span class="n">The</span> <span class="n">genus</span> <span class="n">of</span> <span class="n">the</span> <span class="n">curve</span> <span class="ow">is</span> <span class="mi">4</span>
+<span class="o">&gt;</span> <span class="nb">list</span> <span class="n">X2</span><span class="o">=</span><span class="n">NSplaces</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">X1</span><span class="p">);</span>
+<span class="n">Computing</span> <span class="n">non</span><span class="o">-</span><span class="n">singular</span> <span class="n">affine</span> <span class="n">places</span> <span class="n">of</span> <span class="n">degree</span> <span class="mi">1</span> <span class="o">...</span>
+<span class="o">&gt;</span> <span class="nb">list</span> <span class="n">X3</span><span class="o">=</span><span class="n">extcurve</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">X2</span><span class="p">);</span>
 
-Total number of rational places : 6
+<span class="n">Total</span> <span class="n">number</span> <span class="n">of</span> <span class="n">rational</span> <span class="n">places</span> <span class="p">:</span> <span class="mi">6</span>
 
-&gt; def R=X3[1][5];
-&gt; setring R;
-&gt; POINTS;
-[1]:
-   [1]:
-      0
-   [2]:
-      1
-   [3]:
-      0
-[2]:
-   [1]:
-      -2
-   [2]:
-      1
-   [3]:
-      1
-[3]:
-   [1]:
-      -2
-   [2]:
-      1
-   [3]:
-      1
-[4]:
-   [1]:
-      -2
-   [2]:
-      -1
-   [3]:
-      1
-[5]:
-   [1]:
-      2
-   [2]:
-      -2
-   [3]:
-      1
-[6]:
-   [1]:
-      0
-   [2]:
-      0
-   [3]:
-      1
+<span class="o">&gt;</span> <span class="k">def</span> <span class="nf">R</span><span class="o">=</span><span class="n">X3</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">5</span><span class="p">];</span>
+<span class="o">&gt;</span> <span class="n">setring</span> <span class="n">R</span><span class="p">;</span>
+<span class="o">&gt;</span> <span class="n">POINTS</span><span class="p">;</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="mi">0</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="mi">1</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">0</span>
+<span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="o">-</span><span class="mi">2</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="mi">1</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">1</span>
+<span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="o">-</span><span class="mi">2</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="mi">1</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">1</span>
+<span class="p">[</span><span class="mi">4</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="o">-</span><span class="mi">2</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="o">-</span><span class="mi">1</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">1</span>
+<span class="p">[</span><span class="mi">5</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="mi">2</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="o">-</span><span class="mi">2</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">1</span>
+<span class="p">[</span><span class="mi">6</span><span class="p">]:</span>
+   <span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+      <span class="mi">0</span>
+   <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+      <span class="mi">0</span>
+   <span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+      <span class="mi">1</span>
 </pre></div>
 </div>
 <p>Here is another way of doing this same calculation in the Sage
 interface to Singular:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">singular</span><span class="o">.</span><span class="n">LIB</span><span class="p">(</span><span class="s2">&quot;brnoeth.lib&quot;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">singular</span><span class="o">.</span><span class="n">LIB</span><span class="p">(</span><span class="s2">&quot;brnoeth.lib&quot;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">singular</span><span class="o">.</span><span class="n">ring</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="s1">&#39;(x,y)&#39;</span><span class="p">,</span><span class="s1">&#39;lp&#39;</span><span class="p">)</span>
 <span class="go">    //   characteristic : 5</span>
 <span class="go">    //   number of vars : 2</span>
@@ -469,7 +469,7 @@ separate function to do just that. This requires figuring out how to
 determine where the coordinates of the points are placed in the string
 <span class="math">\(L\)</span>. Python has some very useful string manipulation commands to do
 just that.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">points_parser</span><span class="p">(</span><span class="n">string_points</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">points_parser</span><span class="p">(</span><span class="n">string_points</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function will parse a string of points</span>
 <span class="sd">    of X over a finite field F returned by Singular&#39;s NSplaces</span>
@@ -528,7 +528,7 @@ output is the number of places in <span class="math">\(X\)</span> of degree <spa
 moment, there is no &#8220;translation&#8221; between elements of <span class="math">\(GF(p^d)\)</span> in
 Singular and Sage unless <span class="math">\(d=1\)</span>. So, for this reason, we restrict
 ourselves to points of degree one.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">places_on_curve</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">places_on_curve</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    INPUT:</span>
 <span class="sd">        f -- element of F[x,y], defining X: f(x,y)=0</span>
@@ -560,9 +560,9 @@ ourselves to points of degree one.</p>
 </pre></div>
 </div>
 <p>Note that the ordering returned by this Sage function is exactly the
-same as the ordering in the Singular variable <tt class="docutils literal"><span class="pre">POINTS</span></tt>.</p>
+same as the ordering in the Singular variable <code class="docutils literal"><span class="pre">POINTS</span></code>.</p>
 <p>One more example (in addition to the one in the docstring):</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">MPolynomialRing</span><span class="p">(</span><span class="n">F</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span><span class="s2">&quot;y&quot;</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
 <span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span><span class="o">+</span><span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">+</span><span class="n">x</span>
@@ -576,7 +576,7 @@ same as the ordering in the Singular variable <tt class="docutils literal"><span
 <p>There is also a more Python-like interface to Singular. Using this,
 the code is much simpler, as illustrated below. First, we demonstrate
 computing the places on a curve in a particular case:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">singular</span><span class="o">.</span><span class="n">lib</span><span class="p">(</span><span class="s1">&#39;brnoeth.lib&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">singular</span><span class="o">.</span><span class="n">lib</span><span class="p">(</span><span class="s1">&#39;brnoeth.lib&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">singular</span><span class="o">.</span><span class="n">ring</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;(x,y)&#39;</span><span class="p">,</span> <span class="s1">&#39;lp&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">singular</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;y^2 - x^9 - x&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">X1</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">Adj_div</span><span class="p">()</span>
@@ -590,14 +590,14 @@ computing the places on a curve in a particular case:</p>
 <p>Note that these elements of L are defined modulo 5 in Singular, and
 they compare differently than you would expect from their print
 representation:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">sorted</span><span class="p">([(</span><span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)])</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">sorted</span><span class="p">([(</span><span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">L</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)])</span>
 <span class="go">[(0, 0, 1), (0, 1, 0), (2, 2, 1), (2, -2, 1), (-2, 1, 1), (-2, -1, 1)]</span>
 </pre></div>
 </div>
 <p>Next, we implement the general function (for brevity we omit the
-docstring, which is the same as above). Note that the <tt class="docutils literal"><span class="pre">point_parser</span></tt>
+docstring, which is the same as above). Note that the <code class="docutils literal"><span class="pre">point_parser</span></code>
 function is not required:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">places_on_curve</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">places_on_curve</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">F</span><span class="p">):</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">characteristic</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">F</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -615,7 +615,7 @@ function is not required:</p>
 </pre></div>
 </div>
 <p>This code is much shorter, nice, and more readable. However, it
-depends on certain functions, e.g. <tt class="docutils literal"><span class="pre">singular.setring</span></tt> having been
+depends on certain functions, e.g. <code class="docutils literal"><span class="pre">singular.setring</span></code> having been
 implemented in the Sage/Singular interface, whereas the code in the
 previous section used only the barest minimum of that interface.</p>
 </div>
@@ -627,26 +627,26 @@ modification or extensions to that program. They are also surprisingly
 fast and flexible (given how they work!), because all I/O is buffered,
 and because interaction between Sage and the command line program can
 be non-blocking (asynchronous). A pseudo-tty Sage interface is
-asynchronous because it derives from the Sage class <tt class="docutils literal"><span class="pre">Expect</span></tt>, which
+asynchronous because it derives from the Sage class <code class="docutils literal"><span class="pre">Expect</span></code>, which
 handles the communication between Sage and the external process.</p>
 <p>For example, here is part of the file
-<tt class="docutils literal"><span class="pre">SAGE_ROOT/src/sage/interfaces/octave.py</span></tt>, which
+<code class="docutils literal"><span class="pre">SAGE_ROOT/src/sage/interfaces/octave.py</span></code>, which
 defines an interface between Sage and Octave, an open source program
 for doing numerical computations, among other things:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">expect</span> <span class="kn">import</span> <span class="n">Expect</span><span class="p">,</span> <span class="n">ExpectElement</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">expect</span> <span class="k">import</span> <span class="n">Expect</span><span class="p">,</span> <span class="n">ExpectElement</span>
 
 <span class="k">class</span> <span class="nc">Octave</span><span class="p">(</span><span class="n">Expect</span><span class="p">):</span>
     <span class="o">...</span>
 </pre></div>
 </div>
-<p>The first two lines import the library <tt class="docutils literal"><span class="pre">os</span></tt>, which contains
-operating system routines, and also the class <tt class="docutils literal"><span class="pre">Expect</span></tt>, which is the
+<p>The first two lines import the library <code class="docutils literal"><span class="pre">os</span></code>, which contains
+operating system routines, and also the class <code class="docutils literal"><span class="pre">Expect</span></code>, which is the
 basic class for interfaces. The third line defines the class
-<tt class="docutils literal"><span class="pre">Octave</span></tt>; it derives from <tt class="docutils literal"><span class="pre">Expect</span></tt> as well. After this comes a
+<code class="docutils literal"><span class="pre">Octave</span></code>; it derives from <code class="docutils literal"><span class="pre">Expect</span></code> as well. After this comes a
 docstring, which we omit here (see the file for details). Next comes:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_subdirectory</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-             <span class="n">server</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">server_tmpdir</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_subdirectory</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_tmpdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">Expect</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;octave&#39;</span><span class="p">,</span>
                     <span class="n">prompt</span> <span class="o">=</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">,</span>
@@ -654,14 +654,14 @@ docstring, which we omit here (see the file for details). Next comes:</p>
                     <span class="n">server</span> <span class="o">=</span> <span class="n">server</span><span class="p">,</span>
                     <span class="n">server_tmpdir</span> <span class="o">=</span> <span class="n">server_tmpdir</span><span class="p">,</span>
                     <span class="n">script_subdirectory</span> <span class="o">=</span> <span class="n">script_subdirectory</span><span class="p">,</span>
-                    <span class="n">restart_on_ctrlc</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
-                    <span class="n">verbose_start</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+                    <span class="n">restart_on_ctrlc</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="n">verbose_start</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                     <span class="n">logfile</span> <span class="o">=</span> <span class="n">logfile</span><span class="p">,</span>
                     <span class="n">eval_using_file_cutoff</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This uses the class <tt class="docutils literal"><span class="pre">Expect</span></tt> to set up the Octave interface:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<p>This uses the class <code class="docutils literal"><span class="pre">Expect</span></code> to set up the Octave interface:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set the variable var to the given value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -682,10 +682,10 @@ docstring, which we omit here (see the file for details). Next comes:</p>
     <span class="n">octave_console</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>These let users type <tt class="docutils literal"><span class="pre">octave.set('x',</span> <span class="pre">3)</span></tt>, after which
-<tt class="docutils literal"><span class="pre">octave.get('x')</span></tt> returns <tt class="docutils literal"><span class="pre">'</span> <span class="pre">3'</span></tt>. Running <tt class="docutils literal"><span class="pre">octave.console()</span></tt>
+<p>These let users type <code class="docutils literal"><span class="pre">octave.set('x',</span> <span class="pre">3)</span></code>, after which
+<code class="docutils literal"><span class="pre">octave.get('x')</span></code> returns <code class="docutils literal"><span class="pre">'</span> <span class="pre">3'</span></code>. Running <code class="docutils literal"><span class="pre">octave.console()</span></code>
 dumps the user into an Octave interactive shell:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve_linear_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">solve_linear_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Use octave to compute a solution x to A*x = b, as a list.</span>
 
@@ -710,8 +710,8 @@ dumps the user into an Octave interactive shell:</p>
     <span class="n">n</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">ncols</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">m</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dimensions of A and b must be compatible&quot;</span><span class="p">)</span>
-    <span class="kn">from</span> <span class="nn">sage.matrix.all</span> <span class="kn">import</span> <span class="n">MatrixSpace</span>
-    <span class="kn">from</span> <span class="nn">sage.rings.all</span> <span class="kn">import</span> <span class="n">QQ</span>
+    <span class="kn">from</span> <span class="nn">sage.matrix.all</span> <span class="k">import</span> <span class="n">MatrixSpace</span>
+    <span class="kn">from</span> <span class="nn">sage.rings.all</span> <span class="k">import</span> <span class="n">QQ</span>
     <span class="n">MS</span> <span class="o">=</span> <span class="n">MatrixSpace</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">b</span>  <span class="o">=</span> <span class="n">MS</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">b</span><span class="p">))</span> <span class="c1"># converted b to a &quot;column vector&quot;</span>
     <span class="n">sA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sage2octave_matrix_string</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
@@ -726,11 +726,11 @@ dumps the user into an Octave interactive shell:</p>
     <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This code defines the method <tt class="docutils literal"><span class="pre">solve_linear_system</span></tt>, which works as
+<p>This code defines the method <code class="docutils literal"><span class="pre">solve_linear_system</span></code>, which works as
 documented.</p>
-<p>These are only excerpts from <tt class="docutils literal"><span class="pre">octave.py</span></tt>; check that file for more
+<p>These are only excerpts from <code class="docutils literal"><span class="pre">octave.py</span></code>; check that file for more
 definitions and examples. Look at other files in the directory
-<tt class="docutils literal"><span class="pre">SAGE_ROOT/src/sage/interfaces/</span></tt> for examples of interfaces to other
+<code class="docutils literal"><span class="pre">SAGE_ROOT/src/sage/interfaces/</span></code> for examples of interfaces to other
 software packages.</p>
 <table class="docutils citation" frame="void" id="sagecomponents" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
@@ -746,7 +746,7 @@ for a list</td></tr>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
@@ -793,7 +793,7 @@ for a list</td></tr>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -814,14 +814,14 @@ for a list</td></tr>
     
   
   
-        <li><a href="index.html">Developer&#39;s Guide v7.1</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.2</a> &raquo;</li>
  
       </ul>
     </div>
     
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2005--2016, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

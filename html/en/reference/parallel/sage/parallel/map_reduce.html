@@ -1,0 +1,1566 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parallel computations using RecursivelyEnumeratedSet and Map-Reduce &mdash; Sage Reference Manual v7.2: Parallel Computing</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '7.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.2: Parallel Computing" href="../../index.html" />
+    <link rel="next" title="Parallel Iterator built using Python’s multiprocessing module" href="multiprocessing_sage.html" />
+    <link rel="prev" title="Parallel iterator built using the fork() system call" href="use_fork.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="multiprocessing_sage.html" title="Parallel Iterator built using Python’s multiprocessing module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="use_fork.html" title="Parallel iterator built using the fork() system call"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Parallel Computing</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="parallel-computations-using-recursivelyenumeratedset-and-map-reduce">
+<span id="sage-parallel-map-reduce"></span><h1>Parallel computations using RecursivelyEnumeratedSet and Map-Reduce<a class="headerlink" href="#parallel-computations-using-recursivelyenumeratedset-and-map-reduce" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.parallel.map_reduce"></span><p>There exists an efficient way to distribute computations when you have a set
+<span class="math">\(S\)</span> of objects defined by <a class="reference external" href="../../../structure/sage/sets/recursively_enumerated_set.html#sage.sets.recursively_enumerated_set.RecursivelyEnumeratedSet" title="(in Sage Reference Manual: Basic Structures v7.2)"><code class="xref py py-func docutils literal"><span class="pre">RecursivelyEnumeratedSet()</span></code></a> (see
+<a class="reference external" href="../../../structure/sage/sets/recursively_enumerated_set.html#module-sage.sets.recursively_enumerated_set" title="(in Sage Reference Manual: Basic Structures v7.2)"><code class="xref py py-mod docutils literal"><span class="pre">sage.sets.recursively_enumerated_set</span></code></a> for more details) over which you
+would like to perform the following kind of operations :</p>
+<ul class="simple">
+<li>Compute the cardinality of a (very large) set defined recursively (through a
+call to
+<a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span> <span class="pre">forest</span> <span class="pre">type</span></code></a>)</li>
+<li>More generally, compute any kind of generating series over this set</li>
+<li>Test a conjecture : i.e. find an element of <span class="math">\(S\)</span> satisfying a specific
+property; conversely, check that all of them do</li>
+<li>Count/list the elements of <span class="math">\(S\)</span> having a specific property</li>
+<li>Apply any map/reduce kind of operation over the elements of <span class="math">\(S\)</span></li>
+</ul>
+<p>AUTHORS :</p>
+<ul class="simple">
+<li>Florent Hivert &#8211; code, documentation (2012-2016)</li>
+<li>Jean Baptiste Priez &#8211; prototype, debugging help on MacOSX (2011-June, 2016)</li>
+<li>Nathann Cohen &#8211; Some doc (2012)</li>
+</ul>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#basic-usage"><span class="std std-ref">How can I use all that stuff?</span></a></li>
+<li><a class="reference internal" href="#advanced-use"><span class="std std-ref">Advanced use</span></a></li>
+<li><a class="reference internal" href="#profiling"><span class="std std-ref">Profiling</span></a></li>
+<li><a class="reference internal" href="#logging"><span class="std std-ref">Logging</span></a></li>
+<li><a class="reference internal" href="#protocol-description"><span class="std std-ref">How does it work ?</span></a></li>
+<li><a class="reference internal" href="#examples"><span class="std std-ref">Are there examples of classes ?</span></a></li>
+</ul>
+</div>
+<div class="section" id="how-is-this-different-from-usual-mapreduce">
+<h2>How is this different from usual MapReduce ?<a class="headerlink" href="#how-is-this-different-from-usual-mapreduce" title="Permalink to this headline">¶</a></h2>
+<p>This implementation is specific to
+<a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span> <span class="pre">forest</span> <span class="pre">type</span></code></a>,
+and uses its properties to do its job. Not only mapping
+and reducing is done on different processors but also <strong>generating the elements
+of</strong> <span class="math">\(S\)</span>.</p>
+</div>
+<div class="section" id="how-can-i-use-all-that-stuff">
+<span id="basic-usage"></span><h2>How can I use all that stuff?<a class="headerlink" href="#how-can-i-use-all-that-stuff" title="Permalink to this headline">¶</a></h2>
+<p>First, you need the information necessary to describe a
+<a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span> <span class="pre">forest</span>
+<span class="pre">type</span></code></a> representing your set <span class="math">\(S\)</span> (see
+<a class="reference external" href="../../../structure/sage/sets/recursively_enumerated_set.html#module-sage.sets.recursively_enumerated_set" title="(in Sage Reference Manual: Basic Structures v7.2)"><code class="xref py py-mod docutils literal"><span class="pre">sage.sets.recursively_enumerated_set</span></code></a>).  Then, you need to provide a Map
+function as well as a Reduce function. Here are some examples :</p>
+<ul>
+<li><p class="first"><strong>Counting the number of elements</strong>: In this situation, the map function
+can be set to <code class="docutils literal"><span class="pre">lambda</span> <span class="pre">x</span> <span class="pre">:</span> <span class="pre">1</span></code>, and the reduce function just adds the
+values together, i.e. <code class="docutils literal"><span class="pre">lambda</span> <span class="pre">x,y</span> <span class="pre">:</span> <span class="pre">x+y</span></code>.</p>
+<p>Here&#8217;s the Sage code for binary words of length <span class="math">\(\leq 16\)</span></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">seeds</span> <span class="o">=</span> <span class="p">[[]]</span>
+<span class="gp">sage: </span><span class="n">succ</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="n">l</span><span class="o">+</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">l</span><span class="o">+</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">15</span> <span class="k">else</span> <span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">succ</span><span class="p">,</span>
+<span class="go">....:   structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+<span class="gp">sage: </span><span class="n">map_function</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">reduce_function</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="n">y</span>
+<span class="gp">sage: </span><span class="n">reduce_init</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span><span class="n">map_function</span><span class="p">,</span> <span class="n">reduce_function</span><span class="p">,</span> <span class="n">reduce_init</span><span class="p">)</span>
+<span class="go">131071</span>
+</pre></div>
+</div>
+<p>One can check that this is indeed the number of binary words of
+length <span class="math">\(\leq 16\)</span></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">factor</span><span class="p">(</span><span class="mi">131071</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">2^17</span>
+</pre></div>
+</div>
+<p>Note that the function mapped and reduced here are equivalent to the default
+values of the <a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest.map_reduce" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-meth docutils literal"><span class="pre">sage.combinat.backtrack.SearchForest.map_reduce()</span></code></a> method
+so that to compute the number of element you only need to call:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">()</span>
+<span class="go">131071</span>
+</pre></div>
+</div>
+<p>You don&#8217;t need to use <a class="reference external" href="../../../structure/sage/sets/recursively_enumerated_set.html#sage.sets.recursively_enumerated_set.RecursivelyEnumeratedSet" title="(in Sage Reference Manual: Basic Structures v7.2)"><code class="xref py py-func docutils literal"><span class="pre">RecursivelyEnumeratedSet()</span></code></a>, you can use directly
+<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a>. This is needed if you want to have fine
+control over the parallel execution (see <a class="reference internal" href="#advanced-use"><span class="std std-ref">Advanced use</span></a> below):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span>
+<span class="go">....:   roots = [[]],</span>
+<span class="go">....:   children = lambda l: [l+[0], l+[1]] if len(l) &lt;= 15 else [],</span>
+<span class="go">....:   map_function = lambda x : 1,</span>
+<span class="go">....:   reduce_function = lambda x,y: x+y,</span>
+<span class="go">....:   reduce_init = 0 )</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">131071</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>Generating series</strong>: In this situation, the map function associates a
+monomial to each element of <span class="math">\(S\)</span>, while the Reduce function is still equal to
+<code class="docutils literal"><span class="pre">lambda</span> <span class="pre">x,y</span> <span class="pre">:</span> <span class="pre">x+y</span></code>.</p>
+<p>Here&#8217;s the Sage code for binary words of length <span class="math">\(\leq 16\)</span></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span>
+<span class="go">....:   [[]], lambda l: [l+[0], l+[1]] if len(l) &lt; 16 else [],</span>
+<span class="go">....:   structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+<span class="gp">sage: </span><span class="n">sp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span>
+<span class="go">....:   map_function = lambda z: x**len(z),</span>
+<span class="go">....:   reduce_function = lambda x,y: x+y,</span>
+<span class="go">....:   reduce_init = 0 )</span>
+<span class="gp">sage: </span><span class="n">sp</span>
+<span class="go">65536*x^16 + 32768*x^15 + 16384*x^14 + 8192*x^13 + 4096*x^12 + 2048*x^11 + 1024*x^10 + 512*x^9 + 256*x^8 + 128*x^7 + 64*x^6 + 32*x^5 + 16*x^4 + 8*x^3 + 4*x^2 + 2*x + 1</span>
+</pre></div>
+</div>
+<p>This is of course <span class="math">\(\sum_{i=0}^{i=16} (2x)^i\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">sp</span> <span class="o">==</span> <span class="nb">sum</span><span class="p">((</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">17</span><span class="p">)))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Here is another example where we count permutations of size <span class="math">\(\leq 8\)</span> (here
+we use the default values):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: ([l[:i] + [len(l)] + l[i:] for i in range(len(l)+1)]</span>
+<span class="go">....:               if len(l) &lt; 8 else []),</span>
+<span class="go">....:   structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+<span class="gp">sage: </span><span class="n">sp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">));</span> <span class="n">sp</span>
+<span class="go">40320*x^8 + 5040*x^7 + 720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>This is of course <span class="math">\(\sum_{i=0}^{i=8} i! x^i\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">sp</span> <span class="o">==</span> <span class="nb">sum</span><span class="p">(</span><span class="n">factorial</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>Post Processing</strong>: We now demonstrate the use of <code class="docutils literal"><span class="pre">post_process</span></code>. We
+generate the permutation as previously, but we only perform the map/reduce
+computation on those of even <code class="docutils literal"><span class="pre">len</span></code>. Of course we get the even part of the
+previous generating series:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: ([l[:i] + [len(l)+1] + l[i:] for i in range(len(l)+1)]</span>
+<span class="go">....:               if len(l) &lt; 8 else []),</span>
+<span class="go">....:   post_process = lambda l : l if len(l) % 2 == 0 else None,</span>
+<span class="go">....:   structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+<span class="gp">sage: </span><span class="n">sp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">));</span> <span class="n">sp</span>
+<span class="go">40320*x^8 + 720*x^6 + 24*x^4 + 2*x^2 + 1</span>
+</pre></div>
+</div>
+<p>This is also useful for example to call a constructor on the generated
+elements:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: ([l[:i] + [len(l)+1] + l[i:] for i in range(len(l)+1)]</span>
+<span class="go">....:               if len(l) &lt; 5 else []),</span>
+<span class="go">....:   post_process = lambda l : Permutation(l) if len(l) == 5 else None,</span>
+<span class="go">....:   structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+<span class="gp">sage: </span><span class="n">sp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">inversions</span><span class="p">())));</span> <span class="n">sp</span>
+<span class="go">x^10 + 4*x^9 + 9*x^8 + 15*x^7 + 20*x^6 + 22*x^5 + 20*x^4 + 15*x^3 + 9*x^2 + 4*x + 1</span>
+</pre></div>
+</div>
+<p>We get here a polynomial called the <span class="math">\(x\)</span>-factorial of <span class="math">\(5\)</span> that is
+<span class="math">\(\prod_{i=1}^{i=5} \frac{1-x^i}{1-x}\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="n">prod</span><span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="n">x</span><span class="o">^</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">)))</span><span class="o">.</span><span class="n">simplify_rational</span><span class="p">()</span>
+<span class="go">x^10 + 4*x^9 + 9*x^8 + 15*x^7 + 20*x^6 + 22*x^5 + 20*x^4 + 15*x^3 + 9*x^2 + 4*x + 1</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>Listing the objects</strong>: One can also compute the list of objects in a
+<a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span> <span class="pre">forest</span> <span class="pre">type</span></code></a>
+using <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a>. As an example, we compute the set of number
+beetween 1 and 63, generated by their binary expansion:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<span class="go">....:    lambda l: [(l&lt;&lt;1)|0, (l&lt;&lt;1)|1] if l &lt; 1&lt;&lt;5 else [],</span>
+<span class="go">....:    structure=&#39;forest&#39;, enumeration=&#39;depth&#39;)</span>
+</pre></div>
+</div>
+<p>Here is the list computed without <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">serial</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">serial</span>
+<span class="go">[1, 2, 4, 8, 16, 32, 33, 17, 34, 35, 9, 18, 36, 37, 19, 38, 39, 5, 10, 20, 40, 41, 21, 42, 43, 11, 22, 44, 45, 23, 46, 47, 3, 6, 12, 24, 48, 49, 25, 50, 51, 13, 26, 52, 53, 27, 54, 55, 7, 14, 28, 56, 57, 29, 58, 59, 15, 30, 60, 61, 31, 62, 63]</span>
+</pre></div>
+</div>
+<p>Here is how to perform the parallel computation. The order of the lists
+depends on the synchronisation of the various computation processes and
+therefore should be considered as random:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">parall</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">,</span> <span class="p">[]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">parall</span>   <span class="c1"># random</span>
+<span class="go">[1, 3, 7, 15, 31, 63, 62, 30, 61, 60, 14, 29, 59, 58, 28, 57, 56, 6, 13, 27, 55, 54, 26, 53, 52, 12, 25, 51, 50, 24, 49, 48, 2, 5, 11, 23, 47, 46, 22, 45, 44, 10, 21, 43, 42, 20, 41, 40, 4, 9, 19, 39, 38, 18, 37, 36, 8, 17, 35, 34, 16, 33, 32]</span>
+<span class="gp">sage: </span><span class="nb">sorted</span><span class="p">(</span><span class="n">serial</span><span class="p">)</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">parall</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="advanced-use">
+<span id="id1"></span><h2>Advanced use<a class="headerlink" href="#advanced-use" title="Permalink to this headline">¶</a></h2>
+<p>Fine control of the execution of a map/reduce computations is obtained by
+passing parameters to the <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce.run" title="sage.parallel.map_reduce.RESetMapReduce.run"><code class="xref py py-meth docutils literal"><span class="pre">RESetMapReduce.run()</span></code></a> method. One can use the
+three following parameters:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">max_proc</span></code> &#8211; maximum number of process used.
+default: number of processor on the machine</li>
+<li><code class="docutils literal"><span class="pre">timeout</span></code> &#8211; a timeout on the computation (default: <code class="docutils literal"><span class="pre">None</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">reduce_locally</span></code> &#8211; whether the workers should reduce locally
+their work or sends results to the master as soon as possible.
+See <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a> for details.</li>
+</ul>
+<p>Here is an example or how to deal with timeout:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">AbortError</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span> <span class="o">=</span> <span class="mi">8</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     res = EX.run(timeout=0.01)</span>
+<span class="go">....: except AbortError:</span>
+<span class="go">....:     print(&quot;Computation timeout&quot;)</span>
+<span class="go">....: else:</span>
+<span class="go">....:     print(&quot;Computation normally finished&quot;)</span>
+<span class="go">....:     res</span>
+<span class="go">Computation timeout</span>
+</pre></div>
+</div>
+<p>The following should not timeout even on a very slow machine:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     res = EX.run(timeout=60)</span>
+<span class="go">....: except AbortError:</span>
+<span class="go">....:     print(&quot;Computation Timeout&quot;)</span>
+<span class="go">....: else:</span>
+<span class="go">....:     print(&quot;Computation normally finished&quot;)</span>
+<span class="go">....:     res</span>
+<span class="go">Computation normally finished</span>
+<span class="go">40320*x^8 + 5040*x^7 + 720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>As for <code class="docutils literal"><span class="pre">reduce_locally</span></code>, one should not see any difference, except for speed
+during normal usage. Most of the time the user should leave it to <code class="docutils literal"><span class="pre">True</span></code>,
+unless he sets up a mecanism to consume the partial results as soon as they
+arrive. See <a class="reference internal" href="#sage.parallel.map_reduce.RESetParallelIterator" title="sage.parallel.map_reduce.RESetParallelIterator"><code class="xref py py-class docutils literal"><span class="pre">RESetParallelIterator</span></code></a> and in particular the <code class="docutils literal"><span class="pre">__iter__</span></code>
+method for a example of consumer use.</p>
+</div>
+<div class="section" id="profiling">
+<span id="id2"></span><h2>Profiling<a class="headerlink" href="#profiling" title="Permalink to this headline">¶</a></h2>
+<p>It is possible the profile a map/reduce computation. First we create a
+<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a> object:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span>
+<span class="go">....:     roots = [[]],</span>
+<span class="go">....:     children = lambda l: [l+[0], l+[1]] if len(l) &lt;= 15 else [],</span>
+<span class="go">....:     map_function = lambda x : 1,</span>
+<span class="go">....:     reduce_function = lambda x,y: x+y,</span>
+<span class="go">....:     reduce_init = 0 )</span>
+</pre></div>
+</div>
+<p>The profiling is activated by the <code class="docutils literal"><span class="pre">profile</span></code> parameter. The value provided
+should be a prefix (including a possible directory) for the profile dump:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">prof</span> <span class="o">=</span> <span class="n">tmp_dir</span><span class="p">(</span><span class="s1">&#39;RESetMR_profile&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;profcomp&#39;</span>
+<span class="gp">sage: </span><span class="n">res</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="n">prof</span><span class="p">)</span> <span class="c1"># random</span>
+<span class="go">[RESetMapReduceWorker-1:58] (20:00:41.444) Profiling in /home/user/.sage/temp/mymachine.mysite/32414/RESetMR_profilewRCRAx/profcomp1 ...</span>
+<span class="gp">...</span>
+<span class="go">[RESetMapReduceWorker-1:57] (20:00:41.444) Profiling in /home/user/.sage/temp/mymachine.mysite/32414/RESetMR_profilewRCRAx/profcomp0 ...</span>
+<span class="gp">sage: </span><span class="n">res</span>
+<span class="go">131071</span>
+</pre></div>
+</div>
+<p>In this example, the profile have been dumped in files such as
+<code class="docutils literal"><span class="pre">profcomp0</span></code>. One can then load and print them as follows. See
+<code class="xref py py-class docutils literal"><span class="pre">profile.profile</span></code> for more details:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">cProfile</span><span class="o">,</span> <span class="nn">pstats</span>
+<span class="gp">sage: </span><span class="n">st</span> <span class="o">=</span> <span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="n">prof</span><span class="o">+</span><span class="s1">&#39;0&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">st</span><span class="o">.</span><span class="n">strip_dirs</span><span class="p">()</span><span class="o">.</span><span class="n">sort_stats</span><span class="p">(</span><span class="s1">&#39;cumulative&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">print_stats</span><span class="p">()</span> <span class="c1">#random</span>
+<span class="gp">...</span>
+<span class="go">   Ordered by: cumulative time</span>
+
+<span class="go">   ncalls  tottime  percall  cumtime  percall filename:lineno(function)</span>
+<span class="go">        1    0.023    0.023    0.432    0.432 map_reduce.py:1211(run_myself)</span>
+<span class="go">    11968    0.151    0.000    0.223    0.000 map_reduce.py:1292(walk_branch_locally)</span>
+<span class="gp">...</span>
+<span class="go">&lt;pstats.Stats instance at 0x7fedea40c6c8&gt;</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="https://docs.python.org/2/library/profile.html">The Python Profilers</a>
+for more detail on profiling in python.</p>
+</div>
+</div>
+<div class="section" id="logging">
+<span id="id3"></span><h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p>The computation progress is logged through a <a class="reference external" href="https://docs.python.org/library/logging.html#logging.Logger" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></code></a> in
+<code class="xref py py-obj docutils literal"><span class="pre">sage.parallel.map_reduce.logger</span></code> together with <a class="reference external" href="https://docs.python.org/library/logging.handlers.html#logging.StreamHandler" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">logging.StreamHandler</span></code></a>
+and a <a class="reference external" href="https://docs.python.org/library/logging.html#logging.Formatter" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">logging.Formatter</span></code></a>. They are currently configured to print
+warning message on the console.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="https://docs.python.org/2/library/logging.html">Logging facility for Python</a>
+for more detail on logging and log system configuration.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Calls to logger which involve printing the node are commented out in the
+code, because the printing (to a string) of the node can be very time
+consuming depending on the node and it happens before the decision whether
+the logger should record the string or drop it.</p>
+</div>
+</div>
+<div class="section" id="how-does-it-work">
+<span id="protocol-description"></span><h2>How does it work ?<a class="headerlink" href="#how-does-it-work" title="Permalink to this headline">¶</a></h2>
+<p>The scheduling algorithm we use here is any adaptation of <a class="reference external" href="https://en.wikipedia.org/wiki/Work_stealing">Wikipedia article Work_stealing</a>:</p>
+<blockquote>
+<div>In a work stealing scheduler, each processor in a computer system has a
+queue of work items (computational tasks, threads) to perform. [...]. Each
+work items are initially put on the queue of the processor executing the
+work item. When a processor runs out of work, it looks at the queues of
+other processors and &#8220;steals&#8221; their work items. In effect, work stealing
+distributes the scheduling work over idle processors, and as long as all
+processors have work to do, no scheduling overhead occurs.</div></blockquote>
+<p>For communication we use Python&#8217;s basic <a class="reference external" href="https://docs.python.org/library/multiprocessing.html#module-multiprocessing" title="(in Python v2.7)"><code class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></code></a> module. We
+first describe the different actors and communications tools used by the
+system. The work is done under the coordination of a <strong>master</strong> object (an
+instance of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a>) by a bunch of <strong>worker</strong> objects
+(instances of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a>).</p>
+<p>Each running map reduce instance work on a <a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span>
+<span class="pre">forest</span> <span class="pre">type</span></code></a> called here <span class="math">\(C\)</span> and is
+coordinated by a <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a> object called the <strong>master</strong>. The
+master is in charge of lauching the work, gathering the results and cleaning
+up at the end of the computation. It doesn&#8217;t perform any computation
+associated to the generation of the element <span class="math">\(C\)</span> nor the computation of the
+mapped function. It however occasionally perform a reduce, but most reducing
+is by default done by the workers. Also thanks to the work-stealing algorithm,
+the master is only involved in detecting the termination of the computation
+but all the load balancing is done at the level of the worker.</p>
+<p>Workers are instance of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a>. They are responsible of
+doing the actual computations: elements generation, mapping and reducing. They
+are also responsible of the load balancing thanks to work-stealing.</p>
+<p>Here is a description of the attribute of the <strong>master</strong> relevant to the
+map-reduce protocol:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">master._results</span></code> &#8211; a <code class="xref py py-class docutils literal"><span class="pre">SimpleQueue</span></code> where
+the master gathers the results sent by the workers.</li>
+<li><code class="docutils literal"><span class="pre">master._active_tasks</span></code> &#8211; a <a class="reference external" href="https://docs.python.org/library/multiprocessing.html#multiprocessing.Semaphore" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">Semaphore</span></code></a> recording
+the number of active task.  The work is done when it gets to 0.</li>
+<li><code class="docutils literal"><span class="pre">master._done</span></code> &#8211; a <a class="reference external" href="https://docs.python.org/library/multiprocessing.html#multiprocessing.Lock" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">Lock</span></code></a> which ensures that
+shutdown is done only once.</li>
+<li><code class="docutils literal"><span class="pre">master._abort</span></code> &#8211; a <a class="reference external" href="https://docs.python.org/library/multiprocessing.html#multiprocessing.Value" title="(in Python v2.7)"><code class="xref py py-func docutils literal"><span class="pre">Value()</span></code></a> storing a shared
+<a class="reference external" href="https://docs.python.org/library/ctypes.html#ctypes.c_bool" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">ctypes.c_bool</span></code></a> which is <code class="docutils literal"><span class="pre">True</span></code> if the computation was aborted before
+all the worker runs out of work.</li>
+<li><code class="docutils literal"><span class="pre">master._workers</span></code> &#8211; a list of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a> objects. Each worker is
+identified by its position in this list.</li>
+</ul>
+<p>Each worker is a process (<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a> inherits from
+<a class="reference external" href="https://docs.python.org/library/multiprocessing.html#multiprocessing.Process" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">Process</span></code></a>) which contains:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">worker._iproc</span></code> &#8211; the identifier of the worker that is its position in the
+master&#8217;s list of workers</li>
+<li><code class="docutils literal"><span class="pre">worker._todo</span></code> &#8211; a <a class="reference external" href="https://docs.python.org/library/collections.html#collections.deque" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">collections.deque</span></code></a> storing of nodes of the
+worker. It is used as a stack by the worker. Thiefs steal from the bottom of
+this queue.</li>
+<li><code class="docutils literal"><span class="pre">worker._request</span></code> &#8211; a <code class="xref py py-class docutils literal"><span class="pre">SimpleQueue</span></code> storing
+steal request submitted to <code class="docutils literal"><span class="pre">worker</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">worker._read_task</span></code>, <code class="docutils literal"><span class="pre">worker._write_task</span></code> &#8211; a
+<code class="xref py py-class docutils literal"><span class="pre">Pipe</span></code> used to transfert node during steal.</li>
+<li><code class="docutils literal"><span class="pre">worker._thief</span></code> &#8211; a <a class="reference external" href="https://docs.python.org/library/threading.html#threading.Thread" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">Thread</span></code></a> which is in charge of stealing from
+<code class="docutils literal"><span class="pre">worker._todo</span></code>.</li>
+</ul>
+<p>Here is a schematic of the architecture:</p>
+<div class="figure" id="figure-map-reduce-arch">
+<img alt="../../_images/map_reduce_arch.png" src="../../_images/map_reduce_arch.png" />
+</div>
+</div>
+<div class="section" id="how-thefts-are-performed">
+<h2>How thefts are performed<a class="headerlink" href="#how-thefts-are-performed" title="Permalink to this headline">¶</a></h2>
+<p>During normal time, that is when all worker are active) a worker <code class="docutils literal"><span class="pre">W</span></code> is
+iterating though a loop inside
+<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker.walk_branch_locally" title="sage.parallel.map_reduce.RESetMapReduceWorker.walk_branch_locally"><code class="xref py py-meth docutils literal"><span class="pre">RESetMapReduceWorker.walk_branch_locally()</span></code></a>. Work nodes are taken from
+and new nodes <code class="docutils literal"><span class="pre">W._todo</span></code> are appended to <code class="docutils literal"><span class="pre">W._todo</span></code>. When a worker <code class="docutils literal"><span class="pre">W</span></code> is
+running out of work, that is <code class="docutils literal"><span class="pre">worker._todo</span></code> is empty, then it tries to steal
+some work (ie: a node) from another worker. This is performed in the
+<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker.steal" title="sage.parallel.map_reduce.RESetMapReduceWorker.steal"><code class="xref py py-meth docutils literal"><span class="pre">RESetMapReduceWorker.steal()</span></code></a> method.</p>
+<p>From the point of view of <code class="docutils literal"><span class="pre">W</span></code> here is what happens:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">W</span></code> signals to the master that it is idle <code class="xref py py-meth docutils literal"><span class="pre">master._signal_task_done()</span></code>;</li>
+<li><code class="docutils literal"><span class="pre">W</span></code> chose a victim <code class="docutils literal"><span class="pre">V</span></code> at random;</li>
+<li><code class="docutils literal"><span class="pre">W</span></code> sends a request to <code class="docutils literal"><span class="pre">V</span></code> : it puts its identifier into <code class="docutils literal"><span class="pre">V._request</span></code>;</li>
+<li><code class="docutils literal"><span class="pre">W</span></code> tries to read a node from <code class="docutils literal"><span class="pre">W._read_task</span></code>. Then three things may happen:<ul>
+<li>a proper node is read. Then the theft was a success and <code class="docutils literal"><span class="pre">W</span></code> starts
+working locally on the received node.</li>
+<li><code class="docutils literal"><span class="pre">None</span></code> is received. This means that <code class="docutils literal"><span class="pre">V</span></code> was idle. Then <code class="docutils literal"><span class="pre">W</span></code> tries
+another victim.</li>
+<li><code class="docutils literal"><span class="pre">AbortError</span></code> is received. This means either that the computation was
+aborted or that it simply succeded and that no more work is required by
+<code class="docutils literal"><span class="pre">W</span></code>. Therefore an <code class="docutils literal"><span class="pre">AbortError</span></code> exception is raised leading to <code class="docutils literal"><span class="pre">W</span></code> to
+shutdown.</li>
+</ul>
+</li>
+</ul>
+<p>We now describe the protocol on the victims side. Each worker process contains
+a <code class="xref py py-class docutils literal"><span class="pre">Thread</span></code> which we call <code class="docutils literal"><span class="pre">T</span></code> for thief which acts like some kinds of
+Troyan horse during theft. It is normally blocked waiting for a steal request.</p>
+<p>From the point of view of <code class="docutils literal"><span class="pre">V</span></code> and <code class="docutils literal"><span class="pre">T</span></code>, here is what happens:</p>
+<ul class="simple">
+<li>during normal time <code class="docutils literal"><span class="pre">T</span></code> is blocked waiting on <code class="docutils literal"><span class="pre">V._request</span></code>;</li>
+<li>upon steal request, <code class="docutils literal"><span class="pre">T</span></code> wakes up receiving the identification of <code class="docutils literal"><span class="pre">W</span></code>;</li>
+<li><code class="docutils literal"><span class="pre">T</span></code> signal to the master that a new task is starting by
+<code class="xref py py-meth docutils literal"><span class="pre">master._signal_task_start()</span></code>;</li>
+<li>Two things may happen depending if the queue <code class="docutils literal"><span class="pre">V._todo</span></code> is empty or not.
+Remark that due to the GIL, there is no parallel execution between the
+victim <code class="docutils literal"><span class="pre">V</span></code> and its thief tread <code class="docutils literal"><span class="pre">T</span></code>.<ul>
+<li>If <code class="docutils literal"><span class="pre">V._todo</span></code> is empty, then <code class="docutils literal"><span class="pre">None</span></code> is answered on
+<code class="docutils literal"><span class="pre">W._write_task</span></code>. The task is immediately signaled to end the the master
+through <code class="xref py py-meth docutils literal"><span class="pre">master._signal_task_done()</span></code>.</li>
+<li>Otherwise, a node is removed from the bottom of <code class="docutils literal"><span class="pre">V._todo</span></code>. The node is
+sent to <code class="docutils literal"><span class="pre">W</span></code> on <code class="docutils literal"><span class="pre">W._write_task</span></code>. The task will be ended by <code class="docutils literal"><span class="pre">W</span></code>, that
+is when finished working on the subtree rooted at the node, <code class="docutils literal"><span class="pre">W</span></code> will
+call <code class="xref py py-meth docutils literal"><span class="pre">master._signal_task_done()</span></code>.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="the-end-of-the-computation">
+<h2>The end of the computation<a class="headerlink" href="#the-end-of-the-computation" title="Permalink to this headline">¶</a></h2>
+<p>To detect when a computation is finished, we keep a synchronized integer which
+count the number of active task. This is essentially a semaphore but semaphore
+are broken on Darwin&#8217;s OSes so we ship two implementations depending on the os
+(see <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounter" title="sage.parallel.map_reduce.ActiveTaskCounter"><code class="xref py py-class docutils literal"><span class="pre">ActiveTaskCounter</span></code></a> and <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin" title="sage.parallel.map_reduce.ActiveTaskCounterDarwin"><code class="xref py py-class docutils literal"><span class="pre">ActiveTaskCounterDarwin</span></code></a> and note
+below).</p>
+<p>When a worker finishes working on a task, it calls
+<code class="xref py py-meth docutils literal"><span class="pre">master._signal_task_done()</span></code>. This decrease the task counter
+<code class="docutils literal"><span class="pre">master._active_tasks</span></code>. When it reaches 0, it means that there are no more
+nodes: the work is done. The worker executes <code class="xref py py-meth docutils literal"><span class="pre">master._shutdown()</span></code> which
+sends <code class="docutils literal"><span class="pre">AbortError</span></code> on all <code class="xref py py-meth docutils literal"><span class="pre">worker._request()</span></code> and
+<code class="xref py py-meth docutils literal"><span class="pre">worker._write_task()</span></code> Queues. Each worker or thief thread receiving such
+a message raise the corresponding exception, stoping therefore its work. A
+lock called <code class="docutils literal"><span class="pre">master._done</span></code> ensures that shutdown is only done once.</p>
+<p>Finally, it is also possible to interrupt the computation before its ends
+calling <code class="xref py py-meth docutils literal"><span class="pre">master.abort()</span></code>. This is done by putting
+<code class="docutils literal"><span class="pre">master._active_tasks</span></code> to 0 and calling <code class="xref py py-meth docutils literal"><span class="pre">master._shutdown()</span></code>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>The MacOSX Semaphore bug</p>
+<p class="last">Darwin&#8217;s OSes do not correctly implement POSIX&#8217;s semaphore semantic.
+Indeed, on this system, acquire may fail and return False not only because
+the semaphore is equal to zero but also <strong>because someone else is trying to
+acquire</strong> at the same time. This renders the usage of Semaphore impossible
+on MacOSX so that on this system we use a synchronized integer.</p>
+</div>
+</div>
+<div class="section" id="are-there-examples-of-classes">
+<span id="examples"></span><h2>Are there examples of classes ?<a class="headerlink" href="#are-there-examples-of-classes" title="Permalink to this headline">¶</a></h2>
+<p>Yes ! Here, there are:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.parallel.map_reduce.RESetMPExample" title="sage.parallel.map_reduce.RESetMPExample"><code class="xref py py-class docutils literal"><span class="pre">RESetMPExample</span></code></a> &#8211; a simple basic example</li>
+<li><a class="reference internal" href="#sage.parallel.map_reduce.RESetParallelIterator" title="sage.parallel.map_reduce.RESetParallelIterator"><code class="xref py py-class docutils literal"><span class="pre">RESetParallelIterator</span></code></a> &#8211; a more advanced example using non standard
+communication configuration.</li>
+</ul>
+</div>
+<div class="section" id="tests">
+<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
+<p>Generating series for sum of strictly decreassing list of integer smaller than
+15:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">y</span> <span class="o">=</span> <span class="n">polygen</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span>
+<span class="go">....:     roots = [([], 0, 0)] +[([i], i, i) for i in range(1,15)],</span>
+<span class="go">....:     children = lambda list_sum_last:</span>
+<span class="go">....:         [(list_sum_last[0] + [i], list_sum_last[1] + i, i) for i in range(1, list_sum_last[2])],</span>
+<span class="go">....:     map_function = lambda li_sum_dummy: y**li_sum_dummy[1])</span>
+<span class="gp">sage: </span><span class="n">sg</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">bool</span><span class="p">(</span><span class="n">sg</span> <span class="o">==</span> <span class="n">expand</span><span class="p">(</span><span class="n">prod</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">y</span><span class="o">^</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">15</span><span class="p">))))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="classes-and-methods">
+<h2>Classes and methods<a class="headerlink" href="#classes-and-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="sage.parallel.map_reduce.AbortError">
+<em class="property">exception </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">AbortError</code><a class="headerlink" href="#sage.parallel.map_reduce.AbortError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/exceptions.html#exceptions.Exception" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></a></p>
+<p>Exception for aborting parallel computations</p>
+<p>This is used both as exception or as abort message</p>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">AbortError</span>
+<span class="gp">sage: </span><span class="k">raise</span> <span class="n">AbortError</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">AbortError</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounter">
+<code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">ActiveTaskCounter</code><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounter" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix" title="sage.parallel.map_reduce.ActiveTaskCounterPosix"><code class="xref py py-class docutils literal"><span class="pre">ActiveTaskCounterPosix</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterDarwin">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">ActiveTaskCounterDarwin</code><span class="sig-paren">(</span><em>task_number</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Handling the number of Active Tasks</p>
+<p>A class for handling the number of active task in distributed computation
+process. This is essentially a semaphore, but Darwin&#8217;s OSes do not
+correctly implement POSIX&#8217;s semaphore semantic. So we use a shared integer
+with a lock.</p>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterDarwin.abort">
+<code class="descname">abort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.abort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the task counter to 0.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounterDarwin</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_done">
+<code class="descname">task_done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrement the task counter by one.</p>
+<p>OUTPUT:</p>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_done" title="sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_done"><code class="xref py py-meth docutils literal"><span class="pre">task_done()</span></code></a> decrement the counter and returns its value
+after the decrementation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounterDarwin</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=3)</span>
+
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start">
+<code class="descname">task_start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increment the task counter by one.</p>
+<p>OUTPUT:</p>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start" title="sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start"><code class="xref py py-meth docutils literal"><span class="pre">task_start()</span></code></a> on a zero or negative counter returns 0,
+otherwise increment the counter and returns its value after the
+incrementation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounterDarwin</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_start</span><span class="p">()</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=5)</span>
+</pre></div>
+</div>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start" title="sage.parallel.map_reduce.ActiveTaskCounterDarwin.task_start"><code class="xref py py-meth docutils literal"><span class="pre">task_start()</span></code></a> on a zero counter does nothing:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_start</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterPosix">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">ActiveTaskCounterPosix</code><span class="sig-paren">(</span><em>task_number</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Handling the number of Active Tasks</p>
+<p>A class for handling the number of active task in distributed computation
+process. This is the standard implementation on POSIX compliant OSes. We
+essentially wrap a semaphore.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>A legitimate question is whether there is a need in keeping the two
+implementations. I ran the following experiment on my machine:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">S</span> <span class="o">=</span> <span class="n">RecursivelyEnumeratedSet</span><span class="p">(</span> <span class="p">[[]],</span>
+        <span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="p">([</span><span class="n">l</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)]</span> <span class="o">+</span> <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">:]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+          <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">NNN</span> <span class="k">else</span> <span class="p">[]),</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s1">&#39;forest&#39;</span><span class="p">,</span> <span class="n">enumeration</span><span class="o">=</span><span class="s1">&#39;depth&#39;</span><span class="p">)</span>
+<span class="o">%</span><span class="n">time</span> <span class="n">sp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">map_reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">));</span> <span class="n">sp</span>
+</pre></div>
+</div>
+<p>For NNN = 10, averaging a dozen of runs, I got:</p>
+<ul class="simple">
+<li>Posix complient implementation : 17.04 s</li>
+<li>Darwin&#8217;s implementation        : 18.26 s</li>
+</ul>
+<p class="last">So there is a non negligible overhead. It will probably be worth if we
+tries to Cythonize the code. So I&#8217;m keeping both implementation.</p>
+</div>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterPosix.abort">
+<code class="descname">abort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.abort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the task counter to 0.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounter</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterPosix.task_done">
+<code class="descname">task_done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.task_done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrement the task counter by one.</p>
+<p>OUTPUT:</p>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.task_done" title="sage.parallel.map_reduce.ActiveTaskCounterPosix.task_done"><code class="xref py py-meth docutils literal"><span class="pre">task_done()</span></code></a> decrement the counter and returns its value
+after the decrementation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounter</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=3)</span>
+
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start">
+<code class="descname">task_start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increment the task counter by one.</p>
+<p>OUTPUT:</p>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start" title="sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start"><code class="xref py py-meth docutils literal"><span class="pre">task_start()</span></code></a> on a zero or negative counter returns 0,
+otherwise increment the counter and returns its value after the
+incrementation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">ActiveTaskCounterDarwin</span> <span class="k">as</span> <span class="n">ATC</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=4)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_start</span><span class="p">()</span>
+<span class="go">5</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=5)</span>
+</pre></div>
+</div>
+<p>Calling <a class="reference internal" href="#sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start" title="sage.parallel.map_reduce.ActiveTaskCounterPosix.task_start"><code class="xref py py-meth docutils literal"><span class="pre">task_start()</span></code></a> on a zero counter does nothing:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">ATC</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">task_start</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">c</span>
+<span class="go">ActiveTaskCounter(value=0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.RESetMPExample">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">RESetMPExample</code><span class="sig-paren">(</span><em>maxl=9</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMPExample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">sage.parallel.map_reduce.RESetMapReduce</span></code></a></p>
+<p>An example of map reduce class</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">maxl</span></code> &#8211; the maximum size of permutations generated (default to <span class="math">\(9\)</span>).</li>
+</ul>
+<p>This compute the generating series of permutations counted by their size
+upto size <code class="docutils literal"><span class="pre">maxl</span></code>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">362880*x^9 + 40320*x^8 + 5040*x^7 + 720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">This is an example of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a></p>
+</div>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMPExample.children">
+<code class="descname">children</code><span class="sig-paren">(</span><em>l</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMPExample.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the chidren of the permutation <span class="math">\(l\)</span></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">l</span></code> &#8211; a list containing a permutation</li>
+</ul>
+<p>OUTPUT:</p>
+<p>the lists of <code class="docutils literal"><span class="pre">len(l)</span></code> inserted at all possible positions into <code class="docutils literal"><span class="pre">l</span></code></p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">RESetMPExample</span><span class="p">()</span><span class="o">.</span><span class="n">children</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">[[2, 1, 0], [1, 2, 0], [1, 0, 2]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMPExample.map_function">
+<code class="descname">map_function</code><span class="sig-paren">(</span><em>l</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMPExample.map_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>The monomial associated to the permutation <span class="math">\(l\)</span></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">l</span></code> &#8211; a list containing a permutation</li>
+</ul>
+<p>OUTPUT:</p>
+<p><code class="docutils literal"><span class="pre">x^len(l)</span></code>.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">RESetMPExample</span><span class="p">()</span><span class="o">.</span><span class="n">map_function</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">x^2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMPExample.roots">
+<code class="descname">roots</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMPExample.roots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the empty permutation</p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">RESetMPExample</span><span class="p">()</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span>
+<span class="go">[[]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.RESetMapReduce">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">RESetMapReduce</code><span class="sig-paren">(</span><em>roots=None</em>, <em>children=None</em>, <em>post_process=None</em>, <em>map_function=None</em>, <em>reduce_function=None</em>, <em>reduce_init=None</em>, <em>forest=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Map-Reduce on recursively enumerated sets</p>
+<p>INPUT:</p>
+<p>Description of the set:</p>
+<ul class="simple">
+<li>either <code class="docutils literal"><span class="pre">forest=f</span></code> &#8211; where <code class="docutils literal"><span class="pre">f</span></code> is a
+<a class="reference external" href="../../../combinat/sage/combinat/backtrack.html#sage.combinat.backtrack.SearchForest" title="(in Sage Reference Manual: Combinatorics v7.2)"><code class="xref py py-class docutils literal"><span class="pre">RecursivelyEnumeratedSet</span> <span class="pre">of</span> <span class="pre">forest</span> <span class="pre">type</span></code></a></li>
+<li>or a triple <code class="docutils literal"><span class="pre">roots,</span> <span class="pre">children,</span> <span class="pre">post_process</span></code> as follows<ul>
+<li><code class="docutils literal"><span class="pre">roots=r</span></code> &#8211; The root of the enumeration</li>
+<li><code class="docutils literal"><span class="pre">children=c</span></code> &#8211; a function iterating through children node, given a parent nodes</li>
+<li><code class="docutils literal"><span class="pre">post_process=p</span></code> &#8211; a post processing function</li>
+</ul>
+</li>
+</ul>
+<p>The option <code class="docutils literal"><span class="pre">post_process</span></code> allows for customizing the nodes that
+are actually produced. Furthermore, if <code class="docutils literal"><span class="pre">post_process(x)</span></code> returns <code class="docutils literal"><span class="pre">None</span></code>,
+then <code class="docutils literal"><span class="pre">x</span></code> won&#8217;t be output at all.</p>
+<p>Decription of the map/reduce operation:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">map_function=f</span></code> &#8211; (default to <code class="docutils literal"><span class="pre">None</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">reduce_function=red</span></code> &#8211; (default to <code class="docutils literal"><span class="pre">None</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">reduce_init=init</span></code> &#8211; (default to <code class="docutils literal"><span class="pre">None</span></code>)</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#module-sage.parallel.map_reduce" title="sage.parallel.map_reduce"><code class="xref py py-mod docutils literal"><span class="pre">the</span> <span class="pre">Map/Reduce</span> <span class="pre">module</span></code></a> for
+details and examples.</p>
+</div>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.abort">
+<code class="descname">abort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.abort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abort the current parallel computation</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetParallelIterator</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetParallelIterator</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: [l+[0], l+[1]] if len(l) &lt; 17 else [])</span>
+<span class="gp">sage: </span><span class="n">it</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">hasattr</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="s1">&#39;work_queue&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.finish">
+<code class="descname">finish</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroys the worker and all the communication objects.</p>
+<p>Also gathers the communication statistics before destroying the workers.</p>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># indirect doctest</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">_workers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">_workers</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_results</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">_shutdown</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">print_communication_statistics</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">AttributeError</span>: <span class="n">&#39;RESetMPExample&#39; object has no attribute &#39;_stats&#39;</span>
+
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">print_communication_statistics</span><span class="p">()</span>
+<span class="go">#proc: ...</span>
+<span class="gp">...</span>
+
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="c1"># Cleanup</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce.print_communication_statistics" title="sage.parallel.map_reduce.RESetMapReduce.print_communication_statistics"><code class="xref py py-meth docutils literal"><span class="pre">print_communication_statistics()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.get_results">
+<code class="descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.get_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the results from the queue</p>
+<p>OUTPUT:</p>
+<p>the reduction of the results of all the workers, that is the result of
+the map/reduce computation.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="bp">None</span><span class="p">]:</span> <span class="n">S</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">get_results</span><span class="p">()</span>
+<span class="go">6</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">del</span> <span class="n">S</span><span class="o">.</span><span class="n">_results</span><span class="p">,</span> <span class="n">S</span><span class="o">.</span><span class="n">_active_tasks</span><span class="p">,</span> <span class="n">S</span><span class="o">.</span><span class="n">_done</span><span class="p">,</span> <span class="n">S</span><span class="o">.</span><span class="n">_workers</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.map_function">
+<code class="descname">map_function</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.map_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the function mapped by <code class="docutils literal"><span class="pre">self</span></code></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">o</span></code> &#8211; a node</li>
+</ul>
+<p>OUTPUT:</p>
+<p>By default <code class="docutils literal"><span class="pre">1</span></code>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This should be overloaded in applications.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">map_function</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="n">map_function</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">map_function</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">26</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.post_process">
+<code class="descname">post_process</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.post_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the post-processing function for <code class="docutils literal"><span class="pre">self</span></code></p>
+<p>INPUT: <code class="docutils literal"><span class="pre">a</span></code> &#8211; a node</p>
+<p>By default, returns <code class="docutils literal"><span class="pre">a</span></code> itself</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This should be overloaded in applications.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">post_process</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="n">post_process</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">post_process</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">16</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.print_communication_statistics">
+<code class="descname">print_communication_statistics</code><span class="sig-paren">(</span><em>blocksize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.print_communication_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the communication statistics in a nice way</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">print_communication_statistics</span><span class="p">()</span>    <span class="c1"># random</span>
+<span class="go">#proc:        0    1    2    3    4    5    6    7</span>
+<span class="go">reqs sent:    5    2    3   11   21   19    1    0</span>
+<span class="go">reqs rcvs:   10   10    9    5    1   11    9    2</span>
+<span class="go">- thefs:      1    0    0    0    0    0    0    0</span>
+<span class="go">+ thefs:      0    0    1    0    0    0    0    0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.random_worker">
+<code class="descname">random_worker</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.random_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a random workers</p>
+<p>OUTPUT:</p>
+<p>A worker for <code class="docutils literal"><span class="pre">self</span></code> chosed at random</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">random_worker</span><span class="p">()</span>
+<span class="go">&lt;RESetMapReduceWorker(RESetMapReduceWorker-..., initial)&gt;</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">random_worker</span><span class="p">()</span> <span class="ow">in</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">del</span> <span class="n">EX</span><span class="o">.</span><span class="n">_results</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_active_tasks</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_done</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.reduce_function">
+<code class="descname">reduce_function</code><span class="sig-paren">(</span><em>a</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.reduce_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the reducer function for <code class="docutils literal"><span class="pre">self</span></code></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">a</span></code>, <code class="docutils literal"><span class="pre">b</span></code> &#8211; two value to be reduced</li>
+</ul>
+<p>OUTPUT:</p>
+<p>by default the sum of <code class="docutils literal"><span class="pre">a</span></code> and <code class="docutils literal"><span class="pre">b</span></code>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This should be overloaded in applications.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce_function</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">7</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="n">reduce_function</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce_function</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.reduce_init">
+<code class="descname">reduce_init</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.reduce_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the initial element for a reduction</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This should be overloaded in applications.</p>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce_init</span><span class="p">()</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="n">reduce_init</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">reduce_init</span><span class="p">()</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.roots">
+<code class="descname">roots</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.roots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the roots of <code class="docutils literal"><span class="pre">self</span></code></p>
+<p>OUTPUT:</p>
+<p>an iterable of nodes</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This should be overloaded in applications.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>max_proc=None</em>, <em>reduce_locally=True</em>, <em>timeout=None</em>, <em>profile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the computations</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">max_proc</span></code> &#8211; maximum number of process used.
+default: number of processor on the machine</li>
+<li><code class="docutils literal"><span class="pre">reduce_locally</span></code> &#8211; See <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a> (default: <code class="docutils literal"><span class="pre">True</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">timeout</span></code> &#8211; a timeout on the computation (default: <code class="docutils literal"><span class="pre">None</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">profile</span></code> &#8211; directory/filename prefix for profiling, or <code class="docutils literal"><span class="pre">None</span></code>
+for no profiling (default: <code class="docutils literal"><span class="pre">None</span></code>)</li>
+</ul>
+<p>OUTPUT:</p>
+<p>the result of the map/reduce computation or an exception
+<a class="reference internal" href="#sage.parallel.map_reduce.AbortError" title="sage.parallel.map_reduce.AbortError"><code class="xref py py-exc docutils literal"><span class="pre">AbortError</span></code></a> if the computation was interrupted or timeout.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span> <span class="o">=</span> <span class="mi">8</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">40320*x^8 + 5040*x^7 + 720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>Here is an example or how to deal with timeout:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">AbortError</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     res = EX.run(timeout=0.01)</span>
+<span class="go">....: except AbortError:</span>
+<span class="go">....:     print(&quot;Computation timeout&quot;)</span>
+<span class="go">....: else:</span>
+<span class="go">....:     print(&quot;Computation normally finished&quot;)</span>
+<span class="go">....:     res</span>
+<span class="go">Computation timeout</span>
+</pre></div>
+</div>
+<p>The following should not timeout even on a very slow machine:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">AbortError</span>
+<span class="gp">sage: </span><span class="k">try</span><span class="p">:</span>
+<span class="go">....:     res = EX.run(timeout=60)</span>
+<span class="go">....: except AbortError:</span>
+<span class="go">....:     print(&quot;Computation Timeout&quot;)</span>
+<span class="go">....: else:</span>
+<span class="go">....:     print(&quot;Computation normally finished&quot;)</span>
+<span class="go">....:     res</span>
+<span class="go">Computation normally finished</span>
+<span class="go">40320*x^8 + 5040*x^7 + 720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.run_serial">
+<code class="descname">run_serial</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.run_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serial run of the computation (mostly for tests)</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">run_serial</span><span class="p">()</span>
+<span class="go">24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.setup_workers">
+<code class="descname">setup_workers</code><span class="sig-paren">(</span><em>max_proc=None</em>, <em>reduce_locally=True</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.setup_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the communication channels</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">mac_proc</span></code> &#8211; an integer: the maximum number of workers</li>
+<li><code class="docutils literal"><span class="pre">reduce_locally</span></code> &#8211; whether the workers should reduce locally
+their work or sends results to the master as soon as possible.
+See <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="sage.parallel.map_reduce.RESetMapReduceWorker"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduceWorker</span></code></a> for details.</li>
+</ul>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">_results</span>
+<span class="go">&lt;multiprocessing.queues.SimpleQueue object at 0x...&gt;</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">_workers</span><span class="p">)</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduce.start_workers">
+<code class="descname">start_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduce.start_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lauch the workers</p>
+<p>The worker should have been created using <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce.setup_workers" title="sage.parallel.map_reduce.RESetMapReduce.setup_workers"><code class="xref py py-meth docutils literal"><span class="pre">setup_workers()</span></code></a>.</p>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMapReduce</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetMapReduce</span><span class="p">(</span><span class="n">roots</span><span class="o">=</span><span class="p">[])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">start_workers</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">_workers</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="n">w</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">_workers</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">RESetMapReduceWorker</code><span class="sig-paren">(</span><em>mapred</em>, <em>iproc</em>, <em>reduce_locally</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">multiprocessing.process.Process</span></code></p>
+<p>Worker for generate-map-reduce</p>
+<p>This shouldn&#8217;t be called directly, but instead created by
+<a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce.setup_workers" title="sage.parallel.map_reduce.RESetMapReduce.setup_workers"><code class="xref py py-meth docutils literal"><span class="pre">RESetMapReduce.setup_workers()</span></code></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">mapred</span></code> &#8211; the instance of <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a> for which
+this process is working.</li>
+<li><code class="docutils literal"><span class="pre">iproc</span></code> &#8211; the id of this worker.</li>
+<li><code class="docutils literal"><span class="pre">reduce_locally</span></code> &#8211; when reducing the results. Three possible values
+are supported:<ul>
+<li><code class="docutils literal"><span class="pre">True</span></code> &#8211; means the reducing work is done all locally, the result is
+only sent back at the end of the work. This ensure the lowest level of
+communication.</li>
+<li><code class="docutils literal"><span class="pre">False</span></code> &#8211; results are sent back after each finished branches, when
+the process is asking for more work.</li>
+</ul>
+</li>
+</ul>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main function executed by the worker</p>
+<p>Calls <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduceWorker.run_myself" title="sage.parallel.map_reduce.RESetMapReduceWorker.run_myself"><code class="xref py py-meth docutils literal"><span class="pre">run_myself()</span></code></a> after possibly setting up parallel profiling.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EX</span><span class="o">.</span><span class="n">roots</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">get_results</span><span class="p">()</span>
+<span class="go">720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">del</span> <span class="n">EX</span><span class="o">.</span><span class="n">_results</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_active_tasks</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_done</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker.run_myself">
+<code class="descname">run_myself</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker.run_myself" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main function executed by the worker</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EX</span><span class="o">.</span><span class="n">roots</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">run_myself</span><span class="p">()</span>
+
+<span class="gp">sage: </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">get_results</span><span class="p">()</span>
+<span class="go">720*x^6 + 120*x^5 + 24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+<p>Cleanups:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">del</span> <span class="n">EX</span><span class="o">.</span><span class="n">_results</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_active_tasks</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_done</span><span class="p">,</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker.send_partial_result">
+<code class="descname">send_partial_result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker.send_partial_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send results to the MapReduce process</p>
+<p>Send the result stored in <code class="docutils literal"><span class="pre">self._res</span></code> to the master an reinitialize it to
+<code class="docutils literal"><span class="pre">master.reduce_init</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">send_partial_result</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker.steal">
+<code class="descname">steal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker.steal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Steal some node from another worker</p>
+<p>OUTPUT:</p>
+<p>a node stolen from another worker choosed at random</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">EX</span><span class="o">.</span><span class="n">setup_workers</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="gp">sage: </span><span class="n">w0</span><span class="p">,</span> <span class="n">w1</span> <span class="o">=</span> <span class="n">EX</span><span class="o">.</span><span class="n">_workers</span>
+<span class="gp">sage: </span><span class="n">w0</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">thief0</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span> <span class="o">=</span> <span class="n">w0</span><span class="o">.</span><span class="n">_thief</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Thief&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">thief0</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="gp">sage: </span><span class="n">w1</span><span class="o">.</span><span class="n">steal</span><span class="p">()</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetMapReduceWorker.walk_branch_locally">
+<code class="descname">walk_branch_locally</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetMapReduceWorker.walk_branch_locally" title="Permalink to this definition">¶</a></dt>
+<dd><p>Work locally</p>
+<p>Performs the map/reduce computation on the subtrees rooted at <code class="docutils literal"><span class="pre">node</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">node</span></code> &#8211; the root of the subtree explored.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>nothing, the result are stored in <code class="docutils literal"><span class="pre">self._res</span></code></p>
+<p>This is where the actual work is performed.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetMPExample</span><span class="p">,</span> <span class="n">RESetMapReduceWorker</span>
+<span class="gp">sage: </span><span class="n">EX</span> <span class="o">=</span> <span class="n">RESetMPExample</span><span class="p">(</span><span class="n">maxl</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">w</span> <span class="o">=</span> <span class="n">RESetMapReduceWorker</span><span class="p">(</span><span class="n">EX</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">def</span> <span class="nf">sync</span><span class="p">():</span> <span class="k">pass</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">synchronize</span> <span class="o">=</span> <span class="n">sync</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">walk_branch_locally</span><span class="p">([])</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span>
+<span class="go">x^4 + x^3 + x^2 + x + 1</span>
+
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">walk_branch_locally</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span>
+<span class="go">2*x^4 + x^3 + x^2 + x + 1</span>
+
+<span class="gp">sage: </span><span class="k">while</span> <span class="bp">True</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">walk_branch_locally</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">_todo</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">IndexError</span>: <span class="n">pop from an empty deque</span>
+<span class="gp">sage: </span><span class="n">w</span><span class="o">.</span><span class="n">_res</span>
+<span class="go">24*x^4 + 6*x^3 + 2*x^2 + x + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.parallel.map_reduce.RESetParallelIterator">
+<em class="property">class </em><code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">RESetParallelIterator</code><span class="sig-paren">(</span><em>roots=None</em>, <em>children=None</em>, <em>post_process=None</em>, <em>map_function=None</em>, <em>reduce_function=None</em>, <em>reduce_init=None</em>, <em>forest=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetParallelIterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">sage.parallel.map_reduce.RESetMapReduce</span></code></a></p>
+<p>A parallel iterator for recursively enumerated sets</p>
+<p>This demonstrate how to use <a class="reference internal" href="#sage.parallel.map_reduce.RESetMapReduce" title="sage.parallel.map_reduce.RESetMapReduce"><code class="xref py py-class docutils literal"><span class="pre">RESetMapReduce</span></code></a> to get an iterator on
+a recursively enumerated sets for which the computations are done in
+parallel.</p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetParallelIterator</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetParallelIterator</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: [l+[0], l+[1]] if len(l) &lt; 15 else [])</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">S</span><span class="p">)</span>
+<span class="go">65535</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.parallel.map_reduce.RESetParallelIterator.map_function">
+<code class="descname">map_function</code><span class="sig-paren">(</span><em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.RESetParallelIterator.map_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a singleton tuple</p>
+<p>INPUT: <code class="docutils literal"><span class="pre">z</span></code> &#8211; a node</p>
+<p>OUPUT: <code class="docutils literal"><span class="pre">(z,</span> <span class="pre">)</span></code></p>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">RESetParallelIterator</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">RESetParallelIterator</span><span class="p">(</span> <span class="p">[[]],</span>
+<span class="go">....:   lambda l: [l+[0], l+[1]] if len(l) &lt; 15 else [])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">map_function</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">([1, 0],)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.parallel.map_reduce.proc_number">
+<code class="descclassname">sage.parallel.map_reduce.</code><code class="descname">proc_number</code><span class="sig-paren">(</span><em>max_proc=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.parallel.map_reduce.proc_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computing the number of process used</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">max_proc</span></code> &#8211; the maximum number of process used</li>
+</ul>
+<p>EXAMPLE:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.parallel.map_reduce</span> <span class="kn">import</span> <span class="n">proc_number</span>
+<span class="gp">sage: </span><span class="n">proc_number</span><span class="p">()</span> <span class="c1"># random</span>
+<span class="go">8</span>
+<span class="gp">sage: </span><span class="n">proc_number</span><span class="p">(</span><span class="n">max_proc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">proc_number</span><span class="p">(</span><span class="n">max_proc</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Parallel computations using RecursivelyEnumeratedSet and Map-Reduce</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a></li>
+<li><a class="reference internal" href="#how-is-this-different-from-usual-mapreduce">How is this different from usual MapReduce ?</a></li>
+<li><a class="reference internal" href="#how-can-i-use-all-that-stuff">How can I use all that stuff?</a></li>
+<li><a class="reference internal" href="#advanced-use">Advanced use</a></li>
+<li><a class="reference internal" href="#profiling">Profiling</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#how-does-it-work">How does it work ?</a></li>
+<li><a class="reference internal" href="#how-thefts-are-performed">How thefts are performed</a></li>
+<li><a class="reference internal" href="#the-end-of-the-computation">The end of the computation</a></li>
+<li><a class="reference internal" href="#are-there-examples-of-classes">Are there examples of classes ?</a></li>
+<li><a class="reference internal" href="#tests">Tests</a></li>
+<li><a class="reference internal" href="#classes-and-methods">Classes and methods</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="use_fork.html"
+                                  title="previous chapter">Parallel iterator built using the <code class="docutils literal"><span class="pre">fork()</span></code> system call</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="multiprocessing_sage.html"
+                                  title="next chapter">Parallel Iterator built using Python&#8217;s multiprocessing module</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/parallel/map_reduce.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="multiprocessing_sage.html" title="Parallel Iterator built using Python’s multiprocessing module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="use_fork.html" title="Parallel iterator built using the fork() system call"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Parallel Computing</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+  </body>
+</html>
