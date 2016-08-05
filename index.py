@@ -8,8 +8,8 @@
 #
 # Note: the script assumes the html and pdf files are copied after
 # running `make doc-html && make doc-pdf` like this:
-# $ cp -aR $SAGE_ROOT/local/share/doc/sage/pdf .
-# $ cp -aR $SAGE_ROOT/local/share/doc/sage/html .
+# $ cp -alR $SAGE_ROOT/local/share/doc/sage/pdf .
+# $ cp -alR $SAGE_ROOT/local/share/doc/sage/html .
 #
 # License: Apache 2.0
 # Author: Harald Schilly <harald.schilly@gmail.com>
@@ -65,7 +65,10 @@ title="SageMath Mathematical Software">
 
 filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-",
               "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-",
-              "plot-", "generic_graph-", "fully_packed_loop", "link-", "complex_plot-"]
+              "plot-", "generic_graph-", "fully_packed_loop", "link-", "complex_plot-",
+              "hyperbolic_geodesic-", "contour_plot-", "density_plot-", "plot_field-",
+              "chart-", "point_configuration-", "text-", "point-",
+             ]
 filter_html = [("en","website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
