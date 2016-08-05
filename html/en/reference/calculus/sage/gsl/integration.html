@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Numerical Integration &mdash; Sage Reference Manual v7.2: Symbolic Calculus</title>
+    <title>Numerical Integration &mdash; Sage Reference Manual v7.3: Symbolic Calculus</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '7.2',
+        VERSION:     '7.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v7.2: Symbolic Calculus" href="../../index.html" />
+    <link rel="top" title="Sage Reference Manual v7.3: Symbolic Calculus" href="../../index.html" />
     <link rel="next" title="Riemann Mapping" href="../calculus/riemann.html" />
     <link rel="prev" title="Solving ODE numerically by GSL" href="ode.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
@@ -71,7 +71,7 @@
 <li>Josh Kantor (2007-02): first version</li>
 <li>William Stein (2007-02): rewrite of docs, conventions, etc.</li>
 <li>Robert Bradshaw (2008-08): fast float integration</li>
-<li>Jeroen Demeyer (2011-11-23): <a class="reference external" href="http://trac.sagemath.org/12047">trac ticket #12047</a>: return 0 when the
+<li>Jeroen Demeyer (2011-11-23): <a class="reference external" href="https://trac.sagemath.org/12047">trac ticket #12047</a>: return 0 when the
 integration interval is a point; reformat documentation and add to
 the reference manual.</li>
 </ul>
@@ -102,6 +102,7 @@ and the second element the upper bound.  Use <code class="docutils literal"><spa
 <li><p class="first"><code class="docutils literal"><span class="pre">algorithm</span></code> &#8211; valid choices are:</p>
 <ul class="simple">
 <li>&#8216;qag&#8217; &#8211; for an adaptive integration</li>
+<li>&#8216;qags&#8217; &#8211; for an adaptive integration with (integrable) singularities</li>
 <li>&#8216;qng&#8217; &#8211; for a non-adaptive Gauss-Kronrod (samples at a maximum of 87pts)</li>
 </ul>
 </li>
@@ -214,11 +215,21 @@ function (which uses GSL) or the native integration (which uses Maxima):</p>
 </div>
 <p>If the interval of integration is a point, then the result is
 always zero (this makes sense within the Lebesgue theory of
-integration), see <a class="reference external" href="http://trac.sagemath.org/12047">trac ticket #12047</a>:</p>
+integration), see <a class="reference external" href="https://trac.sagemath.org/12047">trac ticket #12047</a>:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">numerical_integral</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 <span class="go">(0.0, 0.0)</span>
 <span class="gp">sage: </span><span class="n">numerical_integral</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">)</span> <span class="p">)</span>
 <span class="go">(0.0, 0.0)</span>
+</pre></div>
+</div>
+<p>In the presence of integrable singularity, the default adaptive method might
+fail and it is advised to use <code class="docutils literal"><span class="pre">'qags'</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="mf">1.81759643554688</span>
+<span class="gp">sage: </span><span class="n">F</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">((</span><span class="o">-</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">numerical_integral</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="go">(inf, nan)</span>
+<span class="gp">sage: </span><span class="n">numerical_integral</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;qags&#39;</span><span class="p">)</span>    <span class="c1"># abs tol 1e-10</span>
+<span class="go">(1.1817104238446596, 3.387268288079781e-07)</span>
 </pre></div>
 </div>
 <p>AUTHORS:</p>
@@ -231,7 +242,7 @@ integration), see <a class="reference external" href="http://trac.sagemath.org/1
 <p>ALGORITHM: Uses calls to the GSL (GNU Scientific Library) C library.</p>
 <p>TESTS:</p>
 <p>Make sure that constant Expressions, not merely uncallable arguments,
-can be integrated (<a class="reference external" href="http://trac.sagemath.org/10088">trac ticket #10088</a>), at least if we can coerce them
+can be integrated (<a class="reference external" href="https://trac.sagemath.org/10088">trac ticket #10088</a>), at least if we can coerce them
 to float:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">-</span><span class="mi">1</span>
 <span class="gp">sage: </span><span class="n">numerical_integral</span><span class="p">(</span><span class="n">f</span><span class="o">-</span><span class="n">g</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -314,7 +325,7 @@ to float:</p>
     
     <div class="footer" role="contentinfo">
         &copy; Copyright 2005--2016, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

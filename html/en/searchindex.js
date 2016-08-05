@@ -1,1 +1,1 @@
-Search.setIndex({envversion:47,filenames:["index"],objects:{},objnames:{},objtypes:{},terms:{edit:0,file:0,output:0,overridden:0,templat:0,thi:0},titles:["Sage Documentation"],titleterms:{document:0,sage:0}})
+Search.setIndex({envversion:49,filenames:["index"],objects:{},objnames:{},objtypes:{},terms:{edit:0,file:0,output:0,overridden:0,templat:0,thi:0},titles:["Sage Documentation"],titleterms:{document:0,sage:0}})
