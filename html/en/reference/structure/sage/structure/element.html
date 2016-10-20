@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=600, initial-scale=1">
-    <title>Elements &mdash; Sage Reference Manual v7.3: Basic Structures</title>
+    <title>Elements &mdash; Sage Reference Manual v7.4: Basic Structures</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '7.3',
+        VERSION:     '7.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,10 +26,12 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v7.3: Basic Structures" href="../../index.html" />
+    <link rel="top" title="Sage Reference Manual v7.4: Basic Structures" href="../../index.html" />
     <link rel="next" title="Element Wrapper" href="element_wrapper.html" />
     <link rel="prev" title="Pure python code for abstract base class for objects with generators" href="gens_py.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+    <script src="../../../_static/thebe.js" type="text/javascript"></script>
+    <script src="../../../_static/thebe-sage.js" type="text/javascript"></script>
 
   </head>
   <body role="document">
@@ -78,6 +80,8 @@ through to completion.</li>
 lots of tests</li>
 <li>Robert Bradshaw (2007-2010): arithmetic operators and coercion</li>
 <li>Maarten Derickx (2010-07): added architecture for is_square and sqrt</li>
+<li>Jeroen Demeyer (2016-08): moved all coercion to the base class
+<a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>, see <a class="reference external" href="https://trac.sagemath.org/20767">trac ticket #20767</a></li>
 </ul>
 <div class="section" id="the-abstract-element-class-hierarchy">
 <h2>The Abstract Element Class Hierarchy<a class="headerlink" href="#the-abstract-element-class-hierarchy" title="Permalink to this headline">¶</a></h2>
@@ -109,8 +113,8 @@ abstract base classes.</p>
 <div class="section" id="how-to-define-a-new-element-class">
 <h2>How to Define a New Element Class<a class="headerlink" href="#how-to-define-a-new-element-class" title="Permalink to this headline">¶</a></h2>
 <p>Elements typically define a method <code class="docutils literal"><span class="pre">_new_c</span></code>, e.g.,</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cdef</span> <span class="n">_new_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defining</span> <span class="n">data</span><span class="p">):</span>
-    <span class="n">cdef</span> <span class="n">FreeModuleElement_generic_dense</span> <span class="n">x</span>
+<div class="highlight-cython"><div class="highlight"><pre><span></span><span class="k">cdef</span> <span class="nf">_new_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defining</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">cdef</span> <span class="kt">FreeModuleElement_generic_dense</span> <span class="nf">x</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">FreeModuleElement_generic_dense</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">FreeModuleElement_generic_dense</span><span class="p">)</span>
     <span class="n">x</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span>
     <span class="n">x</span><span class="o">.</span><span class="n">_entries</span> <span class="o">=</span> <span class="n">v</span>
@@ -118,52 +122,176 @@ abstract base classes.</p>
 </div>
 <p>that creates a new sibling very quickly from defining data
 with assumed properties.</p>
-<p>Sage has a special system in place for handling arithmetic operations
-for all Element subclasses. There are various rules that must be
-followed by both arithmetic implementers and callers.</p>
-<p>A quick summary for the impatient:</p>
-<ul class="simple">
-<li>To implement addition for any Element class, override <code class="docutils literal"><span class="pre">def</span> <span class="pre">_add_()</span></code>.</li>
-<li>If you want to add <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code>, whose parents you know are <strong>identical</strong>,
-you may call <code class="docutils literal"><span class="pre">_add_(x,</span> <span class="pre">y)</span></code>. This will be the fastest way to guarantee
-that the correct implementation gets called. Of course you can still
-always use <code class="docutils literal"><span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span></code>.</li>
-</ul>
-<p>Now in more detail. The aims of this system are to provide (1) an efficient
-calling protocol from both Python and Cython, (2) uniform coercion semantics
-across Sage, (3) ease of use, (4) readability of code.</p>
-<p>We will take addition of RingElements as an example; all other
-operators and classes are similar. There are three relevant functions,
-with subtly differing names (<code class="docutils literal"><span class="pre">add</span></code> vs.  <code class="docutils literal"><span class="pre">iadd</span></code>, single vs. double
-underscores).</p>
+<div class="section" id="arithmetic-for-elements">
+<span id="element-arithmetic"></span><h3>Arithmetic for Elements<a class="headerlink" href="#arithmetic-for-elements" title="Permalink to this headline">¶</a></h3>
+<p>Sage has a special system for handling arithmetic operations on Sage
+elements (that is instances of <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>), in particular to
+manage uniformly mixed arithmetic operations using the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v7.4)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span>
+<span class="pre">model</span></code></a>. We describe here the rules that must
+be followed by both arithmetic implementers and callers.</p>
+<div class="section" id="a-quick-summary-for-the-impatient">
+<h4>A quick summary for the impatient<a class="headerlink" href="#a-quick-summary-for-the-impatient" title="Permalink to this headline">¶</a></h4>
+<p>To implement addition for any <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> subclass, override the
+<code class="docutils literal"><span class="pre">def</span> <span class="pre">_add_(self,</span> <span class="pre">other)</span></code> method instead of the usual Python
+<code class="docutils literal"><span class="pre">__add__</span></code> <a class="reference external" href="https://docs.python.org/release/2.7.10/reference/datamodel.html#special-method-names">special method</a>.
+Within <code class="docutils literal"><span class="pre">_add_(self,</span> <span class="pre">other)</span></code>, you may assume that <code class="docutils literal"><span class="pre">self</span></code> and
+<code class="docutils literal"><span class="pre">other</span></code> have the same parent.</p>
+<p>If the implementation is generic across all elements in a given
+category <span class="math">\(C\)</span>, then this method can be put in <code class="docutils literal"><span class="pre">C.ElementMethods</span></code>.</p>
+<p>When writing <em>Cython</em> code, <code class="docutils literal"><span class="pre">_add_</span></code> should be a cpdef method:
+<code class="docutils literal"><span class="pre">cpdef</span> <span class="pre">_add_(self,</span> <span class="pre">other)</span></code>.</p>
+<p>When doing arithmetic with two elements having different parents,
+the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v7.4)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span> <span class="pre">model</span></code></a> is responsible for
+&#8220;coercing&#8221; them to a common parent and performing arithmetic on the
+coerced elements.</p>
+</div>
+<div class="section" id="arithmetic-in-more-detail">
+<h4>Arithmetic in more detail<a class="headerlink" href="#arithmetic-in-more-detail" title="Permalink to this headline">¶</a></h4>
+<p>The aims of this system are to provide (1) an efficient calling protocol
+from both Python and Cython, (2) uniform coercion semantics across Sage,
+(3) ease of use, (4) readability of code.</p>
+<p>We will take addition as an example; all other operators are similar.
+There are two relevant functions, with differing names
+(single vs. double underscores).</p>
 <ul>
-<li><p class="first"><strong>def RingElement.__add__</strong></p>
-<p>This function is called by Python or Cython when the binary &#8220;+&#8221; operator
-is encountered. It <strong>assumes</strong> that at least one of its arguments is a
-RingElement; only a really twisted programmer would violate this
-condition. It has a fast pathway to deal with the most common case
-where the arguments have the same parent. Otherwise, it uses the coercion
-module to work out how to make them have the same parent. After any
-necessary coercions have been performed, it calls <code class="docutils literal"><span class="pre">_add_</span></code> to dispatch to
-the correct underlying addition implementation.</p>
-<p>Note that although this function is declared as <code class="docutils literal"><span class="pre">def</span></code>, it doesn&#8217;t have the
-usual overheads associated with Python functions (either for the caller or
-for <code class="docutils literal"><span class="pre">__add__</span></code> itself). This is because Python has optimised calling
-protocols for such special functions.</p>
+<li><p class="first"><strong>def Element.__add__(left, right)</strong></p>
+<p>This function is called by Python or Cython when the binary &#8220;+&#8221;
+operator is encountered. It assumes that at least one of its
+arguments is an <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>.</p>
+<p>It has a fast pathway to deal with the most common case where both
+arguments have the same parent. Otherwise, it uses the coercion
+model to work out how to make them have the same parent. The
+coercion model then adds the coerced elements (technically, it calls
+<code class="docutils literal"><span class="pre">operator.add</span></code>). Note that the result of coercion is not required
+to be a Sage <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>, it could be a plain Python type.</p>
+<p>Note that, although this function is declared as <code class="docutils literal"><span class="pre">def</span></code>, it doesn&#8217;t
+have the usual overheads associated with Python functions (either
+for the caller or for <code class="docutils literal"><span class="pre">__add__</span></code> itself). This is because Python
+has optimised calling protocols for such special functions.</p>
 </li>
-<li><p class="first"><strong>def RingElement._add_</strong></p>
-<p>This is the function you should override to implement addition in a
-subclass of <code class="docutils literal"><span class="pre">RingElement</span></code>.</p>
+<li><p class="first"><strong>def Element._add_(self, other)</strong></p>
+<p>This is the function that you should override to implement addition
+in a subclass of <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>.</p>
 <p>The two arguments to this function are guaranteed to have the <strong>same
-parent</strong>. Its return value <strong>must</strong> have the <strong>same parent</strong> as its
-arguments.</p>
-<p>If you want to add two objects and you know that their parents are
-the same object, you are encouraged to call this function directly,
-instead of using <code class="docutils literal"><span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span></code>.</p>
-<p>When implementing <code class="docutils literal"><span class="pre">_add_</span></code> in a Cython extension class, use
+parent</strong>, but not necessarily the same Python type.</p>
+<p>When implementing <code class="docutils literal"><span class="pre">_add_</span></code> in a Cython extension type, use
 <code class="docutils literal"><span class="pre">cpdef</span> <span class="pre">_add_</span></code> instead of <code class="docutils literal"><span class="pre">def</span> <span class="pre">_add_</span></code>.</p>
+<p>In Cython code, if you want to add two elements and you know that
+their parents are identical, you are encouraged to call this
+function directly, instead of using <code class="docutils literal"><span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span></code>. This only works if
+Cython knows that the left argument is an <code class="docutils literal"><span class="pre">Element</span></code>. You can
+always cast explicitly: <code class="docutils literal"><span class="pre">(&lt;Element&gt;x)._add_(y)</span></code> to force this.
+In plain Python, <code class="docutils literal"><span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span></code> is always the fastest way to add two
+elements because the special method <code class="docutils literal"><span class="pre">__add__</span></code> is optimized
+unlike the normal method <code class="docutils literal"><span class="pre">_add_</span></code>.</p>
 </li>
 </ul>
+<p>The difference in the names of the arguments (<code class="docutils literal"><span class="pre">left,</span> <span class="pre">right</span></code>
+versus <code class="docutils literal"><span class="pre">self,</span> <span class="pre">other</span></code>) is intentional: <code class="docutils literal"><span class="pre">self</span></code> is guaranteed to be an
+instance of the class in which the method is defined. In Cython, we know
+that at least one of <code class="docutils literal"><span class="pre">left</span></code> or <code class="docutils literal"><span class="pre">right</span></code> is an instance of the class
+but we do not know a priori which one.</p>
+<p>For addition and multiplication (not for other operators), there is a
+fast path for operations with a Python <code class="docutils literal"><span class="pre">int</span></code> (which corresponds
+to a C <code class="docutils literal"><span class="pre">long</span></code>). Implement <code class="docutils literal"><span class="pre">cdef</span> <span class="pre">_add_long(self,</span> <span class="pre">long</span> <span class="pre">n)</span></code> or
+<code class="docutils literal"><span class="pre">cdef</span> <span class="pre">_mul_long(self,</span> <span class="pre">long</span> <span class="pre">n)</span></code> with optimized code for <code class="docutils literal"><span class="pre">self</span> <span class="pre">+</span> <span class="pre">n</span></code>
+or <code class="docutils literal"><span class="pre">self</span> <span class="pre">*</span> <span class="pre">n</span></code>. These are assumed to be commutative, so they are also
+called for <code class="docutils literal"><span class="pre">n</span> <span class="pre">+</span> <span class="pre">self</span></code> or <code class="docutils literal"><span class="pre">n</span> <span class="pre">*</span> <span class="pre">self</span></code>.
+From Cython code, you can also call <code class="docutils literal"><span class="pre">_add_long</span></code> or <code class="docutils literal"><span class="pre">_mul_long</span></code>
+directly.</p>
+</div>
+<div class="section" id="examples">
+<h4>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h4>
+<p>We need some <a class="reference internal" href="parent.html#sage.structure.parent.Parent" title="sage.structure.parent.Parent"><code class="xref py py-class docutils literal"><span class="pre">Parent</span></code></a> to work with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.parent</span> <span class="kn">import</span> <span class="n">Parent</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">ExampleParent</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
+<span class="go">....:     def __init__(self, name, **kwds):</span>
+<span class="go">....:         Parent.__init__(self, **kwds)</span>
+<span class="go">....:         self.rename(name)</span>
+</pre></div>
+</div>
+<p>We start with a very basic example of a Python class implementing
+<code class="docutils literal"><span class="pre">_add_</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _add_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">ExampleParent</span><span class="p">(</span><span class="s2">&quot;Some parent&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>When two different parents are involved, this no longer works since
+there is no coercion:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">ExampleParent</span><span class="p">(</span><span class="s2">&quot;Other parent&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">y</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;Some parent&#39; and &#39;Other parent&#39;</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal"><span class="pre">_add_</span></code> is not defined, an error message is raised, referring to
+the parents:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">_add_</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">AttributeError</span>: <span class="n">&#39;sage.structure.element.Element&#39; object has no attribute &#39;_add_&#39;</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;Some parent&#39; and &#39;Some parent&#39;</span>
+<span class="gp">sage: </span><span class="n">y</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;Some parent&#39; and &#39;Other parent&#39;</span>
+</pre></div>
+</div>
+<p>We can also implement arithmetic generically in categories:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyCategory</span><span class="p">(</span><span class="n">Category</span><span class="p">):</span>
+<span class="go">....:     def super_categories(self):</span>
+<span class="go">....:         return [Sets()]</span>
+<span class="go">....:     class ElementMethods:</span>
+<span class="go">....:         def _add_(self, other):</span>
+<span class="go">....:             return 42</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">ExampleParent</span><span class="p">(</span><span class="s2">&quot;Parent in my category&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">MyCategory</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="implementation-details">
+<h4>Implementation details<a class="headerlink" href="#implementation-details" title="Permalink to this headline">¶</a></h4>
+<p>Implementing the above features actually takes a bit of magic. Casual
+callers and implementers can safely ignore it, but here are the
+details for the curious.</p>
+<p>To achieve fast arithmetic, it is critical to have a fast path in Cython
+to call the <code class="docutils literal"><span class="pre">_add_</span></code> method of a Cython object. So we would like
+to declare <code class="docutils literal"><span class="pre">_add_</span></code> as a <code class="docutils literal"><span class="pre">cpdef</span></code> method of class <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>.
+Remember however that the abstract classes coming
+from categories come after <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> in the method resolution
+order (or fake method resolution order in case of a Cython
+class). Hence any generic implementation of <code class="docutils literal"><span class="pre">_add_</span></code> in such an
+abstract class would in principle be shadowed by <code class="docutils literal"><span class="pre">Element._add_</span></code>.
+This is worked around by defining <code class="docutils literal"><span class="pre">Element._add_</span></code> as a <code class="docutils literal"><span class="pre">cdef</span></code>
+instead of a <code class="docutils literal"><span class="pre">cpdef</span></code> method. Concrete implementations in subclasses
+should be <code class="docutils literal"><span class="pre">cpdef</span></code> or <code class="docutils literal"><span class="pre">def</span></code> methods.</p>
+<p>Let us now see what happens upon evaluating <code class="docutils literal"><span class="pre">x</span> <span class="pre">+</span> <span class="pre">y</span></code> when <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code>
+are instances of a class that does not implement <code class="docutils literal"><span class="pre">_add_</span></code> but where
+<code class="docutils literal"><span class="pre">_add_</span></code> is implemented in the category.
+First, <code class="docutils literal"><span class="pre">x.__add__(y)</span></code> is called, where <code class="docutils literal"><span class="pre">__add__</span></code> is implemented
+in <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>.
+Assuming that <code class="docutils literal"><span class="pre">x</span></code> and <code class="docutils literal"><span class="pre">y</span></code> have the same parent, a Cython call to
+<code class="docutils literal"><span class="pre">x._add_(y)</span></code> will be done.
+The latter is implemented to trigger a Python level call to <code class="docutils literal"><span class="pre">x._add_(y)</span></code>
+which will succeed as desired.</p>
+<p>In case that Python code calls <code class="docutils literal"><span class="pre">x._add_(y)</span></code> directly,
+<code class="docutils literal"><span class="pre">Element._add_</span></code> will be invisible, and the method lookup will
+continue down the MRO and find the <code class="docutils literal"><span class="pre">_add_</span></code> method in the category.</p>
 <dl class="class">
 <dt id="sage.structure.element.AdditiveGroupElement">
 <em class="property">class </em><code class="descclassname">sage.structure.element.</code><code class="descname">AdditiveGroupElement</code><a class="headerlink" href="#sage.structure.element.AdditiveGroupElement" title="Permalink to this definition">¶</a></dt>
@@ -203,12 +331,6 @@ instead of using <code class="docutils literal"><span class="pre">x</span> <span
 <code class="descname">richcmp</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>op</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.CoercionModel.richcmp" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-</dd></dl>
-
-<dl class="class">
-<dt id="sage.structure.element.CommutativeAlgebra">
-<em class="property">class </em><code class="descclassname">sage.structure.element.</code><code class="descname">CommutativeAlgebra</code><a class="headerlink" href="#sage.structure.element.CommutativeAlgebra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#sage.structure.element.AlgebraElement" title="sage.structure.element.AlgebraElement"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.element.AlgebraElement</span></code></a></p>
 </dd></dl>
 
 <dl class="class">
@@ -496,7 +618,8 @@ both <span class="math">\(y\)</span> and <span class="math">\(z\)</span> are eli
 <em class="property">class </em><code class="descclassname">sage.structure.element.</code><code class="descname">Element</code><a class="headerlink" href="#sage.structure.element.Element" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="sage_object.html#sage.structure.sage_object.SageObject" title="sage.structure.sage_object.SageObject"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
 <p>Generic element of a structure. All other types of elements
-(RingElement, ModuleElement, etc) derive from this type.</p>
+(<a class="reference internal" href="#sage.structure.element.RingElement" title="sage.structure.element.RingElement"><code class="xref py py-class docutils literal"><span class="pre">RingElement</span></code></a>, <a class="reference internal" href="#sage.structure.element.ModuleElement" title="sage.structure.element.ModuleElement"><code class="xref py py-class docutils literal"><span class="pre">ModuleElement</span></code></a>, etc)
+derive from this type.</p>
 <p>Subtypes must either call <code class="docutils literal"><span class="pre">__init__()</span></code> to set <code class="docutils literal"><span class="pre">_parent</span></code>, or may
 set <code class="docutils literal"><span class="pre">_parent</span></code> themselves if that would be more efficient.</p>
 <dl class="method">
@@ -533,25 +656,431 @@ with <code class="docutils literal"><span class="pre">&lt;</span></code>, <code 
 </dd></dl>
 
 <dl class="method">
-<dt id="sage.structure.element.Element.N">
-<code class="descname">N</code><span class="sig-paren">(</span><em>prec=None</em>, <em>digits=None</em>, <em>algorithm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.N" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a numerical approximation of x with at least prec bits of
-precision.</p>
+<dt id="sage.structure.element.Element.__add__">
+<code class="descname">__add__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__add__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level addition operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span>
-<span class="go">0.666666666666667</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">digits</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># indirect doctest</span>
-<span class="go">3.141592654</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">prec</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>   <span class="c1"># indirect doctest</span>
-<span class="go">3.1416</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _add_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">+</span> <span class="n">e</span>
+<span class="go">42</span>
 </pre></div>
 </div>
 <p>TESTS:</p>
-<p>Check that <a class="reference external" href="https://trac.sagemath.org/14778">trac ticket #14778</a> is fixed:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-<span class="go">0.000000000000000</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">+</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;+&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for +: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for +: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">+</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for +: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">+</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for +: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__sub__">
+<code class="descname">__sub__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__sub__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level subtraction operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _sub_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">-</span> <span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">-</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;-&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">-</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;-&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;-&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for -: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for -: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">-</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for -: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">-</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for -: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__neg__">
+<code class="descname">__neg__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__neg__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level negation operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _neg_(self):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="o">-</span><span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="o">-</span><span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent for unary -: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__mul__">
+<code class="descname">__mul__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__mul__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level multiplication operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _mul_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">*</span> <span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">*</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;*&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">*</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;*&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">*</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;*&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for *: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for *: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">*</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for *: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">*</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for *: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">AlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">example</span><span class="p">();</span> <span class="n">A</span>
+<span class="go">An example of an algebra with basis: the free algebra</span>
+<span class="go">on the generators (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span>
+<span class="go">B[word: ] + 2*B[word: a] + 3*B[word: b] + B[word: bab]</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">__mul__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">B[word: ] + 4*B[word: a] + 4*B[word: aa] + 6*B[word: ab]</span>
+<span class="go">+ 2*B[word: abab] + 6*B[word: b] + 6*B[word: ba]</span>
+<span class="go">+ 2*B[word: bab] + 2*B[word: baba] + 3*B[word: babb]</span>
+<span class="go">+ B[word: babbab] + 9*B[word: bb] + 3*B[word: bbab]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__div__">
+<code class="descname">__div__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__div__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level division operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span>
+<span class="go">2/3</span>
+<span class="gp">sage: </span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span>
+<span class="go">1/3*pi</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">i</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="mi">2</span> <span class="o">/</span> <span class="n">K</span><span class="o">.</span><span class="n">ideal</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Fractional ideal (-i + 1)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _div_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">/</span> <span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">/</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">/</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">/</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">/</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">/</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">/</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__truediv__">
+<code class="descname">__truediv__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__truediv__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level true division operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">2/3</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">1/3*pi</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">i</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">.</span><span class="n">ideal</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">Fractional ideal (-i + 1)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _div_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;/&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">operator</span><span class="o">.</span><span class="n">truediv</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for /: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__floordiv__">
+<code class="descname">__floordiv__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__floordiv__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level floor division operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="mi">7</span> <span class="o">//</span> <span class="mi">3</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="mi">7</span> <span class="o">//</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _floordiv_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">//</span> <span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">//</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;//&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">//</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;//&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">//</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;//&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for //: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">//</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for //: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">//</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for //: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">//</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for //: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.__mod__">
+<code class="descname">__mod__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.__mod__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level modulo operator for <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a> invoking
+the coercion model.</p>
+<p>See <a class="reference internal" href="#element-arithmetic"><span class="std std-ref">Arithmetic for Elements</span></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="mi">7</span> <span class="o">%</span> <span class="mi">3</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="mi">7</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyElement</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="go">....:     def _mod_(self, other):</span>
+<span class="go">....:         return 42</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">MyElement</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">%</span> <span class="n">e</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">Parent</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">%</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;%&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="mi">1</span> <span class="o">%</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;%&#39;: &#39;Integer Ring&#39; and &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">%</span> <span class="mi">1</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand parent(s) for &#39;%&#39;: &#39;&lt;type &#39;sage.structure.parent.Parent&#39;&gt;&#39; and &#39;Integer Ring&#39;</span>
+<span class="gp">sage: </span><span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for %: &#39;int&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for %: &#39;sage.structure.element.Element&#39; and &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="bp">None</span> <span class="o">%</span> <span class="n">e</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for %: &#39;NoneType&#39; and &#39;sage.structure.element.Element&#39;</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">%</span> <span class="bp">None</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">unsupported operand type(s) for %: &#39;sage.structure.element.Element&#39; and &#39;NoneType&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.N">
+<code class="descname">N</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.N" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated: Use <a class="reference internal" href="#sage.structure.element.Element.n" title="sage.structure.element.Element.n"><code class="xref py py-meth docutils literal"><span class="pre">n()</span></code></a> instead.
+See <a class="reference external" href="https://trac.sagemath.org/13055">trac ticket #13055</a> for details.</p>
 </dd></dl>
 
 <dl class="method">
@@ -593,14 +1122,36 @@ implement <code class="docutils literal"><span class="pre">__nonzero__</span></c
 <dl class="method">
 <dt id="sage.structure.element.Element.n">
 <code class="descname">n</code><span class="sig-paren">(</span><em>prec=None</em>, <em>digits=None</em>, <em>algorithm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.n" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a numerical approximation of x with at least prec bits of
-precision.</p>
+<dd><p>Alias for <a class="reference internal" href="#sage.structure.element.Element.numerical_approx" title="sage.structure.element.Element.numerical_approx"><code class="xref py py-meth docutils literal"><span class="pre">numerical_approx()</span></code></a>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span>
 <span class="go">0.666666666666667</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">digits</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># indirect doctest</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.structure.element.Element.numerical_approx">
+<code class="descname">numerical_approx</code><span class="sig-paren">(</span><em>prec=None</em>, <em>digits=None</em>, <em>algorithm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.numerical_approx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a numerical approximation of <code class="docutils literal"><span class="pre">self</span></code> with <code class="docutils literal"><span class="pre">prec</span></code> bits
+(or decimal <code class="docutils literal"><span class="pre">digits</span></code>) of precision.</p>
+<p>No guarantee is made about the accuracy of the result.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">prec</span></code> &#8211; precision in bits</li>
+<li><code class="docutils literal"><span class="pre">digits</span></code> &#8211; precision in decimal digits (only used if
+<code class="docutils literal"><span class="pre">prec</span></code> is not given)</li>
+<li><code class="docutils literal"><span class="pre">algorithm</span></code> &#8211; which algorithm to use to compute this
+approximation (the accepted algorithms depend on the object)</li>
+</ul>
+<p>If neither <code class="docutils literal"><span class="pre">prec</span></code> nor <code class="docutils literal"><span class="pre">digits</span></code> is given, the default
+precision is 53 bits (roughly 16 digits).</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">numerical_approx</span><span class="p">()</span>
+<span class="go">0.666666666666667</span>
+<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">digits</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="go">3.141592654</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">prec</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>   <span class="c1"># indirect doctest</span>
+<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">prec</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="go">3.1416</span>
 </pre></div>
 </div>
@@ -610,25 +1161,10 @@ precision.</p>
 <span class="go">0.000000000000000</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt id="sage.structure.element.Element.numerical_approx">
-<code class="descname">numerical_approx</code><span class="sig-paren">(</span><em>prec=None</em>, <em>digits=None</em>, <em>algorithm=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.Element.numerical_approx" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a numerical approximation of x with at least prec bits of
-precision.</p>
-<p>EXAMPLES:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">()</span>
-<span class="go">0.666666666666667</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">digits</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># indirect doctest</span>
-<span class="go">3.141592654</span>
-<span class="gp">sage: </span><span class="n">pi</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">prec</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>   <span class="c1"># indirect doctest</span>
-<span class="go">3.1416</span>
-</pre></div>
-</div>
-<p>TESTS:</p>
-<p>Check that <a class="reference external" href="https://trac.sagemath.org/14778">trac ticket #14778</a> is fixed:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">n</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<p>The <code class="docutils literal"><span class="pre">.N</span></code> method is a deprecated alias:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="mf">0.</span><span class="n">N</span><span class="p">()</span>
+<span class="go">doctest:...: DeprecationWarning: N is deprecated. Please use n instead.</span>
+<span class="go">See http://trac.sagemath.org/13055 for details.</span>
 <span class="go">0.000000000000000</span>
 </pre></div>
 </div>
@@ -1024,20 +1560,6 @@ zero and the quotient is <code class="docutils literal"><span class="pre">self/r
 </dd></dl>
 
 <dl class="class">
-<dt id="sage.structure.element.NamedBinopMethod">
-<em class="property">class </em><code class="descclassname">sage.structure.element.</code><code class="descname">NamedBinopMethod</code><a class="headerlink" href="#sage.structure.element.NamedBinopMethod" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A decorator to be used on binary operation methods that should operate
-on elements of the same parent. If the parents of the arguments differ,
-coercion is performed, then the method is re-looked up by name on the
-first argument.</p>
-<p>In short, using the <code class="docutils literal"><span class="pre">NamedBinopMethod</span></code> (alias <code class="docutils literal"><span class="pre">coerce_binop</span></code>) decorator
-on a method gives it the exact same semantics of the basic arithmetic
-operations like <code class="docutils literal"><span class="pre">_add_</span></code>, <code class="docutils literal"><span class="pre">_sub_</span></code>, etc. in that both operands are
-guaranteed to have exactly the same parent.</p>
-</dd></dl>
-
-<dl class="class">
 <dt id="sage.structure.element.PrincipalIdealDomainElement">
 <em class="property">class </em><code class="descclassname">sage.structure.element.</code><code class="descname">PrincipalIdealDomainElement</code><a class="headerlink" href="#sage.structure.element.PrincipalIdealDomainElement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#sage.structure.element.DedekindDomainElement" title="sage.structure.element.DedekindDomainElement"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.element.DedekindDomainElement</span></code></a></p>
@@ -1207,16 +1729,100 @@ the parents of <code class="docutils literal"><span class="pre">z</span></code> 
 </div>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="sage.structure.element.coerce_binop">
-<code class="descclassname">sage.structure.element.</code><code class="descname">coerce_binop</code><a class="headerlink" href="#sage.structure.element.coerce_binop" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#sage.structure.element.NamedBinopMethod" title="sage.structure.element.NamedBinopMethod"><code class="xref py py-class docutils literal"><span class="pre">NamedBinopMethod</span></code></a></p>
-</dd></dl>
-
 <dl class="function">
-<dt id="sage.structure.element.coerce_cmp">
-<code class="descclassname">sage.structure.element.</code><code class="descname">coerce_cmp</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.coerce_cmp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="sage.structure.element.coerce_binop">
+<code class="descclassname">sage.structure.element.</code><code class="descname">coerce_binop</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.coerce_binop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator for a binary operator method for applying coercion to the
+arguments before calling the method.</p>
+<p>Consider a parent class in the category framework, <span class="math">\(S\)</span>, whose element class
+expose a method <span class="math">\(binop\)</span>. If <span class="math">\(a\)</span> and <span class="math">\(b\)</span> are elements of <span class="math">\(S\)</span>, then
+<span class="math">\(a.binop(b)\)</span> behaves as expected. If <span class="math">\(a\)</span> and <span class="math">\(b\)</span> are not elements of <span class="math">\(S\)</span>,
+but rather have a common parent <span class="math">\(T\)</span> whose element class also exposes
+<span class="math">\(binop\)</span>, we would rather expect <span class="math">\(a.binop(b)\)</span> to compute <span class="math">\(aa.binop(bb)\)</span>,
+where <span class="math">\(aa = T(a)\)</span> and <span class="math">\(bb = T(b)\)</span>. This decorator ensures that behaviour
+without having to otherwise modify the implementation of <span class="math">\(binop\)</span> on the
+element class of <span class="math">\(A\)</span>.</p>
+<p>Since coercion will be attempted on the arguments of the decorated method, a
+<span class="math">\(TypeError\)</span> will be thrown if there is no common parent between the
+elements. An <span class="math">\(AttributeError\)</span> or <span class="math">\(NotImplementedError\)</span> or similar will be
+thrown if there is a common parent of the arguments, but its element class
+does not implement a method of the same name as the decorated method.</p>
+<p>EXAMPLES:</p>
+<p>Sparse polynomial rings uses <span class="math">\(&#64;coerce_binop\)</span> on <span class="math">\(gcd\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">x</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>  <span class="c1">#indirect doctest</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="n">T</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">u</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">h</span><span class="p">);</span> <span class="n">u</span>  <span class="c1">#indirect doctest</span>
+<span class="go">x</span>
+<span class="gp">sage: </span><span class="n">u</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">T</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Another real example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R1</span><span class="o">=</span><span class="n">QQ</span><span class="p">[</span><span class="s1">&#39;x,y&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">R2</span><span class="o">=</span><span class="n">QQ</span><span class="p">[</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">=</span><span class="n">R1</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="o">=</span><span class="n">R1</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">=</span><span class="n">R2</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;modular&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;modular&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="s1">&#39;modular&#39;</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>We demonstrate a small class using <span class="math">\(&#64;coerce_binop\)</span> on a method:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">coerce_binop</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyRational</span><span class="p">(</span><span class="n">Rational</span><span class="p">):</span>
+<span class="go">....:     def __init__(self,value):</span>
+<span class="go">....:         self.v = value</span>
+<span class="go">....:     @coerce_binop</span>
+<span class="go">....:     def test_add(self, other, keyword=&#39;z&#39;):</span>
+<span class="go">....:         return (self.v, other, keyword)</span>
+</pre></div>
+</div>
+<p>Calls func directly if the two arguments have the same parent:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">MyRational</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">test_add</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">(1, 1/2, &#39;z&#39;)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">test_add</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">keyword</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(1, 1/2, 3)</span>
+</pre></div>
+</div>
+<p>Passes through coercion and does a method lookup if the left operand is not
+the same. If the common parent&#8217;s element class does not have a method of the
+same name, an exception is raised:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">test_add</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">(1, 2, &#39;z&#39;)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">test_add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">keyword</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(1, 2, 3)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">test_add</span><span class="p">(</span><span class="n">CC</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">AttributeError</span>: <span class="n">&#39;sage.rings.complex_number.ComplexNumber&#39; object has no attribute &#39;test_add&#39;</span>
+</pre></div>
+</div>
+<p>TESTS:</p>
+<p>Test that additional arguments given to the method do not override
+the <code class="docutils literal"><span class="pre">self</span></code> argument, see <a class="reference external" href="https://trac.sagemath.org/21322">trac ticket #21322</a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">algorithm 1 not supported</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="function">
 <dt id="sage.structure.element.coercion_traceback">
@@ -1546,6 +2152,8 @@ returned:</p>
 
 </div>
 </div>
+</div>
+</div>
 
 
           </div>
@@ -1557,7 +2165,16 @@ returned:</p>
             <ul>
 <li><a class="reference internal" href="#">Elements</a><ul>
 <li><a class="reference internal" href="#the-abstract-element-class-hierarchy">The Abstract Element Class Hierarchy</a></li>
-<li><a class="reference internal" href="#how-to-define-a-new-element-class">How to Define a New Element Class</a></li>
+<li><a class="reference internal" href="#how-to-define-a-new-element-class">How to Define a New Element Class</a><ul>
+<li><a class="reference internal" href="#arithmetic-for-elements">Arithmetic for Elements</a><ul>
+<li><a class="reference internal" href="#a-quick-summary-for-the-impatient">A quick summary for the impatient</a></li>
+<li><a class="reference internal" href="#arithmetic-in-more-detail">Arithmetic in more detail</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#implementation-details">Implementation details</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
