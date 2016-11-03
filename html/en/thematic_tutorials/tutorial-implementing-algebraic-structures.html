@@ -1,0 +1,958 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=600, initial-scale=1">
+    <title>Tutorial: Implementing Algebraic Structures &mdash; Thematic Tutorials v7.4</title>
+    
+    <link rel="stylesheet" href="_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '7.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Thematic Tutorials v7.4" href="index.html" />
+    <link rel="up" title="Thematic tutorial document tree" href="toctree.html" />
+    <link rel="next" title="How to call a C code (or a compiled library) from Sage ?" href="cython_interface.html" />
+    <link rel="prev" title="How to implement new algebraic structures in Sage" href="coercion_and_categories.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+    <script src="_static/thebe.js" type="text/javascript"></script>
+    <script src="_static/thebe-sage.js" type="text/javascript"></script>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cython_interface.html" title="How to call a C code (or a compiled library) from Sage ?"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coercion_and_categories.html" title="How to implement new algebraic structures in Sage"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Thematic Tutorials v7.4</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="toctree.html" accesskey="U">Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial-implementing-algebraic-structures">
+<span id="id1"></span><h1>Tutorial: Implementing Algebraic Structures<a class="headerlink" href="#tutorial-implementing-algebraic-structures" title="Permalink to this headline">¶</a></h1>
+<p><em>Author: Nicolas M. Thiéry &lt;nthiery at users.sf.net&gt;,
+Jason Bandlow &lt;<a class="reference external" href="mailto:jbandlow&#37;&#52;&#48;gmail&#46;com">jbandlow<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt; et al.</em></p>
+<p>This tutorial will cover four concepts:</p>
+<ul class="simple">
+<li>endowing free modules and vector spaces with additional algebraic structure</li>
+<li>defining morphisms</li>
+<li>defining coercions and conversions</li>
+<li>implementing algebraic structures with several realizations</li>
+</ul>
+<p>At the end of this tutorial, the reader should be able to reimplement
+by himself the example of algebra with several realizations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Sets</span><span class="p">()</span><span class="o">.</span><span class="n">WithRealizations</span><span class="p">()</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="go">The subset algebra of {1, 2, 3} over Rational Field</span>
+</pre></div>
+</div>
+<p>Namely, we consider an algebra <span class="math">\(A(S)\)</span> whose basis is indexed by the
+subsets <span class="math">\(s\)</span> of a given set <span class="math">\(S\)</span>. <span class="math">\(A(S)\)</span> is endowed with three natural
+basis: <code class="docutils literal"><span class="pre">F</span></code>, <code class="docutils literal"><span class="pre">In</span></code>, <code class="docutils literal"><span class="pre">Out</span></code>; in the first basis, the product is
+given by the union of the indexing sets. The <code class="docutils literal"><span class="pre">In</span></code> basis and <code class="docutils literal"><span class="pre">Out</span></code>
+basis are defined respectively by:</p>
+<blockquote>
+<div><div class="math">
+\[In_s  = \sum_{t\subset s} F_t \qquad
+F_s   = \sum_{t\supset s} Out_t\]</div>
+</div></blockquote>
+<p>Each such basis gives a realization of <span class="math">\(A\)</span>, where the elements are
+represented by their expansion in this basis. In the running exercises
+we will progressively implement this algebra and its three
+realizations, with coercions and mixed arithmetic between them.</p>
+<p>This tutorial heavily depends on <a class="reference external" href="../reference/modules/sage/modules/tutorial_free_modules.html#sage-modules-tutorial-free-modules" title="(in Sage Reference Manual: Modules v7.4)"><span>Tutorial: Using Free Modules and Vector Spaces</span></a>.
+You may also want to read the less specialized thematic tutorial
+<a class="reference internal" href="coercion_and_categories.html#coercion-and-categories"><span class="std std-ref">How to implement new algebraic structures</span></a>.</p>
+<div class="section" id="subclassing-free-modules-and-including-category-information">
+<h2>Subclassing free modules and including category information<a class="headerlink" href="#subclassing-free-modules-and-including-category-information" title="Permalink to this headline">¶</a></h2>
+<p>As a warm-up, we implement the group algebra of the additive group
+<span class="math">\(\ZZ/5\ZZ\)</span>. Of course this is solely for pedagogical purposes; group
+algebras are already implemented (see <code class="docutils literal"><span class="pre">ZMod(5).algebra(ZZ)</span></code>). Recall
+that a fully functional <span class="math">\(\ZZ\)</span>-module over this group can be created
+with the simple command:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">CombinatorialFreeModule</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">Zmod</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We reproduce the same, but by deriving a subclass of
+<a class="reference external" href="../reference/combinat/sage/combinat/free_module.html#sage.combinat.free_module.CombinatorialFreeModule" title="(in Sage Reference Manual: Combinatorics v7.4)"><code class="xref py py-class docutils literal"><span class="pre">CombinatorialFreeModule</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyCyclicGroupModule</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">):</span>
+<span class="go">....:     &quot;&quot;&quot;An absolutely minimal implementation of a module whose basis is a cyclic group&quot;&quot;&quot;</span>
+<span class="go">....:     def __init__(self, R, n, *args, **kwargs):</span>
+<span class="go">....:         CombinatorialFreeModule.__init__(self, R, Zmod(n), *args, **kwargs)</span>
+
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">MyCyclicGroupModule</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="c1"># or 4 or 5 or 11     ...</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
+<span class="go">2*a[0] + 2*a[1] + 3*a[2]</span>
+</pre></div>
+</div>
+<p>We now want to endow <span class="math">\(A\)</span> with its natural product structure, to get
+the desired group algebra. To define a multiplication, we should be in
+a category where multiplication makes sense, which is not yet the
+case:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">category</span><span class="p">()</span>
+<span class="go">Category of finite dimensional vector spaces with basis over Rational Field</span>
+</pre></div>
+</div>
+<p>We can look at the available <a class="reference external" href="../reference/categories/sage/categories/category.html">Categories</a>
+from the documentation in the reference manual or we can use introspection to
+look through the list of categories to pick one we want:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">categories</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>                   <span class="c1"># not tested</span>
+</pre></div>
+</div>
+<p>Once we have chosen an appropriate category (here
+<a class="reference external" href="../reference/categories/sage/categories/algebras_with_basis.html#sage.categories.algebras_with_basis.AlgebrasWithBasis" title="(in Sage Reference Manual: Category Framework v7.4)"><code class="xref py py-class docutils literal"><span class="pre">AlgebrasWithBasis</span></code></a>), one can look at one example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">AlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">example</span><span class="p">();</span> <span class="n">E</span>
+<span class="go">An example of an algebra with basis: the free algebra on the generators (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;) over Rational Field</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">an_element</span><span class="p">();</span> <span class="n">e</span>
+<span class="go">B[word: ] + 2*B[word: a] + 3*B[word: b] + B[word: bab]</span>
+</pre></div>
+</div>
+<p>and browse through its code:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>sage: E??                                     # not tested
+</pre></div>
+</div>
+<p>This code is meant as a template for implementing a
+new algebra. In particular, this template suggests that we need to implement the
+methods <code class="docutils literal"><span class="pre">product_on_basis</span></code>, <code class="docutils literal"><span class="pre">one_basis</span></code>, <code class="docutils literal"><span class="pre">_repr_</span></code> and
+<code class="docutils literal"><span class="pre">algebra_generators</span></code>. Another way to get this list of methods is to
+ask the category (TODO: find a slicker idiom for this):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.abstract_method</span> <span class="kn">import</span> <span class="n">abstract_methods_of_class</span>
+<span class="gp">sage: </span><span class="n">abstract_methods_of_class</span><span class="p">(</span><span class="n">AlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">element_class</span><span class="p">)</span>
+<span class="go">{&#39;optional&#39;: [&#39;_add_&#39;, &#39;_mul_&#39;],</span>
+<span class="go"> &#39;required&#39;: [&#39;__nonzero__&#39;, &#39;monomial_coefficients&#39;]}</span>
+<span class="gp">sage: </span><span class="n">abstract_methods_of_class</span><span class="p">(</span><span class="n">AlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">parent_class</span><span class="p">)</span>
+<span class="go">{&#39;optional&#39;: [&#39;one_basis&#39;, &#39;product_on_basis&#39;], &#39;required&#39;: [&#39;__contains__&#39;]}</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The result above is not yet necessarily complete; many required
+methods in the categories are not yet marked as
+<code class="xref py py-func docutils literal"><span class="pre">abstract_methods()</span></code>. We also recommend browsing the
+documentation of this category: <a class="reference external" href="../reference/categories/sage/categories/algebras_with_basis.html#sage.categories.algebras_with_basis.AlgebrasWithBasis" title="(in Sage Reference Manual: Category Framework v7.4)"><code class="xref py py-class docutils literal"><span class="pre">AlgebrasWithBasis</span></code></a>.</p>
+</div>
+<p>Adding these methods, here is the minimal implementation of the group algebra:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyCyclicGroupAlgebra</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">):</span>
+<span class="go">....:</span>
+<span class="go">....:     def __init__(self, R, n, **keywords):</span>
+<span class="go">....:         self._group = Zmod(n)</span>
+<span class="go">....:         CombinatorialFreeModule.__init__(self, R, self._group,</span>
+<span class="go">....:             category=AlgebrasWithBasis(R), **keywords)</span>
+<span class="go">....:</span>
+<span class="go">....:     def product_on_basis(self, left, right):</span>
+<span class="go">....:         return self.monomial( left + right )</span>
+<span class="go">....:</span>
+<span class="go">....:     def one_basis(self):</span>
+<span class="go">....:         return self._group.zero()</span>
+<span class="go">....:</span>
+<span class="go">....:     def algebra_generators(self):</span>
+<span class="go">....:         return Family( [self.monomial( self._group(1) ) ] )</span>
+<span class="go">....:</span>
+<span class="go">....:     def _repr_(self):</span>
+<span class="go">....:         return &quot;Jason&#39;s group algebra of %s over %s&quot;%(self._group, self.base_ring())</span>
+</pre></div>
+</div>
+<p>Some notes about this implementation:</p>
+<ul>
+<li><p class="first">Alternatively, we could have defined <code class="docutils literal"><span class="pre">product</span></code> instead of
+<code class="docutils literal"><span class="pre">product_on_basis</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">....</span><span class="p">:</span>     <span class="c1"># def product(self, left, right):</span>
+<span class="o">....</span><span class="p">:</span>     <span class="c1">#     return ## something ##</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">For the sake of readability in this tutorial, we have stripped out
+all the documentation strings. Of course all of those should be
+present as in <code class="docutils literal"><span class="pre">E</span></code>.</p>
+</li>
+<li><p class="first">The purpose of <code class="docutils literal"><span class="pre">**keywords</span></code> is to pass down options like
+<code class="docutils literal"><span class="pre">prefix</span></code> to <code class="xref py py-class docutils literal"><span class="pre">CombinatorialFreeModules</span></code>.</p>
+</li>
+</ul>
+<p>Let us do some calculations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">MyCyclicGroupAlgebra</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="c1"># or 4 or 5 or 11     ...</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">basis</span><span class="p">();</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">an_element</span><span class="p">();</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="p">,</span> <span class="n">f</span>
+<span class="go">(Jason&#39;s group algebra of Ring of integers modulo 2 over Rational Field, 2*a[0] + 2*a[1])</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">*</span> <span class="n">f</span>
+<span class="go">8*a[0] + 8*a[1]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>                                 <span class="c1"># not tested</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">.</span><span class="n">is_idempotent</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+<span class="go">a[0]</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">algebra_generators</span><span class="p">()</span><span class="o">.</span><span class="n">first</span><span class="p">()</span> <span class="c1"># Typically x,y,    ... = A.algebra_generators()</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">x</span><span class="o">^</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="go">[a[0], a[1], a[0], a[1]]</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="p">(</span><span class="n">f</span> <span class="o">+</span> <span class="n">g</span><span class="p">)</span><span class="o">*</span><span class="n">f</span> <span class="o">==</span> <span class="n">f</span><span class="o">*</span><span class="n">f</span> <span class="o">+</span> <span class="n">g</span><span class="o">*</span><span class="n">f</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>This seems to work fine, but we would like to put more stress on our
+implementation to shake potential bugs out of it. To this end, we will
+use <a class="reference external" href="../reference/misc/sage/misc/sage_unittest.html#sage.misc.sage_unittest.TestSuite" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-class docutils literal"><span class="pre">TestSuite</span></code></a>, a tool that performs many routine tests
+on our algebra for us.</p>
+<p>Since we defined the class interactively, instead of in a Python
+module, those tests will complain about &#8220;pickling&#8221;. We can silence this
+error by making sage think that the class is defined in a module. We could also
+just ignore those failing tests for now or call <a class="reference external" href="../reference/misc/sage/misc/sage_unittest.html#sage.misc.sage_unittest.TestSuite" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-class docutils literal"><span class="pre">TestSuite</span></code></a> with the
+argument <span class="math">\(skip='_test_pickling')\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">import</span> <span class="nn">__main__</span>
+<span class="gp">sage: </span><span class="n">__main__</span><span class="o">.</span><span class="n">MyCyclicGroupAlgebra</span> <span class="o">=</span> <span class="n">MyCyclicGroupAlgebra</span>
+</pre></div>
+</div>
+<p>Ok, let&#8217;s run the tests:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">TestSuite</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">running ._test_additive_associativity() . . . pass</span>
+<span class="go">running ._test_an_element() . . . pass</span>
+<span class="go">running ._test_associativity() . . . pass</span>
+<span class="go">running ._test_cardinality() . . . pass</span>
+<span class="go">running ._test_category() . . . pass</span>
+<span class="go">running ._test_characteristic() . . . pass</span>
+<span class="go">running ._test_distributivity() . . . pass</span>
+<span class="go">running ._test_elements() . . .</span>
+<span class="go">  Running the test suite of self.an_element()</span>
+<span class="go">  running ._test_category() . . . pass</span>
+<span class="go">  running ._test_eq() . . . pass</span>
+<span class="go">  running ._test_nonzero_equal() . . . pass</span>
+<span class="go">  running ._test_not_implemented_methods() . . . pass</span>
+<span class="go">  running ._test_pickling() . . . pass</span>
+<span class="go">  pass</span>
+<span class="go">running ._test_elements_eq_reflexive() . . . pass</span>
+<span class="go">running ._test_elements_eq_symmetric() . . . pass</span>
+<span class="go">running ._test_elements_eq_transitive() . . . pass</span>
+<span class="go">running ._test_elements_neq() . . . pass</span>
+<span class="go">running ._test_eq() . . . pass</span>
+<span class="go">running ._test_not_implemented_methods() . . . pass</span>
+<span class="go">running ._test_one() . . . pass</span>
+<span class="go">running ._test_pickling() . . . pass</span>
+<span class="go">running ._test_prod() . . . pass</span>
+<span class="go">running ._test_some_elements() . . . pass</span>
+<span class="go">running ._test_zero() . . . pass</span>
+</pre></div>
+</div>
+<p>For more information on categories, see <a class="reference external" href="../reference/categories/sage/categories/primer.html#sage-categories-primer" title="(in Sage Reference Manual: Category Framework v7.4)"><span>Elements, parents, and categories in Sage: a (draft of) primer</span></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>sage: sage.categories.primer?                 # not tested
+</pre></div>
+</div>
+<div class="section" id="review">
+<h3>Review<a class="headerlink" href="#review" title="Permalink to this headline">¶</a></h3>
+<p>We wanted to implement an algebra, so we:</p>
+<ol class="arabic simple">
+<li>Created the underlying vector space using <a class="reference external" href="../reference/combinat/sage/combinat/free_module.html#sage.combinat.free_module.CombinatorialFreeModule" title="(in Sage Reference Manual: Combinatorics v7.4)"><code class="xref py py-class docutils literal"><span class="pre">CombinatorialFreeModule</span></code></a></li>
+<li>Looked at <code class="docutils literal"><span class="pre">sage.categories.&lt;tab&gt;</span></code> to find an appropriate category</li>
+<li>Loaded an example of that category, and used <a class="reference external" href="../reference/misc/sage/misc/abstract_method.html#sage.misc.abstract_method.abstract_methods_of_class" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-func docutils literal"><span class="pre">sage.misc.abstract_method.abstract_methods_of_class()</span></code></a>, to see what methods we needed to write</li>
+<li>Added the category information and other necessary methods to our class</li>
+<li>Ran <a class="reference external" href="../reference/misc/sage/misc/sage_unittest.html#sage.misc.sage_unittest.TestSuite" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-class docutils literal"><span class="pre">TestSuite</span></code></a> to catch potential discrepancies</li>
+</ol>
+</div>
+<div class="section" id="exercises">
+<h3>Exercises<a class="headerlink" href="#exercises" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Make a tiny modification to <code class="docutils literal"><span class="pre">product_on_basis</span></code> in
+&#8220;MyCyclicGroupAlgebra&#8221; to implement the <em>dual</em> of the group algebra
+of the cyclic group instead of its group algebra (so the product is now given by
+<span class="math">\(b_fb_g=\delta_{f,g}bf\)</span>).</p>
+<p>Run the <a class="reference external" href="../reference/misc/sage/misc/sage_unittest.html#sage.misc.sage_unittest.TestSuite" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-class docutils literal"><span class="pre">TestSuite</span></code></a> tests (you may ignore the &#8220;pickling&#8221;
+errors). What do you notice?</p>
+<p>Fix the implementation of <code class="docutils literal"><span class="pre">one</span></code> and check that the <a class="reference external" href="../reference/misc/sage/misc/sage_unittest.html#sage.misc.sage_unittest.TestSuite" title="(in Sage Reference Manual: Utilities v7.4)"><code class="xref py py-class docutils literal"><span class="pre">TestSuite</span></code></a> tests now pass.</p>
+<p>Add the Hopf algebra structure. Hint: look at the example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">HopfAlgebrasWithBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Given a set <span class="math">\(S\)</span>, say:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">Set</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>and a base ring, say:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">QQ</span>
+</pre></div>
+</div>
+<p>implement an <span class="math">\(R\)</span>-algebra:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">SubsetAlgebraOnFundamentalBasis</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>   <span class="c1"># todo: not implemented</span>
+</pre></div>
+</div>
+<p>with a basis <code class="docutils literal"><span class="pre">(b_s)_{s\subset</span> <span class="pre">S}</span></code> indexed by the subsets of <code class="docutils literal"><span class="pre">S</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Subsets</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="go">Subsets of {1, 2, 3, 4, 5}</span>
+</pre></div>
+</div>
+<p>and where the product is defined by <span class="math">\(b_s b_t = b_{s\cup t}\)</span>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section" id="morphisms">
+<h2>Morphisms<a class="headerlink" href="#morphisms" title="Permalink to this headline">¶</a></h2>
+<p>To better understand relationships between algebraic spaces, one wants
+to consider morphisms between them:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>sage: A.module_morphism?                      # not tested
+sage: A = MyCyclicGroupAlgebra(QQ, 2, prefix=&#39;a&#39;)
+sage: B = MyCyclicGroupAlgebra(QQ, 6, prefix=&#39;b&#39;)
+sage: A, B
+(Jason&#39;s group algebra of Ring of integers modulo 2 over Rational Field, Jason&#39;s group algebra of Ring of integers modulo 6 over Rational Field)
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">def</span> <span class="nf">func_on_basis</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+<span class="go">....:     r&quot;&quot;&quot;</span>
+<span class="go">....:     This function is the &#39;brain&#39; of a (linear) morphism</span>
+<span class="go">....:     from A --&gt; B.</span>
+<span class="go">....:     The input is the index of basis element of the domain (A).</span>
+<span class="go">....:     The output is an element of the codomain (B).</span>
+<span class="go">....:     &quot;&quot;&quot;</span>
+<span class="go">....:     if g==1: return B.monomial(Zmod(6)(3))# g==1 in the range A</span>
+<span class="go">....:     else:    return B.one()</span>
+</pre></div>
+</div>
+<p>We can now define a morphism that extends this function to <span class="math">\(A\)</span> by
+linearity:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">phi</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">module_morphism</span><span class="p">(</span><span class="n">func_on_basis</span><span class="p">,</span> <span class="n">codomain</span><span class="o">=</span><span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">2*a[0] + 2*a[1]</span>
+<span class="gp">sage: </span><span class="n">phi</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">2*b[0] + 2*b[3]</span>
+</pre></div>
+</div>
+<div class="section" id="exercise">
+<h3>Exercise<a class="headerlink" href="#exercise" title="Permalink to this headline">¶</a></h3>
+<p>Define a new free module <code class="docutils literal"><span class="pre">In</span></code> with basis indexed by the subsets of
+<span class="math">\(S\)</span>, and a morphism <code class="docutils literal"><span class="pre">phi</span></code> from <code class="docutils literal"><span class="pre">In</span></code> to <code class="docutils literal"><span class="pre">F</span></code> defined by</p>
+<blockquote>
+<div><div class="math">
+\[\phi(In_s) = \sum_{t\subset s} F_t\]</div>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="diagonal-and-triangular-morphisms">
+<h2>Diagonal and Triangular Morphisms<a class="headerlink" href="#diagonal-and-triangular-morphisms" title="Permalink to this headline">¶</a></h2>
+<p>We now illustrate how to specify that a given morphism is diagonal or triangular
+with respect to some order on the basis, which means that the morphism is
+invertible and <span class="math">\(Sage\)</span> is able to compute the inverse morphism automatically.
+Currently this feature requires the domain and codomain to have the same index
+set (in progress ...).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">X</span> <span class="o">=</span> <span class="n">CombinatorialFreeModule</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">Partitions</span><span class="p">(),</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">);</span> <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">basis</span><span class="p">();</span>
+<span class="gp">sage: </span><span class="n">Y</span> <span class="o">=</span> <span class="n">CombinatorialFreeModule</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">Partitions</span><span class="p">(),</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">);</span> <span class="n">y</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">basis</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>A diagonal module morphism takes as argument a function whose input is
+the index of a basis element of the domain, and whose output is the
+coefficient of the corresponding basis element of the codomain:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">def</span> <span class="nf">diag_func</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<span class="go">....:     if len(p)==0: return 1</span>
+<span class="go">....:     else: return p[0]</span>
+<span class="go">....:</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">diag_func</span><span class="p">(</span><span class="n">Partition</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">module_morphism</span><span class="p">(</span><span class="n">diagonal</span><span class="o">=</span><span class="n">diag_func</span><span class="p">,</span> <span class="n">codomain</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">an_element</span><span class="p">();</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">2*x[[]] + 2*x[[1]] + 3*x[[2]]</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">2*y[[]] + 2*y[[1]] + 6*y[[2]]</span>
+</pre></div>
+</div>
+<p>Python fun fact: <code class="docutils literal"><span class="pre">~</span></code> is the inversion operator (but be careful with
+int&#8217;s!):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="o">~</span><span class="mi">2</span>
+<span class="go">1/2</span>
+<span class="gp">sage: </span><span class="o">~</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="c1"># in python this is the bitwise complement: ~x = -x-1</span>
+<span class="go">-3</span>
+</pre></div>
+</div>
+<p>Diagonal module morphisms are invertible:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Y_to_X</span> <span class="o">=</span> <span class="o">~</span><span class="n">X_to_Y</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">3</span><span class="p">])]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])]</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">-2*y[[2, 1]] + y[[3]]</span>
+<span class="gp">sage: </span><span class="n">Y_to_X</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">-x[[2, 1]] + 1/3*x[[3]]</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span><span class="p">(</span><span class="n">Y_to_X</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+<span class="go">-2*y[[2, 1]] + y[[3]]</span>
+</pre></div>
+</div>
+<p>For triangular morphisms, just like ordinary morphisms, we need a
+function that accepts as input the index of a basis element of the
+domain and returns an element of the codomain.  We think of this
+function as representing the columns of the matrix of the linear
+transformation:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">def</span> <span class="nf">triang_on_basis</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<span class="go">....:     return Y.sum_of_monomials(mu for mu in Partitions(sum(p)) if mu &gt;= p)</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">triang_on_basis</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">y[[3, 2]] + y[[4, 1]] + y[[5]]</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">module_morphism</span><span class="p">(</span><span class="n">triang_on_basis</span><span class="p">,</span> <span class="n">triangular</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">unitriangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">codomain</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">])];</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">x[[1, 1, 1]] + 2*x[[3, 2]]</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">X_to_Y</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">y[[1, 1, 1]] + y[[2, 1]] + y[[3]] + 2*y[[3, 2]] + 2*y[[4, 1]] + 2*y[[5]]</span>
+</pre></div>
+</div>
+<p>Triangular module_morphisms are also invertible, even if <code class="docutils literal"><span class="pre">X</span></code> and
+<code class="docutils literal"><span class="pre">Y</span></code> are both infinite-dimensional:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Y_to_X</span> <span class="o">=</span> <span class="o">~</span><span class="n">X_to_Y</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">x[[1, 1, 1]] + 2*x[[3, 2]]</span>
+<span class="gp">sage: </span><span class="n">Y_to_X</span><span class="p">(</span><span class="n">X_to_Y</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+<span class="go">x[[1, 1, 1]] + 2*x[[3, 2]]</span>
+</pre></div>
+</div>
+<p>For details, see
+<a class="reference external" href="../reference/categories/sage/categories/modules_with_basis.html#sage.categories.modules_with_basis.ModulesWithBasis.ParentMethods.module_morphism" title="(in Sage Reference Manual: Category Framework v7.4)"><code class="xref py py-meth docutils literal"><span class="pre">ModulesWithBasis.ParentMethods.module_morphism()</span></code></a> (and also
+<code class="xref py py-class docutils literal"><span class="pre">sage.categories.modules_with_basis.TriangularModuleMorphism</span></code>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>sage: A.module_morphism?                      # not tested
+</pre></div>
+</div>
+<div class="section" id="id2">
+<h3>Exercise<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>Redefine the morphism <code class="docutils literal"><span class="pre">phi</span></code> from the previous exercise as a morphism that is
+triangular with respect to inclusion of subsets and define the inverse morphism.
+You may want to use the following comparison key as
+<code class="docutils literal"><span class="pre">key</span></code> argument to <code class="docutils literal"><span class="pre">modules_morphism</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">def</span> <span class="nf">subset_key</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="go">....:     &quot;&quot;&quot;</span>
+<span class="go">....:     A comparison key on sets that gives a linear extension</span>
+<span class="go">....:     of the inclusion order.</span>
+<span class="go">....:</span>
+<span class="go">....:     INPUT:</span>
+<span class="go">....:</span>
+<span class="go">....:      - ``s`` -- set</span>
+<span class="go">....:</span>
+<span class="go">....:     EXAMPLES::</span>
+<span class="go">....:</span>
+<span class="go">....:         sage: sorted(Subsets([1,2,3]), key=subset_key)</span>
+<span class="go">....:         [{}, {1}, {2}, {3}, {1, 2}, {1, 3}, {2, 3}, {1, 2, 3}]</span>
+<span class="go">....:     &quot;&quot;&quot;</span>
+<span class="go">....:     return (len(s), list(s))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="coercions">
+<h2>Coercions<a class="headerlink" href="#coercions" title="Permalink to this headline">¶</a></h2>
+<p>Once we have defined a morphism from <span class="math">\(X \to Y\)</span>, we can register it as
+a coercion.  This will allow Sage to apply the morphism automatically
+whenever we combine elements of <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> together. See
+<a class="reference external" href="http://sagemath.com/doc/reference/coercion.html">http://sagemath.com/doc/reference/coercion.html</a> for more
+information. As a training step, let us first define a morphism <span class="math">\(X\)</span> to
+<span class="math">\(Y\)</span>, and register it as a coercion:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">def</span> <span class="nf">triang_on_basis</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<span class="go">....:     return Y.sum_of_monomials(mu for mu in Partitions(sum(p)) if mu &gt;= p)</span>
+
+<span class="gp">sage: </span><span class="n">triang_on_basis</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">y[[3, 2]] + y[[4, 1]] + y[[5]]</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">module_morphism</span><span class="p">(</span><span class="n">triang_on_basis</span><span class="p">,</span> <span class="n">triangular</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">unitriangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">codomain</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span><span class="o">.&lt;</span><span class="n">tab</span><span class="o">&gt;</span>                            <span class="c1"># not tested</span>
+<span class="gp">sage: </span><span class="n">X_to_Y</span><span class="o">.</span><span class="n">register_as_coercion</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now we can not only convert elements from <span class="math">\(X\)</span> to <span class="math">\(Y\)</span>, but we can also do
+mixed arithmetic with these elements:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Y</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">])])</span>
+<span class="go">y[[3, 2]] + y[[4, 1]] + y[[5]]</span>
+<span class="gp">sage: </span><span class="n">Y</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">Partition</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])]</span>
+<span class="go">2*y[[2, 2, 1]] + y[[3, 1, 1]] + y[[3, 2]] + y[[4, 1]] + y[[5]]</span>
+</pre></div>
+</div>
+<div class="section" id="id3">
+<h3>Exercise<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>Use the inverse of <code class="docutils literal"><span class="pre">phi</span></code> to implement the inverse coercion from
+<code class="docutils literal"><span class="pre">F</span></code> to <code class="docutils literal"><span class="pre">In</span></code>. Reimplement <code class="docutils literal"><span class="pre">In</span></code> as an algebra, with a product
+method making it use <code class="docutils literal"><span class="pre">phi</span></code> and its inverse.</p>
+</div>
+</div>
+<div class="section" id="a-digression-new-bases-and-quotients-of-symmetric-functions">
+<h2>A digression: new bases and quotients of symmetric functions<a class="headerlink" href="#a-digression-new-bases-and-quotients-of-symmetric-functions" title="Permalink to this headline">¶</a></h2>
+<p>As an application, we show how to combine what we have learned to
+implement a new basis and a quotient of the algebra of symmetric
+functions:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">SF</span> <span class="o">=</span> <span class="n">SymmetricFunctions</span><span class="p">(</span><span class="n">QQ</span><span class="p">);</span>  <span class="c1"># A graded Hopf algebra</span>
+<span class="gp">sage: </span><span class="n">h</span>  <span class="o">=</span> <span class="n">SF</span><span class="o">.</span><span class="n">homogeneous</span><span class="p">()</span>         <span class="c1"># A particular basis, indexed by partitions (with some additional magic)</span>
+</pre></div>
+</div>
+<p>So, <span class="math">\(h\)</span> is a graded algebra whose basis is indexed by partitions. In more
+detail, <code class="docutils literal"><span class="pre">h([i])</span></code> is the sum of all monomials of degree <span class="math">\(i\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">h</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">x0^2 + x0*x1 + x1^2 + x0*x2 + x1*x2 + x2^2 + x0*x3 + x1*x3 + x2*x3 + x3^2</span>
+</pre></div>
+</div>
+<p>and <code class="docutils literal"><span class="pre">h(mu)</span> <span class="pre">=</span> <span class="pre">prod(</span> <span class="pre">h(p)</span> <span class="pre">for</span> <span class="pre">p</span> <span class="pre">in</span> <span class="pre">mu</span> <span class="pre">)</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">h</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">h</span><span class="p">([</span><span class="mi">3</span><span class="p">])</span> <span class="o">*</span> <span class="n">h</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">h</span><span class="p">([</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">h</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Here we define a new basis <span class="math">\((X_\lambda)_\lambda\)</span> by triangularity
+with respect to <span class="math">\(h\)</span>; namely, we set <span class="math">\(X_\lambda = \sum_{\mu\geq \lambda, |\mu|=|\nu|} h_\mu\)</span>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MySFBasis</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">):</span>
+<span class="go">....:     r&quot;&quot;&quot;</span>
+<span class="go">....:     Note: We would typically use SymmetricFunctionAlgebra_generic</span>
+<span class="go">....:     for this. This is as an example only.</span>
+<span class="go">....:     &quot;&quot;&quot;</span>
+<span class="go">....:</span>
+<span class="go">....:     def __init__(self, R, *args, **kwargs):</span>
+<span class="go">....:         &quot;&quot;&quot; TODO: Informative doc-string and examples &quot;&quot;&quot;</span>
+<span class="go">....:         CombinatorialFreeModule.__init__(self, R, Partitions(), category=AlgebrasWithBasis(R), *args, **kwargs)</span>
+<span class="go">....:         self._h = SymmetricFunctions(R).homogeneous()</span>
+<span class="go">....:         self._to_h = self.module_morphism( self._to_h_on_basis, triangular=&#39;lower&#39;, unitriangular=True, codomain=self._h)</span>
+<span class="go">....:         self._from_h = ~(self._to_h)</span>
+<span class="go">....:         self._to_h.register_as_coercion()</span>
+<span class="go">....:         self._from_h.register_as_coercion()</span>
+<span class="go">....:</span>
+<span class="go">....:     def _to_h_on_basis(self, la):</span>
+<span class="go">....:         return self._h.sum_of_monomials(mu for mu in Partitions(sum(la)) if mu &gt;= la)</span>
+<span class="go">....:</span>
+<span class="go">....:     def product(self, left, right):</span>
+<span class="go">....:         return self( self._h(left) * self._h(right) )</span>
+<span class="go">....:</span>
+<span class="go">....:     def _repr_(self):</span>
+<span class="go">....:         return &quot;Jason&#39;s basis for symmetric functions over %s&quot;%self.base_ring()</span>
+<span class="go">....:</span>
+<span class="go">....:     @cached_method</span>
+<span class="go">....:     def one_basis(self):</span>
+<span class="go">....:         r&quot;&quot;&quot; Returns the index of the basis element that is equal to &#39;1&#39;.&quot;&quot;&quot;</span>
+<span class="go">....:         return Partition([])</span>
+<span class="gp">sage: </span><span class="n">X</span> <span class="o">=</span> <span class="n">MySFBasis</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">);</span> <span class="n">x</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">basis</span><span class="p">();</span> <span class="n">h</span> <span class="o">=</span> <span class="n">SymmetricFunctions</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">homogeneous</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">X</span><span class="p">(</span><span class="n">h</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">h</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>  <span class="c1"># Note the capital X</span>
+<span class="gp">sage: </span><span class="n">f</span>
+<span class="go">x[[2, 1, 1]] - 3*x[[2, 2]] + 2*x[[3, 1]]</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">h[2, 1, 1] - 2*h[2, 2]</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="o">*</span><span class="n">f</span><span class="o">*</span><span class="n">f</span>
+<span class="go">x[[2, 2, 2, 1, 1, 1, 1, 1, 1]] - 7*x[[2, 2, 2, 2, 1, 1, 1, 1]] + 18*x[[2, 2, 2, 2, 2, 1, 1]]</span>
+<span class="go">- 20*x[[2, 2, 2, 2, 2, 2]] + 8*x[[3, 1, 1, 1, 1, 1, 1, 1, 1, 1]]</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">f</span><span class="p">)</span>
+<span class="go">h[2, 2, 1, 1, 1, 1] - 4*h[2, 2, 2, 1, 1] + 4*h[2, 2, 2, 2]</span>
+</pre></div>
+</div>
+<p>We now implement a quotient of the algebra of symmetric functions
+obtained by killing any monomial symmetric function <span class="math">\(m_\lambda\)</span> such
+that the first part of <span class="math">\(\lambda\)</span> is greater than <span class="math">\(k\)</span>. See
+<a class="reference external" href="../reference/categories/sage/categories/sets_cat.html#sage.categories.sets_cat.Sets.SubcategoryMethods.Subquotients" title="(in Sage Reference Manual: Category Framework v7.4)"><code class="xref py py-meth docutils literal"><span class="pre">Sets.SubcategoryMethods.Subquotients()</span></code></a> for more details about
+implementing quotients:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="k">class</span> <span class="nc">MySFQuotient</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">):</span>
+<span class="go">....:     r&quot;&quot;&quot;</span>
+<span class="go">....:     The quotient of the ring of symmetric functions by the ideal generated</span>
+<span class="go">....:     by those monomial symmetric functions whose part is larger than some fixed</span>
+<span class="go">....:     number ``k``.</span>
+<span class="go">....:     &quot;&quot;&quot;</span>
+<span class="go">....:     def __init__(self, R, k, prefix=None, *args, **kwargs):</span>
+<span class="go">....:         CombinatorialFreeModule.__init__(self, R,</span>
+<span class="go">....:             Partitions(NonNegativeIntegers(), max_part=k),</span>
+<span class="go">....:             prefix = &#39;mm&#39;,</span>
+<span class="go">....:             category = Algebras(R).Graded().WithBasis().Quotients(), *args, **kwargs)</span>
+<span class="go">....:</span>
+<span class="go">....:         self._k = k</span>
+<span class="go">....:         self._m = SymmetricFunctions(R).monomial()</span>
+<span class="go">....:</span>
+<span class="go">....:         self.lift = self.module_morphism(self._m.monomial)</span>
+<span class="go">....:         self.retract = self._m.module_morphism(self._retract_on_basis, codomain=self)</span>
+<span class="go">....:</span>
+<span class="go">....:         self.lift.register_as_coercion()</span>
+<span class="go">....:         self.retract.register_as_coercion()</span>
+<span class="go">....:</span>
+<span class="go">....:     def ambient(self):</span>
+<span class="go">....:         return self._m</span>
+<span class="go">....:</span>
+<span class="go">....:     def _retract_on_basis(self, mu):</span>
+<span class="go">....:         r&quot;&quot;&quot;</span>
+<span class="go">....:         Takes the index of a basis element of a monomial</span>
+<span class="go">....:         symmetric function, and returns the projection of that</span>
+<span class="go">....:         element to the quotient.</span>
+<span class="go">....:         &quot;&quot;&quot;</span>
+<span class="go">....:         if len(mu) &gt; 0 and mu[0] &gt; self._k:</span>
+<span class="go">....:             return self.zero()</span>
+<span class="go">....:         return self.monomial(mu)</span>
+<span class="go">....:</span>
+<span class="gp">sage: </span><span class="n">MM</span> <span class="o">=</span> <span class="n">MySFQuotient</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">mm</span> <span class="o">=</span> <span class="n">MM</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">m</span> <span class="o">=</span> <span class="n">SymmetricFunctions</span><span class="p">(</span><span class="n">QQ</span><span class="p">)</span><span class="o">.</span><span class="n">monomial</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">Partition</span>
+<span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">P</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="p">[</span><span class="n">P</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">])]</span> <span class="o">+</span> <span class="n">m</span><span class="p">[</span><span class="n">P</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">])];</span> <span class="n">g</span>
+<span class="go">m[3, 2, 1] + 2*m[3, 3] + m[4, 2]</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">MM</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">f</span>
+<span class="go">mm[[3, 2, 1]] + 2*mm[[3, 3]]</span>
+<span class="gp">sage: </span><span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">m[3, 2, 1] + 2*m[3, 3]</span>
+
+<span class="gp">sage: </span><span class="p">(</span><span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="p">))</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">8*m[3, 3, 2, 2, 1, 1] + 12*m[3, 3, 2, 2, 2] + 24*m[3, 3, 3, 2, 1] + 48*m[3, 3, 3, 3]</span>
+<span class="go">+ 4*m[4, 3, 2, 2, 1] + 4*m[4, 3, 3, 1, 1] + 14*m[4, 3, 3, 2] + 4*m[4, 4, 2, 2]</span>
+<span class="go">+ 4*m[4, 4, 3, 1] + 6*m[4, 4, 4] + 4*m[5, 3, 2, 1, 1] + 4*m[5, 3, 2, 2]</span>
+<span class="go">+ 12*m[5, 3, 3, 1] + 2*m[5, 4, 2, 1] + 6*m[5, 4, 3] + 4*m[5, 5, 1, 1] + 2*m[5, 5, 2]</span>
+<span class="go">+ 4*m[6, 2, 2, 1, 1] + 6*m[6, 2, 2, 2] + 6*m[6, 3, 2, 1] + 10*m[6, 3, 3] + 2*m[6, 4, 1, 1] + 5*m[6, 4, 2] + 4*m[6, 5, 1] + 4*m[6, 6]</span>
+
+<span class="gp">sage: </span><span class="n">f</span><span class="o">^</span><span class="mi">2</span>
+<span class="go">8*mm[[3, 3, 2, 2, 1, 1]] + 12*mm[[3, 3, 2, 2, 2]] + 24*mm[[3, 3, 3, 2, 1]] + 48*mm[[3, 3, 3, 3]]</span>
+
+<span class="gp">sage: </span><span class="p">(</span><span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="p">))</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">4*m[4, 3, 2, 2, 1] + 4*m[4, 3, 3, 1, 1] + 14*m[4, 3, 3, 2] + 4*m[4, 4, 2, 2] + 4*m[4, 4, 3, 1] + 6*m[4, 4, 4] + 4*m[5, 3, 2, 1, 1] + 4*m[5, 3, 2, 2] + 12*m[5, 3, 3, 1] + 2*m[5, 4, 2, 1] + 6*m[5, 4, 3] + 4*m[5, 5, 1, 1] + 2*m[5, 5, 2] + 4*m[6, 2, 2, 1, 1] + 6*m[6, 2, 2, 2] + 6*m[6, 3, 2, 1] + 10*m[6, 3, 3] + 2*m[6, 4, 1, 1] + 5*m[6, 4, 2] + 4*m[6, 5, 1] + 4*m[6, 6]</span>
+
+<span class="gp">sage: </span><span class="n">MM</span><span class="p">(</span> <span class="p">(</span><span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="p">))</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">m</span><span class="p">(</span><span class="n">f</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="implementing-algebraic-structures-with-several-realizations">
+<h2>Implementing algebraic structures with several realizations<a class="headerlink" href="#implementing-algebraic-structures-with-several-realizations" title="Permalink to this headline">¶</a></h2>
+<p>We now return to the subset algebra and use it as an example to show how to
+implement several different bases for an algebra with automatic coercions
+between the different bases. We have already implemented three bases for this
+algebra:  the <code class="docutils literal"><span class="pre">F</span></code>, <code class="docutils literal"><span class="pre">In</span></code>, and <code class="docutils literal"><span class="pre">Out</span></code> bases, as well as coercions between
+them. In real calculations it is convenient to tie these parents together by
+implementing an object <code class="docutils literal"><span class="pre">A</span></code> that models the abstract algebra itself. Then, the
+parents <code class="docutils literal"><span class="pre">F</span></code>, <code class="docutils literal"><span class="pre">In</span></code> and <code class="docutils literal"><span class="pre">Out</span></code> will be <em>realizations</em> of <code class="docutils literal"><span class="pre">A</span></code>, while <code class="docutils literal"><span class="pre">A</span></code>
+will be a <em>parent with realizations</em>. See <a class="reference external" href="../reference/categories/sage/categories/with_realizations.html#sage.categories.with_realizations.WithRealizations" title="(in Sage Reference Manual: Category Framework v7.4)"><code class="xref py py-func docutils literal"><span class="pre">Sets().WithRealizations</span></code></a> for more information
+about the expected user interface and the rationale.</p>
+<p>Here is a brief template highlighting the overall structure:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyAlgebra</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">UniqueRepresentation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+        <span class="n">category</span> <span class="o">=</span> <span class="n">Algebras</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="o">.</span><span class="n">Commutative</span><span class="p">()</span>
+        <span class="n">Parent</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="o">.</span><span class="n">WithRealizations</span><span class="p">())</span>
+        <span class="c1"># attribute initalization, construction of the morphisms</span>
+        <span class="c1"># between the bases, ...</span>
+
+    <span class="k">class</span> <span class="nc">Bases</span><span class="p">(</span><span class="n">Category_realization_of_parent</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">super_categories</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">()</span>
+            <span class="n">category</span> <span class="o">=</span> <span class="n">Algebras</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">base_ring</span><span class="p">())</span><span class="o">.</span><span class="n">Commutative</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">A</span><span class="o">.</span><span class="n">Realizations</span><span class="p">(),</span> <span class="n">category</span><span class="o">.</span><span class="n">Realizations</span><span class="p">()</span><span class="o">.</span><span class="n">WithBasis</span><span class="p">()]</span>
+
+        <span class="k">class</span> <span class="nc">ParentMethods</span><span class="p">:</span>
+            <span class="sd">r&quot;&quot;&quot;Code that is common to all bases of the algebra&quot;&quot;&quot;</span>
+
+        <span class="k">class</span> <span class="nc">ElementMethods</span><span class="p">:</span>
+            <span class="sd">r&quot;&quot;&quot;Code that is common to elements of all bases of the algebra&quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">FirstBasis</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">,</span> <span class="n">BindableClass</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">):</span>
+            <span class="n">CombinatorialFreeModule</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">Bases</span><span class="p">())</span>
+
+        <span class="c1"># implementation of the multiplication, the unit, ...</span>
+
+    <span class="k">class</span> <span class="nc">SecondBasis</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">,</span> <span class="n">BindableClass</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">):</span>
+            <span class="n">CombinatorialFreeModule</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">Bases</span><span class="p">())</span>
+
+        <span class="c1"># implementation of the multiplication, the unit, ...</span>
+</pre></div>
+</div>
+<p>The class <code class="docutils literal"><span class="pre">MyAlgebra</span></code> implements a commutative algebra <code class="docutils literal"><span class="pre">A</span></code> with several
+realizations, which we specify in the constructor of <code class="docutils literal"><span class="pre">MyAlgebra</span></code>. The two
+bases classes <code class="docutils literal"><span class="pre">MyAlgebra.FirstBasis</span></code> and <code class="docutils literal"><span class="pre">MyAlgebra.SecondBasis</span></code> implement
+different realizations of <code class="docutils literal"><span class="pre">A</span></code> that correspond to distinguished bases on which
+elements are expanded. They are initialized in the category <code class="docutils literal"><span class="pre">MyAlgebra.Bases</span></code>
+of all bases of <code class="docutils literal"><span class="pre">A</span></code>, whose role is to factor out their common features. In
+particular, this construction says that they are:</p>
+<ul class="simple">
+<li>realizations of <code class="docutils literal"><span class="pre">A</span></code></li>
+<li>realizations of a commutative algebra, with a distinguished basis</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>There is a bit of redundancy here: given that <code class="docutils literal"><span class="pre">A</span></code> knows it is a
+commutative algebra with realizations the infrastructure could, in
+principle, determine that its realizations are commutative algebras. If this
+was done then it would be possible to implement <span class="math">\(Bases.super_categories\)</span> by
+returning:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">A</span><span class="o">.</span><span class="n">Realizations</span><span class="p">()</span><span class="o">.</span><span class="n">WithBasis</span><span class="p">()]</span>
+</pre></div>
+</div>
+<p class="last">However, this has not been implemented yet.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Inheriting from <code class="xref py py-class docutils literal"><span class="pre">BindableCass</span></code> just provides syntactic
+sugar: it makes <code class="docutils literal"><span class="pre">MyAlgebras().FirstBasis()</span></code> a shorthand for
+<code class="docutils literal"><span class="pre">MyAlgebras.FirstBasis(MyAlgebras().FirstBasis())</span></code> (binding
+behavior). The class <code class="docutils literal"><span class="pre">Bases</span></code> inherits this binding behavior from
+<code class="xref py py-class docutils literal"><span class="pre">Category_realization_of_parent</span></code> , which is why we can
+write <code class="docutils literal"><span class="pre">MyAlgebras().Bases</span></code> instead of
+<code class="docutils literal"><span class="pre">MyAlgebras.Bases(MyAlgebras())</span></code></p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>More often than not, the constructors for all of the bases will be very
+similar, if not identical; so we would want to factor it out. Annoyingly,
+the natural approach of putting the constructor in <code class="docutils literal"><span class="pre">Bases.ParentMethods</span></code>
+does not work because this is an abstract class whereas the constructor
+handles the concrete implementation of the data structure. Similarly, it
+would be better if it was only necessary to  specify the classes the bases
+inherit from once, but this can&#8217;t code go into <code class="docutils literal"><span class="pre">Bases</span></code> for the same
+reason.</p>
+<p>The current recommended solution is to have an additional class <code class="docutils literal"><span class="pre">Basis</span></code>
+that factors out the common concrete features of the different bases:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">Basis</span><span class="p">(</span><span class="n">CombinatorialFreeModule</span><span class="p">,</span> <span class="n">BindableClass</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">):</span>
+        <span class="n">CombinatorialFreeModule</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">Bases</span><span class="p">())</span>
+
+<span class="k">class</span> <span class="nc">FirstBasis</span><span class="p">(</span><span class="n">Basis</span><span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">SecondBasis</span><span class="p">(</span><span class="n">Basis</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p class="last">This solution works but it is not optimal because to share features between
+the two bases code needs to go into two locations, <code class="docutils literal"><span class="pre">Basis</span></code> and <code class="docutils literal"><span class="pre">Bases</span></code>,
+depending on whether they are concrete or abstract, respectively.</p>
+</div>
+<p>We now urge the reader to browse the full code of the following
+example, which is meant as a complete template for constructing new
+parents with realizations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>sage: A = Sets().WithRealizations().example(); A
+The subset algebra of {1, 2, 3} over Rational Field
+
+sage: A??                                     # not implemented
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>Review<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>Congratulations on reading this far!</p>
+<p>We have now been through a complete tour of the features needed to
+implement an algebra with several realizations. The infrastructure for
+realizations is not tied specifically to algebras; what we have
+learned applies mutatis mutandis in full generality, for example for
+implementing groups with several realizations.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">Tutorial: Implementing Algebraic Structures</a><ul>
+<li><a class="reference internal" href="#subclassing-free-modules-and-including-category-information">Subclassing free modules and including category information</a><ul>
+<li><a class="reference internal" href="#review">Review</a></li>
+<li><a class="reference internal" href="#exercises">Exercises</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morphisms">Morphisms</a><ul>
+<li><a class="reference internal" href="#exercise">Exercise</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#diagonal-and-triangular-morphisms">Diagonal and Triangular Morphisms</a><ul>
+<li><a class="reference internal" href="#id2">Exercise</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#coercions">Coercions</a><ul>
+<li><a class="reference internal" href="#id3">Exercise</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-digression-new-bases-and-quotients-of-symmetric-functions">A digression: new bases and quotients of symmetric functions</a></li>
+<li><a class="reference internal" href="#implementing-algebraic-structures-with-several-realizations">Implementing algebraic structures with several realizations</a></li>
+<li><a class="reference internal" href="#id4">Review</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="coercion_and_categories.html"
+                                  title="previous chapter">How to implement new algebraic structures in Sage</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="cython_interface.html"
+                                  title="next chapter">How to call a C code (or a compiled library) from Sage ?</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tutorial-implementing-algebraic-structures.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <!-- The shading of the "Go" button should be consistent -->
+                <!-- with the colour of the header and footer. See the file -->
+                <!-- doc/common/themes/sage/theme.conf for colours used by -->
+                <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cython_interface.html" title="How to call a C code (or a compiled library) from Sage ?"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coercion_and_categories.html" title="How to implement new algebraic structures in Sage"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Thematic Tutorials v7.4</a> &raquo;</li>
+
+          <li class="nav-item nav-item-1"><a href="toctree.html" >Thematic tutorial document tree</a> &raquo;</li> 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2005--2016, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>
