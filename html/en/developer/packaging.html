@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=600, initial-scale=1">
-    <title>Packaging Third-Party Code &mdash; Sage Developer&#39;s Guide v7.4</title>
+    <title>Packaging Third-Party Code &mdash; Sage Developer&#39;s Guide v7.5</title>
     
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '7.4',
+        VERSION:     '7.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="Sage Developer&#39;s Guide v7.4" href="index.html" />
+    <link rel="top" title="Sage Developer&#39;s Guide v7.5" href="index.html" />
     <link rel="next" title="Packaging Old-Style SPKGs" href="packaging_old_spkgs.html" />
     <link rel="prev" title="Using External Libraries and Interfaces" href="coding_in_other.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
@@ -54,7 +54,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.4</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.5</a> &raquo;</li>
  
       </ul>
     </div>  
@@ -166,10 +166,10 @@ a minimum the following files:</p>
 <code class="docutils literal"><span class="pre">standard</span></code>, <code class="docutils literal"><span class="pre">optional</span></code> or <code class="docutils literal"><span class="pre">experimental</span></code>.
 See <a class="reference internal" href="#section-package-types"><span class="std std-ref">Package types</span></a> for the meaning of these types.</p>
 </div>
-<div class="section" id="install-script">
-<span id="section-spkg-install"></span><h3>Install Script<a class="headerlink" href="#install-script" title="Permalink to this headline">¶</a></h3>
-<p>The <code class="docutils literal"><span class="pre">spkg-install</span></code> file is a shell script or Python script which
-installs the package.
+<div class="section" id="build-and-install-scripts">
+<span id="section-spkg-install"></span><h3>Build and install scripts<a class="headerlink" href="#build-and-install-scripts" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal"><span class="pre">spkg-build</span></code> and <code class="docutils literal"><span class="pre">spkg-install</span></code> files are shell scripts or
+Python scripts which build and install the package.
 In the best case, the upstream project can simply be installed by the
 usual configure / make / make install steps. In that case, the build
 script would simply consist of:</p>
@@ -188,7 +188,12 @@ if [ $? -ne 0 ]; then
     echo &gt;&amp;2 &quot;Error building PACKAGE_NAME.&quot;
     exit 1
 fi
+</pre></div>
+</div>
+<p>The install script would consist of:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>#!/usr/bin/env bash
 
+cd src
 $MAKE install
 if [ $? -ne 0 ]; then
     echo &gt;&amp;2 &quot;Error installing PACKAGE_NAME.&quot;
@@ -197,8 +202,8 @@ fi
 </pre></div>
 </div>
 <p>Note that the top-level directory inside the tarball is renamed to
-<code class="docutils literal"><span class="pre">src</span></code> before calling the <code class="docutils literal"><span class="pre">spkg-install</span></code> script, so you can just use
-<code class="docutils literal"><span class="pre">cd</span> <span class="pre">src</span></code> instead of <code class="docutils literal"><span class="pre">cd</span> <span class="pre">foo-1.3</span></code>.</p>
+<code class="docutils literal"><span class="pre">src</span></code> before calling the <code class="docutils literal"><span class="pre">spkg-build</span></code> and <code class="docutils literal"><span class="pre">spkg-install</span></code>
+scripts, so you can just use <code class="docutils literal"><span class="pre">cd</span> <span class="pre">src</span></code> instead of <code class="docutils literal"><span class="pre">cd</span> <span class="pre">foo-1.3</span></code>.</p>
 <p>If there is any meaningful documentation included but not installed by
 <code class="docutils literal"><span class="pre">make</span> <span class="pre">install</span></code>, then you can add something like the following to
 install it:</p>
@@ -213,6 +218,16 @@ install it:</p>
 fi
 </pre></div>
 </div>
+<p>Many packages currently do not separate the build and install steps
+and only provide a <code class="docutils literal"><span class="pre">spkg-install</span></code> file that does both.  The
+separation is useful in particular for root-owned install hierarchies:</p>
+<ul class="simple">
+<li>If <code class="docutils literal"><span class="pre">spkg-build</span></code> exists, it is first called, followed by
+<code class="docutils literal"><span class="pre">$SAGE_SUDO</span> <span class="pre">spkg-install</span></code>.</li>
+<li>Otherwise, only <code class="docutils literal"><span class="pre">spkg-install</span></code> is called (without <code class="docutils literal"><span class="pre">$SAGE_SUDO</span></code>).
+Such packages would prefix all commands in <code class="docutils literal"><span class="pre">spkg-install</span></code> that
+write into the installation hierarchy with <code class="docutils literal"><span class="pre">$SAGE_SUDO</span></code>.</li>
+</ul>
 </div>
 <div class="section" id="self-tests">
 <span id="section-spkg-check"></span><h3>Self-Tests<a class="headerlink" href="#self-tests" title="Permalink to this headline">¶</a></h3>
@@ -259,7 +274,7 @@ If the tarball was modified by hand and not via a spkg-src
 script, describe what was changed.
 </pre></div>
 </div>
-<p>with <code class="docutils literal"><span class="pre">PACKAGE_NAME</span></code> replaced by the the package name. Legacy
+<p>with <code class="docutils literal"><span class="pre">PACKAGE_NAME</span></code> replaced by the package name. Legacy
 <code class="docutils literal"><span class="pre">SPKG.txt</span></code> files have an additional changelog section, but this
 information is now kept in the git repository.</p>
 </div>
@@ -315,11 +330,13 @@ optional packages.</p>
 </div>
 <div class="section" id="patching-sources">
 <span id="section-spkg-patching"></span><h3>Patching Sources<a class="headerlink" href="#patching-sources" title="Permalink to this headline">¶</a></h3>
-<p>Actual changes to the source code must be via patches, which should be
-placed in the <code class="docutils literal"><span class="pre">patches</span></code> directory. GNU patch is distributed with
-Sage, so you can rely on it being available. Patches must include
-documentation in their header (before the first diff hunk), so a
-typical patch file should look like this:</p>
+<p>Actual changes to the source code must be via patches, which should be placed
+in the <code class="docutils literal"><span class="pre">patches/</span></code> directory, and must have the <code class="docutils literal"><span class="pre">.patch</span></code> extension. GNU
+patch is distributed with Sage, so you can rely on it being available. Patches
+must include documentation in their header (before the first diff hunk), and
+must have only one &#8220;prefix&#8221; level in the paths (that is, only one path level
+above the root of the upstream sources being patched).  So a typical patch file
+should look like this:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Add</span> <span class="n">autodoc_builtin_argspec</span> <span class="n">config</span> <span class="n">option</span>
 
 <span class="n">Following</span> <span class="n">the</span> <span class="n">title</span> <span class="n">line</span> <span class="n">you</span> <span class="n">can</span> <span class="n">add</span> <span class="n">a</span> <span class="n">multi</span><span class="o">-</span><span class="n">line</span> <span class="n">description</span> <span class="n">of</span>
@@ -340,20 +357,116 @@ typical patch file should look like this:</p>
      <span class="n">app</span><span class="o">.</span><span class="n">add_event</span><span class="p">(</span><span class="s1">&#39;autodoc-process-docstring&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Patches to files in <code class="docutils literal"><span class="pre">src/</span></code> need to be applied in <code class="docutils literal"><span class="pre">spkg-install</span></code>,
-that is, if there are any patches then your <code class="docutils literal"><span class="pre">spkg-install</span></code> script
-should contain a section like this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>for patch in ../patches/*.patch; do
-    [ -r &quot;$patch&quot; ] || continue  # Skip non-existing or non-readable patches
-    patch -p1 &lt;&quot;$patch&quot;
-    if [ $? -ne 0 ]; then
-        echo &gt;&amp;2 &quot;Error applying &#39;$patch&#39;&quot;
-        exit 1
-    fi
-done
+<p>Patches directly under the <code class="docutils literal"><span class="pre">patches/</span></code> directly are applied automatically
+before running the <code class="docutils literal"><span class="pre">spkg-install</span></code> script (so long as they have the <code class="docutils literal"><span class="pre">.patch</span></code>
+extension).  If you need to apply patches conditionally (such as only on
+a specifically platform), you can place those patches in a subdirectory of
+<code class="docutils literal"><span class="pre">patches/</span></code> and apply them manually using the <code class="docutils literal"><span class="pre">sage-apply-patches</span></code> script.
+For example, considering the layout:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>SAGE_ROOT/build/pkgs/foo
+|-- patches
+|   |-- solaris
+|   |   |-- solaris.patch
+|   |-- bar.patch
+|   `-- baz.patch
 </pre></div>
 </div>
-<p>which applies the patches to the sources.</p>
+<p>The patches <code class="docutils literal"><span class="pre">bar.patch</span></code> and <code class="docutils literal"><span class="pre">baz.patch</span></code> are applied to the unpacked
+upstream sources in <code class="docutils literal"><span class="pre">src/</span></code> before running <code class="docutils literal"><span class="pre">spkg-install</span></code>.  To conditionally
+apply the patch for Solaris the <code class="docutils literal"><span class="pre">spkg-install</span></code> should contain a section like
+this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>if [ $UNAME == &quot;SunOS&quot; ]; then
+    sage-apply-patches -d solaris
+fi
+</pre></div>
+</div>
+<p>where the <code class="docutils literal"><span class="pre">-d</span></code> flag applies all patches in the <code class="docutils literal"><span class="pre">solaris/</span></code> subdirectory of
+the main <code class="docutils literal"><span class="pre">patches/</span></code> directory.</p>
+</div>
+<div class="section" id="when-to-patch-when-to-repackage-when-to-autoconfiscate">
+<span id="section-spkg-patch-or-repackage"></span><h3>When to patch, when to repackage, when to autoconfiscate<a class="headerlink" href="#when-to-patch-when-to-repackage-when-to-autoconfiscate" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">Use unpatched original upstream tarball when possible.</p>
+<p>Sometimes it may seem as if you need to patch a (hand-written)
+<code class="docutils literal"><span class="pre">Makefile</span></code> because it &#8220;hard-codes&#8221; some paths or compiler flags:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>--- a/Makefile
++++ b/Makefile
+@@ -77,7 +77,7 @@
+ # This is a Makefile.
+ # Handwritten.
+
+-DESTDIR = /usr/local
++DESTDIR = $(SAGE_ROOT)/local
+ BINDIR   = $(DESTDIR)/bin
+ INCDIR   = $(DESTDIR)/include
+ LIBDIR   = $(DESTDIR)/lib
+</pre></div>
+</div>
+<p>Don&#8217;t use patching for that.  Makefile variables can be overridden
+from the command-line.  Just use the following in <code class="docutils literal"><span class="pre">spkg-install</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$(MAKE) DESTDIR=&quot;$SAGE_ROOT/local&quot;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Check if Debian or another distribution already provides patches
+for upstream.  Use them, don&#8217;t reinvent the wheel.</p>
+</li>
+<li><p class="first">If the upstream Makefile does not build shared libraries,
+don&#8217;t bother trying to patch it.</p>
+<p>Autoconfiscate the package instead and use the standard facilities
+of Automake and Libtool.  This ensures that the shared library build
+is portable between Linux and macOS.</p>
+</li>
+<li><p class="first">If you have to make changes to <code class="docutils literal"><span class="pre">configure.ac</span></code> or other source
+files of the autotools build system (or if you are autoconfiscating
+the package), then you can&#8217;t use patching; make a <a class="reference internal" href="#section-spkg-src"><span class="std std-ref">modified
+tarball</span></a> instead.</p>
+</li>
+<li><p class="first">If the patch would be huge, don&#8217;t use patching.  Make a
+<a class="reference internal" href="#section-spkg-src"><span class="std std-ref">modified tarball</span></a> instead.</p>
+</li>
+<li><p class="first">Otherwise, <a class="reference internal" href="#section-spkg-patch-maintenance"><span class="std std-ref">maintain a set of patches</span></a>.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="how-to-maintain-a-set-of-patches">
+<span id="section-spkg-patch-maintenance"></span><h3>How to maintain a set of patches<a class="headerlink" href="#how-to-maintain-a-set-of-patches" title="Permalink to this headline">¶</a></h3>
+<p>We recommend the following workflow for maintaining a set of patches.</p>
+<ul>
+<li><p class="first">Fork the package and put it on a public git repository.</p>
+<p>If upstream has a public version control repository, import it from
+there.  If upstream does not have a public version control
+repository, import the current sources from the upstream tarball.
+Let&#8217;s call the branch <code class="docutils literal"><span class="pre">upstream</span></code>.</p>
+</li>
+<li><p class="first">Create a branch for the changes necessary for Sage, let&#8217;s call it
+<code class="docutils literal"><span class="pre">sage_package_VERSION</span></code>, where <code class="docutils literal"><span class="pre">version</span></code> is the upstream version
+number.</p>
+</li>
+<li><p class="first">Make the changes and commit them to the branch.</p>
+</li>
+<li><p class="first">Generate the patches against the <code class="docutils literal"><span class="pre">upstream</span></code> branch:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">rm</span> <span class="o">-</span><span class="n">Rf</span> <span class="n">SAGE_ROOT</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">pkgs</span><span class="o">/</span><span class="n">PACKAGE</span><span class="o">/</span><span class="n">patches</span>
+<span class="n">mkdir</span> <span class="n">SAGE_ROOT</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">pkgs</span><span class="o">/</span><span class="n">PACKAGE</span><span class="o">/</span><span class="n">patches</span>
+<span class="n">git</span> <span class="nb">format</span><span class="o">-</span><span class="n">patch</span> <span class="o">-</span><span class="n">o</span> <span class="n">SAGE_ROOT</span><span class="o">/</span><span class="n">build</span><span class="o">/</span><span class="n">pkgs</span><span class="o">/</span><span class="n">PACKAGE</span><span class="o">/</span><span class="n">patches</span><span class="o">/</span> <span class="n">upstream</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Optionally, create an <code class="docutils literal"><span class="pre">spkg-src</span></code> file in the Sage package&#8217;s
+directory that regenerates the patch directory using the above
+commmands.</p>
+</li>
+<li><p class="first">When a new upstream version becomes available, merge (or import) it
+into <code class="docutils literal"><span class="pre">upstream</span></code>, then create a new branch and rebase in on top of
+the updated upstream:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">sage_package_OLDVERSION</span>
+<span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">sage_package_NEWVERSION</span>
+<span class="n">git</span> <span class="n">rebase</span> <span class="n">upstream</span>
+</pre></div>
+</div>
+<p>Then regenerate the patches.</p>
+</li>
+</ul>
 </div>
 <div class="section" id="modified-tarballs">
 <span id="section-spkg-src"></span><h3>Modified Tarballs<a class="headerlink" href="#modified-tarballs" title="Permalink to this headline">¶</a></h3>
@@ -531,11 +644,13 @@ this is not possible.</p>
 <li><a class="reference internal" href="#package-types">Package types</a></li>
 <li><a class="reference internal" href="#directory-structure">Directory Structure</a><ul>
 <li><a class="reference internal" href="#package-type">Package type</a></li>
-<li><a class="reference internal" href="#install-script">Install Script</a></li>
+<li><a class="reference internal" href="#build-and-install-scripts">Build and install scripts</a></li>
 <li><a class="reference internal" href="#self-tests">Self-Tests</a></li>
 <li><a class="reference internal" href="#the-spkg-txt-file">The SPKG.txt File</a></li>
 <li><a class="reference internal" href="#package-dependencies">Package dependencies</a></li>
 <li><a class="reference internal" href="#patching-sources">Patching Sources</a></li>
+<li><a class="reference internal" href="#when-to-patch-when-to-repackage-when-to-autoconfiscate">When to patch, when to repackage, when to autoconfiscate</a></li>
+<li><a class="reference internal" href="#how-to-maintain-a-set-of-patches">How to maintain a set of patches</a></li>
 <li><a class="reference internal" href="#modified-tarballs">Modified Tarballs</a></li>
 <li><a class="reference internal" href="#package-versioning">Package Versioning</a></li>
 <li><a class="reference internal" href="#checksums">Checksums</a></li>
@@ -602,13 +717,13 @@ this is not possible.</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.4</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.5</a> &raquo;</li>
  
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2005--2016, The Sage Development Team.
+        &copy; Copyright 2005--2017, The Sage Development Team.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
     </div>
     <script type="text/javascript">

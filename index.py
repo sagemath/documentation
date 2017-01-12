@@ -68,7 +68,8 @@ filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-
               "plot-", "generic_graph-", "fully_packed_loop", "link-", "complex_plot-",
               "hyperbolic_geodesic-", "contour_plot-", "density_plot-", "plot_field-",
               "chart-", "point_configuration-", "text-", "point-", "parametric_plot3d-",
-              "revolution_plot3d-", "ordered_tree-",
+              "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
+              "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-",
              ]
 filter_html = [("en","website")]
 

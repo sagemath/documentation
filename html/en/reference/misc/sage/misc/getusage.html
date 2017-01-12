@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=600, initial-scale=1">
-    <title>Get resource usage of process &mdash; Sage Reference Manual v7.4: Utilities</title>
+    <title>Get resource usage of process &mdash; Sage Reference Manual v7.5: Utilities</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '7.4',
+        VERSION:     '7.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v7.4: Utilities" href="../../index.html" />
+    <link rel="top" title="Sage Reference Manual v7.5: Utilities" href="../../index.html" />
     <link rel="next" title="Class inheritance graphs" href="classgraph.html" />
     <link rel="prev" title="Edit the source code of Sage interactively" href="edit_module.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
@@ -71,6 +71,8 @@
 <span class="target" id="module-sage.misc.getusage"></span><p>AUTHORS:</p>
 <ul class="simple">
 <li>William Stein (2006-03-04): initial version</li>
+<li>Jeroen Demeyer (2016-11-14): implement as thin wrapper over
+<code class="docutils literal"><span class="pre">psutil</span></code> package</li>
 </ul>
 <dl class="function">
 <dt id="sage.misc.getusage.VmB">
@@ -81,39 +83,19 @@
 <dl class="function">
 <dt id="sage.misc.getusage.get_memory_usage">
 <code class="descclassname">sage.misc.getusage.</code><code class="descname">get_memory_usage</code><span class="sig-paren">(</span><em>t=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.misc.getusage.get_memory_usage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return memory usage.</p>
+<dd><p>Return the memory usage of the current process in megabytes.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">t</span></code> - a float (default: None); output of an earlier call</li>
+<li><code class="docutils literal"><span class="pre">t</span></code> &#8211; a float (default: None); output of an earlier call.
+If this is given, return the current usage minus <span class="math">\(t\)</span>.</li>
 </ul>
-<p>OUTPUT:</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">Linux</span></code> - Returns float number (in megabytes)</li>
-<li><code class="docutils literal"><span class="pre">OS</span> <span class="pre">X</span></code> - Returns float number (in megabytes) that matches
-VSIZE column of <code class="docutils literal"><span class="pre">top</span></code></li>
-<li><code class="docutils literal"><span class="pre">Solaris</span> <span class="pre">or</span> <span class="pre">OpenSolaris</span></code> - Returns float number (in megabytes)
-that matches RSS column of <code class="docutils literal"><span class="pre">prstat</span></code>. Depending on the memory
-usage, <code class="docutils literal"><span class="pre">prstat</span></code> will output the data in KB, MB or GB. In each
-case, the value returned by this function will always be in MB.</li>
-<li><code class="docutils literal"><span class="pre">FreeBSD</span></code> - Returns float number (in megabytes) that matches
-RSS column of <code class="docutils literal"><span class="pre">ps</span> <span class="pre">-auxwww</span></code></li>
-<li><code class="docutils literal"><span class="pre">other</span></code> - not implemented for any other operating systems</li>
-</ul>
+<p>OUTPUT: a float representing the number of megabytes used.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">get_memory_usage</span><span class="p">();</span> <span class="n">t</span>  <span class="c1"># random</span>
 <span class="go">873.98046875</span>
+<span class="gp">sage: </span><span class="nb">type</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="go">&lt;type &#39;float&#39;&gt;</span>
 </pre></div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<ul class="last simple">
-<li>Currently, <a class="reference internal" href="#sage.misc.getusage.get_memory_usage" title="sage.misc.getusage.get_memory_usage"><code class="xref py py-func docutils literal"><span class="pre">get_memory_usage()</span></code></a> calls <code class="docutils literal"><span class="pre">prstat</span></code> on Solaris
-and OpenSolaris to get the data it requires. In the long term, a
-better solution would be to use Solaris system calls.</li>
-<li>In some instances, <code class="docutils literal"><span class="pre">top</span></code> may be used on OS X. This may break
-if the memory usage is greater than 9999 MB. However, normally
-<code class="docutils literal"><span class="pre">top</span></code> is not used on OS X.</li>
-</ul>
 </div>
 </dd></dl>
 
@@ -149,6 +131,25 @@ need to install &#8216;top&#8217;.</p>
 OpenSolaris systems. That is part of Solaris, and will not need to
 be installed. The columns used in the &#8216;prstat&#8217; output are:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">PID</span> <span class="n">USERNAME</span>  <span class="n">SIZE</span>   <span class="n">RSS</span> <span class="n">STATE</span>  <span class="n">PRI</span> <span class="n">NICE</span>      <span class="n">TIME</span>  <span class="n">CPU</span> <span class="n">PROCESS</span><span class="o">/</span><span class="n">NLWP</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.misc.getusage.virtual_memory_limit">
+<code class="descclassname">sage.misc.getusage.</code><code class="descname">virtual_memory_limit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.misc.getusage.virtual_memory_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the upper limit for virtual memory usage.</p>
+<p>This is the value set by <code class="docutils literal"><span class="pre">ulimit</span> <span class="pre">-v</span></code> at the command line or a
+practical limit if no limit is set. In any case, the value is
+bounded by <code class="docutils literal"><span class="pre">sys.maxsize</span></code>.</p>
+<p>OUTPUT:</p>
+<p>Integer. The virtual memory limit in bytes.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.misc.getusage</span> <span class="kn">import</span> <span class="n">virtual_memory_limit</span>
+<span class="gp">sage: </span><span class="n">virtual_memory_limit</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">virtual_memory_limit</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -220,7 +221,7 @@ be installed. The columns used in the &#8216;prstat&#8217; output are:</p>
     </div>
     
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2005--2016, The Sage Development Team.
+        &copy; Copyright 2005--2017, The Sage Development Team.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
     </div>
     <script type="text/javascript">
