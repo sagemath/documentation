@@ -1,0 +1,722 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=600, initial-scale=1">
+    <title>Double Description Algorithm for Cones &mdash; Sage Reference Manual v7.6: Combinatorial and Discrete Geometry</title>
+    
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '7.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.6: Combinatorial and Discrete Geometry" href="../../../index.html" />
+    <link rel="next" title="Double Description for Arbitrary Polyhedra" href="double_description_inhomogeneous.html" />
+    <link rel="prev" title="The PPL (Parma Polyhedra Library) backend for polyhedral computations" href="backend_ppl.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+    <script src="../../../../_static/thebe.js" type="text/javascript"></script>
+    <script src="../../../../_static/thebe-sage.js" type="text/javascript"></script>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="double_description_inhomogeneous.html" title="Double Description for Arbitrary Polyhedra"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="backend_ppl.html" title="The PPL (Parma Polyhedra Library) backend for polyhedral computations"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Combinatorial and Discrete Geometry</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="double-description-algorithm-for-cones">
+<span id="sage-geometry-polyhedron-double-description"></span><h1>Double Description Algorithm for Cones<a class="headerlink" href="#double-description-algorithm-for-cones" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.geometry.polyhedron.double_description"></span><p>This module implements the double description algorithm for extremal
+vertex enumeration in a pointed cone following <a class="reference internal" href="../../../../references/index.html#fp1996" id="id1">[FP1996]</a>. With a
+little bit of preprocessing (see
+<a class="reference internal" href="double_description_inhomogeneous.html#module-sage.geometry.polyhedron.double_description_inhomogeneous" title="sage.geometry.polyhedron.double_description_inhomogeneous"><code class="xref py py-mod docutils literal"><span class="pre">double_description_inhomogeneous</span></code></a>)
+this defines a backend for polyhedral computations. But as far as this
+module is concerned, <em>inequality</em> always means without a constant term
+and the origin is always a point of the cone.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">alg</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">);</span>  <span class="n">alg</span>
+<span class="go">Pointed cone with inequalities</span>
+<span class="go">(1, 0, 1)</span>
+<span class="go">(0, 1, 1)</span>
+<span class="go">(-1, -1, 1)</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">alg</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">();</span>  <span class="n">DD</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">    [ 1  0  1]        [ 2/3 -1/3 -1/3]</span>
+<span class="go">A = [ 0  1  1],   R = [-1/3  2/3 -1/3]</span>
+<span class="go">    [-1 -1  1]        [ 1/3  1/3  1/3]</span>
+</pre></div>
+</div>
+<p>The implementation works over any exact field that is embedded in
+<span class="math">\(\RR\)</span>, for example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">AA</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">AA</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(),</span><span class="o">-</span><span class="n">AA</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(),</span><span class="mi">1</span><span class="p">),</span>
+<span class="go">....:                 (-AA(3).sqrt(),-AA(2).sqrt(),1)])</span>
+<span class="gp">sage: </span><span class="n">alg</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">alg</span><span class="o">.</span><span class="n">run</span><span class="p">()</span><span class="o">.</span><span class="n">R</span>
+<span class="go">[(-0.4177376677004119?, 0.5822623322995881?, 0.4177376677004119?),</span>
+<span class="go"> (-0.2411809548974793?, -0.2411809548974793?, 0.2411809548974793?),</span>
+<span class="go"> (0.07665629029830300?, 0.07665629029830300?, 0.2411809548974793?),</span>
+<span class="go"> (0.5822623322995881?, -0.4177376677004119?, 0.4177376677004119?)]</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair">
+<em class="property">class </em><code class="descclassname">sage.geometry.polyhedron.double_description.</code><code class="descname">DoubleDescriptionPair</code><span class="sig-paren">(</span><em>problem</em>, <em>A_rows</em>, <em>R_cols</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for a double description pair <span class="math">\((A, R)\)</span></p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">You should use the <a class="reference internal" href="#sage.geometry.polyhedron.double_description.Problem.initial_pair" title="sage.geometry.polyhedron.double_description.Problem.initial_pair"><code class="xref py py-meth docutils literal"><span class="pre">Problem.initial_pair()</span></code></a> or
+<code class="xref py py-meth docutils literal"><span class="pre">Problem.run()</span></code> to generate double description pairs
+for a set of inequalities, and not generate
+<code class="docutils literal"><span class="pre">DoubleDescriptionPair</span></code> instances directly.</p>
+</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">problem</span></code> &#8211; instance of <a class="reference internal" href="#sage.geometry.polyhedron.double_description.Problem" title="sage.geometry.polyhedron.double_description.Problem"><code class="xref py py-class docutils literal"><span class="pre">Problem</span></code></a>.</li>
+<li><code class="docutils literal"><span class="pre">A_rows</span></code> &#8211; list of row vectors of the matrix <span class="math">\(A\)</span>. These
+encode the inequalities.</li>
+<li><code class="docutils literal"><span class="pre">R_cols</span></code> &#8211; list of column vectors of the matrix
+<span class="math">\(R\)</span>. These encode the rays.</li>
+</ul>
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.R_by_sign">
+<code class="descname">R_by_sign</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.R_by_sign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Classify the rays into those that are positive, zero, and negative on <span class="math">\(a\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">a</span></code> &#8211; vector. Coefficient vector of a homogeneous inequality.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A triple consisting of the rays (columns of <span class="math">\(R\)</span>) that are
+positive, zero, and negative on <span class="math">\(a\)</span>. In that order.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">R_by_sign</span><span class="p">(</span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="go">([(2/3, -1/3, 1/3)], [(-1/3, -1/3, 1/3)], [(-1/3, 2/3, 1/3)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">R_by_sign</span><span class="p">(</span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="go">([(2/3, -1/3, 1/3), (-1/3, 2/3, 1/3)], [], [(-1/3, -1/3, 1/3)])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.are_adjacent">
+<code class="descname">are_adjacent</code><span class="sig-paren">(</span><em>r1</em>, <em>r2</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.are_adjacent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether the two rays are adjacent.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">r1</span></code>, <code class="docutils literal"><span class="pre">r2</span></code> &#8211; two rays.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>Boolean. Whether the two rays are adjacent.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">are_adjacent</span><span class="p">(</span><span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">are_adjacent</span><span class="p">(</span><span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">are_adjacent</span><span class="p">(</span><span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.cone">
+<code class="descname">cone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.cone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cone defined by <span class="math">\(A\)</span>.</p>
+<p>This method is for debugging only. Assumes that the base ring
+is <span class="math">\(\QQ\)</span>.</p>
+<p>OUTPUT:</p>
+<p>The cone defined by the inequalities as a
+<a class="reference internal" href="constructor.html#sage.geometry.polyhedron.constructor.Polyhedron" title="sage.geometry.polyhedron.constructor.Polyhedron"><code class="xref py py-func docutils literal"><span class="pre">Polyhedron()</span></code></a>,
+using the PPL backend.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">cone</span><span class="p">()</span><span class="o">.</span><span class="n">Hrepresentation</span><span class="p">()</span>
+<span class="go">(An inequality (-1, -1, 1) x + 0 &gt;= 0,</span>
+<span class="go"> An inequality (0, 1, 1) x + 0 &gt;= 0,</span>
+<span class="go"> An inequality (1, 0, 1) x + 0 &gt;= 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.dual">
+<code class="descname">dual</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.dual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the dual.</p>
+<p>OUTPUT:</p>
+<p>For the double description pair <span class="math">\((A, R)\)</span> this method returns
+the dual double description pair <span class="math">\((R^T, A^T)\)</span></p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">    [ 0  1  0]        [0 1 0]</span>
+<span class="go">A = [ 1  0  0],   R = [1 0 0]</span>
+<span class="go">    [ 0 -1  1]        [1 0 1]</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">dual</span><span class="p">()</span>
+<span class="go"> Double description pair (A, R) defined by</span>
+<span class="go">    [0 1 1]        [ 0  1  0]</span>
+<span class="go">A = [1 0 0],   R = [ 1  0 -1]</span>
+<span class="go">    [0 0 1]        [ 0  0  1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.first_coordinate_plane">
+<code class="descname">first_coordinate_plane</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.first_coordinate_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restrict to the first coordinate plane.</p>
+<p>OUTPUT:</p>
+<p>A new double description pair with the constraint <span class="math">\(x_0 = 0\)</span>
+added.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">A = [ 1  1],   R = [ 1/2 -1/2]</span>
+<span class="go">    [-1  1]        [ 1/2  1/2]</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">first_coordinate_plane</span><span class="p">()</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">    [ 1  1]</span>
+<span class="go">A = [-1  1],   R = [  0]</span>
+<span class="go">    [-1  0]        [1/2]</span>
+<span class="go">    [ 1  0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.inner_product_matrix">
+<code class="descname">inner_product_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.inner_product_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the inner product matrix between the rows of <span class="math">\(A\)</span>
+and the columns of <span class="math">\(R\)</span>.</p>
+<p>OUTPUT:</p>
+<p>A matrix over the base ring. There is one row for each row of
+<span class="math">\(A\)</span> and one column for each column of <span class="math">\(R\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">alg</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">alg</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">inner_product_matrix</span><span class="p">()</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.is_extremal">
+<code class="descname">is_extremal</code><span class="sig-paren">(</span><em>ray</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.is_extremal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether the ray is extremal.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">is_extremal</span><span class="p">(</span><span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.matrix_space">
+<code class="descname">matrix_space</code><span class="sig-paren">(</span><em>nrows</em>, <em>ncols</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.matrix_space" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a matrix space of size <code class="docutils literal"><span class="pre">nrows</span></code> and <code class="docutils literal"><span class="pre">ncols</span></code> over the base ring
+of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>These matrix spaces are cached to avoid their creation in the very
+demanding <code class="xref py py-meth docutils literal"><span class="pre">add_inequality()</span></code> and more precisely <a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.are_adjacent" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.are_adjacent"><code class="xref py py-meth docutils literal"><span class="pre">are_adjacent()</span></code></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">matrix_space</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">Full MatrixSpace of 2 by 2 dense matrices over Rational Field</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">matrix_space</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">Full MatrixSpace of 3 by 2 dense matrices over Rational Field</span>
+
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">sqrt2</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="n">sqrt2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span>  <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">matrix_space</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">Full MatrixSpace of 1 by 2 dense matrices over Number Field in sqrt2</span>
+<span class="go">with defining polynomial x^2 - 2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the double description pair.</p>
+<p>This method used the PPL backend to check that the double
+description pair is valid. An assertion is triggered if it is
+not. Does nothing if the base ring is not <span class="math">\(\QQ\)</span>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> \
+<span class="go">....:     DoubleDescriptionPair, Problem</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">alg</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">DoubleDescriptionPair</span><span class="p">(</span><span class="n">alg</span><span class="p">,</span>
+<span class="go">....:     [(1, 0, 3), (0, 1, 1), (-1, -1, 1)],</span>
+<span class="go">....:     [(2/3, -1/3, 1/3), (-1/3, 2/3, 1/3), (-1/3, -1/3, 1/3)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">verify</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+    <span class="k">assert</span> <span class="n">A_cone</span> <span class="o">==</span> <span class="n">R_cone</span>
+<span class="gr">AssertionError</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.DoubleDescriptionPair.zero_set">
+<code class="descname">zero_set</code><span class="sig-paren">(</span><em>ray</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair.zero_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the zero set (active set) <span class="math">\(Z(r)\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">ray</span></code> &#8211; a ray vector.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A set containing the inequality vectors that are zero on <code class="docutils literal"><span class="pre">ray</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">r</span> <span class="o">=</span> <span class="n">DD</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>  <span class="n">r</span>
+<span class="go">(2/3, -1/3, 1/3)</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">zero_set</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">{(-1, -1, 1), (0, 1, 1)}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.geometry.polyhedron.double_description.Problem">
+<em class="property">class </em><code class="descclassname">sage.geometry.polyhedron.double_description.</code><code class="descname">Problem</code><span class="sig-paren">(</span><em>A</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for implementations of the double description algorithm</p>
+<p>It does not make sense to instantiate the base class directly,
+it just provides helpers for implementations.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">A</span></code> &#8211; a matrix. The rows of the matrix are interpreted as
+homogeneous inequalities <span class="math">\(A x \geq 0\)</span>. Must have maximal rank.</li>
+</ul>
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.Problem.A">
+<code class="descname">A</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.A" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the rows of the defining matrix <span class="math">\(A\)</span>.</p>
+<p>OUTPUT:</p>
+<p>The matrix <span class="math">\(A\)</span> whose rows are the inequalities.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">A</span><span class="p">()</span>
+<span class="go">((1, 1), (-1, 1))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.Problem.A_matrix">
+<code class="descname">A_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.A_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the defining matrix <span class="math">\(A\)</span>.</p>
+<p>OUTPUT:</p>
+<p>Matrix whose rows are the inequalities.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">A_matrix</span><span class="p">()</span>
+<span class="go">[ 1  1]</span>
+<span class="go">[-1  1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.Problem.base_ring">
+<code class="descname">base_ring</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.base_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the base field.</p>
+<p>OUTPUT:</p>
+<p>A field.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">AA</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">base_ring</span><span class="p">()</span>
+<span class="go">Algebraic Real Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.Problem.dim">
+<code class="descname">dim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ambient space dimension.</p>
+<p>OUTPUT:</p>
+<p>Integer. The ambient space dimension of the cone.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.Problem.initial_pair">
+<code class="descname">initial_pair</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.initial_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an initial double description pair.</p>
+<p>Picks an initial set of rays by selecting a basis. This is
+probably the most efficient way to select the initial set.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">pair_class</span></code> &#8211; subclass of
+<a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">DoubleDescriptionPair</span></code></a>.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A pair consisting of a <a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">DoubleDescriptionPair</span></code></a> instance
+and the tuple of remaining unused inequalities.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">Problem</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">verify</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">remaining</span>
+<span class="go">[(1/2, -1/2), (1/2, 2)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.geometry.polyhedron.double_description.Problem.pair_class">
+<code class="descname">pair_class</code><a class="headerlink" href="#sage.geometry.polyhedron.double_description.Problem.pair_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">DoubleDescriptionPair</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.geometry.polyhedron.double_description.StandardAlgorithm">
+<em class="property">class </em><code class="descclassname">sage.geometry.polyhedron.double_description.</code><code class="descname">StandardAlgorithm</code><span class="sig-paren">(</span><em>A</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.StandardAlgorithm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.geometry.polyhedron.double_description.Problem" title="sage.geometry.polyhedron.double_description.Problem"><code class="xref py py-class docutils literal"><span class="pre">sage.geometry.polyhedron.double_description.Problem</span></code></a></p>
+<p>Standard implementation of the double description algorithm</p>
+<p>See <a class="reference internal" href="../../../../references/index.html#fp1996" id="id2">[FP1996]</a> for the definition of the &#8220;Standard
+Algorithm&#8221;.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">DD</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">R</span>    <span class="c1"># the extremal rays</span>
+<span class="go">[(1/2, 1/2), (-1/2, 1/2)]</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="sage.geometry.polyhedron.double_description.StandardAlgorithm.pair_class">
+<code class="descname">pair_class</code><a class="headerlink" href="#sage.geometry.polyhedron.double_description.StandardAlgorithm.pair_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">StandardDoubleDescriptionPair</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.StandardAlgorithm.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.StandardAlgorithm.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the Standard Algorithm.</p>
+<p>OUTPUT:</p>
+<p>A double description pair <span class="math">\((A, R)\)</span> of all inequalities as a
+<a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">DoubleDescriptionPair</span></code></a>.  By virtue of the double
+description algorithm, the columns of <span class="math">\(R\)</span> are the extremal
+rays.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">    [ 0  1  0]        [0 0 1 1]</span>
+<span class="go">A = [ 1  0  0],   R = [1 0 1 0]</span>
+<span class="go">    [ 0 -1  1]        [1 1 1 1]</span>
+<span class="go">    [-1  0  1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair">
+<em class="property">class </em><code class="descclassname">sage.geometry.polyhedron.double_description.</code><code class="descname">StandardDoubleDescriptionPair</code><span class="sig-paren">(</span><em>problem</em>, <em>A_rows</em>, <em>R_cols</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.geometry.polyhedron.double_description.DoubleDescriptionPair" title="sage.geometry.polyhedron.double_description.DoubleDescriptionPair"><code class="xref py py-class docutils literal"><span class="pre">sage.geometry.polyhedron.double_description.DoubleDescriptionPair</span></code></a></p>
+<p>Double description pair for the &#8220;Standard Algorithm&#8221;.</p>
+<p>See <a class="reference internal" href="#sage.geometry.polyhedron.double_description.StandardAlgorithm" title="sage.geometry.polyhedron.double_description.StandardAlgorithm"><code class="xref py py-class docutils literal"><span class="pre">StandardAlgorithm</span></code></a>.</p>
+<dl class="method">
+<dt id="sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair.add_inequality">
+<code class="descname">add_inequality</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.StandardDoubleDescriptionPair.add_inequality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the inequality <code class="docutils literal"><span class="pre">a</span></code> to the matrix <span class="math">\(A\)</span> of the double description.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">a</span></code> &#8211; vector. An inequality.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">StandardAlgorithm</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">StandardAlgorithm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="o">.</span><span class="n">initial_pair</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">DD</span><span class="o">.</span><span class="n">add_inequality</span><span class="p">(</span><span class="n">vector</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+<span class="gp">sage: </span><span class="n">DD</span>
+<span class="go">Double description pair (A, R) defined by</span>
+<span class="go">    [  -1    1    0]        [   1    1    0    0]</span>
+<span class="go">A = [  -1    2    1],   R = [   1    1    1    1]</span>
+<span class="go">    [ 1/2 -1/2   -1]        [   0   -1 -1/2   -2]</span>
+<span class="go">    [   1    0    0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.geometry.polyhedron.double_description.random_inequalities">
+<code class="descclassname">sage.geometry.polyhedron.double_description.</code><code class="descname">random_inequalities</code><span class="sig-paren">(</span><em>d</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.geometry.polyhedron.double_description.random_inequalities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Random collections of inequalities for testing purposes.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">d</span></code> &#8211; integer. The dimension.</li>
+<li><code class="docutils literal"><span class="pre">n</span></code>  &#8211; integer. The number of random inequalities to generate.</li>
+</ul>
+<p>OUTPUT:</p>
+<p>A random set of inequalites as a <a class="reference internal" href="#sage.geometry.polyhedron.double_description.StandardAlgorithm" title="sage.geometry.polyhedron.double_description.StandardAlgorithm"><code class="xref py py-class docutils literal"><span class="pre">StandardAlgorithm</span></code></a> instance.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.geometry.polyhedron.double_description</span> <span class="kn">import</span> <span class="n">random_inequalities</span>
+<span class="gp">sage: </span><span class="n">P</span> <span class="o">=</span> <span class="n">random_inequalities</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">run</span><span class="p">()</span><span class="o">.</span><span class="n">verify</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="backend_ppl.html"
+                                  title="previous chapter">The PPL (Parma Polyhedra Library) backend for polyhedral computations</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="double_description_inhomogeneous.html"
+                                  title="next chapter">Double Description for Arbitrary Polyhedra</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../../_sources/sage/geometry/polyhedron/double_description.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="double_description_inhomogeneous.html" title="Double Description for Arbitrary Polyhedra"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="backend_ppl.html" title="The PPL (Parma Polyhedra Library) backend for polyhedral computations"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Combinatorial and Discrete Geometry</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2005--2017, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>

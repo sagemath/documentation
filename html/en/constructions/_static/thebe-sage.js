@@ -127,7 +127,7 @@ $(function() {
         cellNode.innerHTML = html;
     }
 
-    if (window.location.protocol.startsWith('http')) {
+    if (false && window.location.protocol.startsWith('http')) {
         var cellSelector = "pre:contains('sage: ')";
         if ($(cellSelector).length > 0) {
             $('<button id="thebe-activate">Activate</button>')

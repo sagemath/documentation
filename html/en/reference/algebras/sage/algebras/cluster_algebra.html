@@ -1,0 +1,1711 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=600, initial-scale=1">
+    <title>Cluster algebras &mdash; Sage Reference Manual v7.6: Algebras</title>
+    
+    <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '7.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="top" title="Sage Reference Manual v7.6: Algebras" href="../../index.html" />
+    <link rel="next" title="Descent Algebras" href="../combinat/descent_algebra.html" />
+    <link rel="prev" title="Clifford Algebras" href="clifford_algebra.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+    <script src="../../../_static/thebe.js" type="text/javascript"></script>
+    <script src="../../../_static/thebe-sage.js" type="text/javascript"></script>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../combinat/descent_algebra.html" title="Descent Algebras"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="clifford_algebra.html" title="Clifford Algebras"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Algebras</a> &raquo;</li>
+ 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cluster-algebras">
+<span id="sage-algebras-cluster-algebra"></span><h1>Cluster algebras<a class="headerlink" href="#cluster-algebras" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.algebras.cluster_algebra"></span><p>This file constructs cluster algebras using the Parent-Element framework.
+The implementation mainly utilizes structural theorems from <a class="reference internal" href="../../../references/index.html#fz2007" id="id1">[FZ2007]</a>.</p>
+<p>The key points being used here are these:</p>
+<ul class="simple">
+<li>cluster variables are parametrized by their g-vectors;</li>
+<li>g-vectors (together with c-vectors) provide a self-standing model for the
+combinatorics behind any cluster algebra;</li>
+<li>each cluster variable in any cluster algebra can be computed, by the
+separation of additions formula, from its g-vector and F-polynomial.</li>
+</ul>
+<p>Accordingly this file provides three classes:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a></li>
+<li><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraSeed</span></code></a></li>
+<li><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraElement" title="sage.algebras.cluster_algebra.ClusterAlgebraElement"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraElement</span></code></a></li>
+</ul>
+<p><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a>, constructed as a subobject of
+<a class="reference external" href="../../../polynomial_rings/sage/rings/polynomial/laurent_polynomial_ring.html#sage.rings.polynomial.laurent_polynomial_ring.LaurentPolynomialRing_generic" title="(in Sage Reference Manual: Polynomials v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.laurent_polynomial_ring.LaurentPolynomialRing_generic</span></code></a>,
+is the frontend of this implementation. It provides all the algebraic
+features (like ring morphisms), it computes cluster variables, it is
+responsible for controlling the exploration of the exchange graph and
+serves as the repository for all the data recursively computed so far.
+In particular, all g-vectors and all F-polynomials of known cluster
+variables as well as a mutation path by which they can be obtained
+are recorded. In the optic of efficiency, this implementation does not
+store directly the exchange graph nor the exchange relations. Both of
+these could be added to <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a> with minimal effort.</p>
+<p><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraSeed</span></code></a> provides the combinatorial backbone
+for <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a>. It is an auxiliary class and therefore its
+instances should <strong>not</strong> be directly created by the user. Rather it
+should be accessed via <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.current_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.current_seed"><code class="xref py py-meth docutils literal"><span class="pre">ClusterAlgebra.current_seed()</span></code></a>
+and <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed"><code class="xref py py-meth docutils literal"><span class="pre">ClusterAlgebra.initial_seed()</span></code></a>. The task of performing current
+seed mutations is delegated to this class. Seeds are considered equal if
+they have the same parent cluster algebra and they can be obtained from
+each other by a permutation of their data (i.e. if they coincide as
+unlabelled seeds).  Cluster algebras whose initial seeds are equal in the
+above sense are not considered equal but are endowed with coercion maps
+to each other.  More generally, a cluster algebra is endowed with coercion
+maps from any cluster algebra which is obtained by freezing a collection
+of initial cluster variables and/or permuting both cluster variables
+and coefficients.</p>
+<p><a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraElement" title="sage.algebras.cluster_algebra.ClusterAlgebraElement"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraElement</span></code></a> is a thin wrapper around
+<a class="reference external" href="../../../polynomial_rings/sage/rings/polynomial/laurent_polynomial.html#sage.rings.polynomial.laurent_polynomial.LaurentPolynomial_generic" title="(in Sage Reference Manual: Polynomials v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.rings.polynomial.laurent_polynomial.LaurentPolynomial_generic</span></code></a>
+providing all the functions specific to cluster variables.
+Elemets of a cluster algebra with principal coefficients have special methods
+and these are grouped in the subclass <a class="reference internal" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement" title="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement"><code class="xref py py-class docutils literal"><span class="pre">PrincipalClusterAlgebraElement</span></code></a>.</p>
+<p>One more remark about this implementation. Instances of
+<a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a> are built by identifying the initial cluster variables
+with the generators of <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.ambient" title="sage.algebras.cluster_algebra.ClusterAlgebra.ambient"><code class="xref py py-meth docutils literal"><span class="pre">ClusterAlgebra.ambient()</span></code></a>. In particular, this
+forces a specific embedding into the ambient field of rational expressions. In
+view of this, although cluster algebras themselves are independent of the
+choice of initial seed, <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial" title="sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial"><code class="xref py py-meth docutils literal"><span class="pre">ClusterAlgebra.mutate_initial()</span></code></a> is forced to
+return a different instance of <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a>. At the moment there
+is no coercion implemented among the two instances but this could in
+principle be added to <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial" title="sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial"><code class="xref py py-meth docutils literal"><span class="pre">ClusterAlgebra.mutate_initial()</span></code></a>.</p>
+<p>REFERENCES:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../../../references/index.html#fz2007" id="id2">[FZ2007]</a></li>
+<li><a class="reference internal" href="../../../references/index.html#llz2014" id="id3">[LLZ2014]</a></li>
+<li><a class="reference internal" href="../../../references/index.html#nz2012" id="id4">[NZ2012]</a></li>
+</ul>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li>Dylan Rupel (2015-06-15): initial version</li>
+<li>Salvatore Stella (2015-06-15): initial version</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>We begin by creating a simple cluster algebra and printing its
+initial exchange matrix:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">]);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1 and no coefficients over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">[ 0  1]</span>
+<span class="go">[-1  0]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">A</span></code> is of finite type so we can explore all its exchange graph:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and get all its g-vectors, F-polynomials, and cluster variables:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">()</span>
+<span class="go">[(0, 1), (0, -1), (1, 0), (-1, 1), (-1, 0)]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomials_so_far</span><span class="p">()</span>
+<span class="go">[1, u1 + 1, 1, u0 + 1, u0*u1 + u0 + 1]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variables_so_far</span><span class="p">()</span>
+<span class="go">[x1, (x0 + 1)/x1, x0, (x1 + 1)/x0, (x0 + x1 + 1)/(x0*x1)]</span>
+</pre></div>
+</div>
+<p>Simple operations among cluster variables behave as expected:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">));</span> <span class="n">s</span>
+<span class="go">(x0 + 1)/x1</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span> <span class="n">t</span>
+<span class="go">(x1 + 1)/x0</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">+</span> <span class="n">s</span>
+<span class="go">(x0^2 + x1^2 + x0 + x1)/(x0*x1)</span>
+<span class="gp">sage: </span><span class="n">_</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span>
+<span class="go">(-x0^2 + x1^2 - x0 + x1)/(x0*x1)</span>
+<span class="gp">sage: </span><span class="n">_</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">*</span><span class="n">s</span>
+<span class="go">(x0*x1 + x0 + x1 + 1)/(x0*x1)</span>
+<span class="gp">sage: </span><span class="n">_</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">t</span><span class="o">/</span><span class="n">s</span>
+<span class="go">(x1^2 + x1)/(x0^2 + x0)</span>
+<span class="gp">sage: </span><span class="n">_</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Division is not guaranteed to yield an element of <code class="docutils literal"><span class="pre">A</span></code> so it returns an
+element of <code class="docutils literal"><span class="pre">A.ambient().fraction_field()</span></code> instead:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">/</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">ambient</span><span class="p">()</span><span class="o">.</span><span class="n">fraction_field</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We can compute denominator vectors of any element of <code class="docutils literal"><span class="pre">A</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">d_vector</span><span class="p">()</span>
+<span class="go">(1, 1)</span>
+</pre></div>
+</div>
+<p>Since we are in rank 2 and we do not have coefficients we can compute the
+greedy element associated to any denominator vector:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">A</span><span class="o">.</span><span class="n">coefficients</span><span class="p">()</span> <span class="o">==</span> <span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">greedy_element</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">(x0 + x1 + 1)/(x0*x1)</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">==</span> <span class="n">t</span><span class="o">*</span><span class="n">s</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>not surprising since there is no cluster in <code class="docutils literal"><span class="pre">A</span></code> containing
+both <code class="docutils literal"><span class="pre">t</span></code> and <code class="docutils literal"><span class="pre">s</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">seeds</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">seeds</span><span class="p">(</span><span class="n">mutating_F</span><span class="o">=</span><span class="n">false</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span> <span class="n">S</span> <span class="k">for</span> <span class="n">S</span> <span class="ow">in</span> <span class="n">seeds</span> <span class="k">if</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">in</span> <span class="n">S</span> <span class="ow">and</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">in</span> <span class="n">S</span> <span class="p">]</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<p>indeed:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">greedy_element</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Disabling F-polynomials in the computation just done was redundant because we
+already explored the whole exchange graph before. Though in different
+circumstances it could have saved us considerable time.</p>
+<p>g-vectors and F-polynomials can be computed from elements of <code class="docutils literal"><span class="pre">A</span></code> only if
+<code class="docutils literal"><span class="pre">A</span></code> has principal coefficients at the initial seed:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">g_vector</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">AttributeError</span>: <span class="n">&#39;ClusterAlgebra_with_category.element_class&#39; object has no attribute &#39;g_vector&#39;</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">));</span> <span class="n">s</span>
+<span class="go">(x0*y1 + 1)/x1</span>
+<span class="gp">sage: </span><span class="n">t</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span> <span class="n">t</span>
+<span class="go">(x1 + y0)/x0</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">g_vector</span><span class="p">()</span>
+<span class="go">(-1, 0)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">()</span>
+<span class="go">u0*u1 + u0 + u1 + 1</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">is_homogeneous</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">is_homogeneous</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">homogeneous_components</span><span class="p">()</span>
+<span class="go">{(-1, 1): (x1 + y0)/x0, (0, -1): (x0*y1 + 1)/x1}</span>
+</pre></div>
+</div>
+<p>Each cluster algebra is endowed with a reference to a current seed;
+it could be useful to assign a name to it:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span>
+<span class="go">The initial seed of a Cluster Algebra with cluster variables x0, x1, x2, x3</span>
+<span class="go"> and no coefficients over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">[ 0  1  0  0]</span>
+<span class="go">[-1  0 -1  0]</span>
+<span class="go">[ 0  2  0  1]</span>
+<span class="go">[ 0  0 -1  0]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_matrix</span><span class="p">()</span>
+<span class="go">[1 0 0 0]</span>
+<span class="go">[0 1 0 0]</span>
+<span class="go">[0 0 1 0]</span>
+<span class="go">[0 0 0 1]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variables</span><span class="p">()</span>
+<span class="go">[x0, x1, x2, x3]</span>
+</pre></div>
+</div>
+<p>and use <code class="docutils literal"><span class="pre">S</span></code> to walk around the exchange graph of <code class="docutils literal"><span class="pre">A</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">S</span>
+<span class="go">The seed of a Cluster Algebra with cluster variables x0, x1, x2, x3</span>
+<span class="go"> and no coefficients over Integer Ring obtained from the initial</span>
+<span class="go"> by mutating in direction 0</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">[ 0 -1  0  0]</span>
+<span class="go">[ 1  0 -1  0]</span>
+<span class="go">[ 0  2  0  1]</span>
+<span class="go">[ 0  0 -1  0]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_matrix</span><span class="p">()</span>
+<span class="go">[-1  0  0  0]</span>
+<span class="go">[ 1  1  0  0]</span>
+<span class="go">[ 0  0  1  0]</span>
+<span class="go">[ 0  0  0  1]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variables</span><span class="p">()</span>
+<span class="go">[(x1 + 1)/x0, x1, x2, x3]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="s1">&#39;sinks&#39;</span><span class="p">);</span> <span class="n">S</span>
+<span class="go">The seed of a Cluster Algebra with cluster variables x0, x1, x2, x3</span>
+<span class="go"> and no coefficients over Integer Ring obtained from the initial</span>
+<span class="go"> by mutating along the sequence [0, 2]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span> <span class="n">S</span>
+<span class="go">The seed of a Cluster Algebra with cluster variables x0, x1, x2, x3</span>
+<span class="go"> and no coefficients over Integer Ring obtained from the initial</span>
+<span class="go"> by mutating along the sequence [0, 3, 2, 1, 0]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_vectors</span><span class="p">()</span>
+<span class="go">[(0, 1, -2, 0), (-1, 2, -2, 0), (0, 1, -1, 0), (0, 0, 0, -1)]</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">(x2 + 1)/x3</span>
+</pre></div>
+</div>
+<p>Walking around by mutating <code class="docutils literal"><span class="pre">S</span></code> updates the informations stored in <code class="docutils literal"><span class="pre">A</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">10</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">path_from_initial_seed</span><span class="p">()</span>
+<span class="go">[0, 3, 2, 1, 0]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">S</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Starting from <code class="docutils literal"><span class="pre">A.initial_seed()</span></code> still records data in <code class="docutils literal"><span class="pre">A</span></code> but does not
+update <code class="docutils literal"><span class="pre">A.current_seed()</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">S1</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">11</span>
+<span class="gp">sage: </span><span class="n">S1</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Since <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a> inherits from <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">UniqueRepresentation</span></code></a>,
+computed data is shared across instances:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="ow">is</span> <span class="n">A</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A1</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">11</span>
+</pre></div>
+</div>
+<p>It can be useful, at times to forget all computed data. Because of
+<a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">UniqueRepresentation</span></code></a> this cannot be achieved by simply creating a
+new instance; instead it has to be manually triggered by:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<p>Given a cluster algebra <code class="docutils literal"><span class="pre">A</span></code> we may be looking for a specific cluster
+variable:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">[0, 1, 2, 4, 3]</span>
+</pre></div>
+</div>
+<p>This also performs mutations of F-polynomials:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">u0*u1*u2*u3*u4 + u0*u1*u2*u4 + u0*u2*u3*u4 + u0*u1*u2 + u0*u2*u4</span>
+<span class="go"> + u2*u3*u4 + u0*u2 + u0*u4 + u2*u4 + u0 + u2 + u4 + 1</span>
+</pre></div>
+</div>
+<p>which might not be a good idea in algebras that are too big. One workaround is
+to first disable F-polynomials and then recompute only the desired mutations:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">reset_exploring_iterator</span><span class="p">(</span><span class="n">mutating_F</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>  <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># long time</span>
+<span class="go">[1, 0, 2, 6, 5, 4, 3, 8, 1]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>    <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>   <span class="c1"># long time</span>
+<span class="go">u0*u1^2*u2^2*u3*u4*u5*u6*u8 +</span>
+<span class="gp">...</span>
+<span class="go">2*u2 + u4 + u6 + 1</span>
+</pre></div>
+</div>
+<p>We can manually freeze cluster variables and get coercions in between
+the two algebras:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">]);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1, x2, x3 and no coefficients</span>
+<span class="go"> over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span><span class="o">.</span><span class="n">matrix_from_columns</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">coefficient_prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">);</span> <span class="n">A1</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1, x2 and coefficient x3</span>
+<span class="go"> over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">A1</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>and we also have an immersion of <code class="docutils literal"><span class="pre">A.base()</span></code> into <code class="docutils literal"><span class="pre">A</span></code> and of <code class="docutils literal"><span class="pre">A</span></code>
+into <code class="docutils literal"><span class="pre">A.ambient()</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">base</span><span class="p">())</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">ambient</span><span class="p">()</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>but there is currently no coercion in between algebras obtained by
+mutating at the initial seed:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">mutate_initial</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">A1</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1, x2, x3 and no coefficients</span>
+<span class="go"> over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span> <span class="o">==</span> <span class="n">A1</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span> <span class="n">X</span><span class="o">.</span><span class="n">has_coerce_map_from</span><span class="p">(</span><span class="n">Y</span><span class="p">),</span> <span class="p">[(</span><span class="n">A</span><span class="p">,</span> <span class="n">A1</span><span class="p">),</span> <span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">A</span><span class="p">)])</span>
+<span class="go">[False, False]</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra">
+<em class="property">class </em><code class="descclassname">sage.algebras.cluster_algebra.</code><code class="descname">ClusterAlgebra</code><span class="sig-paren">(</span><em>Q</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.parent.Parent</span></code></a>, <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.unique_representation.UniqueRepresentation</span></code></a></p>
+<p>A Cluster Algebra.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">data</span></code> &#8211; some data defining a cluster algebra; it can be anything
+that can be parsed by <a class="reference external" href="../../../combinat/sage/combinat/cluster_algebra_quiver/quiver.html#sage.combinat.cluster_algebra_quiver.quiver.ClusterQuiver" title="(in Sage Reference Manual: Combinatorics v7.6)"><code class="xref py py-class docutils literal"><span class="pre">ClusterQuiver</span></code></a></li>
+<li><code class="docutils literal"><span class="pre">scalars</span></code> &#8211; a ring (default <span class="math">\(\ZZ\)</span>); the scalars over
+which the cluster algebra is defined</li>
+<li><code class="docutils literal"><span class="pre">cluster_variable_prefix</span></code> &#8211; string (default <code class="docutils literal"><span class="pre">'x'</span></code>); it needs to be
+a valid variable name</li>
+<li><code class="docutils literal"><span class="pre">cluster_variable_names</span></code> &#8211; a list of strings; each element needs
+to be a valid variable name;  supersedes <code class="docutils literal"><span class="pre">cluster_variable_prefix</span></code></li>
+<li><code class="docutils literal"><span class="pre">coefficient_prefix</span></code> &#8211; string (default <code class="docutils literal"><span class="pre">'y'</span></code>); it needs to be
+a valid variable name.</li>
+<li><code class="docutils literal"><span class="pre">coefficient_names</span></code> &#8211; a list of strings; each element needs
+to be a valid variable name; supersedes <code class="docutils literal"><span class="pre">cluster_variable_prefix</span></code></li>
+<li><code class="docutils literal"><span class="pre">principal_coefficients</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">False</span></code>); supersedes any
+coefficient defined by <code class="docutils literal"><span class="pre">data</span></code></li>
+</ul>
+<p>ALGORITHM:</p>
+<p>The implementation is mainly based on <a class="reference internal" href="../../../references/index.html#fz2007" id="id5">[FZ2007]</a> and <a class="reference internal" href="../../../references/index.html#nz2012" id="id6">[NZ2012]</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">(</span><span class="n">B</span><span class="p">);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1, x2, x3</span>
+<span class="go"> and coefficients y0, y1 over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, x2, x3, y0, y1)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">]);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1 and no coefficients</span>
+<span class="go"> over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">);</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, y0, y1)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">coefficient_prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">);</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, x2, x3)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cluster_variable_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]);</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(a, b, c, y0, y1, y2)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cluster_variable_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">cluster_variable_names should be a list of 3 valid variable names</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">coefficient_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]);</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, x2, a, b, c)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">coefficient_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">coefficient_names should be a list of 3 valid variable names</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomial">
+<code class="descname">F_polynomial</code><span class="sig-paren">(</span><em>g_vector</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the F-polynomial with g-vector <code class="docutils literal"><span class="pre">g_vector</span></code> if it has
+been found.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">g_vector</span></code> &#8211; tuple; the g-vector of the F-polynomial to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;the g-vector (-1, 1) has not been found yet&#39;</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">mutating_F</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">KeyError</span>: <span class="n">&#39;the F-polynomial with g-vector (-1, 1) has not been computed yet;</span>
+<span class="go"> you can compute it by mutating from the initial seed along the sequence [0]&#39;</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">u0 + 1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials">
+<code class="descname">F_polynomials</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator producing all the F_polynomials of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>ALGORITHM:</p>
+<p>This method does not use the caching framework provided by <code class="docutils literal"><span class="pre">self</span></code>,
+but recomputes all the F-polynomials from scratch. On the other hand
+it stores the results so that other methods like
+<a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials_so_far" title="sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials_so_far"><code class="xref py py-meth docutils literal"><span class="pre">F_polynomials_so_far()</span></code></a> can access them afterwards.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomials</span><span class="p">()))</span>
+<span class="go">9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials_so_far">
+<code class="descname">F_polynomials_so_far</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.F_polynomials_so_far" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the F-polynomials encountered so far.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomials_so_far</span><span class="p">()</span>
+<span class="go">[1, 1, u0 + 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.ambient">
+<code class="descname">ambient</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.ambient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Laurent polynomial ring containing <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">ambient</span><span class="p">()</span>
+<span class="go">Multivariate Laurent Polynomial Ring in x0, x1, y0, y1 over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.b_matrix">
+<code class="descname">b_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.b_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the initial exchange matrix of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">[ 0  1]</span>
+<span class="go">[-1  0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.clear_computed_data">
+<code class="descname">clear_computed_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.clear_computed_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the cache of computed g-vectors and F-polynomials
+and reset both the current seed and the exploring iterator.</p>
+<dl class="docutils">
+<dt>EXAMPLES::</dt>
+<dd>sage: A = ClusterAlgebra([&#8216;A&#8217;, 2])
+sage: A.clear_computed_data()
+sage: A.g_vectors_so_far()
+[(0, 1), (1, 0)]
+sage: A.current_seed().mutate([1, 0])
+sage: A.g_vectors_so_far()
+[(0, 1), (0, -1), (1, 0), (-1, 0)]
+sage: A.clear_computed_data()
+sage: A.g_vectors_so_far()
+[(0, 1), (1, 0)]</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.cluster_fan">
+<code class="descname">cluster_fan</code><span class="sig-paren">(</span><em>depth=+Infinity</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.cluster_fan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cluster fan (the fan of g-vectors) of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">depth</span></code> &#8211; a positive integer or infinity (default <code class="docutils literal"><span class="pre">infinity</span></code>);
+the maximum depth at which to compute</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_fan</span><span class="p">()</span>
+<span class="go">Rational polyhedral fan in 2-d lattice N</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variable">
+<code class="descname">cluster_variable</code><span class="sig-paren">(</span><em>g_vector</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cluster variable with g-vector <code class="docutils literal"><span class="pre">g_vector</span></code> if it has
+been found.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">g_vector</span></code> &#8211; tuple; the g-vector of the cluster variable to return</li>
+</ul>
+<p>ALGORITHM:</p>
+<p>This function computes cluster variables from their g-vectors and
+F-polynomials using the &#8220;separation of additions&#8221; formula of
+Theorem 3.7 in <a class="reference internal" href="../../../references/index.html#fz2007" id="id7">[FZ2007]</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">(x1 + 1)/x0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables">
+<code class="descname">cluster_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator producing all the cluster variables of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>ALGORITHM:</p>
+<p>This method does not use the caching framework provided by <code class="docutils literal"><span class="pre">self</span></code>,
+but recomputes all the cluster variables from scratch. On the other
+hand it stores the results so that other methods like
+<a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables_so_far" title="sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables_so_far"><code class="xref py py-meth docutils literal"><span class="pre">cluster_variables_so_far()</span></code></a> can access them afterwards.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variables</span><span class="p">()))</span>
+<span class="go">9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables_so_far">
+<code class="descname">cluster_variables_so_far</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.cluster_variables_so_far" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the cluster variables encountered so far.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variables_so_far</span><span class="p">()</span>
+<span class="go">[x1, x0, (x1 + 1)/x0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.coefficient">
+<code class="descname">coefficient</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th coefficient of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the coefficient to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">coefficient</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">y0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.coefficient_names">
+<code class="descname">coefficient_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.coefficient_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of coefficient names.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">coefficient_names</span><span class="p">()</span>
+<span class="go">()</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">coefficient_names</span><span class="p">()</span>
+<span class="go">(&#39;y0&#39;, &#39;y1&#39;)</span>
+<span class="gp">sage: </span><span class="n">A2</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">coefficient_prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A2</span><span class="o">.</span><span class="n">coefficient_names</span><span class="p">()</span>
+<span class="go">(&#39;x3&#39;, &#39;x4&#39;, &#39;x5&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.coefficients">
+<code class="descname">coefficients</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.coefficients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of coefficients of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">coefficients</span><span class="p">()</span>
+<span class="go">(y0, y1)</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">coefficients</span><span class="p">()</span>
+<span class="go">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.contains_seed">
+<code class="descname">contains_seed</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.contains_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if <code class="docutils literal"><span class="pre">seed</span></code> is a seed of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">seed</span></code> &#8211; a <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraSeed</span></code></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1 and coefficients y0, y1 over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">contains_seed</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.current_seed">
+<code class="descname">current_seed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.current_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current seed of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span>
+<span class="go">The initial seed of a Cluster Algebra with cluster variables x0, x1</span>
+<span class="go"> and no coefficients over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.explore_to_depth">
+<code class="descname">explore_to_depth</code><span class="sig-paren">(</span><em>depth</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.explore_to_depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explore the exchange graph of <code class="docutils literal"><span class="pre">self</span></code> up to distance <code class="docutils literal"><span class="pre">depth</span></code>
+from the initial seed.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">depth</span></code> &#8211; a positive integer or infinity; the maximum depth
+at which to stop searching</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">14</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.find_g_vector">
+<code class="descname">find_g_vector</code><span class="sig-paren">(</span><em>g_vector</em>, <em>depth=+Infinity</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.find_g_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a mutation sequence to obtain a seed containing the g-vector <code class="docutils literal"><span class="pre">g_vector</span></code> from the initial seed.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">g_vector</span></code> &#8211; a tuple: the g-vector to find</li>
+<li><code class="docutils literal"><span class="pre">depth</span></code> &#8211; a positive integer or infinity (default <code class="docutils literal"><span class="pre">infinity</span></code>);
+the maximum distance from <code class="docutils literal"><span class="pre">self.current_seed</span></code> to reach</li>
+</ul>
+<p>OUTPUT:</p>
+<p>This function returns a list of integers if it can find <code class="docutils literal"><span class="pre">g_vector</span></code>,
+otherwise it returns <code class="docutils literal"><span class="pre">None</span></code>.  If the exploring iterator stops, it
+means that the algebra is of finite type and <code class="docutils literal"><span class="pre">g_vector</span></code> is not the
+g-vector of any cluster variable. In this case the function resets the
+iterator and raises an error.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">[0, 1, 0]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">find_g_vector</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">(1, 1) is not the g-vector of any cluster variable of a</span>
+<span class="go"> Cluster Algebra with cluster variables x0, x1 and coefficients y0, y1</span>
+<span class="go"> over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors">
+<code class="descname">g_vectors</code><span class="sig-paren">(</span><em>mutating_F=True</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator producing all the g-vectors of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">mutating_F</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">True</span></code>); whether to compute
+F-polynomials; disable this for speed considerations</li>
+</ul>
+<p>ALGORITHM:</p>
+<p>This method does not use the caching framework provided by <code class="docutils literal"><span class="pre">self</span></code>,
+but recomputes all the g-vectors from scratch. On the other hand it
+stores the results so that other methods like <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors_so_far" title="sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors_so_far"><code class="xref py py-meth docutils literal"><span class="pre">g_vectors_so_far()</span></code></a>
+can access them afterwards.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors</span><span class="p">()))</span>
+<span class="go">9</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors_so_far">
+<code class="descname">g_vectors_so_far</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.g_vectors_so_far" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the g-vectors of cluster variables encountered so far.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">()</span>
+<span class="go">[(0, 1), (1, 0), (-1, 1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.gens">
+<code class="descname">gens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.gens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of initial cluster variables and coefficients of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, y0, y1)</span>
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">coefficient_prefix</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="go">(x0, x1, x2, x3)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.greedy_element">
+<code class="descname">greedy_element</code><span class="sig-paren">(</span><em>d_vector</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.greedy_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the greedy element with denominator vector <code class="docutils literal"><span class="pre">d_vector</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">d_vector</span></code> &#8211; tuple of 2 integers; the denominator vector of
+the element to compute</li>
+</ul>
+<p>ALGORITHM:</p>
+<p>This implements greedy elements of a rank 2 cluster algebra using
+Equation (1.5) from <a class="reference internal" href="../../../references/index.html#llz2014" id="id8">[LLZ2014]</a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">greedy_element</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="go">(x0^2 + x1^2 + 1)/(x0*x1)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variable">
+<code class="descname">initial_cluster_variable</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th initial cluster variable of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the cluster variable to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_cluster_variable</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">x0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variable_names">
+<code class="descname">initial_cluster_variable_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variable_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of initial cluster variable names.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_cluster_variable_names</span><span class="p">()</span>
+<span class="go">(&#39;x0&#39;, &#39;x1&#39;)</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">cluster_variable_prefix</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">initial_cluster_variable_names</span><span class="p">()</span>
+<span class="go">(&#39;a0&#39;, &#39;a1&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variables">
+<code class="descname">initial_cluster_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_cluster_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of initial cluster variables of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_cluster_variables</span><span class="p">()</span>
+<span class="go">(x0, x1)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed">
+<code class="descname">initial_seed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the initial seed of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="go">The initial seed of a Cluster Algebra with cluster variables x0, x1 and no coefficients over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.lift">
+<code class="descname">lift</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.lift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">x</span></code> as an element of <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.ambient" title="sage.algebras.cluster_algebra.ClusterAlgebra.ambient"><code class="xref py py-meth docutils literal"><span class="pre">ambient()</span></code></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">lift</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">Multivariate Laurent Polynomial Ring in x0, x1, y0, y1 over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.lower_bound">
+<code class="descname">lower_bound</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.lower_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the lower bound associated to <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">NotImplementedError</span>: <span class="n">not implemented yet</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial">
+<code class="descname">mutate_initial</code><span class="sig-paren">(</span><em>direction</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.mutate_initial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cluster algebra obtained by mutating <code class="docutils literal"><span class="pre">self</span></code> at
+the initial seed.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">direction</span></code> &#8211; in which direction(s) to mutate, it can be:<ul>
+<li>an integer in <code class="docutils literal"><span class="pre">range(self.rank())</span></code> to mutate in one direction only</li>
+<li>an iterable of such integers to mutate along a sequence</li>
+<li>a string &#8220;sinks&#8221; or &#8220;sources&#8221; to mutate at all sinks or sources simultaneously</li>
+</ul>
+</li>
+</ul>
+<p>ALGORITHM:</p>
+<p>This function computes data for the new algebra from known data for
+the old algebra using Equation (4.2) from <a class="reference internal" href="../../../references/index.html#nz2012" id="id9">[NZ2012]</a> for g-vectors, and
+Equation (6.21) from <a class="reference internal" href="../../../references/index.html#fz2007" id="id10">[FZ2007]</a> for F-polynomials. The exponent <span class="math">\(h\)</span>
+in the formula for F-polynomials is <code class="docutils literal"><span class="pre">-min(0,</span> <span class="pre">old_g_vect[k])</span></code>
+due to <a class="reference internal" href="../../../references/index.html#nz2012" id="id11">[NZ2012]</a> Proposition 4.2.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A1</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A2</span> <span class="o">=</span> <span class="n">A1</span><span class="o">.</span><span class="n">mutate_initial</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A2</span><span class="o">.</span><span class="n">_F_poly_dict</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">_F_poly_dict</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Check that we did not mess up the original algebra because of <a class="reference external" href="../../../structure/sage/structure/unique_representation.html#sage.structure.unique_representation.UniqueRepresentation" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">UniqueRepresentation</span></code></a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">mutate_initial</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="ow">is</span> <span class="n">A</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.rank">
+<code class="descname">rank</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the rank of <code class="docutils literal"><span class="pre">self</span></code>, i.e. the number of cluster variables
+in any seed.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">);</span> <span class="n">A</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1</span>
+<span class="go"> and coefficients y0, y1 over Integer Ring</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">rank</span><span class="p">()</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.reset_current_seed">
+<code class="descname">reset_current_seed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.reset_current_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the value reported by <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.current_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.current_seed"><code class="xref py py-meth docutils literal"><span class="pre">current_seed()</span></code></a>
+to <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed"><code class="xref py py-meth docutils literal"><span class="pre">initial_seed()</span></code></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">reset_current_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.reset_exploring_iterator">
+<code class="descname">reset_exploring_iterator</code><span class="sig-paren">(</span><em>mutating_F=True</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.reset_exploring_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the iterator used to explore <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">mutating_F</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">True</span></code>); whether to also compute
+F-polynomials; disable this for speed considerations</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">reset_exploring_iterator</span><span class="p">(</span><span class="n">mutating_F</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">explore_to_depth</span><span class="p">(</span><span class="n">infinity</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">())</span>
+<span class="go">14</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">F_polynomials_so_far</span><span class="p">())</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.retract">
+<code class="descname">retract</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.retract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">x</span></code> as an element of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">ambient</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">L</span><span class="o">.</span><span class="n">gen</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">retract</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+<span class="go">A Cluster Algebra with cluster variables x0, x1 and coefficients y0, y1 over Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.scalars">
+<code class="descname">scalars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.scalars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ring of scalars over which <code class="docutils literal"><span class="pre">self</span></code> is defined.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span>
+<span class="go">Integer Ring</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.seeds">
+<code class="descname">seeds</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.seeds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator running over seeds of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">from_current_seed</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">False</span></code>); whether to start
+the iterator from <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.current_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.current_seed"><code class="xref py py-meth docutils literal"><span class="pre">current_seed()</span></code></a> or <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.initial_seed"><code class="xref py py-meth docutils literal"><span class="pre">initial_seed()</span></code></a></li>
+<li><code class="docutils literal"><span class="pre">mutating_F</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">True</span></code>); whether to compute
+F-polynomials also; disable this for speed considerations</li>
+<li><code class="docutils literal"><span class="pre">allowed_directions</span></code> &#8211; iterable of integers
+(default <code class="docutils literal"><span class="pre">range(self.rank())</span></code>); the directions in which to mutate</li>
+<li><code class="docutils literal"><span class="pre">depth</span></code> &#8211; a positive integer or infinity (default <code class="docutils literal"><span class="pre">infinity</span></code>);
+the maximum depth at which to stop searching</li>
+<li><code class="docutils literal"><span class="pre">catch_KeyboardInterrupt</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">False</span></code>); whether to
+catch <code class="docutils literal"><span class="pre">KeyboardInterrupt</span></code> and return it rather then raising an
+exception &#8211; this allows the iterator returned by this method to be
+resumed after being interrupted</li>
+</ul>
+<p>ALGORITHM:</p>
+<p>This function traverses the exchange graph in a breadth-first search.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">seeds</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">seeds</span><span class="p">(</span><span class="n">allowed_directions</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seeds</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">g_vectors_so_far</span><span class="p">()</span>
+<span class="go">[(-1, 0, 0, 0),</span>
+<span class="go"> (1, 0, 0, 0),</span>
+<span class="go"> (0, 0, 0, 1),</span>
+<span class="go"> (0, -1, 0, 0),</span>
+<span class="go"> (0, 0, 1, 0),</span>
+<span class="go"> (0, 1, 0, 0),</span>
+<span class="go"> (-1, 1, 0, 0),</span>
+<span class="go"> (0, 0, 0, -1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.set_current_seed">
+<code class="descname">set_current_seed</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.set_current_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value reported by <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra.current_seed" title="sage.algebras.cluster_algebra.ClusterAlgebra.current_seed"><code class="xref py py-meth docutils literal"><span class="pre">current_seed()</span></code></a> to <code class="docutils literal"><span class="pre">seed</span></code>,
+if it makes sense.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">seed</span></code> &#8211; a <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebraSeed</span></code></a></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">clear_computed_data</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">S</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">set_current_seed</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span> <span class="o">==</span> <span class="n">S</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">A1</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">set_current_seed</span><span class="p">(</span><span class="n">A1</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">())</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">This is not a seed in this cluster algebra</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.theta_basis_element">
+<code class="descname">theta_basis_element</code><span class="sig-paren">(</span><em>g_vector</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.theta_basis_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the element of the theta basis with g-vector <code class="docutils literal"><span class="pre">g_vector</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">theta_basis_element</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">NotImplementedError</span>: <span class="n">not implemented yet</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.upper_bound">
+<code class="descname">upper_bound</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.upper_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the upper bound associated to <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">NotImplementedError</span>: <span class="n">not implemented yet</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebra.upper_cluster_algebra">
+<code class="descname">upper_cluster_algebra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebra.upper_cluster_algebra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the upper cluster algebra associated to <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">upper_cluster_algebra</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">NotImplementedError</span>: <span class="n">not implemented yet</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraElement">
+<em class="property">class </em><code class="descclassname">sage.algebras.cluster_algebra.</code><code class="descname">ClusterAlgebraElement</code><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/element_wrapper.html#sage.structure.element_wrapper.ElementWrapper" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.element_wrapper.ElementWrapper</span></code></a></p>
+<p>An element of a cluster algebra.</p>
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraElement.d_vector">
+<code class="descname">d_vector</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraElement.d_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the denominator vector of <code class="docutils literal"><span class="pre">self</span></code> as a tuple of integers.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">d_vector</span><span class="p">()</span>
+<span class="go">(1, 1, 2, -2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed">
+<em class="property">class </em><code class="descclassname">sage.algebras.cluster_algebra.</code><code class="descname">ClusterAlgebraSeed</code><span class="sig-paren">(</span><em>B</em>, <em>C</em>, <em>G</em>, <em>parent</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Basic Structures v7.6)"><code class="xref py py-class docutils literal"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
+<p>A seed in a Cluster Algebra.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">B</span></code> &#8211; a skew-symmetrizable integer matrix</li>
+<li><code class="docutils literal"><span class="pre">C</span></code> &#8211; the matrix of c-vectors of <code class="docutils literal"><span class="pre">self</span></code></li>
+<li><code class="docutils literal"><span class="pre">G</span></code> &#8211; the matrix of g-vectors of <code class="docutils literal"><span class="pre">self</span></code></li>
+<li><code class="docutils literal"><span class="pre">parent</span></code> &#8211; <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebra" title="sage.algebras.cluster_algebra.ClusterAlgebra"><code class="xref py py-class docutils literal"><span class="pre">ClusterAlgebra</span></code></a>; the algebra to which the
+seed belongs</li>
+<li><code class="docutils literal"><span class="pre">path</span></code> &#8211; list (default <code class="docutils literal"><span class="pre">[]</span></code>); the mutation sequence from the
+initial seed of <code class="docutils literal"><span class="pre">parent</span></code> to <code class="docutils literal"><span class="pre">self</span></code></li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Seeds should <strong>not</strong> be created manually: no test is performed to
+assert that they are built from consistent data nor that they
+really are seeds of <code class="docutils literal"><span class="pre">parent</span></code>. If you create seeds with
+inconsistent data all sort of things can go wrong, even
+<code class="xref py py-meth docutils literal"><span class="pre">__eq__()</span></code> is no longer guaranteed to give correct answers.
+Use at your own risk.</p>
+</div>
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.F_polynomial">
+<code class="descname">F_polynomial</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.F_polynomial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th F-polynomial of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the F-polynomial to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.F_polynomials">
+<code class="descname">F_polynomials</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.F_polynomials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the F-polynomials of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">F_polynomials</span><span class="p">()</span>
+<span class="go">[1, 1, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.b_matrix">
+<code class="descname">b_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.b_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the exchange matrix of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">b_matrix</span><span class="p">()</span>
+<span class="go">[ 0  1  0]</span>
+<span class="go">[-1  0 -1]</span>
+<span class="go">[ 0  1  0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_matrix">
+<code class="descname">c_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the matrix whose columns are the c-vectors of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">c_matrix</span><span class="p">()</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_vector">
+<code class="descname">c_vector</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th c-vector of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the c-vector to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">c_vector</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(1, 0, 0)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">c_vector</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(-1, 0, 0)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">c_vector</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">(1, 1, 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_vectors">
+<code class="descname">c_vectors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.c_vectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the c-vectors of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">c_vectors</span><span class="p">()</span>
+<span class="go">[(1, 0, 0), (0, 1, 0), (0, 0, 1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.cluster_variable">
+<code class="descname">cluster_variable</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.cluster_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th cluster variable of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the cluster variable to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">x0</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(x1 + 1)/x0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.cluster_variables">
+<code class="descname">cluster_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.cluster_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the cluster variables of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variables</span><span class="p">()</span>
+<span class="go">[x0, x1, x2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.depth">
+<code class="descname">depth</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.depth" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Return the length of a mutation sequence from the initial seed</dt>
+<dd>of <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent"><code class="xref py py-meth docutils literal"><span class="pre">parent()</span></code></a> to <code class="docutils literal"><span class="pre">self</span></code>.</dd>
+</dl>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This is the length of the mutation sequence returned by
+<a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.path_from_initial_seed" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed.path_from_initial_seed"><code class="xref py py-meth docutils literal"><span class="pre">path_from_initial_seed()</span></code></a>, which need not be the
+shortest possible.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S1</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">S2</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">S1</span> <span class="o">==</span> <span class="n">S2</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_matrix">
+<code class="descname">g_matrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the matrix whose columns are the g-vectors of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_matrix</span><span class="p">()</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="go">[0 0 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_vector">
+<code class="descname">g_vector</code><span class="sig-paren">(</span><em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <code class="docutils literal"><span class="pre">j</span></code>-th g-vector of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">j</span></code> &#8211; an integer in <code class="docutils literal"><span class="pre">range(self.parent().rank())</span></code>;
+the index of the g-vector to return</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_vector</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">(1, 0, 0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_vectors">
+<code class="descname">g_vectors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.g_vectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the g-vectors of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">g_vectors</span><span class="p">()</span>
+<span class="go">[(1, 0, 0), (0, 1, 0), (0, 0, 1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.mutate">
+<code class="descname">mutate</code><span class="sig-paren">(</span><em>direction</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.mutate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mutate <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">direction</span></code> &#8211; in which direction(s) to mutate, it can be:<ul>
+<li>an integer in <code class="docutils literal"><span class="pre">range(self.rank())</span></code> to mutate in one direction only</li>
+<li>an iterable of such integers to mutate along a sequence</li>
+<li>a string &#8220;sinks&#8221; or &#8220;sources&#8221; to mutate at all sinks or sources simultaneously</li>
+</ul>
+</li>
+<li><code class="docutils literal"><span class="pre">inplace</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">True</span></code>); whether to mutate in place or to return a new object</li>
+<li><code class="docutils literal"><span class="pre">mutating_F</span></code> &#8211; bool (default <code class="docutils literal"><span class="pre">True</span></code>); whether to compute
+F-polynomials while mutating</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">While knowing F-polynomials is essential to computing
+cluster variables, the process of mutating them is quite slow.
+If you care only about combinatorial data like g-vectors and
+c-vectors, setting <code class="docutils literal"><span class="pre">mutating_F=False</span></code> yields significant
+benefits in terms of speed.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">S</span>
+<span class="go">The seed of a Cluster Algebra with cluster variables x0, x1</span>
+<span class="go"> and no coefficients over Integer Ring obtained from the initial</span>
+<span class="go"> by mutating in direction 0</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">cannot mutate in direction 5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent">
+<code class="descname">parent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the parent of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">current_seed</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span> <span class="o">==</span> <span class="n">A</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.ClusterAlgebraSeed.path_from_initial_seed">
+<code class="descname">path_from_initial_seed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.path_from_initial_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a mutation sequence from the initial seed of <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent" title="sage.algebras.cluster_algebra.ClusterAlgebraSeed.parent"><code class="xref py py-meth docutils literal"><span class="pre">parent()</span></code></a>
+to <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This is the path used to compute <code class="docutils literal"><span class="pre">self</span></code> and it does not
+have to be the shortest possible.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S1</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="o">.</span><span class="n">path_from_initial_seed</span><span class="p">()</span>
+<span class="go">[0, 1, 0, 1]</span>
+<span class="gp">sage: </span><span class="n">S2</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="o">.</span><span class="n">path_from_initial_seed</span><span class="p">()</span>
+<span class="go">[1]</span>
+<span class="gp">sage: </span><span class="n">S1</span> <span class="o">==</span> <span class="n">S2</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement">
+<em class="property">class </em><code class="descclassname">sage.algebras.cluster_algebra.</code><code class="descname">PrincipalClusterAlgebraElement</code><a class="headerlink" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.algebras.cluster_algebra.ClusterAlgebraElement" title="sage.algebras.cluster_algebra.ClusterAlgebraElement"><code class="xref py py-class docutils literal"><span class="pre">sage.algebras.cluster_algebra.ClusterAlgebraElement</span></code></a></p>
+<p>An element in a cluster algebra with principle coefficients.</p>
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.F_polynomial">
+<code class="descname">F_polynomial</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.F_polynomial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the F-polynomial of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">initial_seed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">mutate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">()</span> <span class="o">==</span> <span class="n">S</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">initial_cluster_variables</span><span class="p">())</span><span class="o">.</span><span class="n">F_polynomial</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">this element is not homogeneous</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.g_vector">
+<code class="descname">g_vector</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.g_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the g-vector of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">g_vector</span><span class="p">()</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="nb">sum</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">initial_cluster_variables</span><span class="p">())</span><span class="o">.</span><span class="n">g_vector</span><span class="p">()</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">this element is not homogeneous</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.homogeneous_components">
+<code class="descname">homogeneous_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.homogeneous_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary of the homogeneous components of <code class="docutils literal"><span class="pre">self</span></code>.</p>
+<p>OUTPUT:</p>
+<p>A dictionary whose keys are homogeneous degrees and whose values
+are the summands of <code class="docutils literal"><span class="pre">self</span></code> of the given degree.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">homogeneous_components</span><span class="p">()</span>
+<span class="go">{(0, 1): x1, (1, 0): x0}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.is_homogeneous">
+<code class="descname">is_homogeneous</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.algebras.cluster_algebra.PrincipalClusterAlgebraElement.is_homogeneous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">True</span></code> if <code class="docutils literal"><span class="pre">self</span></code> is a homogeneous element
+of <code class="docutils literal"><span class="pre">self.parent()</span></code>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">ClusterAlgebra</span><span class="p">([</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">principal_coefficients</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">is_homogeneous</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">A</span><span class="o">.</span><span class="n">cluster_variable</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">is_homogeneous</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="clifford_algebra.html"
+                                  title="previous chapter">Clifford Algebras</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../combinat/descent_algebra.html"
+                                  title="next chapter">Descent Algebras</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/sage/algebras/cluster_algebra.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+               <!-- The shading of the "Go" button should be consistent -->
+               <!-- with the colour of the header and footer. See the file -->
+               <!-- doc/common/themes/sage/theme.conf for colours used by -->
+               <!-- the Sage theme. -->
+                <input type="submit" style="background-color: #B8B9F6" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../combinat/descent_algebra.html" title="Descent Algebras"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="clifford_algebra.html" title="Clifford Algebras"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Algebras</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2005--2017, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, resize, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* Delayed resize helper.  Not perfect but good enough. */
+    resize = function () {
+        setTimeout(function () {
+            tog.height(bod.height());
+        }, 100);
+    };
+    jq(window).resize(function () {
+        resize();
+    });
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+    resize();
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+        resize();
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>

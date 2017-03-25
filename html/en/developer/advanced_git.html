@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=600, initial-scale=1">
-    <title>Advanced Git &mdash; Sage Developer&#39;s Guide v7.5</title>
+    <title>Advanced Git &mdash; Sage Developer&#39;s Guide v7.6</title>
     
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '7.5',
+        VERSION:     '7.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="Sage Developer&#39;s Guide v7.5" href="index.html" />
+    <link rel="top" title="Sage Developer&#39;s Guide v7.6" href="index.html" />
     <link rel="next" title="Distributed Development" href="workflows.html" />
     <link rel="prev" title="Tips and References" href="git_background.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
@@ -54,7 +54,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.5</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.6</a> &raquo;</li>
  
       </ul>
     </div>  
@@ -122,6 +122,95 @@ finished with the review, you just abandon the detached head. That way
 you never create a new local branch, so you don&#8217;t have to type <code class="docutils literal"><span class="pre">git</span>
 <span class="pre">branch</span> <span class="pre">-D</span> <span class="pre">my_branch</span></code> at the end to delete the local branch that you
 created only to review the ticket.</p>
+</div>
+<div class="section" id="update-branch-to-latest-sagemath-version-and-minimizing-recompilation-time">
+<span id="section-git-update-latest"></span><h2>Update Branch to Latest SageMath Version (and Minimizing Recompilation Time)<a class="headerlink" href="#update-branch-to-latest-sagemath-version-and-minimizing-recompilation-time" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>You have a compiled and working new SageMath version <code class="docutils literal"><span class="pre">n</span></code>, and</li>
+<li>you want to work on a branch <code class="docutils literal"><span class="pre">some_code</span></code> which is based on some old SageMath version <code class="docutils literal"><span class="pre">o</span></code></li>
+<li>by updating this branch from version <code class="docutils literal"><span class="pre">o</span></code> to <code class="docutils literal"><span class="pre">n</span></code></li>
+<li>with only recompiling changed files (and not all touched files from <code class="docutils literal"><span class="pre">o</span></code> to <code class="docutils literal"><span class="pre">n</span></code>),</li>
+<li>then continue reading this section.</li>
+</ul>
+<div class="section" id="introduction">
+<h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
+<p>When developing, quite frequently one ends up with a branch which is
+not based on the latest (beta) version of SageMath.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Continue working on a feature based on an old branch is perfecly
+fine and usually there is no need to merge in this latest SageMath
+version.</p>
+</div>
+<p>However sometimes there is a need for a merge, for example</p>
+<ul class="simple">
+<li>if there are conflicts with the latest version or</li>
+<li>one needs a recent feature or</li>
+<li>simply because the old SageMath version is not available on your machine
+any longer.</li>
+</ul>
+<p>Then merging in the latest SageMath version has to be done.</p>
+</div>
+<div class="section" id="merge-in-the-latest-sagemath-version">
+<h3>Merge in the Latest SageMath Version<a class="headerlink" href="#merge-in-the-latest-sagemath-version" title="Permalink to this headline">¶</a></h3>
+<p>(This is the easy way without minimizing the recompilation time.)</p>
+<p>Suppose we are on our current working branch <code class="docutils literal"><span class="pre">some_code</span></code>
+(branch is checked out). Then</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">merge</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>does the merging, i.e. we merge the latest development version into
+our working branch.</p>
+<p>However, after this merge, we need to (partially) recompile
+SageMath. Sometimes this can take ages (as many files are touched and
+their timestamps are renewed) and there is a way to avoid it.</p>
+</div>
+<div class="section" id="minimize-the-recompilation-time">
+<h3>Minimize the Recompilation Time<a class="headerlink" href="#minimize-the-recompilation-time" title="Permalink to this headline">¶</a></h3>
+<p>Suppose we are on some new SageMath (e.g. on branch <code class="docutils literal"><span class="pre">develop</span></code>) which
+was already compiled and runs successfully, and we have an &#8220;old&#8221;
+branch <code class="docutils literal"><span class="pre">some_code</span></code>, that we want to bring onto this SageMath version
+(without triggering unnecessary recompilations).</p>
+<p>We first create a new working tree in a directory <code class="docutils literal"><span class="pre">new_worktree</span></code> and switch
+to this directory:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">worktree</span> <span class="n">add</span> <span class="n">new_worktree</span>
+<span class="n">cd</span> <span class="n">new_worktree</span>
+</pre></div>
+</div>
+<p>Here we have a new copy of our source files. Thus no timestamps
+etc. of the original repository will be changed. Now we do the merge:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">some_code</span>
+<span class="n">git</span> <span class="n">merge</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>And go back to our original repository:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">develop</span>
+<span class="n">cd</span> <span class="o">..</span>
+</pre></div>
+</div>
+<p>We can now safely checkout <code class="docutils literal"><span class="pre">some_code</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">some_code</span>
+</pre></div>
+</div>
+<p>We still need to call</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span>
+</pre></div>
+</div>
+<p>but only changed files will be recompiled.</p>
+<p>To remove the new working tree simply use</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">rm</span> <span class="o">-</span><span class="n">r</span> <span class="n">new_worktree</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="why-not-merging-the-other-way-round">
+<h3>Why not Merging the Other Way Round?<a class="headerlink" href="#why-not-merging-the-other-way-round" title="Permalink to this headline">¶</a></h3>
+<p>Being on some new SageMath (e.g. on branch <code class="docutils literal"><span class="pre">develop</span></code>) which runs
+successfully, it would be possible to merge in our branch
+<code class="docutils literal"><span class="pre">some_code</span></code> into develop. This would produce the same source files
+and avoid unnecessary recompilations. However, it makes reading git&#8217;s
+history very unpleasant: For example, it is hard to keep track of changes etc.,
+as one cannot simply pursue the first parent of each git commit.</p>
+</div>
 </div>
 <div class="section" id="reset-and-recovery">
 <span id="section-git-recovery"></span><h2>Reset and Recovery<a class="headerlink" href="#reset-and-recovery" title="Permalink to this headline">¶</a></h2>
@@ -331,6 +420,13 @@ would go back (<code class="docutils literal"><span class="pre">git</span> <span
             <ul>
 <li><a class="reference internal" href="#">Advanced Git</a><ul>
 <li><a class="reference internal" href="#detached-heads-and-reviewing-tickets">Detached Heads and Reviewing Tickets</a></li>
+<li><a class="reference internal" href="#update-branch-to-latest-sagemath-version-and-minimizing-recompilation-time">Update Branch to Latest SageMath Version (and Minimizing Recompilation Time)</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#merge-in-the-latest-sagemath-version">Merge in the Latest SageMath Version</a></li>
+<li><a class="reference internal" href="#minimize-the-recompilation-time">Minimize the Recompilation Time</a></li>
+<li><a class="reference internal" href="#why-not-merging-the-other-way-round">Why not Merging the Other Way Round?</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#reset-and-recovery">Reset and Recovery</a></li>
 <li><a class="reference internal" href="#rewriting-history">Rewriting History</a></li>
 <li><a class="reference internal" href="#interactively-rebasing">Interactively Rebasing</a></li>
@@ -388,7 +484,7 @@ would go back (<code class="docutils literal"><span class="pre">git</span> <span
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.5</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v7.6</a> &raquo;</li>
  
       </ul>
     </div>
