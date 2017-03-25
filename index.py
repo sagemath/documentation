@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # Custom index for the SageMath Documentation
+# Purpose: It generates the index files needed for the CDN.
 #
-# Usage run this script to generate the index files.
+# Usage:
 # Run it only **once** (!) with the argument "fix" to repair all those
 # relative static links. That's necessary to work well with the CDN
-# network at GitHub.
+# network at GitHub. (later, run it without "fix")
 #
 # Note: the script assumes the html and pdf files are copied after
-# running `make doc-html && make doc-pdf` like this:
+# running doc-html and doc-pdf targets. e.g. like this:
+# $ nice ionice -c 3 sh -c 'make -j4 && make doc-html && make doc-pdf'
+# then copy
 # $ cp -alR $SAGE_ROOT/local/share/doc/sage/pdf .
 # $ cp -alR $SAGE_ROOT/local/share/doc/sage/html .
 #
