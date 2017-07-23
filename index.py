@@ -7,6 +7,9 @@
 # relative static links. That's necessary to work well with the CDN
 # network at GitHub. (later, run it without "fix")
 #
+# After indexing, check the index.html file and maybe blacklist more PDFs (many are just pictures)
+# by appending to the `filter_ref` list.
+#
 # Note: the script assumes the html and pdf files are copied after
 # running doc-html and doc-pdf targets. e.g. like this:
 # $ nice ionice -c 3 sh -c 'make -j4 && make doc-html && make doc-pdf'
@@ -73,6 +76,7 @@ filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-
               "chart-", "point_configuration-", "text-", "point-", "parametric_plot3d-",
               "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
               "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-", 'hyperbolic_polygon-',
+              "arrow-", "circle-", "bezier_path-", "mv_polytopes-", "set_partition-", "finite_coxeter_groups-",
              ]
 filter_html = [("en","website")]
 
