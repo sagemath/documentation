@@ -1,2 +1,2 @@
-petersen_database = graphs.PetersenGraph()
-sphinx_plot(petersen_database)
+petersen_spring = Graph(':I`ES@obGkqegW~')
+sphinx_plot(petersen_spring)

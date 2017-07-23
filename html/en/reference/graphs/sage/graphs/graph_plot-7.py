@@ -1,12 +1,7 @@
-from sage.plot.colors import rainbow
-C = graphs.CubeGraph(5)
-R = rainbow(5)
-edge_colors = {}
-for i in range(5):
-    edge_colors[R[i]] = []
-for u,v,l in C.edges():
-    for i in range(5):
-        if u[i] != v[i]:
-            edge_colors[R[i]].append((u,v,l))
-sphinx_plot(C.graphplot(vertex_labels=False, vertex_size=0,
-    edge_colors=edge_colors))
+D = DiGraph( { 0: [1, 10, 19], 1: [8, 2], 2: [3, 6], 3: [19, 4], 4: [17, 5],
+    5: [6, 15], 6: [7], 7: [8, 14], 8: [9], 9: [10, 13], 10: [11],
+    11: [12, 18],12: [16, 13], 13: [14], 14: [15], 15: [16], 16: [17],
+    17: [18], 18: [19], 19: []})
+for u,v,l in D.edges():
+    D.set_edge_label(u,v,'(' + str(u) + ',' + str(v) + ')')
+sphinx_plot(D.graphplot(edge_labels=True, layout='circular'))

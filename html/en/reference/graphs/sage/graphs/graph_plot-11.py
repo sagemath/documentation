@@ -1,3 +1,3 @@
-T = list(graphs.trees(7))
-t = T[3]
-sphinx_plot(t.graphplot(heights={0:[0], 1:[4,5,1], 2:[2], 3:[3,6]}))
+D = DiGraph({0:[0,1], 1:[2], 2:[3]}, loops=True)
+P = D.plot(edge_colors={(0,1,0):[(0,1,None),(1,2,None)],(0,0,0):[(2,3,None)]})
+sphinx_plot(P)

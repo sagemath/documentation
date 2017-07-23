@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=600, initial-scale=1">
-    <title>Elements &mdash; Sage Reference Manual v7.6: Basic Structures</title>
+    <title>Elements &#8212; Sage Reference Manual v8.0: Parents and Elements</title>
     
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,10 +14,11 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '7.6',
+        VERSION:     '8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
@@ -26,7 +27,8 @@
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-    <link rel="top" title="Sage Reference Manual v7.6: Basic Structures" href="../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Element Wrapper" href="element_wrapper.html" />
     <link rel="prev" title="Pure python code for abstract base class for objects with generators" href="gens_py.html" />
     <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
@@ -52,11 +54,11 @@
              accesskey="P">previous</a> |</li>
   
     
-      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../../../../index.html"><img src="../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Basic Structures</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Parents and Elements</a> &#187;</li>
  
       </ul>
     </div>  
@@ -126,7 +128,7 @@ with assumed properties.</p>
 <span id="element-arithmetic"></span><h3>Arithmetic for Elements<a class="headerlink" href="#arithmetic-for-elements" title="Permalink to this headline">¶</a></h3>
 <p>Sage has a special system for handling arithmetic operations on Sage
 elements (that is instances of <a class="reference internal" href="#sage.structure.element.Element" title="sage.structure.element.Element"><code class="xref py py-class docutils literal"><span class="pre">Element</span></code></a>), in particular to
-manage uniformly mixed arithmetic operations using the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v7.6)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span>
+manage uniformly mixed arithmetic operations using the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v8.0)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span>
 <span class="pre">model</span></code></a>. We describe here the rules that must
 be followed by both arithmetic implementers and callers.</p>
 <div class="section" id="a-quick-summary-for-the-impatient">
@@ -141,7 +143,7 @@ category <span class="math">\(C\)</span>, then this method can be put in <code c
 <p>When writing <em>Cython</em> code, <code class="docutils literal"><span class="pre">_add_</span></code> should be a cpdef method:
 <code class="docutils literal"><span class="pre">cpdef</span> <span class="pre">_add_(self,</span> <span class="pre">other)</span></code>.</p>
 <p>When doing arithmetic with two elements having different parents,
-the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v7.6)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span> <span class="pre">model</span></code></a> is responsible for
+the <a class="reference external" href="../../../coercion/sage/structure/coerce.html#module-sage.structure.coerce" title="(in Sage Reference Manual: Coercion v8.0)"><code class="xref py py-mod docutils literal"><span class="pre">coercion</span> <span class="pre">model</span></code></a> is responsible for
 &#8220;coercing&#8221; them to a common parent and performing arithmetic on the
 coerced elements.</p>
 </div>
@@ -611,6 +613,33 @@ with <code class="docutils literal"><span class="pre">&lt;</span></code>, <code 
 <span class="gr">NotImplementedError</span>: <span class="n">comparison not implemented for &lt;type &#39;sage.structure.element.Element&#39;&gt;</span>
 </pre></div>
 </div>
+<p>We now create an <code class="docutils literal"><span class="pre">Element</span></code> class where we define <code class="docutils literal"><span class="pre">_richcmp_</span></code>
+and check that comparison works:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="go">....: from sage.structure.richcmp cimport rich_to_bool</span>
+<span class="go">....: from sage.structure.element cimport Element</span>
+<span class="go">....: cdef class FloatCmp(Element):</span>
+<span class="go">....:     cdef float x</span>
+<span class="go">....:     def __init__(self, float v):</span>
+<span class="go">....:         self.x = v</span>
+<span class="go">....:     cpdef _richcmp_(self, other, int op):</span>
+<span class="go">....:         cdef float x1 = (&lt;FloatCmp&gt;self).x</span>
+<span class="go">....:         cdef float x2 = (&lt;FloatCmp&gt;other).x</span>
+<span class="go">....:         return rich_to_bool(op, (x1 &gt; x2) - (x1 &lt; x2))</span>
+<span class="go">....: &#39;&#39;&#39;)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">FloatCmp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">FloatCmp</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">&lt;=</span> <span class="n">b</span><span class="p">,</span> <span class="n">b</span> <span class="o">&lt;=</span> <span class="n">a</span>
+<span class="go">(True, False)</span>
+</pre></div>
+</div>
+<p>This works despite <code class="docutils literal"><span class="pre">_cmp_</span></code> not being implemented:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">_cmp_</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">NotImplementedError</span>: <span class="n">comparison not implemented for &lt;type &#39;...FloatCmp&#39;&gt;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -687,7 +716,7 @@ the coercion model.</p>
 <span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">an_element</span><span class="p">()</span>
 <span class="gp">sage: </span><span class="n">x</span>
 <span class="go">B[word: ] + 2*B[word: a] + 3*B[word: b] + B[word: bab]</span>
-<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">__mul__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="go">B[word: ] + 4*B[word: a] + 4*B[word: aa] + 6*B[word: ab]</span>
 <span class="go">+ 2*B[word: abab] + 6*B[word: b] + 6*B[word: ba]</span>
 <span class="go">+ 2*B[word: bab] + 2*B[word: baba] + 3*B[word: babb]</span>
@@ -1570,6 +1599,8 @@ which is used in the case that <code class="docutils literal"><span class="pre">
 <span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_coercion_model</span><span class="p">()</span>
 <span class="gp">sage: </span><span class="n">cm</span>
 <span class="go">&lt;sage.structure.coerce.CoercionModel_cache_maps object at ...&gt;</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="ow">is</span> <span class="n">coercion_model</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1790,11 +1821,6 @@ returned:</p>
 </div>
 </dd></dl>
 
-<dl class="function">
-<dt id="sage.structure.element.set_coercion_model">
-<code class="descclassname">sage.structure.element.</code><code class="descname">set_coercion_model</code><span class="sig-paren">(</span><em>cm</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.element.set_coercion_model" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </div>
 </div>
 </div>
@@ -1832,7 +1858,7 @@ returned:</p>
                                   title="next chapter">Element Wrapper</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
-              <li><a href="../../_sources/sage/structure/element.txt"
+              <li><a href="../../_sources/sage/structure/element.rst.txt"
                      rel="nofollow">Show Source</a></li>
             </ul>
           <div id="searchbox" style="display: none">
@@ -1873,18 +1899,18 @@ returned:</p>
              >previous</a> |</li>
   
     
-      <a href="../../../../index.html"><img src="../../../_static/sagelogo.png" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../../../../index.html"><img src="../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Basic Structures</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Parents and Elements</a> &#187;</li>
  
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2005--2017, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.4.
+        &#169; Copyright 2005--2017, The Sage Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

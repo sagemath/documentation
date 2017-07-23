@@ -1,3 +1,12 @@
-D = graphs.DodecahedralGraph()
-Pi = [[6,5,15,14,7],[16,13,8,2,4],[12,17,9,3,1],[0,19,18,10,11]]
-sphinx_plot(D.plot(partition=Pi))
+from sage.plot.colors import rainbow
+C = graphs.CubeGraph(5)
+R = rainbow(5)
+edge_colors = {}
+for i in range(5):
+    edge_colors[R[i]] = []
+for u,v,l in C.edges():
+    for i in range(5):
+        if u[i] != v[i]:
+            edge_colors[R[i]].append((u,v,l))
+sphinx_plot(C.graphplot(vertex_labels=False, vertex_size=0,
+    edge_colors=edge_colors))

@@ -1,4 +1,3 @@
-G = graphs.HeawoodGraph().copy(sparse=True)
-for u,v,l in G.edges():
-    G.set_edge_label(u,v,'(' + str(u) + ',' + str(v) + ')')
-sphinx_plot(G.graphplot(edge_labels=True))
+C = graphs.CubeGraph(8)
+P = C.graphplot(vertex_labels=False, vertex_size=0, graph_border=True)
+sphinx_plot(P)
