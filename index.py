@@ -77,6 +77,7 @@ filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-
               "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
               "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-", 'hyperbolic_polygon-',
               "arrow-", "circle-", "bezier_path-", "mv_polytopes-", "set_partition-", "finite_coxeter_groups-",
+              "integrated_curve-",
              ]
 filter_html = [("en","website")]
 
