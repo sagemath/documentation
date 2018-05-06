@@ -27,7 +27,6 @@ CLF: "\\Bold{C}",
 RDF: "\\Bold{R}",
 RIF: "\\Bold{I} \\Bold{R}",
 RLF: "\\Bold{R}",
-CFF: "\\Bold{CFF}",
 Bold: ["\\mathbf{#1}",1]
     }
   }

@@ -1,0 +1,1 @@
+sphinx_plot(graphs.WheelGraph(15))

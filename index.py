@@ -69,17 +69,19 @@ title="SageMath Mathematical Software">
 </a>
 """
 
-filter_ref = ["graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-",
-              "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-",
-              "plot-", "generic_graph-", "fully_packed_loop", "link-", "complex_plot-",
-              "hyperbolic_geodesic-", "contour_plot-", "density_plot-", "plot_field-",
-              "chart-", "point_configuration-", "text-", "point-", "parametric_plot3d-",
-              "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
-              "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-", 'hyperbolic_polygon-',
-              "arrow-", "circle-", "bezier_path-", "mv_polytopes-", "set_partition-", "finite_coxeter_groups-",
-              "integrated_curve-",
-             ]
-filter_html = [("en","website")]
+filter_ref = [
+    "graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-",
+    "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-", "plot-",
+    "generic_graph-", "fully_packed_loop", "link-", "complex_plot-",
+    "hyperbolic_geodesic-", "contour_plot-", "density_plot-", "plot_field-",
+    "chart-", "point_configuration-", "text-", "point-", "parametric_plot3d-",
+    "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
+    "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-",
+    'hyperbolic_polygon-', "arrow-", "circle-", "bezier_path-",
+    "mv_polytopes-", "set_partition-", "finite_coxeter_groups-",
+    "integrated_curve-", "list_plot3d-"
+]
+filter_html = [("en", "website")]
 
 pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
 
@@ -96,8 +98,7 @@ for path in glob("*/*"):
                 for fn in glob(path2 + EXT):
                     pages[what][lang].append(fn)
 
-
-output = [intro % {"path" : ""}]
+output = [intro % {"path": ""}]
 output.append("<h1>Documentation</h1>")
 
 output.append('<div class="table">')
@@ -107,10 +108,12 @@ for what in sorted(pages.keys()):
     first_row = True
     for lang, entries in sorted(pages[what].iteritems()):
         if not first_row:
-            output.append('<div class="row %s"><div class="cell"></div>' % lang)
+            output.append(
+                '<div class="row %s"><div class="cell"></div>' % lang)
         else:
             first_row = False
-        output.append('<div class="cell lang"><a href="%s/%s">%s</a></div>' % (what, lang, LANG.get(lang, lang)))
+        output.append('<div class="cell lang"><a href="%s/%s">%s</a></div>' %
+                      (what, lang, LANG.get(lang, lang)))
         output.append('<div class="cell doc">')
         for entry in sorted(entries):
             entries = entry.split("/")
@@ -125,13 +128,16 @@ for what in sorted(pages.keys()):
                 fn = entries[-1][:-4] \
                     .replace("_", " ") \
                     .title()# + " (pdf)"
-                subcat = (entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
-            output.append("<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>".format(
-                          path=entry,
-                          lang=lang,
-                          # lang=LANG.get(lang, lang),
-                          subcat=subcat,
-                          fn=fn))
+                subcat = (
+                    entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
+            output.append(
+                "<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>".
+                format(
+                    path=entry,
+                    lang=lang,
+                    # lang=LANG.get(lang, lang),
+                    subcat=subcat,
+                    fn=fn))
         output.append("</div></div>")
     output.append('<div class="row last"></div>')
 output.append("</div>")
@@ -152,32 +158,41 @@ for subdir in ["html", "pdf"]:
             continue
         # if there is no index.html file
         idxfn = join(root, "index.html")
-        if "index.html" not in filenames or IDX_TOKEN in open(idxfn, "r").read():
+        if "index.html" not in filenames or IDX_TOKEN in open(idxfn,
+                                                              "r").read():
             # now we have to write our index.html file
             print "%r >>> %s" % (root_dirs, idxfn)
-            index = [intro % {"path" : root}]
+            index = [intro % {"path": root}]
             index.append(IDX_TOKEN)
             if len(root_dirs) > 1:
-                index.append('<p><a href="%s">Home</a></p>' % '/'.join([".."] * (len(root_dirs) - 1)))
+                index.append(
+                    '<p><a href="%s">Home</a></p>' % '/'.join([".."] * (
+                        len(root_dirs) - 1)))
             index.append('<p><a href="../index.html">Parent Directory</a></p>')
             path = filter(lambda _: not _.startswith("_"), path)
             if len(path) > 0:
                 index.append('<h2>Sub-Directories</h2>')
                 for p in sorted(path):
-                    is_lang_list = len(root_dirs) == 1 or (len(root_dirs) == 2 and root_dirs[1] == '')
+                    is_lang_list = len(root_dirs) == 1 or (
+                        len(root_dirs) == 2 and root_dirs[1] == '')
                     name = LANG.get(p, p) if is_lang_list else p
-                    index.append('<p><a href="%(p)s/">%(name)s</a></p>' % {"p": p, "name": name})
-            filenames = filter(lambda fn : not(fn == "index.html" or fn.startswith("genindex-") or fn.startswith(".")),
-                               filenames)
+                    index.append('<p><a href="%(p)s/">%(name)s</a></p>' % {
+                        "p": p,
+                        "name": name
+                    })
+            filenames = filter(
+                lambda fn: not (fn == "index.html" or fn.startswith("genindex-") or fn.startswith(".")),
+                filenames)
             if len(filenames) > 0:
                 index.append('<h2>Documents</h2>')
                 for fn in sorted(filenames):
-                    index.append('<p><a href="%(fn)s">%(fn)s</a></p>' % {"fn": fn})
+                    index.append('<p><a href="%(fn)s">%(fn)s</a></p>' % {
+                        "fn": fn
+                    })
             # print "    ", path, filenames
             index.append("</body></html>")
             with open(idxfn, "w") as outidx:
-                 outidx.write("\n".join(index))
-
+                outidx.write("\n".join(index))
 
 import sys
 if len(sys.argv) > 1 and sys.argv[1] == "fix":
@@ -189,9 +204,11 @@ if len(sys.argv) > 1 and sys.argv[1] == "fix":
     os.chdir(os.path.join(os.path.dirname(__file__), "html"))
     ROOT = os.path.abspath(os.curdir)
 
-    for link in sp.Popen("find -type l -name _static".split(), stdout=sp.PIPE).stdout:
+    files_cmd = sp.Popen("find -type l -name _static".split(), stdout=sp.PIPE)
+    for link in files_cmd.stdout:
         d = os.path.normpath(os.path.join(ROOT, link.rsplit("/", 1)[0]))
         print d
         os.chdir(d)
         os.system(
-            r'find -type f -name "*.html" -exec sed -i "s/_static/..\/_static/" {} \;')
+            r'find -type f -name "*.html" -exec sed -i "s/_static/..\/_static/" {} \;'
+        )
