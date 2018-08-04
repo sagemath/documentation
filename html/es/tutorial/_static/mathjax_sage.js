@@ -10,6 +10,8 @@ MathJax.Hub.Config({
     }
   },
   TeX: {
+    MAXBUFFER: 50*1024,
+
     Macros: {
      ZZ: "\\Bold{Z}",
 NN: "\\Bold{N}",
