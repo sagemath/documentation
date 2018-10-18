@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Braid groups &#8212; Sage Reference Manual v8.3: Groups</title>
+    <title>Braid groups &#8212; Sage Reference Manual v8.4: Groups</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../../_static/documentation_options.js"></script>
@@ -106,6 +106,7 @@ element by a braid:</p>
 <li>Robert Lipshitz</li>
 <li>Thierry Monteil: add a <code class="docutils literal notranslate"><span class="pre">__hash__</span></code> method consistent with the word
 problem to ensure correct Cayley graph computations.</li>
+<li>Sebastian Oehms (July 2018): add other versions for burau_matrix (unitary + wikipedia)</li>
 </ul>
 <dl class="class">
 <dt id="sage.groups.braid.Braid">
@@ -298,13 +299,25 @@ is negative, we multiply by <span class="math notranslate nohighlight">\(-1\)</s
 <li><code class="docutils literal notranslate"><span class="pre">var</span></code> – string (default: <code class="docutils literal notranslate"><span class="pre">'t'</span></code>); the name of the
 variable in the entries of the matrix</li>
 <li><code class="docutils literal notranslate"><span class="pre">reduced</span></code> – boolean (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>); whether to
-return the reduced or unreduced Burau representation</li>
+return the reduced or unreduced Burau representation, can
+be one of the following:<ul>
+<li><code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">'increasing'</span></code> - returns the reduced form using
+the basis given by <span class="math notranslate nohighlight">\(e_1 - e_i\)</span> for <span class="math notranslate nohighlight">\(2 \leq i \leq n\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">'unitary'</span></code> - the unitary form according to Squier <a class="reference internal" href="../../../references/index.html#squ1984" id="id5">[Squ1984]</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">'simple'</span></code> - returns the reduced form using the basis given
+by simple roots <span class="math notranslate nohighlight">\(e_i - e_{i+1}\)</span>, which yields the matrices
+given on the Wikipedia page</li>
+</ul>
+</li>
 </ul>
 <p>OUTPUT:</p>
 <p>The Burau matrix of the braid. It is a matrix whose entries
 are Laurent polynomials in the variable <code class="docutils literal notranslate"><span class="pre">var</span></code>. If <code class="docutils literal notranslate"><span class="pre">reduced</span></code>
 is <code class="docutils literal notranslate"><span class="pre">True</span></code>, return the matrix for the reduced Burau representation
-instead.</p>
+instead in the format specified. If <code class="docutils literal notranslate"><span class="pre">reduced</span></code> is <code class="docutils literal notranslate"><span class="pre">'unitary'</span></code>,
+a triple <code class="docutils literal notranslate"><span class="pre">M,</span> <span class="pre">Madj,</span> <span class="pre">H</span></code> is returned, where <code class="docutils literal notranslate"><span class="pre">M</span></code> is the Burau matrix
+in the unitary form, <code class="docutils literal notranslate"><span class="pre">Madj</span></code> the adjoined to <code class="docutils literal notranslate"><span class="pre">M</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code>
+the hermitian form.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">B</span><span class="o">.</span><span class="n">inject_variables</span><span class="p">()</span>
@@ -326,9 +339,33 @@ instead.</p>
 <span class="go">[-t  0  1]</span>
 </pre></div>
 </div>
+<p>Using the different reduced forms:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">burau_matrix</span><span class="p">(</span><span class="n">reduced</span><span class="o">=</span><span class="s1">&#39;simple&#39;</span><span class="p">)</span>
+<span class="go">[    1 - t -t^-1 + 1        -1]</span>
+<span class="go">[        1 -t^-1 + 1        -1]</span>
+<span class="go">[        1     -t^-1         0]</span>
+
+<span class="gp">sage: </span><span class="n">M</span><span class="p">,</span> <span class="n">Madj</span><span class="p">,</span> <span class="n">H</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">burau_matrix</span><span class="p">(</span><span class="n">reduced</span><span class="o">=</span><span class="s1">&#39;unitary&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span>
+<span class="go">[  1 - t^2 -t^-1 + t      -t^2]  </span>
+<span class="go">[     t^-1 -t^-2 + 1        -t]</span>
+<span class="go">[     t^-2     -t^-3         0]</span>
+<span class="gp">sage: </span><span class="n">Madj</span>
+<span class="go">[-t^-2 + 1         t       t^2]</span>
+<span class="go">[ t^-1 - t   1 - t^2      -t^3]</span>
+<span class="go">[    -t^-2     -t^-1         0]</span>
+<span class="gp">sage: </span><span class="n">H</span>
+<span class="go">[t^-1 + t       -1        0]</span>
+<span class="go">[      -1 t^-1 + t       -1]</span>
+<span class="go">[       0       -1 t^-1 + t]</span>
+<span class="gp">sage: </span><span class="n">Madj</span> <span class="o">*</span> <span class="n">H</span> <span class="o">*</span> <span class="n">M</span> <span class="o">==</span> <span class="n">H</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 <p>REFERENCES:</p>
 <ul class="simple">
 <li><a class="reference external" href="https://en.wikipedia.org/wiki/Burau_representation">Wikipedia article Burau_representation</a></li>
+<li><a class="reference internal" href="../../../references/index.html#squ1984" id="id6">[Squ1984]</a></li>
 </ul>
 </dd></dl>
 
@@ -339,14 +376,9 @@ instead.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">centralizer</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">centralizer</span><span class="p">()</span>
 <span class="go">[s1*s0*s2*s1, s0*s2]</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -385,19 +417,14 @@ to be installed.</p>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
-<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">conjugating_braid</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
-<span class="gp">sage: </span><span class="n">d</span> <span class="o">*</span> <span class="n">c</span> <span class="o">/</span> <span class="n">d</span> <span class="o">==</span> <span class="n">a</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">conjugating_braid</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">*</span> <span class="n">c</span> <span class="o">/</span> <span class="n">d</span> <span class="o">==</span> <span class="n">a</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">d</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">d</span>
 <span class="go">s1*s0</span>
-<span class="gp">sage: </span><span class="n">d</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="n">d</span> <span class="o">==</span> <span class="n">c</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="n">d</span> <span class="o">==</span> <span class="n">c</span>
 <span class="go">False</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -413,16 +440,11 @@ to be installed.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 <span class="go">s0^-1*s1^-1*s0^-2*s1^2*s0</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
 <span class="go">s0^-1*s1^-1*s0^-2*s1^2*s0</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -439,16 +461,11 @@ to be installed.</p>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_conjugated</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_conjugated</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_conjugated</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_conjugated</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
 <span class="go">False</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -460,16 +477,11 @@ to be installed.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_periodic</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_periodic</span><span class="p">()</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_periodic</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_periodic</span><span class="p">()</span>
 <span class="go">True</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -481,16 +493,11 @@ to be installed.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_pseudoanosov</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_pseudoanosov</span><span class="p">()</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_pseudoanosov</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_pseudoanosov</span><span class="p">()</span>
 <span class="go">False</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -501,17 +508,12 @@ to be installed.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_reducible</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">is_reducible</span><span class="p">()</span>
 <span class="go">True</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_reducible</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">is_reducible</span><span class="p">()</span>
 <span class="go">False</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -522,13 +524,13 @@ to be installed.</p>
 <p>The normalization is so that the unknot has Jones polynomial <span class="math notranslate nohighlight">\(1\)</span>. If
 <code class="docutils literal notranslate"><span class="pre">skein_normalization</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the variable of the result is
 replaced by a itself to the power of <span class="math notranslate nohighlight">\(4\)</span>, so that the result
-agrees with the conventions of <a class="reference internal" href="../../../references/index.html#lic1997" id="id5">[Lic1997]</a> (which in particular differs
+agrees with the conventions of <a class="reference internal" href="../../../references/index.html#lic1997" id="id7">[Lic1997]</a> (which in particular differs
 slightly from the conventions used otherwise in this class), had
 one used the conventional Kauffman bracket variable notation directly.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">variab</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> return a polynomial in the variable <span class="math notranslate nohighlight">\(A\)</span>
 or <span class="math notranslate nohighlight">\(t\)</span>, depending on the value <code class="docutils literal notranslate"><span class="pre">skein_normalization</span></code>. In
 particular, if <code class="docutils literal notranslate"><span class="pre">skein_normalization</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>, return the
-result in terms of the variable <span class="math notranslate nohighlight">\(t\)</span>, also used in <a class="reference internal" href="../../../references/index.html#lic1997" id="id6">[Lic1997]</a>.</p>
+result in terms of the variable <span class="math notranslate nohighlight">\(t\)</span>, also used in <a class="reference internal" href="../../../references/index.html#lic1997" id="id8">[Lic1997]</a>.</p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">variab</span></code> – variable (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>); the variable in the
@@ -607,13 +609,9 @@ mirror of the “Conway” knot):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">lcm</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">lcm</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 <span class="go">(s0*s1)^2*s0</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package to be installed.</p>
 </div>
 </dd></dl>
 
@@ -766,14 +764,9 @@ Used for all strands.</li>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">right_normal_form</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">right_normal_form</span><span class="p">()</span>
 <span class="go">(s1*s0, s0*s2, 1)</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -785,16 +778,11 @@ to be installed.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">rigidity</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">rigidity</span><span class="p">()</span>
 <span class="go">6</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">rigidity</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">rigidity</span><span class="p">()</span>
 <span class="go">0</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -808,7 +796,7 @@ a list of braids.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sliding_circuits</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">sliding_circuits</span><span class="p">()</span>
 <span class="go">[[(s0^-1*s1^-1*s0^-1)^2*s1^3*s0^2*s1^3],</span>
 <span class="go"> [s0^-1*s1^-1*s0^-2*s1^-1*s0^2*s1^2*s0^3],</span>
 <span class="go"> [s0^-1*s1^-1*s0^-2*s1^-1*s0^3*s1^2*s0^2],</span>
@@ -822,14 +810,9 @@ a list of braids.</p>
 <span class="go"> [(s0^-1*s1^-1*s0^-1)^2*s1*s0^6*s1],</span>
 <span class="go"> [s0^-1*s1^-1*s0^-2*s1^5*s0]]</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">sliding_circuits</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">sliding_circuits</span><span class="p">()</span>
 <span class="go">[[s0*s1*s0^2, (s0*s1)^2]]</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -853,17 +836,12 @@ to be installed.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">super_summit_set</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">super_summit_set</span><span class="p">()</span>
 <span class="go">[s0^-1*s1^-1*s0^-2*s1^2*s0^2,</span>
 <span class="go">(s0^-1*s1^-1*s0^-1)^2*s1^2*s0^3*s1,</span>
 <span class="go">(s0^-1*s1^-1*s0^-1)^2*s1*s0^3*s1^2,</span>
 <span class="go">s0^-1*s1^-1*s0^-2*s1^-1*s0*s1^3*s0]</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -876,20 +854,15 @@ to be installed.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span>
 <span class="go">&#39;reducible&#39;</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span>
 <span class="go">&#39;pseudo-anosov&#39;</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">thurston_type</span><span class="p">()</span>
 <span class="go">&#39;periodic&#39;</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -916,8 +889,8 @@ to be installed.</p>
 </div>
 <p>REFERENCES:</p>
 <ul class="simple">
-<li><a class="reference internal" href="../../../references/index.html#dw2007" id="id7">[DW2007]</a></li>
-<li><a class="reference internal" href="../../../references/index.html#deh2011" id="id8">[Deh2011]</a></li>
+<li><a class="reference internal" href="../../../references/index.html#dw2007" id="id9">[DW2007]</a></li>
+<li><a class="reference internal" href="../../../references/index.html#deh2011" id="id10">[Deh2011]</a></li>
 </ul>
 </dd></dl>
 
@@ -929,9 +902,9 @@ to be installed.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">B</span> <span class="o">=</span> <span class="n">BraidGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">ultra_summit_set</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">b</span><span class="o">.</span><span class="n">ultra_summit_set</span><span class="p">()</span>
 <span class="go">[[s0*s1*s0^2, (s0*s1)^2]]</span>
-<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">ultra_summit_set</span><span class="p">()</span> <span class="c1"># optional - libbraiding</span>
+<span class="gp">sage: </span><span class="n">a</span><span class="o">.</span><span class="n">ultra_summit_set</span><span class="p">()</span>
 <span class="go">[[(s0^-1*s1^-1*s0^-1)^2*s1^3*s0^2*s1^3,</span>
 <span class="go">(s0^-1*s1^-1*s0^-1)^2*s1^2*s0^2*s1^4,</span>
 <span class="go">(s0^-1*s1^-1*s0^-1)^2*s1*s0^2*s1^5,</span>
@@ -945,11 +918,6 @@ to be installed.</p>
 <span class="go">s0^-1*s1^-1*s0^-2*s1^-1*s0^4*s1^2*s0,</span>
 <span class="go">s0^-1*s1^-1*s0^-2*s1^-1*s0^3*s1^2*s0^2]]</span>
 </pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This functionality requires the libbraiding package
-to be installed.</p>
 </div>
 </dd></dl>
 
@@ -1050,7 +1018,7 @@ Here, <span class="math notranslate nohighlight">\(n\)</span> is the number of s
 specified by <code class="docutils literal notranslate"><span class="pre">drain_size</span></code>.</p>
 <p>A basis element is specified as a list of integers obtained by
 considering the pairings as obtained as the ‘highest term’ of
-trivalent trees marked by Jones–Wenzl projectors (see e.g. <a class="reference internal" href="../../../references/index.html#wan2010" id="id9">[Wan2010]</a>).
+trivalent trees marked by Jones–Wenzl projectors (see e.g. <a class="reference internal" href="../../../references/index.html#wan2010" id="id11">[Wan2010]</a>).
 In practice, this is a list of non-negative integers whose first
 element is <code class="docutils literal notranslate"><span class="pre">drain_size</span></code>, whose last element is <span class="math notranslate nohighlight">\(0\)</span>, and satisfying
 that consecutive integers have difference <span class="math notranslate nohighlight">\(1\)</span>. Moreover, the length
@@ -1285,7 +1253,7 @@ construct this action yourself.</p>
 <dl class="class">
 <dt id="sage.groups.braid.MappingClassGroupAction">
 <em class="property">class </em><code class="descclassname">sage.groups.braid.</code><code class="descname">MappingClassGroupAction</code><span class="sig-paren">(</span><em>G</em>, <em>M</em>, <em>is_left=0</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.groups.braid.MappingClassGroupAction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../categories/sage/categories/action.html#sage.categories.action.Action" title="(in Sage Reference Manual: Category Framework v8.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.categories.action.Action</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="../../../categories/sage/categories/action.html#sage.categories.action.Action" title="(in Sage Reference Manual: Category Framework v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.categories.action.Action</span></code></a></p>
 <p>The action of the braid group the free group as the mapping class
 group of the punctured disk.</p>
 <p>That is, this action is the action of the braid over the punctured
@@ -1392,7 +1360,7 @@ method of the braid group to construct this action.</p>
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2018, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

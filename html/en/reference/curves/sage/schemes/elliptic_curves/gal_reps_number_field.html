@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Galois representations for elliptic curves over number fields &#8212; Sage Reference Manual v8.3: Plane curves</title>
+    <title>Galois representations for elliptic curves over number fields &#8212; Sage Reference Manual v8.4: Plane curves</title>
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../../_static/documentation_options.js"></script>
@@ -83,6 +83,7 @@ and <code class="docutils literal notranslate"><span class="pre">non_surjective<
 <li>Eric Larson (2012-05-28): initial version.</li>
 <li>Eric Larson (2014-08-13): added isogeny_bound function.</li>
 <li>John Cremona (2016, 2017): various efficiency improvements to _semistable_reducible_primes</li>
+<li>John Cremona (2017): implementation of Billerey’s algorithm to find all reducible primes</li>
 </ul>
 <p>REFERENCES:</p>
 <table class="docutils citation" frame="void" id="serre72" rules="none">
@@ -95,15 +96,253 @@ courbes elliptiques. Inventiones mathematicae, 1972.</td></tr>
 <table class="docutils citation" frame="void" id="sutherland12" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label">[Sutherland12]</td><td>Sutherland. A local-global principle for rational
+<tr><td class="label"><a class="fn-backref" href="#id4">[Sutherland12]</a></td><td>Sutherland. A local-global principle for rational
 isogenies of prime degree. Journal de Théorie des Nombres de Bordeaux,
 2012.</td></tr>
 </tbody>
 </table>
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_B_bound">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Billerey_B_bound</code><span class="sig-paren">(</span><em>E</em>, <em>max_l=200</em>, <em>num_l=8</em>, <em>small_prime_bound=0</em>, <em>debug=False</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_B_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Billerey’s bound <span class="math notranslate nohighlight">\(B\)</span>.</p>
+<p>We compute <span class="math notranslate nohighlight">\(B_l\)</span> for <span class="math notranslate nohighlight">\(l\)</span> up to <code class="docutils literal notranslate"><span class="pre">max_l</span></code> (at most) until <code class="docutils literal notranslate"><span class="pre">num_l</span></code>
+nonzero values are found (at most).  Return the list of primes
+dividing all <span class="math notranslate nohighlight">\(B_l\)</span> computed, excluding those dividing 6 or
+ramified or of bad reduction or less than small_prime_bound.  If
+no non-zero values are found return [0].</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over a number field <span class="math notranslate nohighlight">\(K\)</span>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">max_l</span></code> (int, default 200) – maximum size of primes l to check.</li>
+<li><code class="docutils literal notranslate"><span class="pre">num_l</span></code> (int, default 8)  – maximum number of primes l to check.</li>
+<li><code class="docutils literal notranslate"><span class="pre">small_prime_bound</span></code> (int, default 0) – remove primes less
+than this from the output.</li>
+<li><code class="docutils literal notranslate"><span class="pre">debug</span></code> (bool, default <code class="docutils literal notranslate"><span class="pre">False</span></code>)  – if <code class="docutils literal notranslate"><span class="pre">True</span></code> prints details.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The purpose of the small_prime_bound is that it is faster to
+deal with these using the local test; by ignoring them here,
+we enable the algorithm to terminate sooner when there are no
+large reducible primes, which is always the case in practice.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">Billerey_B_bound</span>
+<span class="gp">sage: </span><span class="n">Billerey_B_bound</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[5]</span>
+</pre></div>
+</div>
+<p>If we do not use enough primes <span class="math notranslate nohighlight">\(l\)</span>, extraneous primes will be
+included which are not reducible primes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Billerey_B_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">num_l</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">[5, 7]</span>
+</pre></div>
+</div>
+<p>Similarly if we do not use large enough primes <span class="math notranslate nohighlight">\(l\)</span>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Billerey_B_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">max_l</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">num_l</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">[5, 7]</span>
+<span class="gp">sage: </span><span class="n">Billerey_B_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">max_l</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_l</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">[5]</span>
+</pre></div>
+</div>
+<p>This curve does have a rational 5-isogeny:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_B_l">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Billerey_B_l</code><span class="sig-paren">(</span><em>E</em>, <em>l</em>, <em>B=0</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_B_l" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Billerey’s <span class="math notranslate nohighlight">\(B_l\)</span>, adapted from the definition in <a class="reference internal" href="../../../../references/index.html#bil2011" id="id1">[Bil2011]</a>, after (9).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over a number field <span class="math notranslate nohighlight">\(K\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">l</span></code> (int) – a rational prime</li>
+<li><code class="docutils literal notranslate"><span class="pre">B</span></code> (int) – 0 or LCM of previous <span class="math notranslate nohighlight">\(B_l\)</span>: the prime-to-B part of this <span class="math notranslate nohighlight">\(B_l\)</span> is ignored.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">Billerey_B_l</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">Billerey_B_l</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">primes</span><span class="p">(</span><span class="mi">15</span><span class="p">)]</span>
+<span class="go">[1123077552537600,</span>
+<span class="go">227279663773903886745600,</span>
+<span class="go">0,</span>
+<span class="go">0,</span>
+<span class="go">269247154818492941287713746693964214802283882086400,</span>
+<span class="go">0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_P_l">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Billerey_P_l</code><span class="sig-paren">(</span><em>E</em>, <em>l</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_P_l" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Billerey’s <span class="math notranslate nohighlight">\(P_l^*\)</span> as defined in <a class="reference internal" href="../../../../references/index.html#bil2011" id="id2">[Bil2011]</a>, equation (9).</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over a number field <span class="math notranslate nohighlight">\(K\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">l</span></code> – a rational prime</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">Billerey_P_l</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">Billerey_P_l</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">primes</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+<span class="go">[x^2 + 8143*x + 16777216,</span>
+<span class="go">x^2 + 451358*x + 282429536481,</span>
+<span class="go">x^4 - 664299076*x^3 + 205155493652343750*x^2 - 39595310449600219726562500*x + 3552713678800500929355621337890625,</span>
+<span class="go">x^4 - 207302404*x^3 - 377423798538689366394*x^2 - 39715249826471656586987520004*x + 36703368217294125441230211032033660188801]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_R_bound">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Billerey_R_bound</code><span class="sig-paren">(</span><em>E</em>, <em>max_l=200</em>, <em>num_l=8</em>, <em>small_prime_bound=None</em>, <em>debug=False</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_R_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Billerey’s bound <span class="math notranslate nohighlight">\(R\)</span>.</p>
+<p>We compute <span class="math notranslate nohighlight">\(R_q\)</span> for <span class="math notranslate nohighlight">\(q\)</span> dividing primes <span class="math notranslate nohighlight">\(\ell\)</span> up to <code class="docutils literal notranslate"><span class="pre">max_l</span></code>
+(at most) until <code class="docutils literal notranslate"><span class="pre">num_l</span></code> nonzero values are found (at most).
+Return the list of primes dividing all <code class="docutils literal notranslate"><span class="pre">R_q</span></code> computed, excluding
+those dividing 6 or ramified or of bad reduction or less than
+small_prime_bound.  If no non-zero values are found return [0].</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over a number field <span class="math notranslate nohighlight">\(K\)</span>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">max_l</span></code> (int, default 200) – maximum size of rational primes
+l for which the primes q above l are checked.</li>
+<li><code class="docutils literal notranslate"><span class="pre">num_l</span></code> (int, default 8) – maximum number of rational primes
+l for which the primes q above l are checked.</li>
+<li><code class="docutils literal notranslate"><span class="pre">small_prime_bound</span></code> (int, default 0) – remove primes less
+than this from the output.</li>
+<li><code class="docutils literal notranslate"><span class="pre">debug</span></code> (bool, default <code class="docutils literal notranslate"><span class="pre">False</span></code>)  – if <code class="docutils literal notranslate"><span class="pre">True</span></code> prints details.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The purpose of the small_prime_bound is that it is faster to
+deal with these using the local test; by ignoring them here,
+we enable the algorithm to terminate sooner when there are no
+large reducible primes, which is always the case in practice.</p>
+</div>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">Billerey_R_bound</span>
+<span class="gp">sage: </span><span class="n">Billerey_R_bound</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[5]</span>
+</pre></div>
+</div>
+<p>We may get no bound at all if we do not use enough primes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Billerey_R_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">max_l</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">[0]</span>
+</pre></div>
+</div>
+<p>Or we may get a bound but not a good one if we do not use enough primes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Billerey_R_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">num_l</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">[5, 17, 67, 157]</span>
+</pre></div>
+</div>
+<p>In this case two primes is enough to restrict the set of possible
+reducible primes to just <span class="math notranslate nohighlight">\(\{5\}\)</span>.  This curve does have a rational 5-isogeny:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Billerey_R_bound</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">num_l</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">[5]</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_R_q">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Billerey_R_q</code><span class="sig-paren">(</span><em>E</em>, <em>q</em>, <em>B=0</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Billerey_R_q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Billerey’s <span class="math notranslate nohighlight">\(R_q\)</span>, adapted from the definition in <a class="reference internal" href="../../../../references/index.html#bil2011" id="id3">[Bil2011]</a>, Theorem 2.8.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over a number field <span class="math notranslate nohighlight">\(K\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">q</span></code> – a prime ideal of <span class="math notranslate nohighlight">\(K\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">B</span></code> (int) – 0 or LCM of previous <span class="math notranslate nohighlight">\(R_q\)</span>: the prime-to-B part of this <span class="math notranslate nohighlight">\(R_q\)</span> is ignored.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">Billerey_R_q</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">Billerey_R_q</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">K</span><span class="o">.</span><span class="n">prime_above</span><span class="p">(</span><span class="n">l</span><span class="p">))</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">primes</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+<span class="go">[1123077552537600,</span>
+<span class="go">227279663773903886745600,</span>
+<span class="go">51956919562116960000000000000000,</span>
+<span class="go">252485933820556361829926400000000]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.Frobenius_filter">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">Frobenius_filter</code><span class="sig-paren">(</span><em>E</em>, <em>L</em>, <em>patience=100</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.Frobenius_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine which primes in L might have an image contained in a
+Borel subgroup, by checking of traces of Frobenius.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function will sometimes return primes for which the image
+is not contained in a Borel subgroup.  This issue cannot always
+be fixed by increasing patience as it may be a result of a
+failure of a local-global principle for isogenies.</p>
+</div>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – EllipticCurve - over a number field.</li>
+<li><code class="docutils literal notranslate"><span class="pre">L</span></code> – list - a list of prime numbers.</li>
+<li><code class="docutils literal notranslate"><span class="pre">patience</span></code> (int), default 100– a positive integer bounding
+the number of traces of Frobenius to use while trying to prove
+irreducibility.</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>list – The list of all primes <span class="math notranslate nohighlight">\(\ell\)</span> in L for which the mod
+<span class="math notranslate nohighlight">\(\ell\)</span> image might be contained in a Borel subgroup of
+<span class="math notranslate nohighlight">\(GL_2(\mathbf{F}_{\ell})\)</span>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;11a1&#39;</span><span class="p">)</span> <span class="c1"># has a 5-isogeny</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">schemes</span><span class="o">.</span><span class="n">elliptic_curves</span><span class="o">.</span><span class="n">gal_reps_number_field</span><span class="o">.</span><span class="n">Frobenius_filter</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">primes</span><span class="p">(</span><span class="mi">40</span><span class="p">))</span>
+<span class="go">[5]</span>
+</pre></div>
+</div>
+<p>Example to show that the output may contain primes where the
+representation is in fact reducible.  Over <span class="math notranslate nohighlight">\(\QQ\)</span> the following is
+essentially the unique such example by <a class="reference internal" href="#sutherland12" id="id4">[Sutherland12]</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="mi">2268945</span><span class="o">/</span><span class="mi">128</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">schemes</span><span class="o">.</span><span class="n">elliptic_curves</span><span class="o">.</span><span class="n">gal_reps_number_field</span><span class="o">.</span><span class="n">Frobenius_filter</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">])</span>
+<span class="go">[7]</span>
+</pre></div>
+</div>
+<p>This curve does possess a 7-isogeny modulo every prime of good
+reduction, but has no rational 7-isogeny:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<p>A number field example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">i</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="o">+</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">399</span><span class="o">-</span><span class="mi">240</span><span class="o">*</span><span class="n">i</span><span class="p">,</span>  <span class="mi">2627</span><span class="o">+</span><span class="mi">2869</span><span class="o">*</span><span class="n">i</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">sage</span><span class="o">.</span><span class="n">schemes</span><span class="o">.</span><span class="n">elliptic_curves</span><span class="o">.</span><span class="n">gal_reps_number_field</span><span class="o">.</span><span class="n">Frobenius_filter</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">primes</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+<span class="go">[2, 3]</span>
+</pre></div>
+</div>
+<p>Here the curve really does possess isogenies of degrees 2 and 3:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">(</span><span class="n">l</span><span class="p">))</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]]</span>
+<span class="go">[1, 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="class">
 <dt id="sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation">
 <em class="property">class </em><code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">GaloisRepresentation</code><span class="sig-paren">(</span><em>E</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.GaloisRepresentation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Parents and Elements v8.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Parents and Elements v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
 <p>The compatible family of Galois representation
 attached to an elliptic curve over a number field.</p>
 <p>Given an elliptic curve <span class="math notranslate nohighlight">\(E\)</span> over a number field <span class="math notranslate nohighlight">\(K\)</span>
@@ -384,6 +623,94 @@ optionally yielding only principal primes.</p>
 </div>
 </dd></dl>
 
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.reducible_primes_Billerey">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">reducible_primes_Billerey</code><span class="sig-paren">(</span><em>E</em>, <em>num_l=None</em>, <em>max_l=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.reducible_primes_Billerey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a finite set of primes <span class="math notranslate nohighlight">\(\ell\)</span> containing all those for which
+<span class="math notranslate nohighlight">\(E\)</span> has a <span class="math notranslate nohighlight">\(K\)</span>-rational ell-isogeny, where <span class="math notranslate nohighlight">\(K\)</span> is the base field of
+<span class="math notranslate nohighlight">\(E\)</span>: i.e., the mod-<span class="math notranslate nohighlight">\(\ell\)</span> representation is irreducible for all
+<span class="math notranslate nohighlight">\(\ell\)</span> outside the set returned.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve defined over a number field <span class="math notranslate nohighlight">\(K\)</span>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">max_l</span></code> (int or <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)) – the maximum prime
+<span class="math notranslate nohighlight">\(\ell\)</span> to use for the B-bound and R-bound.  If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a
+default value will be used.</li>
+<li><code class="docutils literal notranslate"><span class="pre">num_l</span></code> (int or <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)) – the number of primes
+<span class="math notranslate nohighlight">\(\ell\)</span> to use for the B-bound and R-bound.  If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a
+default value will be used.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If <code class="docutils literal notranslate"><span class="pre">E</span></code> has CM then [0] is returned.  In this case use the
+function
+sage.schemes.elliptic_curves.isogeny_class.possible_isogeny_degrees</p>
+</div>
+<p>We first compute Billeray’s B_bound using at most <code class="docutils literal notranslate"><span class="pre">num_l</span></code> primes
+of size up to <code class="docutils literal notranslate"><span class="pre">max_l</span></code>.  If that fails we compute Billeray’s
+R_bound using at most <code class="docutils literal notranslate"><span class="pre">num_q</span></code> primes of size up to <code class="docutils literal notranslate"><span class="pre">max_q</span></code>.</p>
+<p>Provided that one of these methods succeeds in producing a finite
+list of primes we check these using a local condition, and finally
+test that the primes returned actually are reducible.  Otherwise
+we return [0].</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">reducible_primes_Billerey</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">29</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">);</span> <span class="n">a</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_Billerey</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[3, 5]</span>
+<span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">1728</span><span class="p">))</span> <span class="c1"># CM over K</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_Billerey</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[0]</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="c1"># CM but NOT over K</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_Billerey</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[2, 3]</span>
+</pre></div>
+</div>
+<p>An example where a prime is not reducible but passes the test:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve_from_j</span><span class="p">(</span><span class="n">K</span><span class="p">(</span><span class="mi">2268945</span><span class="o">/</span><span class="mi">128</span><span class="p">))</span><span class="o">.</span><span class="n">global_minimal_model</span><span class="p">()</span> <span class="c1"># c.f. [Sutherland12]</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_Billerey</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[7]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="sage.schemes.elliptic_curves.gal_reps_number_field.reducible_primes_naive">
+<code class="descclassname">sage.schemes.elliptic_curves.gal_reps_number_field.</code><code class="descname">reducible_primes_naive</code><span class="sig-paren">(</span><em>E</em>, <em>max_l=None</em>, <em>num_P=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.gal_reps_number_field.reducible_primes_naive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return locally reducible primes <span class="math notranslate nohighlight">\(\ell\)</span> up to <code class="docutils literal notranslate"><span class="pre">max_l</span></code>.</p>
+<p>The list of primes <span class="math notranslate nohighlight">\(\ell\)</span> returned consists of all those up to
+<code class="docutils literal notranslate"><span class="pre">max_l</span></code> such that <span class="math notranslate nohighlight">\(E\)</span> mod <span class="math notranslate nohighlight">\(P\)</span> has an <span class="math notranslate nohighlight">\(\ell\)</span>-isogeny, where <span class="math notranslate nohighlight">\(K\)</span>
+is the base field of <span class="math notranslate nohighlight">\(E\)</span>, for <code class="docutils literal notranslate"><span class="pre">num_P</span></code> primes <span class="math notranslate nohighlight">\(P\)</span> of <span class="math notranslate nohighlight">\(K\)</span>.  In
+most cases <span class="math notranslate nohighlight">\(E\)</span> then has a <span class="math notranslate nohighlight">\(K\)</span>-rational <span class="math notranslate nohighlight">\(\ell\)</span>-isogeny, but there
+are rare exceptions.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve defined over a number field <span class="math notranslate nohighlight">\(K\)</span></li>
+<li><code class="docutils literal notranslate"><span class="pre">max_l</span></code> (int or <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)) – the maximum prime
+<span class="math notranslate nohighlight">\(\ell\)</span> to test.</li>
+<li><code class="docutils literal notranslate"><span class="pre">num_P</span></code> (int or <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)) – the number of primes
+<span class="math notranslate nohighlight">\(P\)</span> of <span class="math notranslate nohighlight">\(K\)</span> to use in testing each <span class="math notranslate nohighlight">\(\ell\)</span>.</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.gal_reps_number_field</span> <span class="kn">import</span> <span class="n">reducible_primes_naive</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">4</span> <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="o">*</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">95</span><span class="o">*</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">67</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_naive</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">num_P</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">[2, 5, 53, 173, 197, 241, 293, 317, 409, 557, 601, 653, 677, 769, 773, 797]</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_naive</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">num_P</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">[2, 5, 197, 557, 653, 769]</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_naive</span><span class="p">(</span><span class="n">E</span><span class="p">,</span><span class="n">num_P</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">[2, 5]</span>
+<span class="gp">sage: </span><span class="n">reducible_primes_naive</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">[2, 5]</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">phi</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span> <span class="k">for</span> <span class="n">phi</span> <span class="ow">in</span> <span class="n">E</span><span class="o">.</span><span class="n">isogenies_prime_degree</span><span class="p">()]</span>
+<span class="go">[2, 2, 2, 5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 
@@ -449,7 +776,7 @@ optionally yielding only principal primes.</p>
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2018, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

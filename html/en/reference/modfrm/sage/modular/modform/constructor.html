@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Creating Spaces of Modular Forms &#8212; Sage Reference Manual v8.3: Modular Forms</title>
+    <title>Creating Spaces of Modular Forms &#8212; Sage Reference Manual v8.4: Modular Forms</title>
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../../_static/documentation_options.js"></script>
@@ -105,12 +105,12 @@ description of the input parameters.</p>
 <dd><p>Create an ambient space of modular forms.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">group</span></code> - A congruence subgroup or a Dirichlet
-character eps.</li>
-<li><code class="docutils literal notranslate"><span class="pre">weight</span></code> - int, the weight, which must be an
-integer = 1.</li>
-<li><code class="docutils literal notranslate"><span class="pre">base_ring</span></code> - the base ring (ignored if group is
-a Dirichlet character)</li>
+<li><code class="docutils literal notranslate"><span class="pre">group</span></code> - A congruence subgroup or a Dirichlet character eps.</li>
+<li><code class="docutils literal notranslate"><span class="pre">weight</span></code> - int, the weight, which must be an integer &gt;= 1.</li>
+<li><code class="docutils literal notranslate"><span class="pre">base_ring</span></code> - the base ring (ignored if group is a Dirichlet character)</li>
+<li><code class="docutils literal notranslate"><span class="pre">eis_only</span></code> - if True, compute only the Eisenstein part of the space.
+Only permitted (and only useful) in weight 1, where computing dimensions
+of cusp form spaces is expensive.</li>
 </ul>
 <p>Create using the command ModularForms(group, weight, base_ring)
 where group could be either a congruence subgroup or a Dirichlet
@@ -189,7 +189,9 @@ between <span class="math notranslate nohighlight">\(\Gamma_0(N)\)</span> and <s
 <span class="go">Modular Forms space of dimension 10, character [zeta3 + 1] and weight 2 over Cyclotomic Field of order 15 and degree 8</span>
 </pre></div>
 </div>
-<p>We create some weight 1 spaces. The first example works fine, since we can prove purely by Riemann surface theory that there are no weight 1 cusp forms:</p>
+<p>We create some weight 1 spaces. Here modular symbol algorithms do not work.
+In some small examples we can prove using Riemann–Roch that there are no
+cusp forms anyway, so the entire space is Eisenstein:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">ModularForms</span><span class="p">(</span><span class="n">Gamma1</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span> <span class="n">M</span>
 <span class="go">Modular Forms space of dimension 5 for Congruence Subgroup Gamma1(11) of weight 1 over Rational Field</span>
 <span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span>
@@ -207,18 +209,25 @@ between <span class="math notranslate nohighlight">\(\Gamma_0(N)\)</span> and <s
 <span class="go">True</span>
 </pre></div>
 </div>
-<p>This example doesn’t work so well, because we can’t calculate the cusp
-forms; but we can still work with the Eisenstein series.</p>
-<blockquote>
-<div><p>sage: M = ModularForms(Gamma1(57), 1); M
-Traceback (most recent call last):
-…
-NotImplementedError: Computation of dimensions of weight 1 cusp forms spaces not implemented in general</p>
-<p>sage: E = EisensteinForms(Gamma1(57), 1); E
-Eisenstein subspace of dimension 36 of Modular Forms space for Congruence Subgroup Gamma1(57) of weight 1 over Rational Field
-sage: (E.0 + E.2).q_expansion(40)
-1 + q^2 + 1473/2*q^36 - 1101/2*q^37 + q^38 - 373/2*q^39 + O(q^40)</p>
-</div></blockquote>
+<p>When this does not work (which happens as soon as the level is more than
+about 30), we use the Hecke stability algorithm of George Schaeffer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">ModularForms</span><span class="p">(</span><span class="n">Gamma1</span><span class="p">(</span><span class="mi">57</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span> <span class="n">M</span> <span class="c1"># long time</span>
+<span class="go">Modular Forms space of dimension 38 for Congruence Subgroup Gamma1(57) of weight 1 over Rational Field</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">cuspidal_submodule</span><span class="p">()</span><span class="o">.</span><span class="n">basis</span><span class="p">()</span> <span class="c1"># long time</span>
+<span class="go">[</span>
+<span class="go">q - q^4 + O(q^6),</span>
+<span class="go">q^3 - q^4 + O(q^6)</span>
+<span class="go">]</span>
+</pre></div>
+</div>
+<p>The Eisenstein subspace in weight 1 can be computed quickly, without
+triggering the expensive computation of the cuspidal part:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EisensteinForms</span><span class="p">(</span><span class="n">Gamma1</span><span class="p">(</span><span class="mi">59</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span> <span class="n">E</span> <span class="c1"># indirect doctest</span>
+<span class="go">Eisenstein subspace of dimension 29 of Modular Forms space for Congruence Subgroup Gamma1(59) of weight 1 over Rational Field</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="mi">0</span> <span class="o">+</span> <span class="n">E</span><span class="o">.</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">q_expansion</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+<span class="go">1 + q^2 + 196*q^29 - 197*q^30 - q^31 + q^33 + q^34 + q^37 + q^38 - q^39 + O(q^40)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
@@ -428,7 +437,7 @@ corresponding group and index.</p>
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2018, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Abstract SAT Solver &#8212; Sage Reference Manual v8.3: Sat</title>
+    <title>Abstract SAT Solver &#8212; Sage Reference Manual v8.4: Sat</title>
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../../_static/documentation_options.js"></script>
@@ -82,10 +82,11 @@ also allows to construct clauses using simple integers.</p>
 <div><ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">&quot;cryptominisat&quot;</span></code> – note that the cryptominisat package must be
 installed.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;picosat&quot;</span></code> – note that the pycosat package must be installed.</li>
 <li><code class="docutils literal notranslate"><span class="pre">&quot;LP&quot;</span></code> – use <a class="reference internal" href="sat_lp.html#sage.sat.solvers.sat_lp.SatLP" title="sage.sat.solvers.sat_lp.SatLP"><code class="xref py py-class docutils literal notranslate"><span class="pre">SatLP</span></code></a> to solve the
 SAT instance.</li>
-<li><code class="docutils literal notranslate"><span class="pre">None</span></code> (default) – use CryptoMiniSat if available, and a LP solver
-otherwise.</li>
+<li><code class="docutils literal notranslate"><span class="pre">None</span></code> (default) – use CryptoMiniSat if available, else PicoSAT if
+available, and a LP solver otherwise.</li>
 </ul>
 </div></blockquote>
 </li>
@@ -213,22 +214,23 @@ call used assumptions.</p>
 <dt id="sage.sat.solvers.satsolver.SatSolver.read">
 <code class="descname">read</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.sat.solvers.satsolver.SatSolver.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads DIMAC files.</p>
-<p>Reads in DIMAC formatted lines (lazily) from a
-file or file object and adds the corresponding
-clauses into this solver instance. Note that the
+<p>Reads in DIMAC formatted lines (lazily) from a file or file object and
+adds the corresponding clauses into this solver instance. Note that the
 DIMACS format is not well specified, see
 <a class="reference external" href="http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html">http://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html</a>,
-<a class="reference external" href="http://www.satcompetition.org/2009/format-benchmarks2009.html">http://www.satcompetition.org/2009/format-benchmarks2009.html</a>,
-and <a class="reference external" href="http://elis.dvo.ru/~lab_11/glpk-doc/cnfsat.pdf">http://elis.dvo.ru/~lab_11/glpk-doc/cnfsat.pdf</a>.
-The differences were summarized in the discussion on
-the ticket <a class="reference external" href="https://trac.sagemath.org/16924">trac ticket #16924</a>. This method assumes the following
-DIMACS format</p>
+<a class="reference external" href="http://www.satcompetition.org/2009/format-benchmarks2009.html">http://www.satcompetition.org/2009/format-benchmarks2009.html</a>, and
+<a class="reference external" href="http://elis.dvo.ru/~lab_11/glpk-doc/cnfsat.pdf">http://elis.dvo.ru/~lab_11/glpk-doc/cnfsat.pdf</a>.</p>
+<p>The differences were summarized in the discussion on the ticket
+<a class="reference external" href="https://trac.sagemath.org/16924">trac ticket #16924</a>. This method assumes the following DIMACS format:</p>
 <ul class="simple">
 <li>Any line starting with “c” is a comment</li>
 <li>Any line starting with “p” is a header</li>
 <li>Any variable 1-n can be used</li>
 <li>Every line containing a clause must end with a “0”</li>
 </ul>
+<p>The format is extended to allow lines starting with “x” defining <code class="docutils literal notranslate"><span class="pre">xor</span></code>
+clauses, with the notation introduced in cryptominisat, see
+<a class="reference external" href="https://www.msoos.org/xor-clauses/">https://www.msoos.org/xor-clauses/</a></p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">filename</span></code> - The name of a file as a string or a file object</li>
@@ -241,6 +243,18 @@ DIMACS format</p>
 <span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_object</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">clauses</span><span class="p">()</span>
 <span class="go">[((1, -3), False, None), ((2, 3, -1), False, None)]</span>
+</pre></div>
+</div>
+<p>With xor clauses:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">StringIO</span> <span class="c1"># for python 2/3 support</span>
+<span class="gp">sage: </span><span class="n">file_object</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">&quot;c A sample .cnf file with xor clauses.</span><span class="se">\n</span><span class="s2">p cnf 3 3</span><span class="se">\n</span><span class="s2">1 2 0</span><span class="se">\n</span><span class="s2">3 0</span><span class="se">\n</span><span class="s2">x1 2 3 0&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.sat.solvers.cryptominisat</span> <span class="kn">import</span> <span class="n">CryptoMiniSat</span>          <span class="c1"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">solver</span> <span class="o">=</span> <span class="n">CryptoMiniSat</span><span class="p">()</span>                                          <span class="c1"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_object</span><span class="p">)</span>                                          <span class="c1"># optional - cryptominisat</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="o">.</span><span class="n">clauses</span><span class="p">()</span>                                                  <span class="c1"># optional - cryptominisat</span>
+<span class="go">[((1, 2), False, None), ((3,), False, None), ((1, 2, 3), True, True)]</span>
+<span class="gp">sage: </span><span class="n">solver</span><span class="p">()</span>                                                          <span class="c1"># optional - cryptominisat</span>
+<span class="go">(None, True, True, True)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -344,7 +358,7 @@ DIMACS format</p>
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2018, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */

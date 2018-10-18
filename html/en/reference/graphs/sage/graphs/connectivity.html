@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Connectivity related functions &#8212; Sage Reference Manual v8.3: Graph Theory</title>
+    <title>Connectivity related functions &#8212; Sage Reference Manual v8.4: Graph Theory</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../../_static/documentation_options.js"></script>
@@ -138,14 +138,287 @@ Here is what the module can do:</p>
 <tr class="row-odd"><td><a class="reference internal" href="#sage.graphs.connectivity.bridges" title="sage.graphs.connectivity.bridges"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bridges()</span></code></a></td>
 <td>Returns a list of the bridges (or cut edges) of given undirected graph.</td>
 </tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.graphs.connectivity.cleave" title="sage.graphs.connectivity.cleave"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cleave()</span></code></a></td>
+<td>Return the connected subgraphs separated by the input vertex cut.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#sage.graphs.connectivity.spqr_tree" title="sage.graphs.connectivity.spqr_tree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spqr_tree()</span></code></a></td>
+<td>Return a SPQR-tree representing the triconnected components of the graph.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#sage.graphs.connectivity.spqr_tree_to_graph" title="sage.graphs.connectivity.spqr_tree_to_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spqr_tree_to_graph()</span></code></a></td>
+<td>Return the graph represented by the SPQR-tree <span class="math notranslate nohighlight">\(T\)</span>.</td>
+</tr>
 </tbody>
 </table>
 <div class="section" id="methods">
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="sage.graphs.connectivity.TriconnectivitySPQR">
+<em class="property">class </em><code class="descclassname">sage.graphs.connectivity.</code><code class="descname">TriconnectivitySPQR</code><a class="headerlink" href="#sage.graphs.connectivity.TriconnectivitySPQR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Decompose a graph into triconnected components and build SPQR-tree.</p>
+<p>This class implements the algorithm proposed by Hopcroft and Tarjan in
+<a class="reference internal" href="../../../references/index.html#hopcroft1973" id="id1">[Hopcroft1973]</a>, and later corrected by Gutwenger and Mutzel in <a class="reference internal" href="../../../references/index.html#gut2001" id="id2">[Gut2001]</a>,
+for finding the triconnected components of a biconnected graph. It then
+organizes these components into a SPQR-tree. See the:wikipedia:<span class="math notranslate nohighlight">\(SPQR_tree\)</span>.</p>
+<p>A SPQR-tree is a tree data structure used to represent the triconnected
+components of a biconnected (multi)graph and the 2-vertex cuts separating
+them. A node of a SPQR-tree, and the graph associated with it, can be one of
+the following four types:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> – the associated graph is a cycle with at least three vertices.
+<code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">series</span></code> and is also called a <code class="docutils literal notranslate"><span class="pre">polygon</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> – the associated graph is a dipole graph, a multigraph with two
+vertices and three or more edges. <code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">parallel</span></code> and the
+node is called a <code class="docutils literal notranslate"><span class="pre">bond</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;Q&quot;</span></code> – the associated graph has a single real edge. This trivial case
+is necessary to handle the graph that has only one edge.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> – the associated graph is a 3-vertex-connected graph that is not
+a cycle or dipole. <code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">rigid</span></code>.</li>
+</ul>
+<p>The edges of the tree indicate the 2-vertex cuts of the graph.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> – graph; if <code class="docutils literal notranslate"><span class="pre">G</span></code> is a <a class="reference internal" href="digraph.html#sage.graphs.digraph.DiGraph" title="sage.graphs.digraph.DiGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">DiGraph</span></code></a>, the computation is done
+on the underlying <a class="reference internal" href="graph.html#sage.graphs.graph.Graph" title="sage.graphs.graph.Graph"><code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code></a> (i.e., ignoring edge orientation)</li>
+<li><code class="docutils literal notranslate"><span class="pre">check</span></code> – boolean (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>); indicates whether <code class="docutils literal notranslate"><span class="pre">G</span></code>
+needs to be tested for biconnectivity</li>
+</ul>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
+<li><a class="reference internal" href="#sage.graphs.connectivity.spqr_tree" title="sage.graphs.connectivity.spqr_tree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sage.graphs.connectivity.spqr_tree()</span></code></a></li>
+<li><a class="reference internal" href="graph.html#sage.graphs.graph.Graph.is_biconnected" title="sage.graphs.graph.Graph.is_biconnected"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_biconnected()</span></code></a></li>
+<li><a class="reference external" href="https://en.wikipedia.org/wiki/SPQR_tree">Wikipedia article SPQR_tree</a></li>
+</ul>
+</div>
+<p>EXAMPLES:</p>
+<p>Example from the <a class="reference external" href="https://en.wikipedia.org/wiki/SPQR_tree">Wikipedia article SPQR_tree</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">TriconnectivitySPQR</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree_to_graph</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="go">....: (2, 13), (3, 13), (4, 5), (4, 7), (5, 6), (5, 8), (5, 7), (6, 7),</span>
+<span class="go">....: (8, 11), (8, 9), (8, 12), (9, 10), (9, 11), (9, 12), (10, 12)])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>An example from <a class="reference internal" href="../../../references/index.html#hopcroft1973" id="id3">[Hopcroft1973]</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="go">....: (2, 13), (3, 4), (3, 13), (4, 5), (4, 7), (5, 6), (5, 7), (5, 8),</span>
+<span class="go">....: (6, 7), (8, 9), (8, 11), (8, 12), (9, 10), (9, 11), (9, 12),</span>
+<span class="go">....: (10, 11), (10, 12)])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span><span class="o">.</span><span class="n">print_triconnected_components</span><span class="p">()</span>
+<span class="go">Triconnected: [(3, 13, None), (1, 13, None), (2, 13, None), (2, 3, None), (1, 2, None), (3, 1, &#39;newVEdge0&#39;)]</span>
+<span class="go">Polygon: [(3, 4, None), (3, 1, &#39;newVEdge0&#39;), (4, 1, &#39;newVEdge1&#39;)]</span>
+<span class="go">Bond: [(1, 4, None), (4, 1, &#39;newVEdge1&#39;), (4, 1, &#39;newVEdge2&#39;)]</span>
+<span class="go">Polygon: [(6, 7, None), (5, 6, None), (7, 5, &#39;newVEdge3&#39;)]</span>
+<span class="go">Bond: [(7, 5, &#39;newVEdge3&#39;), (5, 7, &#39;newVEdge4&#39;), (5, 7, None)]</span>
+<span class="go">Polygon: [(5, 7, &#39;newVEdge4&#39;), (4, 7, None), (5, 4, &#39;newVEdge5&#39;)]</span>
+<span class="go">Bond: [(4, 5, None), (5, 4, &#39;newVEdge5&#39;), (5, 4, &#39;newVEdge6&#39;)]</span>
+<span class="go">Polygon: [(5, 4, &#39;newVEdge6&#39;), (4, 1, &#39;newVEdge2&#39;), (5, 8, None), (8, 1, &#39;newVEdge8&#39;)]</span>
+<span class="go">Bond: [(1, 8, None), (8, 1, &#39;newVEdge8&#39;), (8, 1, &#39;newVEdge9&#39;)]</span>
+<span class="go">Triconnected: [(8, 9, None), (9, 12, None), (9, 11, None), (8, 11, None), (10, 11, None), (9, 10, None), (10, 12, None), (8, 12, &#39;newVEdge10&#39;)]</span>
+<span class="go">Bond: [(8, 12, &#39;newVEdge10&#39;), (12, 8, &#39;newVEdge11&#39;), (8, 12, None)]</span>
+<span class="go">Polygon: [(8, 1, &#39;newVEdge9&#39;), (12, 8, &#39;newVEdge11&#39;), (1, 12, None)]</span>
+</pre></div>
+</div>
+<p>An example from <a class="reference internal" href="../../../references/index.html#gut2001" id="id4">[Gut2001]</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+<span class="go">....: (4, 6), (5, 7), (5, 8), (5, 14), (6, 8), (7, 14), (8, 9), (8, 10),</span>
+<span class="go">....: (8, 11), (8, 12), (9, 10), (10, 13), (10, 14), (10, 15), (10, 16),</span>
+<span class="go">....: (11, 12), (11, 13), (12, 13), (14, 15), (14, 16), (15, 16)])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>An example with multi-edges and accessing the triconnected components:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span><span class="o">.</span><span class="n">print_triconnected_components</span><span class="p">()</span>
+<span class="go">Bond:  [(1, 5, None), (1, 5, None), (1, 5, &#39;newVEdge0&#39;)]</span>
+<span class="go">Bond:  [(2, 3, None), (2, 3, None), (2, 3, &#39;newVEdge1&#39;)]</span>
+<span class="go">Polygon:  [(4, 5, None), (1, 5, &#39;newVEdge0&#39;), (3, 4, None), (2, 3, &#39;newVEdge1&#39;), (1, 2, None)]</span>
+</pre></div>
+</div>
+<p>An example of a triconnected graph:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="k">print</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">vertices</span><span class="p">())</span>
+<span class="go">[(&#39;R&#39;, Multi-graph on 4 vertices)]</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>An example of a directed graph with multi-edges:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span><span class="o">.</span><span class="n">print_triconnected_components</span><span class="p">()</span>
+<span class="go">Bond:  [(1, 5, None), (5, 1, None), (1, 5, &#39;newVEdge0&#39;)]</span>
+<span class="go">Polygon:  [(4, 5, None), (1, 5, &#39;newVEdge0&#39;), (3, 4, None), (2, 3, None), (1, 2, None)]</span>
+</pre></div>
+</div>
+<p>Edge labels are preserved by the construction:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;04&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;15&#39;</span><span class="p">),</span>
+<span class="go">....: (2, 3, &#39;23&#39;), (2, 6, &#39;26&#39;), (3, 7, &#39;37&#39;), (4, 5, &#39;45&#39;),</span>
+<span class="go">....: (5, 6, &#39;56&#39;), (6, 7, 67)])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">set</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Cythonize the code for more efficiency. Many data structures can be
+turned into integer arrays. More care is needed for the doubly linked
+list and for the lists of lists. Note that the internal graph copy
+must allow edge addition due to the insertion of virtual edges.</p>
+</div>
+<dl class="method">
+<dt id="sage.graphs.connectivity.TriconnectivitySPQR.get_spqr_tree">
+<code class="descname">get_spqr_tree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.graphs.connectivity.TriconnectivitySPQR.get_spqr_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an SPQR-tree representing the triconnected components of the
+graph.</p>
+<p>An SPQR-tree is a tree data structure used to represent the triconnected
+components of a biconnected (multi)graph and the 2-vertex cuts
+separating them. A node of a SPQR-tree, and the graph associated with
+it, can be one of the following four types:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> – the associated graph is a cycle with at least three vertices.
+<code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">series</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> – the associated graph is a dipole graph, a multigraph with
+two vertices and three or more edges. <code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">parallel</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;Q&quot;</span></code> – the associated graph has a single real edge. This trivial
+case is necessary to handle the graph that has only one edge.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> – the associated graph is a 3-connected graph that is not a
+cycle or dipole. <code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">rigid</span></code>.</li>
+</ul>
+<p>The edges of the tree indicate the 2-vertex cuts of the graph.</p>
+<p>OUTPUT:</p>
+<p><code class="docutils literal notranslate"><span class="pre">SPQR-tree</span></code> a tree whose vertices are labeled with the block’s
+type and the subgraph of three-blocks in the decomposition.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">TriconnectivitySPQR</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_clique([0, 1, G.add_vertex(), G.add_vertex()])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">K4</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">K4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;R&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree_to_graph</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_path([0, G.add_vertex(), G.add_vertex(), 1])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">C4</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">C4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">allow_multiple_edges</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">C4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">tric</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[(&#39;Q&#39;, Multi-graph on 2 vertices)]</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span><span class="o">.</span><span class="n">get_spqr_tree</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[(&#39;P&#39;, Multi-graph on 2 vertices)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.connectivity.TriconnectivitySPQR.get_triconnected_components">
+<code class="descname">get_triconnected_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.graphs.connectivity.TriconnectivitySPQR.get_triconnected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the triconnected components as a list of tuples.</p>
+<p>Each component is represented as a tuple of the type of the component
+and the list of edges of the component.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">TriconnectivitySPQR</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_path([0, G.add_vertex(), G.add_vertex(), 1]) </span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span><span class="o">.</span><span class="n">get_triconnected_components</span><span class="p">()</span>
+<span class="go">[(&#39;Polygon&#39;, [(4, 5, None), (0, 4, None), (1, 5, None), (1, 0, &#39;newVEdge1&#39;)]),</span>
+<span class="go">(&#39;Polygon&#39;, [(6, 7, None), (0, 6, None), (1, 7, None), (1, 0, &#39;newVEdge3&#39;)]),</span>
+<span class="go">(&#39;Bond&#39;, [(1, 0, &#39;newVEdge1&#39;), (1, 0, &#39;newVEdge3&#39;), (1, 0, &#39;newVEdge4&#39;)]),</span>
+<span class="go">(&#39;Polygon&#39;, [(1, 3, None), (1, 0, &#39;newVEdge4&#39;), (2, 3, None), (0, 2, None)])]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.graphs.connectivity.TriconnectivitySPQR.print_triconnected_components">
+<code class="descname">print_triconnected_components</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.graphs.connectivity.TriconnectivitySPQR.print_triconnected_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the type and list of edges of each component.</p>
+<p>EXAMPLES:</p>
+<p>An example from <a class="reference internal" href="../../../references/index.html#hopcroft1973" id="id5">[Hopcroft1973]</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">TriconnectivitySPQR</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="go">....: (2, 13), (3, 4), (3, 13), (4, 5), (4, 7), (5, 6), (5, 7), (5, 8),</span>
+<span class="go">....: (6, 7), (8, 9), (8, 11), (8, 12), (9, 10), (9, 11), (9, 12),</span>
+<span class="go">....: (10, 11), (10, 12)])</span>
+<span class="gp">sage: </span><span class="n">tric</span> <span class="o">=</span> <span class="n">TriconnectivitySPQR</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">tric</span><span class="o">.</span><span class="n">print_triconnected_components</span><span class="p">()</span>
+<span class="go">Triconnected: [(3, 13, None), (1, 13, None), (2, 13, None), (2, 3, None), (1, 2, None), (3, 1, &#39;newVEdge0&#39;)]</span>
+<span class="go">Polygon: [(3, 4, None), (3, 1, &#39;newVEdge0&#39;), (4, 1, &#39;newVEdge1&#39;)]</span>
+<span class="go">Bond: [(1, 4, None), (4, 1, &#39;newVEdge1&#39;), (4, 1, &#39;newVEdge2&#39;)]</span>
+<span class="go">Polygon: [(6, 7, None), (5, 6, None), (7, 5, &#39;newVEdge3&#39;)]</span>
+<span class="go">Bond: [(7, 5, &#39;newVEdge3&#39;), (5, 7, &#39;newVEdge4&#39;), (5, 7, None)]</span>
+<span class="go">Polygon: [(5, 7, &#39;newVEdge4&#39;), (4, 7, None), (5, 4, &#39;newVEdge5&#39;)]</span>
+<span class="go">Bond: [(4, 5, None), (5, 4, &#39;newVEdge5&#39;), (5, 4, &#39;newVEdge6&#39;)]</span>
+<span class="go">Polygon: [(5, 4, &#39;newVEdge6&#39;), (4, 1, &#39;newVEdge2&#39;), (5, 8, None), (8, 1, &#39;newVEdge8&#39;)]</span>
+<span class="go">Bond: [(1, 8, None), (8, 1, &#39;newVEdge8&#39;), (8, 1, &#39;newVEdge9&#39;)]</span>
+<span class="go">Triconnected: [(8, 9, None), (9, 12, None), (9, 11, None), (8, 11, None), (10, 11, None), (9, 10, None), (10, 12, None), (8, 12, &#39;newVEdge10&#39;)]</span>
+<span class="go">Bond: [(8, 12, &#39;newVEdge10&#39;), (12, 8, &#39;newVEdge11&#39;), (8, 12, None)]</span>
+<span class="go">Polygon: [(8, 1, &#39;newVEdge9&#39;), (12, 8, &#39;newVEdge11&#39;), (1, 12, None)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="attribute">
 <dt id="sage.graphs.connectivity.blocks_and_cut_vertices">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">blocks_and_cut_vertices</code><a class="headerlink" href="#sage.graphs.connectivity.blocks_and_cut_vertices" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the blocks and cut vertices of the graph.</p>
+<dd><p>Compute the blocks and cut vertices of the graph.</p>
 <p>In the case of a digraph, this computation is done on the underlying
 graph.</p>
 <p>A cut vertex is one whose deletion increases the number of connected
@@ -172,7 +445,7 @@ vertices and the blocks are the corresponding induced subgraphs - and
 <code class="docutils literal notranslate"><span class="pre">C</span></code> is a list of cut vertices.</p>
 <p>ALGORITHM:</p>
 <blockquote>
-<div>We implement the algorithm proposed by Tarjan in <a class="reference internal" href="../../../references/index.html#tarjan72" id="id1">[Tarjan72]</a>. The
+<div>We implement the algorithm proposed by Tarjan in <a class="reference internal" href="../../../references/index.html#tarjan72" id="id6">[Tarjan72]</a>. The
 original version is recursive. We emulate the recursion using a stack.</div></blockquote>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -213,6 +486,14 @@ original version is recursive. We emulate the recursion using a stack.</div></bl
 <span class="go">([[1, 2, 3], [5, 6], [5, 7], [5, 8], [4]], [5])</span>
 </pre></div>
 </div>
+<p>A directed graph with Boost’s algorithm (<a class="reference external" href="https://trac.sagemath.org/25994">trac ticket #25994</a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">rings</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">rings</span><span class="o">.</span><span class="n">merge_vertices</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">rings</span> <span class="o">=</span> <span class="n">rings</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">blocks_and_cut_vertices</span><span class="p">(</span><span class="n">rings</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Tarjan_Boost&quot;</span><span class="p">)</span>
+<span class="go">([[0, 1, 4, 2, 3], [0, 6, 9, 7, 8]], [0])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -230,7 +511,7 @@ property that the distance between two leaves is even. When <code class="docutil
 not connected, the resulting graph is a forest.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">self</span></code> is biconnected, the tree is reduced to a single node of
 type <span class="math notranslate nohighlight">\(B\)</span>.</p>
-<p>We referred to <a class="reference internal" href="../../../references/index.html#harpri" id="id2">[HarPri]</a> and <a class="reference internal" href="../../../references/index.html#gallai" id="id3">[Gallai]</a> for blocks and cuts tree.</p>
+<p>We referred to <a class="reference internal" href="../../../references/index.html#harpri" id="id7">[HarPri]</a> and <a class="reference internal" href="../../../references/index.html#gallai" id="id8">[Gallai]</a> for blocks and cuts tree.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <ul class="last simple">
@@ -293,13 +574,118 @@ A disconnected graph has no bridge.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="sage.graphs.connectivity.connected_component_containing_vertex">
-<code class="descclassname">sage.graphs.connectivity.</code><code class="descname">connected_component_containing_vertex</code><a class="headerlink" href="#sage.graphs.connectivity.connected_component_containing_vertex" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of the vertices connected to vertex.</p>
+<dt id="sage.graphs.connectivity.cleave">
+<code class="descclassname">sage.graphs.connectivity.</code><code class="descname">cleave</code><a class="headerlink" href="#sage.graphs.connectivity.cleave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the connected subgraphs separated by the input vertex cut.</p>
+<p>Given a connected (multi)graph <span class="math notranslate nohighlight">\(G\)</span> and a vertex cut <span class="math notranslate nohighlight">\(X\)</span>, this method
+computes the list of subgraphs of <span class="math notranslate nohighlight">\(G\)</span> induced by each connected component
+<span class="math notranslate nohighlight">\(c\)</span> of <span class="math notranslate nohighlight">\(G\setminus X\)</span> plus <span class="math notranslate nohighlight">\(X\)</span>, i.e., <span class="math notranslate nohighlight">\(G[c\cup X]\)</span>.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) - the input graph.</li>
-<li><code class="docutils literal notranslate"><span class="pre">v</span></code> - the vertex to search for.</li>
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> – a Graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">cut_vertices</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) a set of vertices representing a
+vertex cut of <code class="docutils literal notranslate"><span class="pre">G</span></code>. If no vertex cut is given, the method will compute
+one via a call to <a class="reference internal" href="#sage.graphs.connectivity.vertex_connectivity" title="sage.graphs.connectivity.vertex_connectivity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">vertex_connectivity()</span></code></a>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">virtual_edges</span></code> – boolean (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>); whether to add virtual
+edges to the sides of the cut or not. A virtual edge is an edge between a
+pair of vertices of the cut that are not connected by an edge in <code class="docutils literal notranslate"><span class="pre">G</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">solver</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) Specify a Linear Program (LP) solver to
+be used. If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default one is used. For more information
+on LP solvers and which default solver is used, see the method
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sage.numerical.mip.MixedIntegerLinearProgram.solve()</span></code></a> of the class
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.numerical.mip.MixedIntegerLinearProgram</span></code></a>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">verbose</span></code> – integer (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>). Sets the level of verbosity. Set
+to 0 by default, which means quiet.</li>
+</ul>
+<p>OUTPUT: A triple <span class="math notranslate nohighlight">\((S, C, f)\)</span>, where</p>
+<ul class="simple">
+<li><span class="math notranslate nohighlight">\(S\)</span> is a list of the graphs that are sides of the vertex cut.</li>
+<li><span class="math notranslate nohighlight">\(C\)</span> is the graph of the cocycles. For each pair of vertices of the cut,
+if there exists an edge between them, <span class="math notranslate nohighlight">\(C\)</span> has one copy of each edge
+connecting them in <code class="docutils literal notranslate"><span class="pre">G</span></code> per sides of the cut plus one extra copy.
+Furthermore, when <code class="docutils literal notranslate"><span class="pre">virtual_edges</span> <span class="pre">==</span> <span class="pre">True</span></code>, if a pair of vertices of the
+cut is not connected by an edge in <code class="docutils literal notranslate"><span class="pre">G</span></code>, then it has one virtual edge
+between them per sides of the cut.</li>
+<li><span class="math notranslate nohighlight">\(f\)</span> is the complement of the subgraph of <code class="docutils literal notranslate"><span class="pre">G</span></code> induced by the vertex
+cut. Hence, its vertex set is the vertex cut, and its edge set is the set
+of virtual edges (i.e., edges between pairs of vertices of the cut that
+are not connected by an edge in <code class="docutils literal notranslate"><span class="pre">G</span></code>). When <code class="docutils literal notranslate"><span class="pre">virtual_edges</span> <span class="pre">==</span> <span class="pre">False</span></code>,
+the edge set is empty.</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>If there is an edge between cut vertices:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">cleave</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_clique([0, 1, G.add_vertex(), G.add_vertex()])</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="p">,</span><span class="n">C1</span><span class="p">,</span><span class="n">f1</span> <span class="o">=</span> <span class="n">cleave</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">cut_vertices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">order</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">S1</span><span class="p">]</span>
+<span class="go">[4, 4, 4]</span>
+<span class="gp">sage: </span><span class="n">C1</span><span class="o">.</span><span class="n">order</span><span class="p">(),</span> <span class="n">C1</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">(2, 4)</span>
+<span class="gp">sage: </span><span class="n">f1</span><span class="o">.</span><span class="n">vertices</span><span class="p">(),</span> <span class="n">f1</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">([0, 1], [])</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">virtual_edges</span> <span class="pre">==</span> <span class="pre">False</span></code> and there is an edge between cut vertices:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">complement</span><span class="p">()</span> <span class="o">==</span> <span class="n">Graph</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[]])</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="p">,</span><span class="n">C2</span><span class="p">,</span><span class="n">f2</span> <span class="o">=</span> <span class="n">cleave</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">cut_vertices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">virtual_edges</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">S1</span> <span class="o">==</span> <span class="n">S2</span><span class="p">,</span> <span class="n">C1</span> <span class="o">==</span> <span class="n">C2</span><span class="p">,</span> <span class="n">f1</span> <span class="o">==</span> <span class="n">f2</span><span class="p">)</span>
+<span class="go">(True, True, True)</span>
+</pre></div>
+</div>
+<p>If cut vertices doesn’t have edge between them:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">delete_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">S1</span><span class="p">,</span><span class="n">C1</span><span class="p">,</span><span class="n">f1</span> <span class="o">=</span> <span class="n">cleave</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">cut_vertices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">order</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">S1</span><span class="p">]</span>
+<span class="go">[4, 4, 4]</span>
+<span class="gp">sage: </span><span class="n">C1</span><span class="o">.</span><span class="n">order</span><span class="p">(),</span> <span class="n">C1</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">(2, 3)</span>
+<span class="gp">sage: </span><span class="n">f1</span><span class="o">.</span><span class="n">vertices</span><span class="p">(),</span> <span class="n">f1</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">([0, 1], [(0, 1, None)])</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">virtual_edges</span> <span class="pre">==</span> <span class="pre">False</span></code> and the cut vertices are not connected by an
+edge:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">complement</span><span class="p">()</span> <span class="o">==</span> <span class="n">Graph</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[]])</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="n">S2</span><span class="p">,</span><span class="n">C2</span><span class="p">,</span><span class="n">f2</span> <span class="o">=</span> <span class="n">cleave</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">cut_vertices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">virtual_edges</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">order</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">S2</span><span class="p">]</span>
+<span class="go">[4, 4, 4]</span>
+<span class="gp">sage: </span><span class="n">C2</span><span class="o">.</span><span class="n">order</span><span class="p">(),</span> <span class="n">C2</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">(2, 0)</span>
+<span class="gp">sage: </span><span class="n">f2</span><span class="o">.</span><span class="n">vertices</span><span class="p">(),</span> <span class="n">f2</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="go">([0, 1], [])</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">S1</span> <span class="o">==</span> <span class="n">S2</span><span class="p">,</span> <span class="n">C1</span> <span class="o">==</span> <span class="n">C2</span><span class="p">,</span> <span class="n">f1</span> <span class="o">==</span> <span class="n">f2</span><span class="p">)</span>
+<span class="go">(False, False, False)</span>
+</pre></div>
+</div>
+<p>If <span class="math notranslate nohighlight">\(G\)</span> is a biconnected multigraph:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteBipartiteGraph</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">allow_multiple_edges</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edges</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">S</span><span class="p">,</span><span class="n">C</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">cleave</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">cut_vertices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
+<span class="go">....:     print(g.edges(labels=0))</span>
+<span class="go">[(0, 1), (0, 1), (0, 1), (0, 2), (0, 2), (0, 3), (0, 3), (1, 2), (1, 2), (1, 3), (1, 3), (2, 3), (2, 3)]</span>
+<span class="go">[(0, 1), (0, 1), (0, 1), (0, 4), (0, 4), (1, 4), (1, 4)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.graphs.connectivity.connected_component_containing_vertex">
+<code class="descclassname">sage.graphs.connectivity.</code><code class="descname">connected_component_containing_vertex</code><a class="headerlink" href="#sage.graphs.connectivity.connected_component_containing_vertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the vertices connected to vertex.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) – the input graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">v</span></code> – the vertex to search for.</li>
+<li><code class="docutils literal notranslate"><span class="pre">sort</span></code> – boolean (default <code class="docutils literal notranslate"><span class="pre">True</span></code>)
+whether to sort vertices inside the component</li>
 </ul>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">connected_component_containing_vertex</span>
@@ -318,13 +704,15 @@ A disconnected graph has no bridge.</p>
 <dl class="attribute">
 <dt id="sage.graphs.connectivity.connected_components">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">connected_components</code><a class="headerlink" href="#sage.graphs.connectivity.connected_components" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the list of connected components.</p>
-<p>Returns a list of lists of vertices, each list representing a
+<dd><p>Return the list of connected components.</p>
+<p>This returns a list of lists of vertices, each list representing a
 connected component. The list is ordered from largest to smallest
 component.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) - the input graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) – the input graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">sort</span></code> – boolean (default <code class="docutils literal notranslate"><span class="pre">True</span></code>)
+whether to sort vertices inside each component</li>
 </ul>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">connected_components</span>
@@ -343,10 +731,10 @@ component.</p>
 <dl class="attribute">
 <dt id="sage.graphs.connectivity.connected_components_number">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">connected_components_number</code><a class="headerlink" href="#sage.graphs.connectivity.connected_components_number" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the number of connected components.</p>
+<dd><p>Return the number of connected components.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) - the input graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) – the input graph.</li>
 </ul>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">connected_components_number</span>
@@ -386,7 +774,7 @@ component.</p>
 <dl class="attribute">
 <dt id="sage.graphs.connectivity.connected_components_subgraphs">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">connected_components_subgraphs</code><a class="headerlink" href="#sage.graphs.connectivity.connected_components_subgraphs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of connected components as graph objects.</p>
+<dd><p>Return a list of connected components as graph objects.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">connected_components_subgraphs</span>
 <span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span> <span class="p">{</span> <span class="mi">0</span> <span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">1</span> <span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">2</span> <span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">4</span> <span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="mi">5</span> <span class="p">:</span> <span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="p">}</span> <span class="p">)</span>
@@ -405,8 +793,7 @@ component.</p>
 <dt id="sage.graphs.connectivity.edge_connectivity">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">edge_connectivity</code><a class="headerlink" href="#sage.graphs.connectivity.edge_connectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the edge connectivity of the graph.</p>
-<p>For more information, see the
-<a class="reference external" href="http://en.wikipedia.org/wiki/Connectivity_(graph_theory)">Wikipedia article on connectivity</a>.</p>
+<p>For more information, see the <a class="reference external" href="https://en.wikipedia.org/wiki/Connectivity_(graph_theory)">Wikipedia article Connectivity_(graph_theory)</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">When the graph is a directed graph, this method actually computes
@@ -453,9 +840,9 @@ vertices that are disconnected by the cut. Implies
 solver to be used (ignored if <code class="docutils literal notranslate"><span class="pre">implementation='boost'</span></code>). If set to
 <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default one is used. For more information on LP solvers
 and which default solver is used, see the method
-<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.3)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve</span></code></a>
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve</span></code></a>
 of the class
-<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedIntegerLinearProgram</span></code></a>.</li>
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedIntegerLinearProgram</span></code></a>.</li>
 <li><code class="docutils literal notranslate"><span class="pre">verbose</span></code> – integer (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>). Sets the level of
 verbosity. Set to 0 by default, which means quiet.</li>
 </ul>
@@ -552,11 +939,11 @@ Boost</p>
 <dl class="attribute">
 <dt id="sage.graphs.connectivity.is_connected">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">is_connected</code><a class="headerlink" href="#sage.graphs.connectivity.is_connected" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates whether the (di)graph is connected. Note that in a graph,
-path connected is equivalent to connected.</p>
+<dd><p>Test whether the (di)graph is connected.</p>
+<p>Note that in a graph, path connected is equivalent to connected.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) - the input graph.</li>
+<li><code class="docutils literal notranslate"><span class="pre">G</span></code> (generic_graph) – the input graph.</li>
 </ul>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -715,12 +1102,202 @@ is ignoring edges orientations.</li>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="sage.graphs.connectivity.spqr_tree">
+<code class="descclassname">sage.graphs.connectivity.</code><code class="descname">spqr_tree</code><a class="headerlink" href="#sage.graphs.connectivity.spqr_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an SPQR-tree representing the triconnected components of the graph.</p>
+<p>An SPQR-tree is a tree data structure used to represent the triconnected
+components of a biconnected (multi)graph and the 2-vertex cuts separating
+them. A node of a SPQR-tree, and the graph associated with it, can be one of
+the following four types:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> – the associated graph is a cycle with at least three vertices.
+<code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">series</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> – the associated graph is a dipole graph, a multigraph with two
+vertices and three or more edges. <code class="docutils literal notranslate"><span class="pre">&quot;P&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">parallel</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;Q&quot;</span></code> – the associated graph has a single real edge. This trivial case
+is necessary to handle the graph that has only one edge.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> – the associated graph is a 3-connected graph that is not a cycle
+or dipole. <code class="docutils literal notranslate"><span class="pre">&quot;R&quot;</span></code> stands for <code class="docutils literal notranslate"><span class="pre">rigid</span></code>.</li>
+</ul>
+<p>This method decomposes a biconnected graph into cycles, cocycles, and
+3-connected blocks summed over cocycles, and arranges them as a SPQR-tree.
+More precisely, it splits the graph at each of its 2-vertex cuts, giving a
+unique decomposition into 3-connected blocks, cycles and cocycles. The
+cocycles are dipole graphs with one edge per real edge between the included
+vertices and one additional (virtual) edge per connected component resulting
+from deletion of the vertices in the cut. See the <a class="reference external" href="https://en.wikipedia.org/wiki/SPQR_tree">Wikipedia article SPQR_tree</a>.</p>
+<p>INPUT:</p>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">G</span></code> - the input graph.</p>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">algorithm</span></code> – The algorithm to use in computing the SPQR tree of <code class="docutils literal notranslate"><span class="pre">G</span></code>.</dt>
+<dd><p class="first last">The following algorithms are supported:</p>
+</dd>
+</dl>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">&quot;Hopcroft_Tarjan&quot;</span></code> (default) – Use the algorithm proposed by
+Hopcroft and Tarjan in <a class="reference internal" href="../../../references/index.html#hopcroft1973" id="id9">[Hopcroft1973]</a> and later corrected by Gutwenger
+and Mutzel in <a class="reference internal" href="../../../references/index.html#gut2001" id="id10">[Gut2001]</a>. See
+<a class="reference internal" href="#sage.graphs.connectivity.TriconnectivitySPQR" title="sage.graphs.connectivity.TriconnectivitySPQR"><code class="xref py py-class docutils literal notranslate"><span class="pre">TriconnectivitySPQR</span></code></a>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">&quot;cleave&quot;</span></code> – Using method <a class="reference internal" href="#sage.graphs.connectivity.cleave" title="sage.graphs.connectivity.cleave"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cleave()</span></code></a>.</li>
+</ul>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">solver</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) Specify a Linear Program (LP) solver to
+be used. If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default one is used. For more information
+on LP solvers and which default solver is used, see the method
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sage.numerical.mip.MixedIntegerLinearProgram.solve()</span></code></a> of the class
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.numerical.mip.MixedIntegerLinearProgram</span></code></a>.</p>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">verbose</span></code> – integer (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>). Sets the level of verbosity. Set
+to 0 by default, which means quiet.</p>
+</li>
+</ul>
+<p>OUTPUT: <code class="docutils literal notranslate"><span class="pre">SPQR-tree</span></code> a tree whose vertices are labeled with the block’s type
+and the subgraph of three-blocks in the decomposition.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_clique([0, 1, G.add_vertex(), G.add_vertex()])</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">K4</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CompleteGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">K4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;R&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree_to_graph</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_path([0, G.add_vertex(), G.add_vertex(), 1])</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">C4</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">C4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">allow_multiple_edges</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edges</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">13</span>
+<span class="gp">sage: </span><span class="nb">all</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">C4</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">Tree</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">CycleGraph</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Tree</span><span class="o">.</span><span class="n">order</span><span class="p">()</span>
+<span class="go">3</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">Tree</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="s1">&#39;LlCG{O@?GBoMw?&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Hopcroft_Tarjan&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">T2</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;cleave&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T2</span><span class="p">))</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;cleave&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[(&#39;Q&#39;, Multi-graph on 2 vertices)]</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;Hopcroft_Tarjan&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">T</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[(&#39;Q&#39;, Multi-graph on 2 vertices)]</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;cleave&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
+<span class="go">[(&#39;P&#39;, Multi-graph on 2 vertices)]</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">graphs</span><span class="o">.</span><span class="n">PetersenGraph</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Hopcroft_Tarjan&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">Counter({&#39;R&#39;: 1})</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;cleave&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">Counter({&#39;R&#39;: 1})</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="go">....:     G.add_path([u, G.add_vertex(), G.add_vertex(), v])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Hopcroft_Tarjan&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">Counter({&#39;P&#39;: 15, &#39;S&#39;: 15, &#39;R&#39;: 1})</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;cleave&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">Counter({&#39;P&#39;: 15, &#39;S&#39;: 15, &#39;R&#39;: 1})</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="go">....:     G.add_path([u, G.add_vertex(), G.add_vertex(), v])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Hopcroft_Tarjan&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>
+<span class="go">Counter({&#39;S&#39;: 75, &#39;P&#39;: 60, &#39;R&#39;: 1})</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">spqr_tree</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;cleave&quot;</span><span class="p">)</span> <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">Counter</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">T</span><span class="p">)</span>            <span class="c1"># long time</span>
+<span class="go">Counter({&#39;S&#39;: 75, &#39;P&#39;: 60, &#39;R&#39;: 1})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="sage.graphs.connectivity.spqr_tree_to_graph">
+<code class="descclassname">sage.graphs.connectivity.</code><code class="descname">spqr_tree_to_graph</code><a class="headerlink" href="#sage.graphs.connectivity.spqr_tree_to_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the graph represented by the SPQR-tree <span class="math notranslate nohighlight">\(T\)</span>.</p>
+<p>The main purpose of this method is to test <a class="reference internal" href="#sage.graphs.connectivity.spqr_tree" title="sage.graphs.connectivity.spqr_tree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spqr_tree()</span></code></a>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">T</span></code> – a SPQR tree as returned by <a class="reference internal" href="#sage.graphs.connectivity.spqr_tree" title="sage.graphs.connectivity.spqr_tree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spqr_tree()</span></code></a>.</li>
+</ul>
+<p>OUTPUT: a (multi) graph</p>
+<p>EXAMPLES:</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/SPQR_tree">Wikipedia article SPQR_tree</a> reference paper example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree</span>
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.graphs.connectivity</span> <span class="kn">import</span> <span class="n">spqr_tree_to_graph</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="go">....: (2, 13), (3, 13), (4, 5), (4, 7), (5, 6), (5, 8), (5, 7), (6, 7),</span>
+<span class="go">....: (8, 11), (8, 9), (8, 12), (9, 10), (9, 11), (9, 12), (10, 12)])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">H</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>A small multigraph</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="n">multiedges</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_clique([0, 1, G.add_vertex(), G.add_vertex()])</span>
+<span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="go">....:     G.add_clique([2, 3, G.add_vertex(), G.add_vertex()])</span>
+<span class="gp">sage: </span><span class="n">T</span> <span class="o">=</span> <span class="n">spqr_tree</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">H</span> <span class="o">=</span> <span class="n">spqr_tree_to_graph</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">H</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="sage.graphs.connectivity.strong_articulation_points">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">strong_articulation_points</code><a class="headerlink" href="#sage.graphs.connectivity.strong_articulation_points" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the strong articulation points of this digraph.</p>
 <p>A vertex is a strong articulation point if its deletion increases the
 number of strongly connected components. This method implements the
-algorithm described in <a class="reference internal" href="../../../references/index.html#ils2012" id="id4">[ILS2012]</a>. The time complexity is dominated by
+algorithm described in <a class="reference internal" href="../../../references/index.html#ils2012" id="id11">[ILS2012]</a>. The time complexity is dominated by
 the time complexity of the immediate dominators finding algorithm.</p>
 <p>OUTPUT: The list of strong articulation points.</p>
 <p>EXAMPLES:</p>
@@ -818,8 +1395,8 @@ exactly the strongly connected components:</p>
 and the digraph of those is a chain:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">({</span><span class="mi">0</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span><span class="s2">&quot;01&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;02&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;03&quot;</span><span class="p">},</span> <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;12&quot;</span><span class="p">},</span> <span class="mi">2</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;21&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;23&quot;</span><span class="p">}})</span>
 <span class="gp">sage: </span><span class="n">scc_digraph</span> <span class="o">=</span> <span class="n">strongly_connected_components_digraph</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
-<span class="go">[{0}, {3}, {1, 2}]</span>
+<span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">vertices</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="nb">sorted</span><span class="p">)</span>
+<span class="go">[{0}, {1, 2}, {3}]</span>
 <span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
 <span class="go">[({0}, {1, 2}, None), ({0}, {3}, None), ({1, 2}, {3}, None)]</span>
 </pre></div>
@@ -833,8 +1410,8 @@ result with same source, target, and label are not duplicated
 <span class="math notranslate nohighlight">\(\{1,2\}\)</span> below):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">g</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">({</span><span class="mi">0</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span><span class="s2">&quot;0-12&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;0-12&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;0-3&quot;</span><span class="p">},</span> <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;1-2&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;1-3&quot;</span><span class="p">},</span> <span class="mi">2</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;2-1&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;2-3&quot;</span><span class="p">}})</span>
 <span class="gp">sage: </span><span class="n">scc_digraph</span> <span class="o">=</span> <span class="n">strongly_connected_components_digraph</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">keep_labels</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">vertices</span><span class="p">()</span>
-<span class="go">[{0}, {3}, {1, 2}]</span>
+<span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">vertices</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="nb">sorted</span><span class="p">)</span>
+<span class="go">[{0}, {1, 2}, {3}]</span>
 <span class="gp">sage: </span><span class="n">scc_digraph</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
 <span class="go">[({0}, {1, 2}, &#39;0-12&#39;),</span>
 <span class="go"> ({0}, {3}, &#39;0-3&#39;),</span>
@@ -868,8 +1445,8 @@ components:</p>
 <dt id="sage.graphs.connectivity.vertex_connectivity">
 <code class="descclassname">sage.graphs.connectivity.</code><code class="descname">vertex_connectivity</code><a class="headerlink" href="#sage.graphs.connectivity.vertex_connectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the vertex connectivity of the graph.</p>
-<p>For more information, see <a class="reference external" href="https://en.wikipedia.org/wiki/Connectivity_(graph_theory)">Wikipedia article Connectivity_(graph_theory)</a> and
-<a class="reference external" href="https://en.wikipedia.org/wiki/K-vertex-connected_graph">Wikipedia article K-vertex-connected_graph</a>.</p>
+<p>For more information, see the <a class="reference external" href="https://en.wikipedia.org/wiki/Connectivity_(graph_theory)">Wikipedia article Connectivity_(graph_theory)</a> and
+the <a class="reference external" href="https://en.wikipedia.org/wiki/K-vertex-connected_graph">Wikipedia article K-vertex-connected_graph</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <ul class="last simple">
@@ -905,8 +1482,8 @@ vertex connectivity of the (di)graph is larger or equal to <span class="math not
 method thus outputs a boolean only.</li>
 <li><code class="docutils literal notranslate"><span class="pre">solver</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) Specify a Linear Program (LP) solver
 to be used. If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, the default one is used. For more
-information on LP solvers, see the method <a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.3)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve</span></code></a> of the class
-<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedIntegerLinearProgram</span></code></a>.  Use method
+information on LP solvers, see the method <a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram.solve" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve</span></code></a> of the class
+<a class="reference external" href="../../../numerical/sage/numerical/mip.html#sage.numerical.mip.MixedIntegerLinearProgram" title="(in Sage Reference Manual: Numerical Optimization v8.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MixedIntegerLinearProgram</span></code></a>.  Use method
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">sage.numerical.backends.generic_backend.default_mip_solver()</span></code> to
 know which default solver is used or to set the default solver.</li>
 <li><code class="docutils literal notranslate"><span class="pre">verbose</span></code> – integer (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>). Sets the level of
@@ -1049,7 +1626,7 @@ vertex cut of order at least <code class="docutils literal notranslate"><span cl
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2018, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */
