@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>libGAP shared library Interface to GAP &#8212; Sage Reference Manual v8.5: C/C++ Library Interfaces</title>
+    <title>libGAP shared library Interface to GAP &#8212; Sage Reference Manual v8.6: C/C++ Library Interfaces</title>
     <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../../_static/documentation_options.js"></script>
@@ -208,53 +208,11 @@ using the recursive expansion of the
 </div>
 <div class="section" id="using-the-libgap-c-library-from-cython">
 <h2>Using the libGAP C library from Cython<a class="headerlink" href="#using-the-libgap-c-library-from-cython" title="Permalink to this headline">¶</a></h2>
-<p>The lower-case <code class="docutils literal notranslate"><span class="pre">libgap_foobar</span></code> functions are ones that we added to
-make the libGAP C shared library. The <code class="docutils literal notranslate"><span class="pre">libGAP_foobar</span></code> methods are
-the original GAP methods simply prefixed with the string
-<code class="docutils literal notranslate"><span class="pre">libGAP_</span></code>. The latter were originally not designed to be in a
-library, so some care needs to be taken to call them.</p>
-<p>In particular, you must call <code class="docutils literal notranslate"><span class="pre">libgap_mark_stack_bottom()</span></code> in every
-function that calls into the libGAP C functions. The reason is that
-the GAP memory manager will automatically keep objects alive that are
-referenced in local (stack-allocated) variables. While convenient,
-this requires to look through the stack to find anything that looks
-like an address to a memory bag. But this requires vigilance against
-the following pattern:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cdef</span> <span class="n">f</span><span class="p">()</span>
-  <span class="n">libgap_mark_stack_bottom</span><span class="p">()</span>
-  <span class="n">libGAP_function</span><span class="p">()</span>
-
-<span class="n">cdef</span> <span class="n">g</span><span class="p">()</span>
-  <span class="n">libgap_mark_stack_bottom</span><span class="p">();</span>
-  <span class="n">f</span><span class="p">()</span>                <span class="c1">#  f() changed the stack bottom marker</span>
-  <span class="n">libGAP_function</span><span class="p">()</span>  <span class="c1">#  boom</span>
-</pre></div>
-</div>
-<p>The solution is to re-order <code class="docutils literal notranslate"><span class="pre">g()</span></code> to first call <code class="docutils literal notranslate"><span class="pre">f()</span></code>. In order to
-catch this error, it is recommended that you wrap calls into libGAP in
-<code class="docutils literal notranslate"><span class="pre">libgap_enter</span></code> / <code class="docutils literal notranslate"><span class="pre">libgap_exit</span></code> blocks and not call
-<code class="docutils literal notranslate"><span class="pre">libgap_mark_stack_bottom</span></code> manually. So instead, always write</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>cdef f()</dt>
-<dd>libgap_enter()
-libGAP_function()
-libgap_exit()</dd>
-<dt>cdef g()</dt>
-<dd>f()
-libgap_enter()
-libGAP_function()
-libgap_exit()</dd>
-</dl>
-</div></blockquote>
-<p>If you accidentally call <code class="docutils literal notranslate"><span class="pre">libgap_enter()</span></code> twice then an error
-message is printed to help you debug this:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.libs.gap.util</span> <span class="kn">import</span> <span class="n">error_enter_libgap_block_twice</span>
-<span class="gp">sage: </span><span class="n">error_enter_libgap_block_twice</span><span class="p">()</span>
-<span class="gt">Traceback (most recent call last):</span>
-<span class="c">...</span>
-<span class="gr">RuntimeError</span>: <span class="n">Entered a critical block twice</span>
-</pre></div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p>Update the following text</p>
+<p class="last">We are using libgap API provided by the GAP project since
+GAP 4.10.</p>
 </div>
 <p>AUTHORS:</p>
 <blockquote>
@@ -264,12 +222,14 @@ message is printed to help you debug this:</p>
 almost complete rewrite; first usable version.</li>
 <li>Volker Braun (2012-08-28, GAP/Singular workshop): update to
 gap-4.5.5, make it ready for public consumption.</li>
+<li>Dima Pasechnik (2018-09-18, GAP Days): started the port to native
+libgap API</li>
 </ul>
 </div></blockquote>
 <dl class="class">
 <dt id="sage.libs.gap.libgap.Gap">
 <em class="property">class </em><code class="descclassname">sage.libs.gap.libgap.</code><code class="descname">Gap</code><a class="headerlink" href="#sage.libs.gap.libgap.Gap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Parents and Elements v8.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.parent.Parent</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="../../../../structure/sage/structure/parent.html#sage.structure.parent.Parent" title="(in Sage Reference Manual: Parents and Elements v8.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.parent.Parent</span></code></a></p>
 <p>The libgap interpreter object.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -407,45 +367,9 @@ variable in GAP.</p>
 <dl class="method">
 <dt id="sage.libs.gap.libgap.Gap.mem">
 <code class="descname">mem</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.libs.gap.libgap.Gap.mem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return information about libGAP memory usage</p>
-<p>The GAP workspace is partitioned into 5 pieces (see gasman.c
-in the GAP sources for more details):</p>
-<ul class="simple">
-<li>The <strong>masterpointer area</strong>  contains  all the masterpointers  of  the bags.</li>
-<li>The <strong>old bags area</strong> contains the bodies of all the  bags that survived at
-least one  garbage collection.  This area is  only  scanned for dead bags
-during a full garbage collection.</li>
-<li>The <strong>young bags area</strong> contains the bodies of all  the bags that have been
-allocated since the  last garbage collection.  This  area is scanned  for
-dead  bags during  each garbage  collection.</li>
-<li>The <strong>allocation area</strong> is the storage  that is available for allocation of
-new bags.  When a new bag is allocated the storage for  the body is taken
-from  the beginning of   this area,  and  this  area  is  correspondingly
-reduced.   If  the body does not   fit in the  allocation  area a garbage
-collection is  performed.</li>
-<li>The <strong>unavailable  area</strong> is  the free  storage that  is not  available for
-allocation.</li>
-</ul>
-<p>OUTPUT:</p>
-<p>This function returns a tuple containing 5 integers. Each is
-the size (in bytes) of the five partitions of the
-workspace. This will potentially change after each GAP garbage
-collection.</p>
-<p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c1"># random output</span>
-<span class="go">(1048576, 6706782, 0, 960930, 0)</span>
-
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">FreeGroup</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-<span class="go">&lt;free group on the generators [ f1, f2, f3 ]&gt;</span>
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c1"># random output</span>
-<span class="go">(1048576, 6706782, 47571, 913359, 0)</span>
-
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">mem</span><span class="p">()</span>   <span class="c1"># random output</span>
-<span class="go">(1048576, 6734785, 0, 998463, 0)</span>
-</pre></div>
-</div>
+<dd><p>Return information about GAP memory usage</p>
+<p>This method is deprecated and is a no-op.  Use <a class="reference internal" href="#sage.libs.gap.libgap.Gap.show" title="sage.libs.gap.libgap.Gap.show"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Gap.show()</span></code></a> to
+display memory-usage and bag count statistics from GASMAN.</p>
 </dd></dl>
 
 <dl class="method">
@@ -484,23 +408,58 @@ collection.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="sage.libs.gap.libgap.Gap.set_seed">
+<code class="descname">set_seed</code><span class="sig-paren">(</span><em>seed=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.libs.gap.libgap.Gap.set_seed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reseed the standard GAP pseudo-random sources with the given seed.</p>
+<p>Uses a random seed given by <code class="docutils literal notranslate"><span class="pre">current_randstate().ZZ_seed()</span></code> if
+<code class="docutils literal notranslate"><span class="pre">seed=None</span></code>.  Otherwise the seed should be an integer.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">libgap</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+<span class="go">[2, 3, 3, 4, 2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="sage.libs.gap.libgap.Gap.show">
 <code class="descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.libs.gap.libgap.Gap.show" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print statistics about the GAP owned object list</p>
-<p>Slight complication is that we want to do it without accessing
+<dd><p>Return statistics about the GAP owned object list</p>
+<p>This includes the total memory allocated by GAP as returned by
+<code class="docutils literal notranslate"><span class="pre">libgap.eval('TotalMemoryAllocated()'),</span> <span class="pre">as</span> <span class="pre">well</span> <span class="pre">as</span> <span class="pre">garbage</span> <span class="pre">collection</span>
+<span class="pre">/</span> <span class="pre">object</span> <span class="pre">count</span> <span class="pre">statistitics</span> <span class="pre">as</span> <span class="pre">returned</span> <span class="pre">by</span>
+<span class="pre">``libgap.eval('GasmanStatistics')</span></code>, and finally the total number of
+GAP objects held by Sage as <a class="reference internal" href="element.html#sage.libs.gap.element.GapElement" title="sage.libs.gap.element.GapElement"><code class="xref py py-class docutils literal notranslate"><span class="pre">GapElement</span></code></a>
+instances.</p>
+<p>The value <code class="docutils literal notranslate"><span class="pre">livekb</span> <span class="pre">+</span> <span class="pre">deadkb</span></code> will roughly equal the total memory
+allocated for GAP objects (see
+<code class="docutils literal notranslate"><span class="pre">libgap.eval('TotalMemoryAllocated()')</span></code>).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Slight complication is that we want to do it without accessing
 libgap objects, so we don’t create new GapElements as a side
 effect.</p>
+</div>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">b</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">456</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">libgap</span><span class="p">(</span><span class="mi">789</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="k">del</span> <span class="n">b</span>
-<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c1"># random output</span>
-<span class="go">11 LibGAP elements currently alive</span>
-<span class="go">rec( full := rec( cumulative := 122, deadbags := 9,</span>
-<span class="go">deadkb := 0, freekb := 7785, livebags := 304915,</span>
-<span class="go">livekb := 47367, time := 33, totalkb := 68608 ),</span>
-<span class="go">nfull := 3, npartial := 14 )</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">libgap</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>  <span class="c1"># random output</span>
+<span class="go">{&#39;gasman_stats&#39;: {&#39;full&#39;: {&#39;cumulative&#39;: 110,</span>
+<span class="go">   &#39;deadbags&#39;: 321400,</span>
+<span class="go">   &#39;deadkb&#39;: 12967,</span>
+<span class="go">   &#39;freekb&#39;: 15492,</span>
+<span class="go">   &#39;livebags&#39;: 396645,</span>
+<span class="go">   &#39;livekb&#39;: 37730,</span>
+<span class="go">   &#39;time&#39;: 110,</span>
+<span class="go">   &#39;totalkb&#39;: 65536},</span>
+<span class="go">  &#39;nfull&#39;: 1,</span>
+<span class="go">  &#39;npartial&#39;: 1},</span>
+<span class="go"> &#39;nelements&#39;: 23123,</span>
+<span class="go"> &#39;total_alloc&#39;: 3234234}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -614,7 +573,7 @@ effect.</p>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2018, The Sage Development Team.
+        &#169; Copyright 2005--2019, The Sage Development Team.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
     </div>
     <script type="text/javascript">

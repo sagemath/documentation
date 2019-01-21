@@ -70,16 +70,47 @@ title="SageMath Mathematical Software">
 """
 
 filter_ref = [
-    "graph-", "graph_plot-", "shapes-", "plot3d-", "platonic-", "knot-",
-    "graph_generators-", "dyck_word-", "hyperbolic_regular_polygon-", "plot-",
-    "generic_graph-", "fully_packed_loop", "link-", "complex_plot-",
-    "hyperbolic_geodesic-", "contour_plot-", "density_plot-", "plot_field-",
-    "chart-", "point_configuration-", "text-", "point-", "parametric_plot3d-",
-    "revolution_plot3d-", "ordered_tree-", "implicit_plot3d-", "polygon-",
-    "streamline_plot-", "vectorfield-", "tangent_vector-", "curve-",
-    'hyperbolic_polygon-', "arrow-", "circle-", "bezier_path-",
-    "mv_polytopes-", "set_partition-", "finite_coxeter_groups-",
-    "integrated_curve-", "list_plot3d-"
+    "graph-",
+    "graph_plot-",
+    "shapes-",
+    "plot3d-",
+    "platonic-",
+    "knot-",
+    "graph_generators-",
+    "dyck_word-",
+    "hyperbolic_regular_polygon-",
+    "plot-",
+    "generic_graph-",
+    "fully_packed_loop",
+    "link-",
+    "complex_plot-",
+    "hyperbolic_geodesic-",
+    "contour_plot-",
+    "density_plot-",
+    "plot_field-",
+    "chart-",
+    "point_configuration-",
+    "text-",
+    "point-",
+    "parametric_plot3d-",
+    "revolution_plot3d-",
+    "ordered_tree-",
+    "implicit_plot3d-",
+    "polygon-",
+    "streamline_plot-",
+    "vectorfield-",
+    "tangent_vector-",
+    "curve-",
+    'hyperbolic_polygon-',
+    "arrow-",
+    "circle-",
+    "bezier_path-",
+    "mv_polytopes-",
+    "set_partition-",
+    "finite_coxeter_groups-",
+    "integrated_curve-",
+    "list_plot3d-",
+    "calculus-",
 ]
 filter_html = [("en", "website")]
 
@@ -131,8 +162,8 @@ for what in sorted(pages.keys()):
                 subcat = (
                     entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
             output.append(
-                "<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>".
-                format(
+                "<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>"
+                .format(
                     path=entry,
                     lang=lang,
                     # lang=LANG.get(lang, lang),
@@ -165,9 +196,8 @@ for subdir in ["html", "pdf"]:
             index = [intro % {"path": root}]
             index.append(IDX_TOKEN)
             if len(root_dirs) > 1:
-                index.append(
-                    '<p><a href="%s">Home</a></p>' % '/'.join([".."] * (
-                        len(root_dirs) - 1)))
+                index.append('<p><a href="%s">Home</a></p>' % '/'.join(
+                    [".."] * (len(root_dirs) - 1)))
             index.append('<p><a href="../index.html">Parent Directory</a></p>')
             path = filter(lambda _: not _.startswith("_"), path)
             if len(path) > 0:
@@ -186,9 +216,8 @@ for subdir in ["html", "pdf"]:
             if len(filenames) > 0:
                 index.append('<h2>Documents</h2>')
                 for fn in sorted(filenames):
-                    index.append('<p><a href="%(fn)s">%(fn)s</a></p>' % {
-                        "fn": fn
-                    })
+                    index.append(
+                        '<p><a href="%(fn)s">%(fn)s</a></p>' % {"fn": fn})
             # print "    ", path, filenames
             index.append("</body></html>")
             with open(idxfn, "w") as outidx:
