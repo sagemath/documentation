@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Containers for storing coercion data &#8212; Sage Reference Manual v8.6: Coercion</title>
+    <title>Containers for storing coercion data &#8212; Sage Reference Manual v8.7: Coercion</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../../_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
           <a href="../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
+          <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
           <a href="coerce_exceptions.html" title="Exceptions raised by the coercion model"
@@ -124,11 +124,6 @@ implemented.</p>
 <p>IMPLEMENTATION:</p>
 <p>It is implemented as a hash table with open addressing, similar to python’s
 dict.</p>
-<p>If ki supports weak references then ri is a weak reference to ki with a
-callback to remove the entry from the dictionary if ki gets garbage
-collected. If ki is does not support weak references then ri is identical to ki.
-In the latter case the presence of the key in the dictionary prevents it from
-being garbage collected.</p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">data</span></code> – optional iterable defining initial data, as dict or
@@ -281,19 +276,6 @@ AUTHORS:
 </div>
 </dd></dl>
 
-<dl class="method">
-<dt id="sage.structure.coerce_dict.MonoDict.iteritems">
-<code class="descname">iteritems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.coerce_dict.MonoDict.iteritems" title="Permalink to this definition">¶</a></dt>
-<dd><p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">MonoDict</span>
-<span class="gp">sage: </span><span class="n">MonoDict</span><span class="p">()</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
-<span class="go">doctest:...: DeprecationWarning: MonoDict.iteritems is deprecated, use MonoDict.items instead</span>
-<span class="go">See http://trac.sagemath.org/24135 for details.</span>
-<span class="go">&lt;generator object at ...&gt;</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -346,18 +328,16 @@ the coercion model.</p>
 <div><ul class="simple">
 <li>All keys must be sequence of exactly three elements. All sequence
 types (tuple, list, etc.) map to the same item.</li>
+<li>Any of the three key components that support weak-refs are stored
+via a weakref. If any of these components gets garbage collected
+then the entire entry is removed. In that sense, this structure
+behaves like a nested <a class="reference external" href="https://docs.python.org/library/weakref.html#weakref.WeakKeyDictionary" title="(in Python v2.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeakKeyDictionary</span></code></a>.</li>
 <li>Comparison is done using the ‘is’ rather than ‘==’ operator.</li>
 </ul>
 </div></blockquote>
 <p>There are special cdef set/get methods for faster access.
 It is bare-bones in the sense that not all dictionary methods are
 implemented.</p>
-<p>It is implemented as a list of lists (hereafter called buckets). The bucket is
-chosen according to a very simple hash based on the object pointer, and each
-bucket is of the form [id(k1), id(k2), id(k3), r1, r2, r3, value, id(k1),
-id(k2), id(k3), r1, r2, r3, value, …], on which a linear search is performed.
-If a key component ki supports weak references then ri is a weak reference to
-ki; otherwise ri is identical to ki.</p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">data</span></code> – optional iterable defining initial data, as dict or
@@ -366,10 +346,9 @@ iterable of (key, value) pairs.</li>
 weak references to the values in this dictionary will be used,
 when possible.</li>
 </ul>
-<p>If any of the key components k1,k2,k3 (this can happen for a key component
-that supports weak references) gets garbage collected then the entire
-entry disappears. In that sense this structure behaves like a nested
-<a class="reference external" href="https://docs.python.org/library/weakref.html#weakref.WeakKeyDictionary" title="(in Python v2.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">WeakKeyDictionary</span></code></a>.</p>
+<p>IMPLEMENTATION:</p>
+<p>It is implemented as a hash table with open addressing, similar to python’s
+dict.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">TripleDict</span>
 <span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">TripleDict</span><span class="p">()</span>
@@ -440,19 +419,6 @@ entry disappears. In that sense this structure behaves like a nested
 <span class="go">&lt;generator object at ...&gt;</span>
 <span class="gp">sage: </span><span class="nb">list</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 <span class="go">[((1, 2, 3), None)]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="sage.structure.coerce_dict.TripleDict.iteritems">
-<code class="descname">iteritems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.structure.coerce_dict.TripleDict.iteritems" title="Permalink to this definition">¶</a></dt>
-<dd><p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.structure.coerce_dict</span> <span class="kn">import</span> <span class="n">TripleDict</span>
-<span class="gp">sage: </span><span class="n">TripleDict</span><span class="p">()</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
-<span class="go">doctest:...: DeprecationWarning: TripleDict.iteritems is deprecated, use TripleDict.items instead</span>
-<span class="go">See http://trac.sagemath.org/24135 for details.</span>
-<span class="go">&lt;generator object at ...&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -535,7 +501,7 @@ callback function when creating a weak reference.</p>
           <a href="../../../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
+          <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
           <a href="coerce_exceptions.html" title="Exceptions raised by the coercion model"
