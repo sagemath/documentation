@@ -6,15 +6,16 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Calculus method control &#8212; Sage Reference Manual v8.7: Manifolds</title>
+    <title>Coordinate calculus methods &#8212; Sage Reference Manual v8.8: Manifolds</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
-    <script type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -58,59 +59,102 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="calculus-method-control">
-<span id="sage-manifolds-calculus-method"></span><h1>Calculus method control<a class="headerlink" href="#calculus-method-control" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="coordinate-calculus-methods">
+<span id="sage-manifolds-calculus-method"></span><h1>Coordinate calculus methods<a class="headerlink" href="#coordinate-calculus-methods" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-sage.manifolds.calculus_method"></span><p>The class <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod" title="sage.manifolds.calculus_method.CalculusMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalculusMethod</span></code></a> governs the calculus methods (symbolic and
-numerical) to be used for coordinate computations on manifolds.</p>
+numerical) used for coordinate computations on manifolds.</p>
 <p>AUTHORS:</p>
 <ul class="simple">
-<li>Marco Mancini, (2017): initial version</li>
+<li>Marco Mancini (2017): initial version</li>
+<li>Eric Gourgoulhon (2019): add <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set_simplify_function" title="sage.manifolds.calculus_method.CalculusMethod.set_simplify_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_simplify_function()</span></code></a>
+and various accessors</li>
 </ul>
 <dl class="class">
 <dt id="sage.manifolds.calculus_method.CalculusMethod">
 <em class="property">class </em><code class="descclassname">sage.manifolds.calculus_method.</code><code class="descname">CalculusMethod</code><span class="sig-paren">(</span><em>current=None</em>, <em>base_field_type='real'</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Parents and Elements v8.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
-<p>Control of calculus methods used on coordinate charts of manifolds.</p>
-<p>This class stores the possible calculus methods and permits to
-select some basic operations working on them.
-For the moment, only two calculus methods are implemented:</p>
+<dd><p>Bases: <a class="reference external" href="../../../structure/sage/structure/sage_object.html#sage.structure.sage_object.SageObject" title="(in Sage Reference Manual: Parents and Elements v8.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.structure.sage_object.SageObject</span></code></a></p>
+<p>Control of calculus backends used on coordinate charts of manifolds.</p>
+<p>This class stores the possible calculus methods and permits to switch
+between them, as well as to change the simplifying functions associated
+with them.
+For the moment, only two calculus backends are implemented:</p>
 <ul class="simple">
-<li>Sage’s symbolic engine (Pynac/Maxima), implemented via the
-symbolic ring <code class="docutils literal notranslate"><span class="pre">SR</span></code></li>
+<li>Sage’s symbolic engine (Pynac + Maxima), implemented via the
+Symbolic Ring <code class="docutils literal notranslate"><span class="pre">SR</span></code></li>
 <li>SymPy engine, denoted <code class="docutils literal notranslate"><span class="pre">sympy</span></code> hereafter</li>
 </ul>
 <p>INPUT:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">current</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) current symbolic method</li>
+<li><code class="docutils literal notranslate"><span class="pre">current</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) string defining the calculus method
+that will be considered as the active one, until it is changed by
+<a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set" title="sage.manifolds.calculus_method.CalculusMethod.set"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set()</span></code></a>; must be one of<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'SR'</span></code>: Sage’s default symbolic engine (Symbolic Ring)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'sympy'</span></code>: SymPy</li>
+<li><code class="docutils literal notranslate"><span class="pre">None</span></code>: the default calculus method (<code class="docutils literal notranslate"><span class="pre">'SR'</span></code>)</li>
+</ul>
+</li>
 <li><code class="docutils literal notranslate"><span class="pre">base_field_type</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">'real'</span></code>) base field type of the
 manifold (cf.
 <a class="reference internal" href="manifold.html#sage.manifolds.manifold.TopologicalManifold.base_field_type" title="sage.manifolds.manifold.TopologicalManifold.base_field_type"><code class="xref py py-meth docutils literal notranslate"><span class="pre">base_field_type()</span></code></a>)</li>
 </ul>
 <p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">()</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>In the display, the current method is pointed out by <span class="math notranslate nohighlight">\(*\)</span>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
-<span class="go"> - SR (*) (default)</span>
+<p>In the display, the currently active method is pointed out with a star:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
 <span class="go"> - sympy</span>
 </pre></div>
 </div>
-<p>The current method is changed by <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set" title="sage.manifolds.calculus_method.CalculusMethod.set"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set()</span></code></a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
+<p>It can be changed with <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set" title="sage.manifolds.calculus_method.CalculusMethod.set"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set()</span></code></a>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
 <span class="go"> - SR (default)</span>
 <span class="go"> - sympy (*)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
-<span class="go"> - SR (*) (default)</span>
+</pre></div>
+</div>
+<p>while <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.reset" title="sage.manifolds.calculus_method.CalculusMethod.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> brings back to the default:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
 <span class="go"> - sympy</span>
 </pre></div>
 </div>
+<p>See <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.simplify_function" title="sage.manifolds.calculus_method.CalculusMethod.simplify_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">simplify_function()</span></code></a> for the default simplification algorithms
+associated with each calculus method and <a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set_simplify_function" title="sage.manifolds.calculus_method.CalculusMethod.set_simplify_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_simplify_function()</span></code></a> for
+introducing a new simplification algorithm.</p>
+<dl class="method">
+<dt id="sage.manifolds.calculus_method.CalculusMethod.current">
+<code class="descname">current</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the active calculus method as a string.</p>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>string defining the calculus method, one of<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'SR'</span></code>: Sage’s default symbolic engine (Symbolic Ring)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'sympy'</span></code>: SymPy</li>
+</ul>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">();</span> <span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
+<span class="go"> - sympy</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+<span class="go">&#39;SR&#39;</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+<span class="go">&#39;sympy&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="method">
 <dt id="sage.manifolds.calculus_method.CalculusMethod.is_trivial_zero">
 <code class="descname">is_trivial_zero</code><span class="sig-paren">(</span><em>expression</em>, <em>method=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.is_trivial_zero" title="Permalink to this definition">¶</a></dt>
@@ -127,19 +171,19 @@ to use; if <code class="docutils literal notranslate"><span class="pre">None</sp
 <li><code class="docutils literal notranslate"><span class="pre">True</span></code> is expression is trivially zero, <code class="docutils literal notranslate"><span class="pre">False</span></code> elsewhere.</li>
 </ul>
 <p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">(),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">(),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">(),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">is_trivial_zero</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">(),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
 <span class="go">False</span>
 </pre></div>
 </div>
@@ -148,19 +192,23 @@ to use; if <code class="docutils literal notranslate"><span class="pre">None</sp
 <dl class="method">
 <dt id="sage.manifolds.calculus_method.CalculusMethod.reset">
 <code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.reset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the current symbolic method to default one.</p>
+<dd><p>Set the current calculus method to the default one.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
+<span class="go"> - sympy</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
 <span class="go"> - SR (default)</span>
 <span class="go"> - sympy (*)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
-<span class="go"> - SR (*) (default)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
 <span class="go"> - sympy</span>
 </pre></div>
 </div>
@@ -169,19 +217,89 @@ to use; if <code class="docutils literal notranslate"><span class="pre">None</sp
 <dl class="method">
 <dt id="sage.manifolds.calculus_method.CalculusMethod.set">
 <code class="descname">set</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the current calculus method.</p>
+<dd><p>Set the currently active calculus method.</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">method</span></code> – string defining the calculus method</li>
 </ul>
 <p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span>
-<span class="go">Possible calculus methods:</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
+<span class="go"> - sympy</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
 <span class="go"> - SR (default)</span>
 <span class="go"> - sympy (*)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;lala&#39;</span><span class="p">)</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">NotImplementedError: method lala not implemented</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.manifolds.calculus_method.CalculusMethod.set_simplify_function">
+<code class="descname">set_simplify_function</code><span class="sig-paren">(</span><em>simplifying_func</em>, <em>method=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.set_simplify_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the simplifying function associated to a given calculus method.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">simplifying_func</span></code> – either the string <code class="docutils literal notranslate"><span class="pre">'default'</span></code> for restoring
+the default simplifying function or a function <code class="docutils literal notranslate"><span class="pre">f</span></code> of a single
+argument <code class="docutils literal notranslate"><span class="pre">expr</span></code> such that <code class="docutils literal notranslate"><span class="pre">f(expr)</span></code> returns an object of the same
+type as <code class="docutils literal notranslate"><span class="pre">expr</span></code> (hopefully the simplified version of <code class="docutils literal notranslate"><span class="pre">expr</span></code>), this
+type being<ul>
+<li><a class="reference external" href="../../../calculus/sage/symbolic/expression.html#sage.symbolic.expression.Expression" title="(in Sage Reference Manual: Symbolic Calculus v8.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Expression</span></code></a> if <code class="docutils literal notranslate"><span class="pre">method</span></code> = <code class="docutils literal notranslate"><span class="pre">'SR'</span></code></li>
+<li>a SymPy type if <code class="docutils literal notranslate"><span class="pre">method</span></code> = <code class="docutils literal notranslate"><span class="pre">'sympy'</span></code></li>
+</ul>
+</li>
+<li><code class="docutils literal notranslate"><span class="pre">method</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) string defining the calculus method
+for which <code class="docutils literal notranslate"><span class="pre">simplifying_func</span></code> is provided; must be one of<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'SR'</span></code>: Sage’s default symbolic engine (Symbolic Ring)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'sympy'</span></code>: SymPy</li>
+<li><code class="docutils literal notranslate"><span class="pre">None</span></code>: the currently active calculus method of <code class="docutils literal notranslate"><span class="pre">self</span></code> is
+assumed</li>
+</ul>
+</li>
+</ul>
+<p>EXAMPLES:</p>
+<p>On a real manifold, the default simplifying function is
+<a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_real" title="sage.manifolds.utilities.simplify_chain_real"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_real()</span></code></a> when the
+calculus method is <code class="docutils literal notranslate"><span class="pre">SR</span></code>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">);</span> <span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
+<span class="go"> - sympy</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_real</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Let us change it to <a class="reference external" href="../../../calculus/sage/calculus/functional.html#sage.calculus.functional.simplify" title="(in Sage Reference Manual: Symbolic Calculus v8.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify()</span></code></a>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set_simplify_function</span><span class="p">(</span><span class="n">simplify</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span> <span class="ow">is</span> <span class="n">simplify</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Since <code class="docutils literal notranslate"><span class="pre">SR</span></code> is the current calculus method, the above is equivalent
+to:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set_simplify_function</span><span class="p">(</span><span class="n">simplify</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="n">simplify</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>We revert to the default simplifying function by:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set_simplify_function</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then we are back to:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_real</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -189,7 +307,8 @@ to use; if <code class="docutils literal notranslate"><span class="pre">None</sp
 <dl class="method">
 <dt id="sage.manifolds.calculus_method.CalculusMethod.simplify">
 <code class="descname">simplify</code><span class="sig-paren">(</span><em>expression</em>, <em>method=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.simplify" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply some simplification chain to a given symbolic expression.</p>
+<dd><p>Apply the simplifying function associated with a given calculus method
+to a symbolic expression.</p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">expression</span></code> – symbolic expression to simplify</li>
@@ -201,35 +320,126 @@ to use; must be one of<ul>
 </ul>
 </li>
 </ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the simplified version of <code class="docutils literal notranslate"><span class="pre">expression</span></code></li>
+</ul>
 <p>EXAMPLES:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Manifold</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="s1">&#39;topological&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">X</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">chart</span><span class="p">(</span><span class="s1">&#39;x y&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">Manifold</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="s1">&#39;topological&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">X</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">chart</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
 <span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 <span class="go">x^2 + 1</span>
 </pre></div>
 </div>
-<p>Methods cannot be mixed:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-<span class="gt">Traceback (most recent call last):</span>
-<span class="c">...</span>
-<span class="gr">AttributeError</span>: <span class="n">&#39;sage.symbolic.expression.Expression&#39; object has no attribute &#39;combsimp&#39;</span>
+<p>Using a weaker simplifying function, like
+<a class="reference external" href="../../../calculus/sage/calculus/functional.html#sage.calculus.functional.simplify" title="(in Sage Reference Manual: Symbolic Calculus v8.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify()</span></code></a>, does not succeed in this
+case:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set_simplify_function</span><span class="p">(</span><span class="n">simplify</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">x^2 + cos(x)^2 + sin(x)^2</span>
+</pre></div>
+</div>
+<p>Back to the default simplifying function
+(<a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_real" title="sage.manifolds.utilities.simplify_chain_real"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_real()</span></code></a> in the present
+case):</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set_simplify_function</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">x^2 + 1</span>
+</pre></div>
+</div>
+<p>A <code class="docutils literal notranslate"><span class="pre">SR</span></code> expression, such as <code class="docutils literal notranslate"><span class="pre">f</span></code>, cannot be simplified when the
+current calculus method is <code class="docutils literal notranslate"><span class="pre">sympy</span></code>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">AttributeError: &#39;sage.symbolic.expression.Expression&#39; object has no attribute &#39;combsimp&#39;</span>
 </pre></div>
 </div>
 <p>In the present case, one should either transform <code class="docutils literal notranslate"><span class="pre">f</span></code> to a SymPy
 object:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">())</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_sympy_</span><span class="p">())</span>
 <span class="go">x**2 + 1</span>
 </pre></div>
 </div>
 <p>or force the calculus method to be <code class="docutils literal notranslate"><span class="pre">'SR'</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">calc_meth</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span>
 <span class="go">x^2 + 1</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="method">
+<dt id="sage.manifolds.calculus_method.CalculusMethod.simplify_function">
+<code class="descname">simplify_function</code><span class="sig-paren">(</span><em>method=None</em><span class="sig-paren">)</span><a class="headerlink" href="#sage.manifolds.calculus_method.CalculusMethod.simplify_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the simplifying function associated to a given calculus method.</p>
+<p>The simplifying function is that used in all computations involved
+with the calculus method.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">method</span></code> – (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) string defining the calculus method
+for which <code class="docutils literal notranslate"><span class="pre">simplifying_func</span></code> is provided; must be one of<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'SR'</span></code>: Sage’s default symbolic engine (Symbolic Ring)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'sympy'</span></code>: SymPy</li>
+<li><code class="docutils literal notranslate"><span class="pre">None</span></code>: the currently active calculus method of <code class="docutils literal notranslate"><span class="pre">self</span></code> is
+assumed</li>
+</ul>
+</li>
+</ul>
+<p>OUTPUT:</p>
+<ul class="simple">
+<li>the simplifying function</li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.manifolds.calculus_method</span> <span class="kn">import</span> <span class="n">CalculusMethod</span>
+<span class="gp">sage: </span><span class="n">cm</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">cm</span>
+<span class="go">Available calculus methods (* = current):</span>
+<span class="go"> - SR (default) (*)</span>
+<span class="go"> - sympy</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span>  <span class="c1"># random (memory address)</span>
+<span class="go">&lt;function simplify_chain_real at 0x7f958d5b6758&gt;</span>
+</pre></div>
+</div>
+<p>The output stands for the function
+<a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_real" title="sage.manifolds.utilities.simplify_chain_real"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_real()</span></code></a>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_real</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Since <code class="docutils literal notranslate"><span class="pre">SR</span></code> is the default calculus method, we have:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">()</span> <span class="ow">is</span> <span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>The simplifying function associated with <code class="docutils literal notranslate"><span class="pre">sympy</span></code> is
+<a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_real_sympy" title="sage.manifolds.utilities.simplify_chain_real_sympy"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_real_sympy()</span></code></a>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span>  <span class="c1"># random (memory address)</span>
+<span class="go">&lt;function simplify_chain_real_sympy at 0x7f0b35a578c0&gt;</span>
+<span class="gp">sage: </span><span class="n">cm</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_real_sympy</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>On complex manifolds, the simplifying functions are
+<a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_generic" title="sage.manifolds.utilities.simplify_chain_generic"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_generic()</span></code></a>
+and <a class="reference internal" href="utilities.html#sage.manifolds.utilities.simplify_chain_generic_sympy" title="sage.manifolds.utilities.simplify_chain_generic_sympy"><code class="xref py py-func docutils literal notranslate"><span class="pre">simplify_chain_generic_sympy()</span></code></a>
+for respectively <code class="docutils literal notranslate"><span class="pre">SR</span></code> and <code class="docutils literal notranslate"><span class="pre">sympy</span></code>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cmc</span> <span class="o">=</span> <span class="n">CalculusMethod</span><span class="p">(</span><span class="n">base_field_type</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">cmc</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;SR&#39;</span><span class="p">)</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_generic</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">cmc</span><span class="o">.</span><span class="n">simplify_function</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;sympy&#39;</span><span class="p">)</span> <span class="ow">is</span> \
+<span class="gp">....: </span><span class="n">sage</span><span class="o">.</span><span class="n">manifolds</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">simplify_chain_generic_sympy</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Note that the simplifying functions can be customized via
+<a class="reference internal" href="#sage.manifolds.calculus_method.CalculusMethod.set_simplify_function" title="sage.manifolds.calculus_method.CalculusMethod.set_simplify_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_simplify_function()</span></code></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -301,7 +511,7 @@ object:</p>
     
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2019, The Sage Development Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.6.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */
