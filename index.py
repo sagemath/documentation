@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Custom index for the SageMath Documentation
 # Purpose: It generates the index files needed for the CDN.
 #
@@ -111,6 +111,11 @@ filter_ref = [
     "integrated_curve-",
     "list_plot3d-",
     "calculus-",
+    "index_face_set-",
+    "multigraphics-",
+    "vector_calc_cartesian-",
+    "vector_calc_change-",
+    "vector_calc_plane-",
 ]
 filter_html = [("en", "website")]
 
@@ -137,10 +142,9 @@ for what in sorted(pages.keys()):
     output.append('<div class="row first">')
     output.append("<div class='cell'><h2>%s</h2></div>" % what.upper())
     first_row = True
-    for lang, entries in sorted(pages[what].iteritems()):
+    for lang, entries in sorted(pages[what].items()):
         if not first_row:
-            output.append(
-                '<div class="row %s"><div class="cell"></div>' % lang)
+            output.append(f'<div class="row {lang}"><div class="cell"></div>')
         else:
             first_row = False
         output.append('<div class="cell lang"><a href="%s/%s">%s</a></div>' %
@@ -159,8 +163,10 @@ for what in sorted(pages.keys()):
                 fn = entries[-1][:-4] \
                     .replace("_", " ") \
                     .title()# + " (pdf)"
-                subcat = (
-                    entries[2].title()[:3] + ": ") if len(entries) >= 5 else ""
+                if len(entries) >= 5:
+                    subcat = entries[2].title()[:3] + ": "
+                else:
+                    subcat = ""
             output.append(
                 "<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>"
                 .format(
@@ -192,14 +198,14 @@ for subdir in ["html", "pdf"]:
         if "index.html" not in filenames or IDX_TOKEN in open(idxfn,
                                                               "r").read():
             # now we have to write our index.html file
-            print "%r >>> %s" % (root_dirs, idxfn)
+            print(f"{root_dirs} >>> {idxfn}")
             index = [intro % {"path": root}]
             index.append(IDX_TOKEN)
             if len(root_dirs) > 1:
-                index.append('<p><a href="%s">Home</a></p>' % '/'.join(
-                    [".."] * (len(root_dirs) - 1)))
+                index.append('<p><a href="%s">Home</a></p>' %
+                             '/'.join([".."] * (len(root_dirs) - 1)))
             index.append('<p><a href="../index.html">Parent Directory</a></p>')
-            path = filter(lambda _: not _.startswith("_"), path)
+            path = list(filter(lambda _: not _.startswith("_"), path))
             if len(path) > 0:
                 index.append('<h2>Sub-Directories</h2>')
                 for p in sorted(path):
@@ -210,14 +216,17 @@ for subdir in ["html", "pdf"]:
                         "p": p,
                         "name": name
                     })
-            filenames = filter(
-                lambda fn: not (fn == "index.html" or fn.startswith("genindex-") or fn.startswith(".")),
-                filenames)
+
+            def f_op(fn):
+                return not (fn == "index.html" or fn.startswith("genindex-")
+                            or fn.startswith("."))
+
+            filenames = list(filter(f_op, filenames))
             if len(filenames) > 0:
                 index.append('<h2>Documents</h2>')
                 for fn in sorted(filenames):
-                    index.append(
-                        '<p><a href="%(fn)s">%(fn)s</a></p>' % {"fn": fn})
+                    index.append('<p><a href="%(fn)s">%(fn)s</a></p>' %
+                                 {"fn": fn})
             # print "    ", path, filenames
             index.append("</body></html>")
             with open(idxfn, "w") as outidx:
@@ -225,8 +234,8 @@ for subdir in ["html", "pdf"]:
 
 import sys
 if len(sys.argv) > 1 and sys.argv[1] == "fix":
-    print ' fix the static links in sphinx _static files '.center(100, "#")
-    print ' ONLY RUN THIS ONCE '.center(100, "!")
+    print(' fix the static links in sphinx _static files '.center(100, "#"))
+    print(' ONLY RUN THIS ONCE '.center(100, "!"))
 
     import os
     import subprocess as sp
@@ -236,7 +245,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "fix":
     files_cmd = sp.Popen("find -type l -name _static".split(), stdout=sp.PIPE)
     for link in files_cmd.stdout:
         d = os.path.normpath(os.path.join(ROOT, link.rsplit("/", 1)[0]))
-        print d
+        print(d)
         os.chdir(d)
         os.system(
             r'find -type f -name "*.html" -exec sed -i "s/_static/..\/_static/" {} \;'
