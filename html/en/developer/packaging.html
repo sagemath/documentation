@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Packaging Third-Party Code &#8212; Sage Developer&#39;s Guide v8.9</title>
+    <title>Packaging Third-Party Code &#8212; Sage Developer&#39;s Guide v9.0</title>
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
@@ -44,7 +44,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v8.9</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.0</a> &#187;</li>
  
       </ul>
     </div>  
@@ -180,49 +180,33 @@ installing that package.</p>
 usual configure / make / make install steps. In that case, the build
 script would simply consist of:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> src
-
-./configure --prefix<span class="o">=</span><span class="s2">&quot;</span><span class="nv">$SAGE_LOCAL</span><span class="s2">&quot;</span> --libdir<span class="o">=</span><span class="s2">&quot;</span><span class="nv">$SAGE_LOCAL</span><span class="s2">/lib&quot;</span>
-<span class="k">if</span> <span class="o">[</span> <span class="nv">$?</span> -ne <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> &gt;<span class="p">&amp;</span><span class="m">2</span> <span class="s2">&quot;Error configuring PACKAGE_NAME.&quot;</span>
-    <span class="nb">exit</span> <span class="m">1</span>
-<span class="k">fi</span>
-
-<span class="nv">$MAKE</span>
-<span class="k">if</span> <span class="o">[</span> <span class="nv">$?</span> -ne <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> &gt;<span class="p">&amp;</span><span class="m">2</span> <span class="s2">&quot;Error building PACKAGE_NAME.&quot;</span>
-    <span class="nb">exit</span> <span class="m">1</span>
-<span class="k">fi</span>
+sdh_configure
+sdh_make
 </pre></div>
 </div>
+<p>See <a class="reference internal" href="#section-sdh-helpers"><span class="std std-ref">Helper functions</span></a> for more on the helper functions
+<code class="docutils literal notranslate"><span class="pre">sdh_configure</span></code>, <code class="docutils literal notranslate"><span class="pre">sdh_make</span></code>, etc.</p>
 <p>The install script would consist of:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> src
-<span class="nv">$MAKE</span> install
-<span class="k">if</span> <span class="o">[</span> <span class="nv">$?</span> -ne <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-    <span class="nb">echo</span> &gt;<span class="p">&amp;</span><span class="m">2</span> <span class="s2">&quot;Error installing PACKAGE_NAME.&quot;</span>
-    <span class="nb">exit</span> <span class="m">1</span>
-<span class="k">fi</span>
+sdh_make_install
 </pre></div>
 </div>
 <p>Note that the top-level directory inside the tarball is renamed to
 <code class="docutils literal notranslate"><span class="pre">src</span></code> before calling the <code class="docutils literal notranslate"><span class="pre">spkg-build</span></code> and <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code>
 scripts, so you can just use <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">src</span></code> instead of <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">foo-1.3</span></code>.</p>
 <p>If there is any meaningful documentation included but not installed by
-<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code>, then you can add something like the following to
-install it:</p>
+<code class="docutils literal notranslate"><span class="pre">sdh_make_install</span></code> (which calls <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code>), then you can add
+something like the following to install it:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;</span><span class="nv">$SAGE_SPKG_INSTALL_DOCS</span><span class="s2">&quot;</span> <span class="o">=</span> yes <span class="o">]</span> <span class="p">;</span> <span class="k">then</span>
-    <span class="nv">$MAKE</span> doc
-    <span class="k">if</span> <span class="o">[</span> <span class="nv">$?</span> -ne <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-        <span class="nb">echo</span> &gt;<span class="p">&amp;</span><span class="m">2</span> <span class="s2">&quot;Error building PACKAGE_NAME docs.&quot;</span>
-        <span class="nb">exit</span> <span class="m">1</span>
-    <span class="k">fi</span>
-    mkdir -p <span class="s2">&quot;</span><span class="nv">$SAGE_SHARE</span><span class="s2">/doc/PACKAGE_NAME&quot;</span>
-    cp -R doc/* <span class="s2">&quot;</span><span class="nv">$SAGE_SHARE</span><span class="s2">/doc/PACKAGE_NAME&quot;</span>
+    sdh_make doc
+    sdh_install doc/ <span class="s2">&quot;</span><span class="nv">$SAGE_SHARE</span><span class="s2">&quot;</span>/doc/PACKAGE_NAME
 <span class="k">fi</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p>Prior to Sage 8.1 the shebang line was included, and the scripts were
+<blockquote>
+<div><p>Prior to Sage 8.1 the shebang line was included, and the scripts were
 marked executable.  However, this is no longer the case as of
 <a class="reference external" href="https://trac.sagemath.org/23179">trac ticket #23179</a>.  Now the scripts in the source tree are deliberately
 written not to be directly executed, and are only made into executable
@@ -230,9 +214,24 @@ scripts when they are copied to the package’s build directory.</p>
 <p>Build/install scripts may still be written in Python, but the Python
 code should go in a separate file (e.g. <code class="docutils literal notranslate"><span class="pre">spkg-install.py</span></code>), and can
 then be executed from the real <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code> like:</p>
-<div class="last highlight-text notranslate"><div class="highlight"><pre><span></span>exec sage-python23 spkg-install.py
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>exec sage-system-python spkg-install.py
 </pre></div>
 </div>
+<p>or</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>exec sage-python23 spkg-install.py
+</pre></div>
+</div>
+</div></blockquote>
+<p>In more detail: <code class="docutils literal notranslate"><span class="pre">sage-system-python</span></code> runs the version of Python
+pre-installed on the machine. Use this if the package may be
+installed before Sage has built its own Python. <code class="docutils literal notranslate"><span class="pre">sage-python23</span></code>
+runs the version of Python built by Sage, either Python 2 or 3,
+depending on how the build was configured; you should use this
+script if you are installing a Python package, to make sure that
+the libraries are installed in the right place.</p>
+<p class="last">By the way, there is also a script <code class="docutils literal notranslate"><span class="pre">sage-python</span></code>. This should be
+used at runtime, for example in scripts in <code class="docutils literal notranslate"><span class="pre">SAGE_LOCAL/bin</span></code> which
+expect Sage’s Python to already be built.</p>
 </div>
 <p>Many packages currently do not separate the build and install steps and only
 provide a <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code> file that does both.  The separation is useful in
@@ -247,6 +246,119 @@ at build time,  which should to the appropriate system-specific
 <li>Otherwise, only <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code> is called (without <code class="docutils literal notranslate"><span class="pre">$SAGE_SUDO</span></code>).  Such
 packages should prefix all commands in <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code> that write into
 the installation hierarchy with <code class="docutils literal notranslate"><span class="pre">$SAGE_SUDO</span></code>.</li>
+</ul>
+</div>
+<div class="section" id="helper-functions">
+<span id="section-sdh-helpers"></span><h3>Helper functions<a class="headerlink" href="#helper-functions" title="Permalink to this headline">¶</a></h3>
+<p>In the <code class="docutils literal notranslate"><span class="pre">spkg-build</span></code>, <code class="docutils literal notranslate"><span class="pre">spkg-install</span></code>, and <code class="docutils literal notranslate"><span class="pre">spkg-check</span></code> scripts,
+the following functions are available. They are defined in the file
+<code class="docutils literal notranslate"><span class="pre">$SAGE_ROOT/build/bin/sage-dist-helpers</span></code>, if you want to look at the
+source code.  They should be used to make sure that appropriate
+variables are set and to avoid code duplication. These function names
+begin with <code class="docutils literal notranslate"><span class="pre">sdh_</span></code>, which stands for “Sage-distribution helper”.</p>
+<ul>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">sdh_die</span> <span class="pre">MESSAGE</span></code>: Exit the build script with the error code of
+the last command if it was non-zero, or with 1 otherwise, and print
+an error message. This is typically used like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">command</span> <span class="o">||</span> sdh_die <span class="s2">&quot;Command failed&quot;</span>
+</pre></div>
+</div>
+<p>This function can also (if not given any arguments) read the error message
+from stdin. In particular this is useful in conjunction with a heredoc to
+write multi-line error messages:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">command</span> <span class="o">||</span> sdh_die <span class="s">&lt;&lt; _EOF_</span>
+<span class="s">Command failed.</span>
+<span class="s">Reason given.</span>
+<span class="s">_EOF_</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The other helper functions call <code class="docutils literal notranslate"><span class="pre">sdh_die</span></code>, so do not use (for
+example) <code class="docutils literal notranslate"><span class="pre">sdh_make</span> <span class="pre">||</span> <span class="pre">sdh_die</span></code>: the part of this after
+<code class="docutils literal notranslate"><span class="pre">||</span></code> will never be reached.</p>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">sdh_check_vars</span> <span class="pre">[VARIABLE</span> <span class="pre">...]</span></code>: Check that one or more variables
+are defined and non-empty, and exit with an error if any are
+undefined or empty. Variable names should be given without the ‘$’
+to prevent unwanted expansion.</p>
+</li>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">sdh_configure</span> <span class="pre">[...]</span></code>: Runs <code class="docutils literal notranslate"><span class="pre">./configure</span></code> with arguments
+<code class="docutils literal notranslate"><span class="pre">--prefix=&quot;$SAGE_LOCAL&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">--libdir=&quot;$SAGE_LOCAL/lib&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--disable-maintainer-mode</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">--disable-dependency-tracking</span></code>. Additional arguments to
+<code class="docutils literal notranslate"><span class="pre">./configure</span></code> may be given as arguments.</p>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_make</span> <span class="pre">[...]</span></code>: Runs <code class="docutils literal notranslate"><span class="pre">$MAKE</span></code> with the default target.</dt>
+<dd><p class="first last">Additional arguments to <code class="docutils literal notranslate"><span class="pre">$MAKE</span></code> may be given as arguments.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_make_install</span> <span class="pre">[...]</span></code>: Runs <code class="docutils literal notranslate"><span class="pre">$MAKE</span> <span class="pre">install</span></code> with DESTDIR</dt>
+<dd><p class="first last">correctly set to a temporary install directory, for staged
+installations. Additional arguments to <code class="docutils literal notranslate"><span class="pre">$MAKE</span></code> may be given as
+arguments. If <code class="docutils literal notranslate"><span class="pre">$SAGE_DESTDIR</span></code> is not set then the command is run
+with <code class="docutils literal notranslate"><span class="pre">$SAGE_SUDO</span></code>, if set.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_pip_install</span> <span class="pre">[...]</span></code>: Runs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> with the given</dt>
+<dd><p class="first last">arguments, as well as additional default arguments used for
+installing packages into Sage with pip. Currently this is just a
+wrapper around the <code class="docutils literal notranslate"><span class="pre">sage-pip-install</span></code> command. If
+<code class="docutils literal notranslate"><span class="pre">$SAGE_DESTDIR</span></code> is not set then the command is run with
+<code class="docutils literal notranslate"><span class="pre">$SAGE_SUDO</span></code>, if set.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_install</span> <span class="pre">[-T]</span> <span class="pre">SRC</span> <span class="pre">[SRC...]</span> <span class="pre">DEST</span></code>: Copies one or more files or</dt>
+<dd><p class="first">directories given as <code class="docutils literal notranslate"><span class="pre">SRC</span></code> (recursively in the case of
+directories) into the destination directory <code class="docutils literal notranslate"><span class="pre">DEST</span></code>, while
+ensuring that <code class="docutils literal notranslate"><span class="pre">DEST</span></code> and all its parent directories exist.
+<code class="docutils literal notranslate"><span class="pre">DEST</span></code> should be a path under <code class="docutils literal notranslate"><span class="pre">$SAGE_LOCAL</span></code>, generally. For
+<code class="docutils literal notranslate"><span class="pre">DESTDIR</span></code> installs, the <code class="docutils literal notranslate"><span class="pre">$SAGE_DESTDIR</span></code> path is automatically
+prepended to the destination.</p>
+<p class="last">The <code class="docutils literal notranslate"><span class="pre">-T</span></code> option treats <code class="docutils literal notranslate"><span class="pre">DEST</span></code> as a normal file instead
+(e.g. for copying a file to a different filename). All directory
+components are still created in this case.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>The following is automatically added to each install script, so you
+should not need to add it yourself.</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_guard</span></code>: Wrapper for <code class="docutils literal notranslate"><span class="pre">sdh_check_vars</span></code> that checks some</dt>
+<dd>common variables without which many/most packages won’t build
+correctly (<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT</span></code>, <code class="docutils literal notranslate"><span class="pre">SAGE_LOCAL</span></code>, <code class="docutils literal notranslate"><span class="pre">SAGE_SHARE</span></code>). This is
+important to prevent installation to unintended locations.</dd>
+</dl>
+</li>
+</ul>
+<p>The following are also available, but rarely used.</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_cmake</span> <span class="pre">[...]</span></code>: Runs <code class="docutils literal notranslate"><span class="pre">cmake</span></code> in the current directory with</dt>
+<dd>the given arguments, as well as additional arguments passed to
+cmake (assuming packages are using the GNUInstallDirs module) so
+that <code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code> and <code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_LIBDIR</span></code> are set
+correctly.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">sdh_preload_lib</span> <span class="pre">EXECUTABLE</span> <span class="pre">SONAME</span></code>: (Linux only – no-op on other</dt>
+<dd>platforms.)  Check shared libraries loaded by <code class="docutils literal notranslate"><span class="pre">EXECUTABLE</span></code> (may be a
+program or another library) for a library starting with <code class="docutils literal notranslate"><span class="pre">SONAME</span></code>, and
+if found appends <code class="docutils literal notranslate"><span class="pre">SONAME</span></code> to the <code class="docutils literal notranslate"><span class="pre">LD_PRELOAD</span></code> environment variable.
+See <a class="reference external" href="https://trac.sagemath.org/24885">trac ticket #24885</a>.</dd>
+</dl>
+</li>
 </ul>
 </div>
 <div class="section" id="self-tests">
@@ -684,6 +796,7 @@ this is not possible.</p>
 <li><a class="reference internal" href="#directory-structure">Directory Structure</a><ul>
 <li><a class="reference internal" href="#package-type">Package type</a></li>
 <li><a class="reference internal" href="#build-and-install-scripts">Build and install scripts</a></li>
+<li><a class="reference internal" href="#helper-functions">Helper functions</a></li>
 <li><a class="reference internal" href="#self-tests">Self-Tests</a></li>
 <li><a class="reference internal" href="#python-based-packages">Python-based packages</a></li>
 <li><a class="reference internal" href="#the-spkg-txt-file">The SPKG.txt File</a></li>
@@ -754,13 +867,13 @@ this is not possible.</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v8.9</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.0</a> &#187;</li>
  
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2019, The Sage Development Team.
+        &#169; Copyright 2005--2020, The Sage Development Team.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
     </div>
     <script type="text/javascript">

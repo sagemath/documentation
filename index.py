@@ -116,6 +116,8 @@ filter_ref = [
     "vector_calc_cartesian-",
     "vector_calc_change-",
     "vector_calc_plane-",
+    "graphics-",
+    "topological_submanifold-",
 ]
 filter_html = [("en", "website")]
 
