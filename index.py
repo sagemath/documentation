@@ -150,12 +150,14 @@ for path in glob("*/*"):
 output = [intro % {"path": ""}]
 output.append("<h1>Documentation</h1>")
 
+sortlang = lambda k_v: LANG.get(k_v[0], k_v[0].title())
+
 output.append('<div class="table">')
 for what in sorted(pages.keys()):
     output.append('<div class="row first">')
     output.append("<div class='cell'><h2>%s</h2></div>" % what.upper())
     first_row = True
-    for lang, page_entries in pages[what].items():
+    for lang, page_entries in sorted(pages[what].items(), key=sortlang):
         for subcat, entries in sorted(page_entries.items()):
             if not first_row:
                 output.append(
