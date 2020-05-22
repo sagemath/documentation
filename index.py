@@ -43,15 +43,15 @@ intro = """\
 <title>SageMath Documentation %(path)s</title>
 <link rel="stylesheet" href="/html/en/website/_static/sage.css" type="text/css" />
 <style>
-html {margin: 20px; font-family: sans-serif; }
-body { background-color: white; }
+html {margin: 20px; font-family: sans-serif; font-size: 90%%; }
+body { background-color: white; max-width: 1200px; }
 h2 { margin: 0;}
 a {text-decoration: none;}
 a:hover {text-decoration: underline; }
 div.table { display: table; }
-div.row { display: table-row; margin: 0.5em 0; }
+div.row { display: table-row; }
 div.row:hover {background: #eef; }
-div.cell { display: table-cell; padding: 0 2em 0 0; line-height: 2em;}
+div.cell { display: table-cell; padding: 0 2em 0.5em 0; line-height: 1.5em;}
 div.lang {font-weight: bold; }
 div.row.en {border: 1px solid #ccf;}
 div.row.last {height: 3em;}
@@ -118,10 +118,15 @@ filter_ref = [
     "vector_calc_plane-",
     "graphics-",
     "topological_submanifold-",
+    "elementary-",
+    "glca-",
 ]
 filter_html = [("en", "website")]
 
-pages = {"html": defaultdict(list), "pdf": defaultdict(list)}
+pages = {
+    "html": defaultdict(lambda: defaultdict(list)),
+    "pdf": defaultdict(lambda: defaultdict(list))
+}
 
 for path in glob("*/*"):
     what, lang = path.split("/")
@@ -130,11 +135,17 @@ for path in glob("*/*"):
         if what == "html":
             EXT = "/index.html"
             for fn in glob(path2 + EXT):
-                pages[what][lang].append(fn)
+                pages[what][lang][""].append(fn)
         elif what == "pdf":
             for EXT in ["/*.pdf", "/*/*.pdf"]:
                 for fn in glob(path2 + EXT):
-                    pages[what][lang].append(fn)
+                    dirs = fn.split("/")
+                    # this is only for english reference
+                    if len(dirs) >= 5:
+                        subcat = dirs[2].title()
+                    else:
+                        subcat = ""
+                    pages[what][lang][subcat].append(fn)
 
 output = [intro % {"path": ""}]
 output.append("<h1>Documentation</h1>")
@@ -144,40 +155,35 @@ for what in sorted(pages.keys()):
     output.append('<div class="row first">')
     output.append("<div class='cell'><h2>%s</h2></div>" % what.upper())
     first_row = True
-    for lang, entries in sorted(pages[what].items()):
-        if not first_row:
-            output.append(f'<div class="row {lang}"><div class="cell"></div>')
-        else:
-            first_row = False
-        output.append('<div class="cell lang"><a href="%s/%s">%s</a></div>' %
-                      (what, lang, LANG.get(lang, lang)))
-        output.append('<div class="cell doc">')
-        for entry in sorted(entries):
-            entries = entry.split("/")
-            if what == "html":
-                if tuple(entries[-3:-1]) in filter_html:
-                    continue
-                fn = entries[-2].replace("_", " ").title()
-                subcat = ""
-            elif what == "pdf":
-                if any(entries[-1].startswith(_) for _ in filter_ref):
-                    continue
-                fn = entries[-1][:-4] \
-                    .replace("_", " ") \
-                    .title()# + " (pdf)"
-                if len(entries) >= 5:
-                    subcat = entries[2].title()[:3] + ": "
-                else:
-                    subcat = ""
+    for lang, page_entries in pages[what].items():
+        for subcat, entries in sorted(page_entries.items()):
+            if not first_row:
+                output.append(
+                    f'<div class="row {lang}"><div class="cell"></div>')
+            else:
+                first_row = False
+            subtitle = LANG.get(lang, lang)
+            if subcat != "":
+                subtitle += f"/{subcat}"
             output.append(
-                "<div class='entry lang-{lang}'><a href='{path}'>{subcat}{fn}</a></div>"
-                .format(
-                    path=entry,
-                    lang=lang,
-                    # lang=LANG.get(lang, lang),
-                    subcat=subcat,
-                    fn=fn))
-        output.append("</div></div>")
+                f'<div class="cell lang"><a href="{what}/{lang}">{subtitle}</a></div>'
+            )
+            output.append('<div class="cell doc">')
+            for entry in sorted(entries):
+                entries = entry.split("/")
+                if what == "html":
+                    if tuple(entries[-3:-1]) in filter_html:
+                        continue
+                    fn = entries[-2].replace("_", " ").title()
+                elif what == "pdf":
+                    if any(entries[-1].startswith(_) for _ in filter_ref):
+                        continue
+                    fn = entries[-1][:-4].replace("_", " ").title()
+                output.append(
+                    f"<div class='entry lang-{lang}'><a href='{entry}'>{fn}</a></div>"
+                )
+
+            output.append("</div></div>")
     output.append('<div class="row last"></div>')
 output.append("</div>")
 output.append("</body></html>")
@@ -246,6 +252,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "fix":
 
     files_cmd = sp.Popen("find -type l -name _static".split(), stdout=sp.PIPE)
     for link in files_cmd.stdout:
+        link = link.decode('utf8')
         d = os.path.normpath(os.path.join(ROOT, link.rsplit("/", 1)[0]))
         print(d)
         os.chdir(d)
