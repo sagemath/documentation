@@ -1,0 +1,582 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=600, initial-scale=1">
+    <title>Modular symbols by numerical integration &#8212; Sage 9.2 Reference Manual: Elliptic curves</title>
+    <link rel="stylesheet" href="../../../../_static/sage.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/language_data.js"></script>
+    <script async="async" src="../../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="\(L\)-series for elliptic curves" href="lseries_ell.html" />
+    <link rel="prev" title="Modular symbols attached to elliptic curves over \(\QQ\)" href="ell_modular_symbols.html" />
+    <link rel="icon" href="../../../../_static/sageicon.png" type="image/x-icon" />
+    <script src="../../../../_static/thebe.js" type="text/javascript"></script>
+    <script src="../../../../_static/thebe-sage.js" type="text/javascript"></script>
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lseries_ell.html" title="\(L\)-series for elliptic curves"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ell_modular_symbols.html" title="Modular symbols attached to elliptic curves over \(\QQ\)"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Sage 9.2 Reference Manual: Elliptic curves</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Modular symbols by numerical integration</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="modular-symbols-by-numerical-integration">
+<span id="sage-schemes-elliptic-curves-mod-sym-num"></span><h1>Modular symbols by numerical integration<a class="headerlink" href="#modular-symbols-by-numerical-integration" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.schemes.elliptic_curves.mod_sym_num"></span><p>We describe here the method for computing modular symbols
+by numerical approximations of the integral of the modular form on a
+path between cusps.</p>
+<p>More precisely, let <span class="math notranslate nohighlight">\(E\)</span> be an elliptic curve and <span class="math notranslate nohighlight">\(f\)</span> the newform
+associated to the isogeny class of <span class="math notranslate nohighlight">\(E\)</span>. If</p>
+<div class="math notranslate nohighlight">
+\[\lambda(r\to r') = 2\pi i \int_{r}^{r'} f(\tau)  d\tau\]</div>
+<p>then the modular symbol <span class="math notranslate nohighlight">\([r]^{+}\)</span> is defined as the quotient of
+the real part of <span class="math notranslate nohighlight">\(\lambda(\infty\to r)\)</span> by the least positive real
+period of <span class="math notranslate nohighlight">\(E\)</span>. Similarly for the negative modular symbol, it is the
+quotient of the imaginary part of the above by the smallest positive
+imaginary part of a period on the imaginary axis.</p>
+<p>The theorem of Manin-Drinfeld shows that the modular symbols are
+rational numbers with small denominator. They are used for the
+computation of special values of the L-function of <span class="math notranslate nohighlight">\(E\)</span> twisted by
+Dirichlet characters and for the computation of <span class="math notranslate nohighlight">\(p\)</span>-adic L-functions.</p>
+<p>ALGORITHM:</p>
+<p>The implementation of modular symbols in eclib and directly in sage
+uses the algorithm described in Cremona’s book <a class="reference internal" href="../../../../references/index.html#cre1997" id="id1"><span>[Cre1997]</span></a> and Stein’s
+book <a class="reference internal" href="../../../../references/index.html#st2007" id="id2"><span>[St2007]</span></a>. First the space of all
+modular symbols of the given level is computed, then the space
+corresponding to the given newform is determined. Even if these initial
+steps may take a while, the evaluation afterwards is instantaneous. All
+computations are done with rational numbers and hence are exact.</p>
+<p>Instead the method used here (see <a class="reference internal" href="../../../../references/index.html#wu2018" id="id3"><span>[Wu2018]</span></a> for details)
+is by evaluating the above integrals
+<span class="math notranslate nohighlight">\(\lambda(r\to r')\)</span> by numerical approximation. Since we know precise
+bounds on the denominator, we can make rigorous estimates on the
+error to guarantee that the result is proven to be the correct rational
+number.</p>
+<p>The paths over which we integrate are split up and Atkin-Lehner
+operators are used to compute the badly converging part of the integrals
+by using the Fourier expansion at other cusps than <span class="math notranslate nohighlight">\(\infty\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There is one assumption for the correctness of these computations: The
+Manin constant for the <span class="math notranslate nohighlight">\(X_0\)</span>-optimal curve should be <span class="math notranslate nohighlight">\(1\)</span> if the curve
+lies outside the Cremona tables. This is known for all curves in the
+Cremona table, but only conjectured for general curves.</p>
+</div>
+<p>EXAMPLES:</p>
+<p>The most likely usage for the code is through the functions
+<code class="docutils literal notranslate"><span class="pre">modular_symbol</span></code> with implementation set to “num” and through
+<code class="docutils literal notranslate"><span class="pre">modular_symbol_numerical</span></code>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;5077a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span> <span class="o">=</span> <span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">123</span><span class="p">)</span>
+<span class="go">4</span>
+<span class="gp">sage: </span><span class="n">Mn</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol_numerical</span><span class="p">(</span><span class="n">sign</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Mn</span><span class="p">(</span><span class="mi">3</span><span class="o">/</span><span class="mi">123</span><span class="p">)</span>       <span class="c1"># abs tol 1e-11</span>
+<span class="go">3.00000000000018</span>
+</pre></div>
+</div>
+<p>In more details. A numerical modular symbols <code class="docutils literal notranslate"><span class="pre">M</span></code> is created from an
+elliptic curve with a chosen <code class="docutils literal notranslate"><span class="pre">sign</span></code> (though the other sign will also be
+accessible, too):</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">101</span><span class="p">,</span><span class="mi">103</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">conductor</span><span class="p">()</span>
+<span class="go">35261176</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">,</span> <span class="n">sign</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span>
+<span class="go">Numerical modular symbol attached to Elliptic Curve defined by y^2 = x^3 + 101*x + 103 over Rational Field</span>
+</pre></div>
+</div>
+<p>We can then compute the value <span class="math notranslate nohighlight">\([13/17]^{-}\)</span> and <span class="math notranslate nohighlight">\([1/17]^{+}\)</span> by calling
+the function <code class="docutils literal notranslate"><span class="pre">M</span></code>. The value of <span class="math notranslate nohighlight">\([0]^{+}=0\)</span> tells us that the rank of
+this curve is positive:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">13</span><span class="o">/</span><span class="mi">17</span><span class="p">)</span>
+<span class="go">-1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">17</span><span class="p">,</span><span class="n">sign</span><span class="o">=+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">-3</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sign</span><span class="o">=+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>One can compute the numerical approximation to these rational numbers
+to any proven binary precision:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">13</span><span class="o">/</span><span class="mi">17</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="c1">#abs tol 1e-4</span>
+<span class="go">-0.500003172770455</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">13</span><span class="o">/</span><span class="mi">17</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span> <span class="c1">#abs tol 1e-6</span>
+<span class="go">-0.500000296037388</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sign</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span> <span class="c1">#abs tol 1e-8</span>
+<span class="go">0.000000000000000</span>
+</pre></div>
+</div>
+<p>There are a few other things that one can do with <code class="docutils literal notranslate"><span class="pre">M</span></code>. The Manin
+symbol <span class="math notranslate nohighlight">\(M(c:d)\)</span> for a point <span class="math notranslate nohighlight">\((c:d)\)</span> in the projective line can be
+computed.:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">-1</span>
+</pre></div>
+</div>
+<p>In some cases useful, there is a function that returns all <span class="math notranslate nohighlight">\([a/m]^{+}\)</span>
+for a fixed denominator <span class="math notranslate nohighlight">\(m\)</span>. This is rather quicker for small <span class="math notranslate nohighlight">\(m\)</span> than
+computing them individually:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">{1/7: 0, 2/7: 3/2, 3/7: 3/2, 4/7: -3/2, 5/7: -3/2, 6/7: 0}</span>
+</pre></div>
+</div>
+<p>Finally a word of warning. The algorithm is fast when the cusps involved
+are unitary. If the curve is semistable, all cusps are unitary. But
+rational numbers with a prime <span class="math notranslate nohighlight">\(p\)</span> dividing the denominator once, but the
+conductor more than once, are very difficult. For instance for the above
+example, a seemingly harmless command like <code class="docutils literal notranslate"><span class="pre">M(1/2)</span></code> would take a very
+very long time to return a value. However it is possible to compute them
+for smaller conductors:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;664a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+<p>The problem with non-unitary cusps is dealt with rather easily when one
+can twist to a semistable curve, like in this example:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;11a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">quadratic_twist</span><span class="p">(</span><span class="mi">101</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">101</span><span class="p">)</span>
+<span class="go">41</span>
+</pre></div>
+</div>
+<p>AUTHOR:</p>
+<ul class="simple">
+<li><p>Chris Wuthrich (2013-16)</p></li>
+</ul>
+<dl class="py class">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical">
+<em class="property">class </em><code class="sig-prename descclassname">sage.schemes.elliptic_curves.mod_sym_num.</code><code class="sig-name descname">ModularSymbolNumerical</code><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class assigning to an elliptic curve over <span class="math notranslate nohighlight">\(\QQ\)</span> a modular symbol.
+Unlike the other implementations this class does not precompute a
+basis for this space. Instead at each call, it evaluates the integral
+using numerical approximation. All bounds are very strictly
+implemented and the output is a correct proven rational number.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">E</span></code> – an elliptic curve over the rational numbers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sign</span></code> – either -1 or +1 (default). This sets the default
+value of <code class="docutils literal notranslate"><span class="pre">sign</span></code> throughout the class. Both are still accessible.</p></li>
+</ul>
+<p>OUTPUT: a modular symbol</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;5077a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">77</span><span class="o">/</span><span class="mi">57</span><span class="p">)</span>
+<span class="go">-1</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">33</span><span class="o">/</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">sign</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">2</span>
+
+<span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.schemes.elliptic_curves.mod_sym_num</span> \
+<span class="gp">....: </span><span class="kn">import</span> <span class="n">ModularSymbolNumerical</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">ModularSymbolNumerical</span><span class="p">(</span><span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;11a1&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">-4/5</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.all_values_for_one_denominator">
+<code class="sig-name descname">all_values_for_one_denominator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">sign</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.all_values_for_one_denominator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an integer <code class="docutils literal notranslate"><span class="pre">m</span></code> and a <code class="docutils literal notranslate"><span class="pre">sign</span></code>, this returns the
+modular symbols <span class="math notranslate nohighlight">\([a/m]\)</span> for all <span class="math notranslate nohighlight">\(a\)</span> coprime to <span class="math notranslate nohighlight">\(m\)</span>
+using partial sums.
+This is much quicker than computing them one by one.</p>
+<p>This will only work if <span class="math notranslate nohighlight">\(m\)</span> is relatively small and
+if the cusps <span class="math notranslate nohighlight">\(a/m\)</span> are unitary.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">m</span></code> – a natural number</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sign</span></code> – optional either +1 or -1, or 0 (default),
+in which case the sign passed to the class is taken.</p></li>
+</ul>
+<p>OUTPUT: a dictionary of fractions with denominator <span class="math notranslate nohighlight">\(m\)</span>
+giving rational numbers.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;5077a1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">{1/7: 3, 2/7: 0, 3/7: -3, 4/7: -3, 5/7: 0, 6/7: 3}</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">M</span><span class="p">(</span><span class="n">a</span><span class="o">/</span><span class="mi">7</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">6</span><span class="p">]]</span>
+<span class="go">[3, 0, -3, -3, 0, 3]</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">{1/3: 4, 2/3: -4}</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;11a1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+<span class="go">{1/12: 1/5, 5/12: -23/10, 7/12: -23/10, 11/12: 1/5}</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">{1/12: 0, 5/12: 1/2, 7/12: -1/2, 11/12: 0}</span>
+
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;20a1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="go">{1/4: 0, 3/4: 0}</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">all_values_for_one_denominator</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">{1/8: 1/2, 3/8: -1/2, 5/8: -1/2, 7/8: 1/2}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.approximative_value">
+<code class="sig-name descname">approximative_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">r</span></em>, <em class="sig-param"><span class="n">sign</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">prec</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">use_twist</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.approximative_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The numerical modular symbol evaluated at rational.</p>
+<p>It returns a real number, which should be equal
+to a rational number to the given binary
+precision <code class="docutils literal notranslate"><span class="pre">prec</span></code>. In practice the precision is
+often much higher. See the examples below.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> – a rational (or integer)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sign</span></code> – optional either +1 or -1, or 0 (default),
+in which case the sign passed to the class is taken.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prec</span></code> – an integer (default 20)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_twist</span></code> – True (default) allows to use a
+quadratic twist of the curve to lower the conductor.</p></li>
+</ul>
+<p>OUTPUT: a real number</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;5077a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">123</span><span class="o">/</span><span class="mi">567</span><span class="p">)</span>  <span class="c1"># abs tol 1e-11</span>
+<span class="go">-4.00000000000845</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">123</span><span class="o">/</span><span class="mi">567</span><span class="p">,</span><span class="n">prec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># abs tol 1e-9</span>
+<span class="go">-4.00002815242902</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">([</span><span class="mi">11</span><span class="p">,</span><span class="mi">88</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">conductor</span><span class="p">()</span>
+<span class="go">1715296</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">prec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>   <span class="c1"># abs tol 1e-11</span>
+<span class="go">-0.0000176374317982166</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">7</span><span class="p">,</span><span class="n">prec</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># abs tol 1e-11</span>
+<span class="go">0.999981178147778</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">approximative_value</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">7</span><span class="p">,</span><span class="n">prec</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="c1"># abs tol 1e-11</span>
+<span class="go">0.999999972802649</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.clear_cache">
+<code class="sig-name descname">clear_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the cached values in all methods of this class</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;11a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1/5</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">1/5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.elliptic_curve">
+<code class="sig-name descname">elliptic_curve</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.elliptic_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the elliptic curve of this modular symbol.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;15a4&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">elliptic_curve</span><span class="p">()</span>
+<span class="go">Elliptic Curve defined by y^2 + x*y + y = x^3 + x^2 + 35*x - 28 over Rational Field</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.manin_symbol">
+<code class="sig-name descname">manin_symbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">u</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">sign</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.manin_symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a pair <span class="math notranslate nohighlight">\((u,v)\)</span> presenting a point in
+<span class="math notranslate nohighlight">\(\mathbb{P}^1(\mathbb{Z}/N\mathbb{Z})\)</span> and hence a coset of
+<span class="math notranslate nohighlight">\(\Gamma_0(N)\)</span>, this computes the value of the Manin
+symbol <span class="math notranslate nohighlight">\(M(u:v)\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">u</span></code> – an integer</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">v</span></code> – an integer such that <span class="math notranslate nohighlight">\((u:v)\)</span> is a projective point
+modulo <span class="math notranslate nohighlight">\(N\)</span></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sign</span></code> – optional either +1 or -1, or 0 (default),
+in which case the sign passed to the class is taken.</p></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;11a1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">-1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">sign</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">-1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s1">&#39;14a1&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">-1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="mi">17</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">-1/2</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">manin_symbol</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">)</span>
+<span class="go">-1/2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.transportable_symbol">
+<code class="sig-name descname">transportable_symbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">r</span></em>, <em class="sig-param"><span class="n">rr</span></em>, <em class="sig-param"><span class="n">sign</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.elliptic_curves.mod_sym_num.ModularSymbolNumerical.transportable_symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the symbol <span class="math notranslate nohighlight">\([r']^+ - [r]^+\)</span> where <span class="math notranslate nohighlight">\(r'=\gamma(r)\)</span> for some
+<span class="math notranslate nohighlight">\(\gamma\in\Gamma_0(N)\)</span>. These symbols can be computed by transporting
+the path into the upper half plane close to one of the unitary cusps.
+Here we have implemented it only to move close to <span class="math notranslate nohighlight">\(i\infty\)</span> and <span class="math notranslate nohighlight">\(0\)</span>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> and <code class="docutils literal notranslate"><span class="pre">rr</span></code> – two rational numbers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sign</span></code> – optional either +1 or -1, or 0 (default),
+in which case the sign passed to the class is taken.</p></li>
+</ul>
+<p>OUTPUT: a rational number</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;11a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">-1/2</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;37a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">19</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">19</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0</span>
+
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">EllipticCurve</span><span class="p">(</span><span class="s2">&quot;5077a1&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">modular_symbol</span><span class="p">(</span><span class="n">implementation</span><span class="o">=</span><span class="s2">&quot;num&quot;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">35</span><span class="o">/</span><span class="mi">144</span><span class="p">)</span>
+<span class="go">-3</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">35</span><span class="o">/</span><span class="mi">144</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="o">/</span><span class="mi">31798</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">sage: </span><span class="n">M</span><span class="o">.</span><span class="n">transportable_symbol</span><span class="p">(</span><span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="o">/</span><span class="mi">31798</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">-5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ell_modular_symbols.html"
+                        title="previous chapter">Modular symbols attached to elliptic curves over <span class="math notranslate nohighlight">\(\QQ\)</span></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="lseries_ell.html"
+                        title="next chapter"><span class="math notranslate nohighlight">\(L\)</span>-series for elliptic curves</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/sage/schemes/elliptic_curves/mod_sym_num.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="lseries_ell.html" title="\(L\)-series for elliptic curves"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ell_modular_symbols.html" title="Modular symbols attached to elliptic curves over \(\QQ\)"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../../index.html"><img src="../../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Sage 9.2 Reference Manual: Elliptic curves</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Modular symbols by numerical integration</a></li> 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2005--2020, The Sage Development Team.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* The sidebar toggle adapts its height to the bodywrapper height. */
+    const resizeObserver = new ResizeObserver(entries => {
+        tog.height(bod.height());
+    });
+    resizeObserver.observe(bod[0]);
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>
