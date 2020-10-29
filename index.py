@@ -242,6 +242,11 @@ for subdir in ["html", "pdf"]:
             with open(idxfn, "w") as outidx:
                 outidx.write("\n".join(index))
 
+# fix for https://github.com/sagemath/documentation/issues/23
+if os.path.exists('pdf/en/reference/_static'):
+    print("removing pdf/en/reference/_static symlink")
+    os.system('rm pdf/en/reference/_static')
+
 import sys
 if len(sys.argv) > 1 and sys.argv[1] == "fix":
     print(' fix the static links in sphinx _static files '.center(100, "#"))
