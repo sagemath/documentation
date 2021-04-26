@@ -2,7 +2,7 @@
 
 This repository creates a GitHub page hosting the generated documentation files of [SageMath](https://sagemath.org).
 
-**Changes to the documentation itself should go to http://trac.sagemath.org under the category "doc".**
+**Bug reports and changes to the documentation itself have to go to http://trac.sagemath.org under the category "doc".**
 
 ## Purpose
 
