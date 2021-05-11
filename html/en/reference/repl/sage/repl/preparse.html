@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=600, initial-scale=1">
-    <title>The Sage Preparser &#8212; Sage 9.2 Reference Manual: The Sage Command Line</title>
+    <title>The Sage Preparser &#8212; Sage 9.3 Reference Manual: The Sage Command Line</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -45,7 +45,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.2 Reference Manual: The Sage Command Line</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.3 Reference Manual: The Sage Command Line</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">The Sage Preparser</a></li> 
       </ul>
@@ -133,7 +133,7 @@ expressions.</p></li>
 </pre></div>
 </div>
 <p>A string with escaped quotes in it (the point here is that the
-preparser doesn’t get confused by the internal quotes):</p>
+preparser does not get confused by the internal quotes):</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="s2">&quot;&quot;</span><span class="n">Yes</span><span class="p">,</span><span class="s2">&quot; he said.&quot;</span>
 <span class="go">&#39;&quot;Yes,&quot; he said.&#39;</span>
 <span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">; s</span>
@@ -212,7 +212,7 @@ expression:</p>
 </pre></div>
 </div>
 <p>This involves -=, which should not be turned into a symbolic
-expression (of course a(x) isn’t an identifier, so this will never be
+expression (of course a(x) is not an identifier, so this will never be
 valid):</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">preparse</span><span class="p">(</span><span class="s1">&#39;a(x) -= 5&#39;</span><span class="p">)</span>
 <span class="go">&#39;a(x) -= Integer(5)&#39;</span>
@@ -278,6 +278,131 @@ much more efficient than Sage integers when they are very small;
 large Sage integers are much more efficient than Python integers,
 since they are implemented using the GMP C library.</p>
 </div>
+<p>F-Strings (<a class="reference external" href="https://www.python.org/dev/peps/pep-0498/">PEP 498</a>):</p>
+<p>Expressions embedded within F-strings are preparsed:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{1/3}&#39;</span>
+<span class="go">&#39;1/3&#39;</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{2^3}&#39;</span>
+<span class="go">&#39;8&#39;</span>
+<span class="gp">sage: </span><span class="n">x</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{x} in binary is: {x:08b}&#39;</span>
+<span class="go">&#39;20 in binary is: 00010100&#39;</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{list(map(lambda x: x^2, [1, 2, .., 5]))}&#39;</span>
+<span class="go">&#39;[1, 4, 9, 16, 25]&#39;</span>
+</pre></div>
+</div>
+<p>Note that the format specifier is not preparsed. Expressions within it,
+however, are:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{x:10r}&#39;</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">ValueError: Unknown format code &#39;r&#39; for object of type &#39;int&#39;</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{x:{10r}}&#39;</span>
+<span class="go">&#39;        20&#39;</span>
+</pre></div>
+</div>
+<p>Nested F-strings are also supported:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;{ f&quot;{ 1/3 + 1/6 }&quot; }&#39;</span>
+<span class="go">&#39;1/2&#39;</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="s1">&#39;&#39;&#39;1{ f&quot;2{ f&#39;4{ 2^3 }4&#39; }2&quot; }1&#39;&#39;&#39;</span>
+<span class="go">&#39;1248421&#39;</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt id="sage.repl.preparse.QuoteStack">
+<em class="property">class </em><code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">QuoteStack</code><a class="headerlink" href="#sage.repl.preparse.QuoteStack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The preserved state of parsing in <a class="reference internal" href="#sage.repl.preparse.strip_string_literals" title="sage.repl.preparse.strip_string_literals"><code class="xref py py-func docutils literal notranslate"><span class="pre">strip_string_literals()</span></code></a>.</p>
+<dl class="py method">
+<dt id="sage.repl.preparse.QuoteStack.peek">
+<code class="sig-name descname">peek</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.QuoteStack.peek" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the frame at the top of the stack or None if empty.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">qs</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">peek</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">peek</span><span class="p">()</span>
+<span class="go">QuoteStackFrame(...delim=&#39;&quot;&#39;...)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.repl.preparse.QuoteStack.pop">
+<code class="sig-name descname">pop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.QuoteStack.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove and return the frame that was most recently added to the stack.</p>
+<p>Raise an IndexError if the stack is empty.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">qs</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">IndexError: ...</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<span class="go">QuoteStackFrame(...delim=&#39;&quot;&#39;...)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.repl.preparse.QuoteStack.push">
+<code class="sig-name descname">push</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">frame</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.QuoteStack.push" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a frame to the stack.</p>
+<p>If the frame corresponds to an F-string, its delimiter is marked as no
+longer being a <a class="reference internal" href="#sage.repl.preparse.QuoteStack.safe_delimiter" title="sage.repl.preparse.QuoteStack.safe_delimiter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">safe_delimiter()</span></code></a>.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">qs</span> <span class="o">=</span> <span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">qs</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">sage</span><span class="o">.</span><span class="n">repl</span><span class="o">.</span><span class="n">preparse</span><span class="o">.</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.repl.preparse.QuoteStack.safe_delimiter">
+<code class="sig-name descname">safe_delimiter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.QuoteStack.safe_delimiter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string delimiter that may be safely inserted into the code
+output by <a class="reference internal" href="#sage.repl.preparse.strip_string_literals" title="sage.repl.preparse.strip_string_literals"><code class="xref py py-func docutils literal notranslate"><span class="pre">strip_string_literals()</span></code></a>, if any.</p>
+<p><code class="docutils literal notranslate"><span class="pre">'</span></code> is preferred over <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>. The triple-quoted versions are never
+returned since by the time they would be chosen, they would also be invalid.
+<code class="docutils literal notranslate"><span class="pre">'''</span></code> cannot, for example, appear within an F-string delimited by <code class="docutils literal notranslate"><span class="pre">'</span></code>.</p>
+<p>Once marked unsafe, a delimiter is never made safe again, even after the
+stack frame that used it is popped. It may no longer be applicable to parsing,
+but it appears somewhere in the processed code, so it is not safe to insert
+just anywhere. A future enhancement could be to map ranges in the processed
+code to the delimiter(s) that would be safe to insert there.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="kn">from</span> <span class="nn">sage.repl.preparse</span> <span class="kn">import</span> <span class="n">QuoteStack</span><span class="p">,</span> <span class="n">QuoteStackFrame</span>
+<span class="gp">sage: </span><span class="n">s</span> <span class="o">=</span> <span class="n">QuoteStack</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">safe_delimiter</span><span class="p">()</span>
+<span class="go">&quot;&#39;&quot;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">safe_delimiter</span><span class="p">()</span>
+<span class="go">&quot;&#39;&quot;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<span class="go">QuoteStackFrame(...)</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">f_string</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">safe_delimiter</span><span class="p">()</span>
+<span class="go">&#39;&quot;&#39;</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">QuoteStackFrame</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span> <span class="n">f_string</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="n">s</span><span class="o">.</span><span class="n">safe_delimiter</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="sage.repl.preparse.QuoteStackFrame">
+<em class="property">class </em><code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">QuoteStackFrame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">delim</span></em>, <em class="sig-param"><span class="n">raw</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">f_string</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">braces</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">parens</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">brackets</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">fmt_spec</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nested_fmt_spec</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.QuoteStackFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/types.html#types.SimpleNamespace" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">types.SimpleNamespace</span></code></a></p>
+<p>The state of a single level of a string literal being parsed.</p>
+<p>Only F-strings have more than one level.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt id="sage.repl.preparse.containing_block">
 <code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">containing_block</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">idx</span></em>, <em class="sig-param"><span class="n">delimiters</span><span class="o">=</span><span class="default_value">['()', '[]', '{}']</span></em>, <em class="sig-param"><span class="n">require_delim</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.containing_block" title="Permalink to this definition">¶</a></dt>
@@ -390,9 +515,9 @@ UTF-8 declaration and return <code class="docutils literal notranslate"><span cl
 <p class="admonition-title">Note</p>
 <ul class="simple">
 <li><p><span class="target" id="index-0"></span><a class="pep reference external" href="https://www.python.org/dev/peps/pep-0263"><strong>PEP 263</strong></a> says that Python will interpret a UTF-8
-byte order mark as a declaration of UTF-8 encoding, but I don’t
+byte order mark as a declaration of UTF-8 encoding, but I do not
 think we do that; this function only sees a Python string so it
-can’t account for a BOM.</p></li>
+cannot account for a BOM.</p></li>
 <li><p>We default to UTF-8 encoding even though PEP 263 says that
 Python files should default to ASCII.</p></li>
 <li><p>Also see <a class="reference external" href="https://docs.python.org/ref/encodings.html">https://docs.python.org/ref/encodings.html</a>.</p></li>
@@ -573,7 +698,7 @@ or a non-empty string of digits or just a single <code class="docutils literal n
 <span class="go">&#39;A  * BackslashOperator() * B&#39;</span>
 <span class="gp">sage: </span><span class="n">preparse</span><span class="p">(</span><span class="s2">&quot;A^2 </span><span class="se">\\</span><span class="s2"> B + C&quot;</span><span class="p">)</span>
 <span class="go">&#39;A**Integer(2)  * BackslashOperator() * B + C&#39;</span>
-<span class="gp">sage: </span><span class="n">preparse</span><span class="p">(</span><span class="s2">&quot;a </span><span class="se">\\</span><span class="s2"> b </span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># There is really only one backslash here, it&#39;s just being escaped.</span>
+<span class="gp">sage: </span><span class="n">preparse</span><span class="p">(</span><span class="s2">&quot;a </span><span class="se">\\</span><span class="s2"> b </span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># There is really only one backslash here, it is just being escaped.</span>
 <span class="go">&#39;a  * BackslashOperator() * b \\&#39;</span>
 
 <span class="gp">sage: </span><span class="n">preparse</span><span class="p">(</span><span class="s2">&quot;time R.&lt;x&gt; = ZZ[]&quot;</span><span class="p">,</span> <span class="n">do_time</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -603,7 +728,7 @@ or a non-empty string of digits or just a single <code class="docutils literal n
 </li>
 <li><p>William Stein</p>
 <ul>
-<li><p>Make variables become defined if they aren’t already defined.</p></li>
+<li><p>Make variables become defined if they are not already defined.</p></li>
 </ul>
 </li>
 <li><p>Robert Bradshaw</p>
@@ -653,7 +778,7 @@ numeric_literals is always set to False.</p>
 arguments to load/attach are evaluated in the namespace of this
 dict.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">numeric_literals</span></code> - bool (default: True), whether to factor
-out wrapping of integers and floats, so they don’t get created
+out wrapping of integers and floats, so they do not get created
 repeatedly inside loops</p></li>
 </ul>
 <p>OUTPUT:</p>
@@ -729,7 +854,7 @@ stream code{out}.</p>
 </li>
 <li><p>2006-10-31: William</p>
 <ul>
-<li><p>Fix so obj doesn’t have to be mutated.</p></li>
+<li><p>Fix so obj does not have to be mutated.</p></li>
 </ul>
 </li>
 <li><p>2009-01-27: Robert Bradshaw</p>
@@ -742,15 +867,18 @@ stream code{out}.</p>
 
 <dl class="py function">
 <dt id="sage.repl.preparse.preparse_numeric_literals">
-<code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">preparse_numeric_literals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">extract</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.preparse_numeric_literals" title="Permalink to this definition">¶</a></dt>
-<dd><p>This preparses numerical literals into their Sage counterparts,
+<code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">preparse_numeric_literals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">extract</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">quotes</span><span class="o">=</span><span class="default_value">&quot;'&quot;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.preparse_numeric_literals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preparse numerical literals into their Sage counterparts,
 e.g. Integer, RealNumber, and ComplexNumber.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">code</span></code> - a string; a code block to preparse</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">extract</span></code> - a boolean (default: False); whether to create
+<li><p><code class="docutils literal notranslate"><span class="pre">code</span></code> - string; a code block to preparse</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">extract</span></code> - boolean (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>); whether to create
 names for the literals and return a dictionary of
 name-construction pairs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quotes</span></code> - string (default: <code class="docutils literal notranslate"><span class="pre">&quot;'&quot;</span></code>); used to surround string
+arguments to RealNumber and ComplexNumber. If None, will rebuild
+the string using a list of its Unicode code-points.</p></li>
 </ul>
 <p>OUTPUT:</p>
 <ul class="simple">
@@ -808,6 +936,10 @@ name-construction mapping</p></li>
 <span class="go">&#39;0xEA&#39;</span>
 <span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;0x1012Fae&#39;</span><span class="p">)</span>
 <span class="go">&#39;Integer(0x1012Fae)&#39;</span>
+<span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;042&#39;</span><span class="p">)</span>
+<span class="go">&#39;Integer(42)&#39;</span>
+<span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;000042&#39;</span><span class="p">)</span>
+<span class="go">&#39;Integer(42)&#39;</span>
 </pre></div>
 </div>
 <p>Test underscores as digit separators (PEP 515,
@@ -864,6 +996,17 @@ it is not preparsed, and similarly with a trailing underscore:</p>
 <span class="go">SyntaxError: invalid ...</span>
 </pre></div>
 </div>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">quotes</span></code> parameter:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;5j&#39;</span><span class="p">,</span> <span class="n">quotes</span><span class="o">=</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+<span class="go">&#39;ComplexNumber(0, &quot;5&quot;)&#39;</span>
+<span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;3.14&#39;</span><span class="p">,</span> <span class="n">quotes</span><span class="o">=</span><span class="s2">&quot;&#39;&#39;&#39;&quot;</span><span class="p">)</span>
+<span class="go">&quot;RealNumber(&#39;&#39;&#39;3.14&#39;&#39;&#39;)&quot;</span>
+<span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;3.14&#39;</span><span class="p">,</span> <span class="n">quotes</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="go">&#39;RealNumber(str().join(map(chr, [51, 46, 49, 52])))&#39;</span>
+<span class="gp">sage: </span><span class="n">preparse_numeric_literals</span><span class="p">(</span><span class="s1">&#39;5j&#39;</span><span class="p">,</span> <span class="n">quotes</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="go">&#39;ComplexNumber(0, str().join(map(chr, [53])))&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -894,15 +1037,14 @@ from the documentation works.</p>
 <dl class="py function">
 <dt id="sage.repl.preparse.strip_string_literals">
 <code class="sig-prename descclassname">sage.repl.preparse.</code><code class="sig-name descname">strip_string_literals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">state</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.repl.preparse.strip_string_literals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a string with all literal quotes replaced with labels and
-a dictionary of labels for re-substitution.  This makes parsing
-easier.</p>
+<dd><p>Return a string with all literal quotes replaced with labels and
+a dictionary of labels for re-substitution.</p>
+<p>This makes parsing easier.</p>
 <p>INPUT:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">code</span></code> - a string; the input</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">state</span></code> - a 2-tuple (default: None); state with which to
-continue processing, e.g., across multiple calls to this
-function</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">state</span></code> - a <a class="reference internal" href="#sage.repl.preparse.QuoteStack" title="sage.repl.preparse.QuoteStack"><code class="xref py py-class docutils literal notranslate"><span class="pre">QuoteStack</span></code></a> (default: None); state with which to
+continue processing, e.g., across multiple calls to this function</p></li>
 </ul>
 <p>OUTPUT:</p>
 <ul class="simple">
@@ -1004,14 +1146,14 @@ this function:</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.2 Reference Manual: The Sage Command Line</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.3 Reference Manual: The Sage Command Line</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">The Sage Preparser</a></li> 
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2020, The Sage Development Team.
+        &#169; Copyright 2005--2021, The Sage Development Team.
       Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
     <script type="text/javascript">

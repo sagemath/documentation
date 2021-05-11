@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Testing on multiple platforms &#8212; Sage Developer&#39;s Guide v9.2</title>
+    <title>Testing on multiple platforms &#8212; Sage Developer&#39;s Guide v9.3</title>
     <link rel="stylesheet" href="_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
@@ -17,7 +17,7 @@
     <script async="async" src="_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="The Sage Manuals" href="sage_manuals.html" />
+    <link rel="next" title="Additional development and testing tools" href="tools.html" />
     <link rel="prev" title="Running Sage’s doctests" href="doctesting.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
     <script src="_static/thebe.js" type="text/javascript"></script>
@@ -31,7 +31,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="sage_manuals.html" title="The Sage Manuals"
+          <a href="tools.html" title="Additional development and testing tools"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="doctesting.html" title="Running Sage’s doctests"
@@ -42,7 +42,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.2</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.3</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Testing on multiple platforms</a></li> 
       </ul>
@@ -57,7 +57,7 @@
 <span id="chapter-portability-testing"></span><h1>Testing on multiple platforms<a class="headerlink" href="#testing-on-multiple-platforms" title="Permalink to this headline">¶</a></h1>
 <p>Sage is intended to build and run on a variety of platforms,
 including all major Linux distributions, as well as MacOS, and
-Windows (with Cygwin).</p>
+Windows (with Cygwin and WSL).</p>
 <p>There is considerable variation among these platforms.
 To ensure that Sage continues to build correctly on users’
 machines, it is crucial to test changes to Sage, in particular
@@ -170,11 +170,10 @@ simply named <code class="docutils literal notranslate"><span class="pre">gcc</s
 Debian-derived distributions is called, we can ask Sage for a
 reminder:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">root@39d693b2a75d:/sage#</span> build/bin/sage-print-system-package-command debian install gcc
-<span class="go">sudo apt-get install gcc</span>
+<span class="go">apt-get install gcc</span>
 </pre></div>
 </div>
-<p>We are already root, so we can drop the <code class="docutils literal notranslate"><span class="pre">sudo</span></code>, of course.
-And we remember that we need to fetch the current package lists
+<p>We remember that we need to fetch the current package lists
 from the server first:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">root@39d693b2a75d:/sage#</span> apt-get update
 <span class="gp">root@39d693b2a75d:/sage#</span> apt-get install gcc
@@ -185,11 +184,11 @@ from the server first:</p>
 <h3>Using Sage’s database of distribution prerequisites<a class="headerlink" href="#using-sage-s-database-of-distribution-prerequisites" title="Permalink to this headline">¶</a></h3>
 <p>The source code of the Sage distribution contains a database of
 package names in various distributions’ package managers.  For
-example, the file <code class="docutils literal notranslate"><span class="pre">build/pkgs/debian.txt</span></code> contains the following</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This file, build/pkgs/debian.txt, contains names of Debian/Ubuntu packages</span>
-<span class="c1"># needed for installation of Sage from source.</span>
+example, the file <code class="docutils literal notranslate"><span class="pre">build/pkgs/_prereq/distros/debian.txt</span></code> contains the following</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This file, build/pkgs/_prereq/distros/debian.txt, contains names</span>
+<span class="c1"># of Debian/Ubuntu packages needed for installation of Sage from source.</span>
 <span class="c1">#</span>
-<span class="c1"># In addition, the files build/pkgs/SPKG/debian.txt contain the names</span>
+<span class="c1"># In addition, the files build/pkgs/SPKG/distros/debian.txt contain the names</span>
 <span class="c1"># of packages that provide the equivalent of SPKG.</span>
 <span class="c1">#</span>
 <span class="c1"># Everything on a line after a # character is ignored.</span>
@@ -325,10 +324,10 @@ on their respective machines.</p>
 <h3>Generating Dockerfiles<a class="headerlink" href="#generating-dockerfiles" title="Permalink to this headline">¶</a></h3>
 <p>Sage also provides a script for generating a <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code>, which is
 a recipe for automatically building a new image:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[mkoeppe@sage sage]$</span> build/bin/write-dockerfile.sh debian <span class="s2">&quot;@(standard|optional)&quot;</span> &gt; Dockerfile
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[mkoeppe@sage sage]$</span> build/bin/write-dockerfile.sh debian <span class="s2">&quot;:standard: :optional:&quot;</span> &gt; Dockerfile
 </pre></div>
 </div>
-<p>(The second argument is a bash extglob pattern for the package type.)</p>
+<p>(The second argument is passed to <code class="docutils literal notranslate"><span class="pre">sage</span> <span class="pre">-package</span> <span class="pre">list</span></code> to find packages for the listed package types.)</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> instructs the command <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">build</span></code> to build a
 new Docker image.  Let us take a quick look at the generated file;
 this is slightly simplified:</p>
@@ -596,16 +595,25 @@ on Docker hub they correspond.</p></li>
 </ul>
 <p>The <strong>packages factor</strong> describes a list of system packages to be
 installed on the system before building Sage:</p>
-<ul class="simple">
+<ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">minimal</span></code> installs the system packages known to Sage to provide
 minimal prerequisites for bootstrapping and building the Sage
-distribution.</p></li>
+distribution.  This corresponds to the packages <code class="docutils literal notranslate"><span class="pre">_bootstrap</span></code> and
+<code class="docutils literal notranslate"><span class="pre">_prereq</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">standard</span></code> additionally installs all known system packages that
 are equivalent to standard packages of the Sage distribution, for
 which the mechanism <code class="docutils literal notranslate"><span class="pre">spkg-configure.m4</span></code> is implemented.
-This corresponds to the type pattern <code class="docutils literal notranslate"><span class="pre">&#64;(standard)</span></code>.</p></li>
+This corresponds to the packages listed by:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[mkoeppe@sage sage]$</span> sage --package list --has-file<span class="o">=</span>spkg-configure.m4 :standard:
+</pre></div>
+</div>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">maximal</span></code> does the same for all standard and optional packages.
-This corresponds to the type pattern <code class="docutils literal notranslate"><span class="pre">&#64;(standard|optional)</span></code>.</p></li>
+This corresponds to the packages listed by:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[mkoeppe@sage sage]$</span> sage --package list :standard: :optional:
+</pre></div>
+</div>
+</li>
 </ul>
 <p>The factors are connected by a hyphen to name a system configuration,
 such as <code class="docutils literal notranslate"><span class="pre">debian-buster-standard</span></code> and <code class="docutils literal notranslate"><span class="pre">centos-7-i386-minimal</span></code>.</p>
@@ -690,7 +698,7 @@ separate, distclean git worktree.</p>
 environment called <code class="docutils literal notranslate"><span class="pre">local-direct</span></code>.  Because all builds with tox
 begin by bootstrapping the source tree, you will need autotools and
 other prerequisites installed in your system.  See
-<code class="docutils literal notranslate"><span class="pre">build/pkgs/*-bootstrap.txt</span></code> for a list of system packages that
+<code class="docutils literal notranslate"><span class="pre">build/pkgs/_bootstrap/distros/*.txt</span></code> for a list of system packages that
 provide these prerequisites.</p>
 <p>We start by creating a fresh (distclean) git worktree.</p>
 <blockquote>
@@ -882,6 +890,35 @@ or Miniconda that you may have on your system.</p>
 <p>The environments use the conda-forge channel and use the <code class="docutils literal notranslate"><span class="pre">python</span></code>
 package and the compilers from this channel.</p>
 </div>
+<div class="section" id="options-for-build-testing-with-the-local-technology">
+<h3>Options for build testing with the local technology<a class="headerlink" href="#options-for-build-testing-with-the-local-technology" title="Permalink to this headline">¶</a></h3>
+<p>The environments using the <code class="docutils literal notranslate"><span class="pre">local</span></code> technology can be customized
+by setting environment variables.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">SKIP_SYSTEM_PKG_INSTALL</span></code> is set to <code class="docutils literal notranslate"><span class="pre">1</span></code> (or <code class="docutils literal notranslate"><span class="pre">yes</span></code>),
+then all steps of installing system packages are skipped in this run.
+When reusing a previously created tox environment, this option can
+save time and also give developers more control for experiments
+with system packages.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">SKIP_BOOTSTRAP</span></code> is set to <code class="docutils literal notranslate"><span class="pre">1</span></code> (or <code class="docutils literal notranslate"><span class="pre">yes</span></code>), then the
+bootstrapping phase is skipped.  When reusing a previously created
+tox environment, this option can save time.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">SKIP_CONFIGURE</span></code> is set to <code class="docutils literal notranslate"><span class="pre">1</span></code> (or <code class="docutils literal notranslate"><span class="pre">yes</span></code>), then the
+<code class="docutils literal notranslate"><span class="pre">configure</span></code> script is not run explicitly.  When reusing a
+previously created tox environment, this option can save time.
+(The <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> may still rerun configuration using
+<code class="docutils literal notranslate"><span class="pre">config.status</span> <span class="pre">--recheck</span></code>.)</p></li>
+</ul>
+</div></blockquote>
+<p>The <code class="docutils literal notranslate"><span class="pre">local</span></code> technology also defines a special target <code class="docutils literal notranslate"><span class="pre">bash</span></code>:
+Instead of building anything with <code class="docutils literal notranslate"><span class="pre">make</span></code>, it just starts an
+interactive shell.  For example, in combination with the above
+options:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[mkoeppe@sage worktree-local]$</span> <span class="nv">SKIP_SYSTEM_PKG_INSTALL</span><span class="o">=</span>yes <span class="nv">SKIP_BOOTSTRAP</span><span class="o">=</span><span class="m">1</span> <span class="nv">SKIP_CONFIGURE</span><span class="o">=</span><span class="m">1</span> tox -e local-homebrew-macos-minimal -- bash
+</pre></div>
+</div>
+</div>
 <div class="section" id="automatic-parallel-tox-runs-on-github-actions">
 <h3>Automatic parallel tox runs on GitHub Actions<a class="headerlink" href="#automatic-parallel-tox-runs-on-github-actions" title="Permalink to this headline">¶</a></h3>
 <p>The Sage source tree includes a default configuration for GitHub
@@ -903,7 +940,15 @@ workflow have finished.  Each job generates one tarball.
 “Annotations” highlight certain top-level errors or warnings issued
 during the build.</p>
 <p>The following procedure triggers a run of tests with the default set of
-system configurations.  Let’s assume that <code class="docutils literal notranslate"><span class="pre">github</span></code> is the name of
+system configurations.</p>
+<ul class="simple">
+<li><p>Push your changes to trac.</p></li>
+<li><p>Go to the <a class="reference external" href="https://github.com/sagemath/sagetrac-mirror/actions">Actions page on the GitHub mirror</a> and select the workflow you would like to run.</p></li>
+<li><p>Click on “Run workflow” above the list of workflow runs and select the branch where the workflow will run.</p></li>
+</ul>
+<p>For more information, see the <a class="reference external" href="https://docs.github.com/en/free-pro-team&#64;latest/actions/managing-workflow-runs/manually-running-a-workflow">GitHub documentation</a>.</p>
+<p>Alternatively, you can create and push a custom tag in order to trigger a run of tests as follows.
+Let’s assume that <code class="docutils literal notranslate"><span class="pre">github</span></code> is the name of
 the remote corresponding to your GitHub fork of the Sage repository:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git remote -v <span class="p">|</span> grep /my-github
 <span class="go">my-github      https://github.com/mkoeppe/sage.git (fetch)</span>
@@ -1031,6 +1076,7 @@ it to the command line:</p>
 <li><a class="reference internal" href="#automatic-build-testing-on-the-host-os-with-best-effort-isolation-using-tox-e-local">Automatic build testing on the host OS with best-effort isolation using tox -e local</a></li>
 <li><a class="reference internal" href="#automatic-build-testing-on-macos-with-a-best-effort-isolated-installation-of-homebrew">Automatic build testing on macOS with a best-effort isolated installation of Homebrew</a></li>
 <li><a class="reference internal" href="#automatic-build-testing-with-a-best-effort-isolated-installation-of-conda">Automatic build testing with a best-effort isolated installation of Conda</a></li>
+<li><a class="reference internal" href="#options-for-build-testing-with-the-local-technology">Options for build testing with the local technology</a></li>
 <li><a class="reference internal" href="#automatic-parallel-tox-runs-on-github-actions">Automatic parallel tox runs on GitHub Actions</a></li>
 </ul>
 </li>
@@ -1042,8 +1088,8 @@ it to the command line:</p>
   <p class="topless"><a href="doctesting.html"
                         title="previous chapter">Running Sage’s doctests</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="sage_manuals.html"
-                        title="next chapter">The Sage Manuals</a></p>
+  <p class="topless"><a href="tools.html"
+                        title="next chapter">Additional development and testing tools</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -1072,7 +1118,7 @@ it to the command line:</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="sage_manuals.html" title="The Sage Manuals"
+          <a href="tools.html" title="Additional development and testing tools"
              >next</a> |</li>
         <li class="right" >
           <a href="doctesting.html" title="Running Sage’s doctests"
@@ -1083,14 +1129,14 @@ it to the command line:</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.2</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.3</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Testing on multiple platforms</a></li> 
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2020, The Sage Development Team.
+        &#169; Copyright 2005--2021, The Sage Development Team.
       Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
     <script type="text/javascript">

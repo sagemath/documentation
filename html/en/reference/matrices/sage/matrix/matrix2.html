@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Base class for matrices, part 2 &#8212; Sage 9.2 Reference Manual: Matrices and Spaces of Matrices</title>
+    <title>Base class for matrices, part 2 &#8212; Sage 9.3 Reference Manual: Matrices and Spaces of Matrices</title>
     <link rel="stylesheet" href="../../../_static/sage.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -45,7 +45,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.2 Reference Manual: Matrices and Spaces of Matrices</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.3 Reference Manual: Matrices and Spaces of Matrices</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Base class for matrices, part 2</a></li> 
       </ul>
@@ -95,6 +95,8 @@ matrices of one row, fixed in <a class="reference external" href="https://trac.s
 <li><p>Samuel Lelièvre (2020-09-18): improved method <code class="docutils literal notranslate"><span class="pre">LLL_gram</span></code> based on a patch
 by William Stein posted at <a class="reference external" href="https://trac.sagemath.org/5178">trac ticket #5178</a>, moving the method from its initial
 location in <code class="docutils literal notranslate"><span class="pre">sage.matrix.integer_matrix_dense</span></code></p></li>
+<li><p>Michael Jung (2020-10-02): added Bär-Faddeev-LeVerrier algorithm for the
+Pfaffian</p></li>
 </ul>
 <dl class="py class">
 <dt id="sage.matrix.matrix2.Matrix">
@@ -1026,9 +1028,9 @@ decomposition.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <ul class="simple">
-<li><p><a class="reference external" href="../../../combinat/sage/combinat/permutation.html#sage.combinat.permutation.bistochastic_as_sum_of_permutations" title="(in Sage 9.2 Reference Manual: Combinatorics v9.2)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bistochastic_as_sum_of_permutations</span></code></a>
+<li><p><a class="reference external" href="../../../combinat/sage/combinat/permutation.html#sage.combinat.permutation.bistochastic_as_sum_of_permutations" title="(in Sage 9.3 Reference Manual: Combinatorics v9.3)"><code class="xref py py-func docutils literal notranslate"><span class="pre">bistochastic_as_sum_of_permutations</span></code></a>
 – for more information on this method.</p></li>
-<li><p><a class="reference external" href="../../../discrete_geometry/sage/geometry/polyhedron/library.html#sage.geometry.polyhedron.library.Polytopes.Birkhoff_polytope" title="(in Sage 9.2 Reference Manual: Combinatorial and Discrete Geometry v9.2)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Birkhoff_polytope()</span></code></a></p></li>
+<li><p><a class="reference external" href="../../../discrete_geometry/sage/geometry/polyhedron/library.html#sage.geometry.polyhedron.library.Polytopes.Birkhoff_polytope" title="(in Sage 9.3 Reference Manual: Combinatorial and Discrete Geometry v9.3)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Birkhoff_polytope()</span></code></a></p></li>
 </ul>
 </div>
 <p>EXAMPLES:</p>
@@ -1095,6 +1097,130 @@ that it leaves it invariant:</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="sage.matrix.matrix2.Matrix.block_ldlt">
+<code class="sig-name descname">block_ldlt</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.block_ldlt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a block-<span class="math notranslate nohighlight">\(LDL^{T}\)</span> factorization of a Hermitian
+matrix.</p>
+<p>The standard <span class="math notranslate nohighlight">\(LDL^{T}\)</span> factorization of a positive-definite
+matrix <span class="math notranslate nohighlight">\(A\)</span> factors it as <span class="math notranslate nohighlight">\(A = LDL^{T}\)</span> where <span class="math notranslate nohighlight">\(L\)</span> is
+unit-lower-triangular and <span class="math notranslate nohighlight">\(D\)</span> is diagonal. If one allows
+row/column swaps via a permutation matrix <span class="math notranslate nohighlight">\(P\)</span>, then this
+factorization can be extended to many positive-semidefinite
+matrices <span class="math notranslate nohighlight">\(A\)</span> via the factorization <span class="math notranslate nohighlight">\(P^{T}AP = LDL^{T}\)</span> that
+places the zeros at the bottom of <span class="math notranslate nohighlight">\(D\)</span> to avoid division by
+zero. These factorizations extend easily to complex Hermitian
+matrices when one replaces the transpose by the
+conjugate-transpose.</p>
+<p>However, we can go one step further. If, in addition, we allow
+<span class="math notranslate nohighlight">\(D\)</span> to potentially contain <span class="math notranslate nohighlight">\(2 \times 2\)</span> blocks on its
+diagonal, then every real or complex Hermitian matrix <span class="math notranslate nohighlight">\(A\)</span> can
+be factored as <span class="math notranslate nohighlight">\(A = PLDL^{*}P^{T}\)</span>. When the row/column swaps
+are made intelligently, this process is numerically stable
+over inexact rings like <code class="docutils literal notranslate"><span class="pre">RDF</span></code>.  Bunch and Kaufman describe
+such a “pivot” scheme that is suitable for the solution of
+Hermitian systems, and that is how we choose our row and
+column swaps.</p>
+<p>OUTPUT:</p>
+<p>If the input matrix is Hermitian, we return a triple <span class="math notranslate nohighlight">\((P,L,D)\)</span>
+such that <span class="math notranslate nohighlight">\(A = PLDL^{*}P^{T}\)</span> and</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(P\)</span> is a permutation matrix,</p></li>
+<li><p><span class="math notranslate nohighlight">\(L\)</span> is unit lower-triangular,</p></li>
+<li><p><span class="math notranslate nohighlight">\(D\)</span> is a block-diagonal matrix whose blocks are of size
+one or two.</p></li>
+</ul>
+</div></blockquote>
+<p>If the input matrix is not Hermitian, the output from this
+function is undefined.</p>
+<p>ALGORITHM:</p>
+<p>We essentially follow “Algorithm A” in the paper by Bunch and
+Kaufman <a class="reference internal" href="../../../references/index.html#bk1977" id="id3"><span>[BK1977]</span></a> that describes the stable pivoting strategy.
+The same scheme is described by Higham <a class="reference internal" href="../../../references/index.html#hig2002" id="id4"><span>[Hig2002]</span></a>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#sage.matrix.matrix2.Matrix.indefinite_factorization" title="sage.matrix.matrix2.Matrix.indefinite_factorization"><code class="xref py py-meth docutils literal notranslate"><span class="pre">indefinite_factorization()</span></code></a></p>
+</div>
+<p>REFERENCES:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../references/index.html#bk1977" id="id5"><span>[BK1977]</span></a></p></li>
+<li><p><a class="reference internal" href="../../../references/index.html#hig2002" id="id6"><span>[Hig2002]</span></a></p></li>
+</ul>
+<p>EXAMPLES:</p>
+<p>This three-by-three real symmetric matrix has one positive, one
+negative, and one zero eigenvalue – so it is not any flavor of
+(semi)definite, yet we can still factor it:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span>  <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">D</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">block_ldlt</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span>
+<span class="go">[0 0 1]</span>
+<span class="go">[1 0 0]</span>
+<span class="go">[0 1 0]</span>
+<span class="gp">sage: </span><span class="n">L</span>
+<span class="go">[  1   0   0]</span>
+<span class="go">[  2   1   0]</span>
+<span class="go">[  1 1/2   1]</span>
+<span class="gp">sage: </span><span class="n">D</span>
+<span class="go">[ 1| 0| 0]</span>
+<span class="go">[--+--+--]</span>
+<span class="go">[ 0|-4| 0]</span>
+<span class="go">[--+--+--]</span>
+<span class="go">[ 0| 0| 0]</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">*</span><span class="n">A</span><span class="o">*</span><span class="n">P</span> <span class="o">==</span> <span class="n">L</span><span class="o">*</span><span class="n">D</span><span class="o">*</span><span class="n">L</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>This two-by-two matrix has no standard factorization, but it
+constitutes its own block-factorization:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">block_ldlt</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1 0]  [1 0]  [0 1]</span>
+<span class="go">[0 1], [0 1], [1 0]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>The same is true of the following complex Hermitian matrix:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQbar</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span><span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                    <span class="p">[</span><span class="o">-</span><span class="n">I</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">block_ldlt</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1 0]  [1 0]  [ 0  I]</span>
+<span class="go">[0 1], [0 1], [-I  0]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>Complete diagonal pivoting could cause problems for the
+following matrix, since the diagonal entries are small
+compared to the off-diagonals that must be zeroed; however,
+the block algorithm refuses to factor it:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">RDF</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mf">1e-10</span><span class="p">,</span> <span class="mi">1</span>    <span class="p">],</span>
+<span class="gp">....: </span>                        <span class="p">[</span><span class="mi">1</span>    <span class="p">,</span> <span class="mf">2e-10</span><span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">block_ldlt</span><span class="p">()</span>
+<span class="go">(</span>
+<span class="go">[1.0 0.0]  [1.0 0.0]  [1e-10   1.0]</span>
+<span class="go">[0.0 1.0], [0.0 1.0], [  1.0 2e-10]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<p>The factorization over an inexact ring is necessarily inexact,
+but <span class="math notranslate nohighlight">\(P^{T}AP\)</span> will ideally be close to <span class="math notranslate nohighlight">\(LDL^{*}\)</span> in the metric
+induced by the norm:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">CDF</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.1933</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3185</span> <span class="o">-</span> <span class="mf">1.3553</span><span class="o">*</span><span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                        <span class="p">[</span><span class="o">-</span><span class="mf">0.3185</span> <span class="o">+</span> <span class="mf">1.3553</span><span class="o">*</span><span class="n">I</span><span class="p">,</span> <span class="mf">1.5729</span> <span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">D</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">block_ldlt</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">A</span><span class="o">*</span><span class="n">P</span> <span class="o">==</span> <span class="n">L</span><span class="o">*</span><span class="n">D</span><span class="o">*</span><span class="n">L</span><span class="o">.</span><span class="n">H</span>
+<span class="go">False</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">A</span><span class="o">*</span><span class="n">P</span> <span class="o">-</span> <span class="n">L</span><span class="o">*</span><span class="n">D</span><span class="o">*</span><span class="n">L</span><span class="o">.</span><span class="n">H</span><span class="p">)</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1e-10</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt id="sage.matrix.matrix2.Matrix.characteristic_polynomial">
 <code class="sig-name descname">characteristic_polynomial</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.characteristic_polynomial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synonym for self.charpoly(…).</p>
@@ -1114,6 +1240,7 @@ that it leaves it invariant:</p>
 <dd><p>Returns the characteristic polynomial of self, as a polynomial over
 the base ring.</p>
 <p>ALGORITHM:</p>
+<p>If the base ring has a method <span class="math notranslate nohighlight">\(_matrix_charpoly\)</span>, we use it.</p>
 <p>In the generic case of matrices over a ring (commutative and with
 unity), there is a division-free algorithm, which can be accessed
 using <code class="docutils literal notranslate"><span class="pre">&quot;df&quot;</span></code>, with complexity <span class="math notranslate nohighlight">\(O(n^4)\)</span>.  Alternatively, by
@@ -1219,7 +1346,7 @@ we temporarily view the indeterminate as <span class="math notranslate nohighlig
 </pre></div>
 </div>
 <p>Here is an example over a general commutative ring, that is to say,
-as of version 4.0.2, SAGE does not even positively determine that
+as of version 4.0.2, Sage does not even positively determine that
 <code class="docutils literal notranslate"><span class="pre">S</span></code> in the following example is an integral domain.  But the
 computation of the characteristic polynomial succeeds as follows:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
@@ -1978,7 +2105,7 @@ details.</p>
 <dl class="py method">
 <dt id="sage.matrix.matrix2.Matrix.determinant">
 <code class="sig-name descname">determinant</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">algorithm</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.determinant" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the determinant of self.</p>
+<dd><p>Return the determinant of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
 <p>ALGORITHM:</p>
 <p>If the base ring has a method <code class="xref py py-meth docutils literal notranslate"><span class="pre">_matrix_determinant()</span></code>, we call it.</p>
 <p>Otherwise, for small matrices (n less than 4), this is computed using the
@@ -4154,6 +4281,10 @@ for division by zero.  The number of operations is of order
 <span class="math notranslate nohighlight">\(n^3/3\)</span>, which is half the count for an LU decomposition.
 This makes it an appropriate candidate for solving systems
 with symmetric (or Hermitian) coefficient matrices.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#sage.matrix.matrix2.Matrix.block_ldlt" title="sage.matrix.matrix2.Matrix.block_ldlt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">block_ldlt()</span></code></a></p>
+</div>
 <p>EXAMPLES:</p>
 <p>There is no requirement that a matrix be positive definite, as
 indicated by the negative entries in the resulting diagonal
@@ -4617,7 +4748,7 @@ of <span class="math notranslate nohighlight">\(A\)</span>.</p>
 <p>A matrix not diagonalizable over the base field may become
 diagonalizable by extending the base field to contain all of the
 eigenvalues. Over the rationals, the field of algebraic numbers,
-<a class="reference external" href="../../../number_fields/sage/rings/qqbar.html#module-sage.rings.qqbar" title="(in Sage 9.2 Reference Manual: Algebraic Numbers and Number Fields v9.2)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.qqbar</span></code></a> is a good choice.</p>
+<a class="reference external" href="../../../number_fields/sage/rings/qqbar.html#module-sage.rings.qqbar" title="(in Sage 9.3 Reference Manual: Algebraic Numbers and Number Fields v9.3)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.qqbar</span></code></a> is a good choice.</p>
 <p>To obtain the matrices <span class="math notranslate nohighlight">\(D\)</span> and <span class="math notranslate nohighlight">\(P\)</span>, use the <a class="reference internal" href="#sage.matrix.matrix2.Matrix.diagonalization" title="sage.matrix.matrix2.Matrix.diagonalization"><code class="xref py py-meth docutils literal notranslate"><span class="pre">diagonalization()</span></code></a>
 method.</p>
 <p>ALGORITHM:</p>
@@ -4791,7 +4922,7 @@ if we arrive at a symbolic inequality that cannot be resolved.</p></li>
 </div>
 <p>REFERENCES:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../../references/index.html#or2017" id="id3"><span>[Or2017]</span></a></p></li>
+<li><p><a class="reference internal" href="../../../references/index.html#or2017" id="id7"><span>[Or2017]</span></a></p></li>
 </ul>
 <p>EXAMPLES:</p>
 <p>Diagonal matrices are Lyapunov-like operators on the nonnegative
@@ -5198,6 +5329,90 @@ univariate polynomials with rational coefficients:</p>
 <span class="gp">sage: </span><span class="n">L</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="p">[[</span><span class="n">x</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
 <span class="gp">sage: </span><span class="n">L</span><span class="o">.</span><span class="n">is_positive_operator_on</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
 <span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sage.matrix.matrix2.Matrix.is_positive_semidefinite">
+<code class="sig-name descname">is_positive_semidefinite</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.is_positive_semidefinite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not this matrix is positive-semidefinite.</p>
+<p>By SageMath convention, positive (semi)definite matrices must
+be either real symmetric or complex Hermitian.</p>
+<p>ALGORITHM:</p>
+<p>Bunch and Kaufman <a class="reference internal" href="../../../references/index.html#bk1977" id="id8"><span>[BK1977]</span></a> describe a fast,
+numerically-stable scheme for computing the “inertia” of a
+matrix by way Sylvester’s inertia theorem and a
+block-<span class="math notranslate nohighlight">\(LDL^{T}\)</span> factorization. We perform this factorization,
+and read off the signs of the eigenvalues from the resulting
+diagonal blocks.</p>
+<p>REFERENCES:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../references/index.html#bk1977" id="id9"><span>[BK1977]</span></a></p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#sage.matrix.matrix2.Matrix.block_ldlt" title="sage.matrix.matrix2.Matrix.block_ldlt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">block_ldlt()</span></code></a>, <a class="reference internal" href="#sage.matrix.matrix2.Matrix.is_positive_definite" title="sage.matrix.matrix2.Matrix.is_positive_definite"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_positive_definite()</span></code></a></p>
+</div>
+<p>EXAMPLES:</p>
+<p>A positive-definite matrix:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">()</span>
+<span class="go">[3, 1]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>A positive-semidefinite (but not positive-definite) matrix:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">()</span>
+<span class="go">[2, 0]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>And finally, an indefinite matrix:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">()</span>
+<span class="go">[1, -1]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>A non-Hermitian matrix cannot be positive-semidefinite,
+regardless of its eigenvalues:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+<span class="gp">....: </span>                 <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">()</span>
+<span class="go">[2, 0]</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Any of the preceding examples are valid over inexact rings and
+with complex numbers as well:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">CDF</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span> <span class="mi">2</span><span class="p">,</span> <span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                  <span class="p">[</span><span class="o">-</span><span class="n">I</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">CDF</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span> <span class="mi">1</span><span class="p">,</span> <span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                  <span class="p">[</span><span class="o">-</span><span class="n">I</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">True</span>
+
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">CDF</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                  <span class="p">[</span><span class="n">I</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">]</span> <span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">False</span>
+
+<span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">CDF</span><span class="p">,</span> <span class="p">[</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">I</span><span class="p">],</span>
+<span class="gp">....: </span>                  <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">is_positive_semidefinite</span><span class="p">()</span>
+<span class="go">False</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -6631,7 +6846,7 @@ CDF</p></li>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <ul class="simple">
-<li><p><a class="reference external" href="../../../misc/sage/misc/functional.html#sage.misc.functional.norm" title="(in Sage 9.2 Reference Manual: Utilities v9.2)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sage.misc.functional.norm()</span></code></a></p></li>
+<li><p><a class="reference external" href="../../../misc/sage/misc/functional.html#sage.misc.functional.norm" title="(in Sage 9.3 Reference Manual: Utilities v9.3)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sage.misc.functional.norm()</span></code></a></p></li>
 </ul>
 </div>
 <p>EXAMPLES:</p>
@@ -6836,7 +7051,7 @@ advantage of cancellations that may occur in the computations.</p>
 <span class="go">32</span>
 </pre></div>
 </div>
-<p>A huge permanent that can not be reasonably computed with the Ryser
+<p>A huge permanent that cannot be reasonably computed with the Ryser
 algorithm (a <span class="math notranslate nohighlight">\(50 \times 50\)</span> band matrix with width <span class="math notranslate nohighlight">\(5\)</span>):</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">n</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">5</span>
 <span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">:</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="k">5</span> + 1 if abs(i-j) &lt;= w else 0)
@@ -6978,16 +7193,18 @@ If <code class="docutils literal notranslate"><span class="pre">False</span></co
 <code class="sig-name descname">pfaffian</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">algorithm</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">check</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.pfaffian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the Pfaffian of <code class="docutils literal notranslate"><span class="pre">self</span></code>, assuming that <code class="docutils literal notranslate"><span class="pre">self</span></code> is an
 alternating matrix.</p>
+<p>The result is cached.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code> – string, the algorithm to use; currently the
-following algorithms have been implemented:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code> (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) – string, the algorithm to use;
+currently the following algorithms have been implemented:</p>
 <ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'bfl'</span></code> - using the Bär-Faddeev-LeVerrier algorithm</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">'definition'</span></code> - using the definition given by perfect
 matchings</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">check</span></code> (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>) – Boolean determining whether to
+<li><p><code class="docutils literal notranslate"><span class="pre">check</span></code> (default: <code class="docutils literal notranslate"><span class="pre">True</span></code>) – boolean determining whether to
 check <code class="docutils literal notranslate"><span class="pre">self</span></code> for alternatingness and squareness. This has to
 be set to <code class="docutils literal notranslate"><span class="pre">False</span></code> if <code class="docutils literal notranslate"><span class="pre">self</span></code> is defined over a non-discrete
 ring.</p></li>
@@ -7002,7 +7219,7 @@ case, set <span class="math notranslate nohighlight">\(n = k/2\)</span> (this is
 we denote the <span class="math notranslate nohighlight">\((i, j)\)</span>-th entry of <span class="math notranslate nohighlight">\(A\)</span> by <span class="math notranslate nohighlight">\(a_{i, j}\)</span>. Let <span class="math notranslate nohighlight">\(M\)</span>
 denote the set of all perfect matchings of the set
 <span class="math notranslate nohighlight">\(\{ 1, 2, \ldots, 2n \}\)</span> (see
-<a class="reference external" href="../../../combinat/sage/combinat/perfect_matching.html#sage.combinat.perfect_matching.PerfectMatchings" title="(in Sage 9.2 Reference Manual: Combinatorics v9.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.combinat.perfect_matching.PerfectMatchings</span></code></a> ).
+<a class="reference external" href="../../../combinat/sage/combinat/perfect_matching.html#sage.combinat.perfect_matching.PerfectMatchings" title="(in Sage 9.3 Reference Manual: Combinatorics v9.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.combinat.perfect_matching.PerfectMatchings</span></code></a> ).
 For every matching <span class="math notranslate nohighlight">\(m \in M\)</span>, define the sign <span class="math notranslate nohighlight">\(\mathrm{sign}(m)\)</span>
 of <span class="math notranslate nohighlight">\(m\)</span> by writing <span class="math notranslate nohighlight">\(m\)</span> as <span class="math notranslate nohighlight">\(\{ \{ i_1, j_1 \}, \{ i_2, j_2 \},
 \ldots, \{ i_n, j_n \} \}\)</span> with <span class="math notranslate nohighlight">\(i_k &lt; j_k\)</span> for all <span class="math notranslate nohighlight">\(k\)</span>, and
@@ -7022,21 +7239,25 @@ alternating matrix <span class="math notranslate nohighlight">\(A\)</span>, and 
 <span class="math notranslate nohighlight">\(\mathrm{Pf} (U^T A U) = \det U \cdot \mathrm{Pf}(A)\)</span> for any
 <span class="math notranslate nohighlight">\(n \times n\)</span> matrix <span class="math notranslate nohighlight">\(U\)</span> and any alternating <span class="math notranslate nohighlight">\(n \times n\)</span>
 matrix <span class="math notranslate nohighlight">\(A\)</span>.</p>
-<p>See <a class="reference internal" href="../../../references/index.html#knu1995" id="id4"><span>[Knu1995]</span></a>, <a class="reference internal" href="../../../references/index.html#dw1995" id="id5"><span>[DW1995]</span></a> and <a class="reference internal" href="../../../references/index.html#rot2001" id="id6"><span>[Rot2001]</span></a>, just to name three
-sources, for further properties of Pfaffians.</p>
+<p>See <a class="reference internal" href="../../../references/index.html#knu1995" id="id10"><span>[Knu1995]</span></a>, <a class="reference internal" href="../../../references/index.html#dw1995" id="id11"><span>[DW1995]</span></a> and <a class="reference internal" href="../../../references/index.html#rot2001" id="id12"><span>[Rot2001]</span></a>, <a class="reference internal" href="../../../references/index.html#baer2020" id="id13"><span>[Baer2020]</span></a>, just to name a
+few sources, for further properties of Pfaffians.</p>
 <p>ALGORITHM:</p>
-<p>The current implementation uses the definition given above.
-It checks alternatingness of the matrix <code class="docutils literal notranslate"><span class="pre">self</span></code> only if
-<code class="docutils literal notranslate"><span class="pre">check</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code> (this is important because even if <code class="docutils literal notranslate"><span class="pre">self</span></code>
-is alternating, a non-discrete base ring might prevent Sage
-from being able to check this).</p>
-<div class="admonition-todo admonition" id="id8">
-<p class="admonition-title">Todo</p>
-<p>Implement faster algorithms, including a division-free one.
-Does <a class="reference internal" href="../../../references/index.html#rot2001" id="id7"><span>[Rot2001]</span></a>, section 3.3 give one?</p>
-<p>Check the implementation of the matchings used here for
-performance?</p>
-</div>
+<p>If the matrix is small, namely up to size <span class="math notranslate nohighlight">\(4 \times 4\)</span>, the naive
+formulas are always used.</p>
+<p>The Bär-Faddeev-LeVerrier algorithm can be accessed using <code class="docutils literal notranslate"><span class="pre">'bfl'</span></code>.
+It works over any <span class="math notranslate nohighlight">\(\QQ\)</span>-algebra or ring whose fraction field is an
+<span class="math notranslate nohighlight">\(\QQ\)</span>-algebra (see <a class="reference internal" href="../../../references/index.html#baer2020" id="id14"><span>[Baer2020]</span></a> for details). If that check fails,
+the implementation raises an error because correct results cannot be
+guaranteed.</p>
+<p>To access the algorithm using the above defintion, use <code class="docutils literal notranslate"><span class="pre">'definition'</span></code>.
+However, notice that this algorithm is usually very slow.</p>
+<p>By default, i.e. if no options are set, the implementation tries to
+apply the BFL algorithm first. If BFL is not applicable, it uses the
+definition by perfect matchings.</p>
+<p>The alternatingness of the matrix <code class="docutils literal notranslate"><span class="pre">self</span></code> is checked only if <code class="docutils literal notranslate"><span class="pre">check</span></code>
+is <code class="docutils literal notranslate"><span class="pre">True</span></code> (this is important because even if <code class="docutils literal notranslate"><span class="pre">self</span></code> is alternating,
+a non-discrete base ring might prevent Sage from being able to check
+this).</p>
 <p>EXAMPLES:</p>
 <p>A <span class="math notranslate nohighlight">\(3 \times 3\)</span> alternating matrix has Pfaffian 0 independently
 of its entries:</p>
@@ -7067,8 +7288,8 @@ northeast entry:</p>
 <span class="go">Integer Ring</span>
 </pre></div>
 </div>
-<p>Let us compute the Pfaffian of a generic <span class="math notranslate nohighlight">\(4 \times 4\)</span>
-alternating matrix:</p>
+<p>Let us compute the Pfaffian of a generic <span class="math notranslate nohighlight">\(4 \times 4\)</span> alternating
+matrix:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="s1">&#39;x12,x13,x14,x23,x24,x34&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">x12</span><span class="p">,</span> <span class="n">x13</span><span class="p">,</span> <span class="n">x14</span><span class="p">,</span> <span class="n">x23</span><span class="p">,</span> <span class="n">x24</span><span class="p">,</span> <span class="n">x34</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
 <span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="p">[[</span>   <span class="mi">0</span><span class="p">,</span>  <span class="n">x12</span><span class="p">,</span>  <span class="n">x13</span><span class="p">,</span>  <span class="n">x14</span><span class="p">],</span>
@@ -7093,6 +7314,26 @@ determinant:</p>
 <span class="gp">sage: </span><span class="n">AA</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">AA</span><span class="o">.</span><span class="n">pfaffian</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">==</span> <span class="n">AA</span><span class="o">.</span><span class="n">det</span><span class="p">()</span>
 <span class="go">True</span>
+</pre></div>
+</div>
+<p>In order to use the Bär-Faddeev-LeVerrier algorithm, the base ring
+must have characteristic zero:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="gp">....: </span>                   <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">....: </span>                   <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">....: </span>                   <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">....: </span>                   <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">....: </span>                   <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">pfaffian</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;bfl&#39;</span><span class="p">)</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">TypeError: Bär-Faddeev-LeVerrier algorithm not applicable,</span>
+<span class="go"> use another algorithm instead</span>
+</pre></div>
+</div>
+<p>In that case, the definition by perfect matchings is used instead:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">A</span><span class="o">.</span><span class="n">pfaffian</span><span class="p">()</span>
+<span class="go">2</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -7405,7 +7646,7 @@ of the entire matrix.</p>
 <p>We begin with ZigZag form, which is due to Arne Storjohann
 and is documented at <a class="reference internal" href="#sage.matrix.matrix2.Matrix.zigzag_form" title="sage.matrix.matrix2.Matrix.zigzag_form"><code class="xref py py-meth docutils literal notranslate"><span class="pre">zigzag_form()</span></code></a>.  Then we eliminate
 ‘’corner’’ entries enroute to rational form via an additional
-algorithm of Storjohann’s <a class="reference internal" href="../../../references/index.html#sto2011" id="id9"><span>[Sto2011]</span></a>.</p>
+algorithm of Storjohann’s <a class="reference internal" href="../../../references/index.html#sto2011" id="id15"><span>[Sto2011]</span></a>.</p>
 <p>EXAMPLES:</p>
 <p>The lists of coefficients returned with the <code class="docutils literal notranslate"><span class="pre">invariants</span></code> keyword
 are designed to easily convert to the polynomials associated with
@@ -8988,7 +9229,7 @@ zeroes and ones interchanged, and use the inclusion-exclusion theorem,
 giving for a <span class="math notranslate nohighlight">\(m \times n\)</span> matrix <span class="math notranslate nohighlight">\(A\)</span> with complementary matrix <span class="math notranslate nohighlight">\(B\)</span></p>
 <div class="math notranslate nohighlight">
 \[r_k(A) = \sum_{j=0}^k (-1)^j \binom{m-j}{k-j} \binom{n-j}{k-j} (k-j)! r_j(B)\]</div>
-<p>see <a class="reference internal" href="../../../references/index.html#rio1958" id="id10"><span>[Rio1958]</span></a> or the introductory text <a class="reference internal" href="../../../references/index.html#as2011" id="id11"><span>[AS2011]</span></a>. This can be done
+<p>see <a class="reference internal" href="../../../references/index.html#rio1958" id="id16"><span>[Rio1958]</span></a> or the introductory text <a class="reference internal" href="../../../references/index.html#as2011" id="id17"><span>[AS2011]</span></a>. This can be done
 setting the argument <code class="docutils literal notranslate"><span class="pre">use_complement</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
 <p>An example with an exotic matrix (for which only Butera-Pernici and
 Ryser algorithms are available):</p>
@@ -9726,21 +9967,22 @@ of almost zero:</p>
 <dl class="py method">
 <dt id="sage.matrix.matrix2.Matrix.subdivide">
 <code class="sig-name descname">subdivide</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row_lines</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">col_lines</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.matrix.matrix2.Matrix.subdivide" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides self into logical submatrices which can then be queried and
-extracted. If a subdivision already exists, this method forgets the
+<dd><p>Divides <code class="docutils literal notranslate"><span class="pre">self</span></code> into logical submatrices which can then be queried
+and extracted.</p>
+<p>If a subdivision already exists, this method forgets the
 previous subdivision and flushes the cache.</p>
 <p>INPUT:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">row_lines</span></code> - None, an integer, or a list of
-integers (lines at which self must be split).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">col_lines</span></code> - None, an integer, or a list of
-integers (columns at which self must be split).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">row_lines</span></code> – <code class="docutils literal notranslate"><span class="pre">None</span></code>, an integer, or a list of
+integers (lines at which self must be split)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">col_lines</span></code> – <code class="docutils literal notranslate"><span class="pre">None</span></code>, an integer, or a list of
+integers (columns at which self must be split)</p></li>
 </ul>
-<p>OUTPUT: changes self</p>
+<p>OUTPUT: <code class="docutils literal notranslate"><span class="pre">None</span></code> but changes <code class="docutils literal notranslate"><span class="pre">self</span></code></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>One may also pass a tuple into the first argument which
-will be interpreted as (row_lines, col_lines)</p>
+will be interpreted as <code class="docutils literal notranslate"><span class="pre">(row_lines,</span> <span class="pre">col_lines)</span></code>.</p>
 </div>
 <p>EXAMPLES:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">prime_range</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
@@ -10135,7 +10377,7 @@ have the same pixelsize as the matrix dimensions.</p></li>
 </ul>
 <p>OUTPUT:</p>
 <p>Bitmap image as an instance of
-<a class="reference external" href="../../../repl/sage/repl/image.html#sage.repl.image.Image" title="(in Sage 9.2 Reference Manual: The Sage Command Line v9.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>.</p>
+<a class="reference external" href="../../../repl/sage/repl/image.html#sage.repl.image.Image" title="(in Sage 9.3 Reference Manual: The Sage Command Line v9.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>.</p>
 <p>EXAMPLES:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">M</span> <span class="o">=</span> <span class="n">random_matrix</span><span class="p">(</span><span class="n">CC</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>  <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -10144,7 +10386,7 @@ have the same pixelsize as the matrix dimensions.</p></li>
 <span class="go">7x5px 24-bit RGB image</span>
 </pre></div>
 </div>
-<p>You can use <a class="reference external" href="../../../repl/sage/repl/image.html#sage.repl.image.Image.save" title="(in Sage 9.2 Reference Manual: The Sage Command Line v9.2)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> to save the
+<p>You can use <a class="reference external" href="../../../repl/sage/repl/image.html#sage.repl.image.Image.save" title="(in Sage 9.3 Reference Manual: The Sage Command Line v9.3)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> to save the
 resulting image:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">filename</span> <span class="o">=</span> <span class="n">tmp_filename</span><span class="p">(</span><span class="n">ext</span><span class="o">=</span><span class="s1">&#39;.png&#39;</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
@@ -10230,8 +10472,8 @@ transformation matrix.</p>
 </div>
 <p>ALGORITHM:</p>
 <p>ZigZag form, and its computation, are due to Arne Storjohann
-and are  described in <a class="reference internal" href="../../../references/index.html#sto2000" id="id12"><span>[Sto2000]</span></a> and
-<a class="reference internal" href="../../../references/index.html#sto1998" id="id13"><span>[Sto1998]</span></a>, where the former is more
+and are  described in <a class="reference internal" href="../../../references/index.html#sto2000" id="id18"><span>[Sto2000]</span></a> and
+<a class="reference internal" href="../../../references/index.html#sto1998" id="id19"><span>[Sto1998]</span></a>, where the former is more
 representative of the code here.</p>
 <p>EXAMPLES:</p>
 <p>Two examples that illustrate ZigZag form well. Notice that this is
@@ -10477,14 +10719,14 @@ correctly sorted and prints with carriage returns.</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.2 Reference Manual: Matrices and Spaces of Matrices</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.3 Reference Manual: Matrices and Spaces of Matrices</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Base class for matrices, part 2</a></li> 
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2020, The Sage Development Team.
+        &#169; Copyright 2005--2021, The Sage Development Team.
       Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
     <script type="text/javascript">
