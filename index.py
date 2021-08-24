@@ -125,6 +125,7 @@ filter_ref = [
     "random-",
     "fully_commutative_elements-",
     "matrix_plot-",
+    "subset-",
 ]
 filter_html = [("en", "website")]
 

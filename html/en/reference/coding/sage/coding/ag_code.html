@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=600, initial-scale=1">
+    <title>AG codes &#8212; Sage 9.4 Reference Manual: Coding Theory</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sage.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script async="async" src="../../../_static/MathJax.js?config=TeX-AMS_HTML-full,../mathjax_sage.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Decoders for AG codes" href="ag_code_decoders.html" />
+    <link rel="prev" title="Kasami code" href="kasami_codes.html" />
+    <link rel="icon" href="../../../_static/sageicon.png" type="image/x-icon" />
+    <script src="../../../_static/thebe.js" type="text/javascript"></script>
+    <script src="../../../_static/thebe-sage.js" type="text/javascript"></script>
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ag_code_decoders.html" title="Decoders for AG codes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="kasami_codes.html" title="Kasami code"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.4 Reference Manual: Coding Theory</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">AG codes</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="ag-codes">
+<span id="sage-coding-ag-code"></span><h1>AG codes<a class="headerlink" href="#ag-codes" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-sage.coding.ag_code"></span><p>Algebraic geometry codes or shortly AG codes are linear codes defined using
+functions or differentials on algebraic curves over finite fields. Sage
+implements evaluation AG codes and differential AG codes as Goppa defined in
+<a class="reference internal" href="../../../references/index.html#gop1981" id="id1"><span>[Gop1981]</span></a> and provides decoding algorithms for them in full generality.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">C</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">5</span><span class="o">*</span><span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="go">[8, 5] evaluation AG code over GF(4)</span>
+<span class="gp">sage: </span><span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="go">[8, 3] differential AG code over GF(4)</span>
+</pre></div>
+</div>
+<p>As is well known, the two kinds of AG codes are dual to each other.</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span> <span class="o">==</span> <span class="n">D</span>
+<span class="go">True</span>
+<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">dual_code</span><span class="p">()</span> <span class="o">==</span> <span class="n">E</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Decoders for both evaluation and differential AG codes are available.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ag_code_decoders.html">Decoders for AG codes</a></li>
+</ul>
+</div>
+<p>A natural generalization of classical Goppa codes is Cartier codes <a class="reference internal" href="../../../references/index.html#cou2014" id="id2"><span>[Cou2014]</span></a>. Cartier codes are
+subfield subcodes of differential AG codes.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ProjectiveSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Z</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">Z</span>
+<span class="gp">sage: </span><span class="n">codes</span><span class="o">.</span><span class="n">CartierCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>  <span class="c1"># long time</span>
+<span class="go">[9, 4] Cartier code over GF(3)</span>
+</pre></div>
+</div>
+<p>AUTHORS:</p>
+<ul class="simple">
+<li><p>Kwankyu Lee (2019-03): initial version</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="sage.coding.ag_code.AGCode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sage.coding.ag_code.</span></span><span class="sig-name descname"><span class="pre">AGCode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_encoder_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_decoder_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.AGCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="linear_code.html#sage.coding.linear_code.AbstractLinearCode" title="sage.coding.linear_code.AbstractLinearCode"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.coding.linear_code.AbstractLinearCode</span></code></a></p>
+<p>Base class of algebraic geometry codes.</p>
+<p>A subclass of this class is required to define <code class="docutils literal notranslate"><span class="pre">_function_field</span></code>
+attribute that refers to an abstract functiom field or the function field
+of the underlying curve used to construct a code of the class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.AGCode.base_function_field">
+<span class="sig-name descname"><span class="pre">base_function_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.AGCode.base_function_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the function field used to construct the code.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">C</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">5</span><span class="o">*</span><span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">base_function_field</span><span class="p">()</span>
+<span class="go">Function field in y defined by y^2 + y + x^3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sage.coding.ag_code.CartierCode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sage.coding.ag_code.</span></span><span class="sig-name descname"><span class="pre">CartierCode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.CartierCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.coding.ag_code.AGCode" title="sage.coding.ag_code.AGCode"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.coding.ag_code.AGCode</span></code></a></p>
+<p>Cartier code defined by rational places <code class="docutils literal notranslate"><span class="pre">pls</span></code> and a divisor <code class="docutils literal notranslate"><span class="pre">G</span></code> of a function field.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pls</span></code> – a list of rational places</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">G</span></code> – a divisor whose support is disjoint from <code class="docutils literal notranslate"><span class="pre">pls</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> – integer (default: 1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> – string; name of the generator of the subfield <span class="math notranslate nohighlight">\(\GF{p^r}\)</span></p></li>
+</ul>
+<p>OUTPUT: Cartier code over <span class="math notranslate nohighlight">\(\GF{p^r}\)</span> where <span class="math notranslate nohighlight">\(p\)</span> is the characteristic of the
+base constant field of the function field</p>
+<p>Note that if <code class="docutils literal notranslate"><span class="pre">r</span></code> is 1 the default, then <code class="docutils literal notranslate"><span class="pre">name</span></code> can be omitted.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ProjectiveSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Z</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">Z</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">CartierCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>  <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">minimum_distance</span><span class="p">()</span>           <span class="c1"># long time</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.CartierCode.designed_distance">
+<span class="sig-name descname"><span class="pre">designed_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.CartierCode.designed_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the designed distance of the Cartier code.</p>
+<p>The designed distance is that of the differential code of which the
+Cartier code is a subcode.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ProjectiveSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Z</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">Z</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">CartierCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>  <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">designed_distance</span><span class="p">()</span>          <span class="c1"># long time</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.CartierCode.generator_matrix">
+<span class="sig-name descname"><span class="pre">generator_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.CartierCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator matrix of the Cartier code.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">ProjectiveSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">3</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Z</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">Z</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">CartierCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>  <span class="c1"># long time</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>           <span class="c1"># long time</span>
+<span class="go">[1 0 0 2 2 0 2 2 0]</span>
+<span class="go">[0 1 0 2 2 0 2 2 0]</span>
+<span class="go">[0 0 1 0 0 0 0 0 2]</span>
+<span class="go">[0 0 0 0 0 1 0 0 2]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sage.coding.ag_code.DifferentialAGCode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sage.coding.ag_code.</span></span><span class="sig-name descname"><span class="pre">DifferentialAGCode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.DifferentialAGCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.coding.ag_code.AGCode" title="sage.coding.ag_code.AGCode"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.coding.ag_code.AGCode</span></code></a></p>
+<p>Differential AG code defined by rational places <code class="docutils literal notranslate"><span class="pre">pls</span></code> and a divisor <code class="docutils literal notranslate"><span class="pre">G</span></code></p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pls</span></code> – a list of rational places of a function field</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">G</span></code> – a divisor whose support is disjoint from <code class="docutils literal notranslate"><span class="pre">pls</span></code></p></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">A2</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">A2</span><span class="o">.</span><span class="n">curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Q</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">sage: </span><span class="n">O</span> <span class="o">=</span> <span class="n">C</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">place</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">C</span><span class="o">.</span><span class="n">places</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">O</span><span class="p">,</span> <span class="n">Q</span><span class="p">]]</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="o">-</span><span class="n">O</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="o">-</span><span class="n">O</span> <span class="o">+</span> <span class="n">Q</span><span class="p">)</span>
+<span class="go">[3, 2] differential AG code over GF(4)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.DifferentialAGCode.basis_differentials">
+<span class="sig-name descname"><span class="pre">basis_differentials</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.DifferentialAGCode.basis_differentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the basis differentials associated with the generator matrix.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">matrix</span><span class="p">([[</span><span class="n">w</span><span class="o">.</span><span class="n">residue</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pls</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">code</span><span class="o">.</span><span class="n">basis_differentials</span><span class="p">()])</span>
+<span class="go">[    1     0     0     0     0 a + 1 a + 1     1]</span>
+<span class="go">[    0     1     0     0     0 a + 1     a     0]</span>
+<span class="go">[    0     0     1     0     0     a     1     a]</span>
+<span class="go">[    0     0     0     1     0     a     0 a + 1]</span>
+<span class="go">[    0     0     0     0     1     1     1     1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.DifferentialAGCode.designed_distance">
+<span class="sig-name descname"><span class="pre">designed_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.DifferentialAGCode.designed_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the designed distance of the differential AG code.</p>
+<p>If the code is of dimension zero, then a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">designed_distance</span><span class="p">()</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.DifferentialAGCode.generator_matrix">
+<span class="sig-name descname"><span class="pre">generator_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.DifferentialAGCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator matrix of the code.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">DifferentialAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="go">[    1     0     0     0     0 a + 1 a + 1     1]</span>
+<span class="go">[    0     1     0     0     0 a + 1     a     0]</span>
+<span class="go">[    0     0     1     0     0     a     1     a]</span>
+<span class="go">[    0     0     0     1     0     a     0 a + 1]</span>
+<span class="go">[    0     0     0     0     1     1     1     1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sage.coding.ag_code.EvaluationAGCode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sage.coding.ag_code.</span></span><span class="sig-name descname"><span class="pre">EvaluationAGCode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.EvaluationAGCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#sage.coding.ag_code.AGCode" title="sage.coding.ag_code.AGCode"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.coding.ag_code.AGCode</span></code></a></p>
+<p>Evaluation AG code defined by rational places <code class="docutils literal notranslate"><span class="pre">pls</span></code> and a divisor <code class="docutils literal notranslate"><span class="pre">G</span></code>.</p>
+<p>INPUT:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pls</span></code> – a list of rational places of a function field</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">G</span></code> – a divisor whose support is disjoint from <code class="docutils literal notranslate"><span class="pre">pls</span></code></p></li>
+</ul>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="mi">5</span><span class="o">*</span><span class="n">Q</span>
+<span class="gp">sage: </span><span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
+<span class="go">[8, 5] evaluation AG code over GF(4)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.EvaluationAGCode.basis_functions">
+<span class="sig-name descname"><span class="pre">basis_functions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.EvaluationAGCode.basis_functions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the basis functions associated with the generator matrix.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">basis_functions</span><span class="p">()</span>
+<span class="go">(y + a*x + 1, y + x, (a + 1)*x)</span>
+<span class="gp">sage: </span><span class="n">matrix</span><span class="p">([[</span><span class="n">f</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pls</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">code</span><span class="o">.</span><span class="n">basis_functions</span><span class="p">()])</span>
+<span class="go">[    1     0     0     1     a a + 1     1     0]</span>
+<span class="go">[    0     1     0     1     1     0 a + 1     a]</span>
+<span class="go">[    0     0     1     1     a     a a + 1 a + 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.EvaluationAGCode.designed_distance">
+<span class="sig-name descname"><span class="pre">designed_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.EvaluationAGCode.designed_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the designed distance of the AG code.</p>
+<p>If the code is of dimension zero, then a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">designed_distance</span><span class="p">()</span>
+<span class="go">5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sage.coding.ag_code.EvaluationAGCode.generator_matrix">
+<span class="sig-name descname"><span class="pre">generator_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.coding.ag_code.EvaluationAGCode.generator_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator matrix of the code.</p>
+<p>EXAMPLES:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">function_field</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">places</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Q</span><span class="p">,</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">places_at_infinity</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">pls</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">EvaluationAGCode</span><span class="p">(</span><span class="n">pls</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">code</span><span class="o">.</span><span class="n">generator_matrix</span><span class="p">()</span>
+<span class="go">[    1     0     0     1     a a + 1     1     0]</span>
+<span class="go">[    0     1     0     1     1     0 a + 1     a]</span>
+<span class="go">[    0     0     1     1     a     a a + 1 a + 1]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="kasami_codes.html"
+                        title="previous chapter">Kasami code</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ag_code_decoders.html"
+                        title="next chapter">Decoders for AG codes</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/sage/coding/ag_code.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ag_code_decoders.html" title="Decoders for AG codes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="kasami_codes.html" title="Kasami code"
+             >previous</a> |</li>
+  
+    
+      <a href="../../../../index.html"><img src="../../../_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="../../index.html">Sage 9.4 Reference Manual: Coding Theory</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">AG codes</a></li> 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2005--2021, The Sage Development Team.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.0.1.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* The sidebar toggle adapts its height to the bodywrapper height. */
+    const resizeObserver = new ResizeObserver(entries => {
+        tog.height(bod.height());
+    });
+    resizeObserver.observe(bod[0]);
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>
