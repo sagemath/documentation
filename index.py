@@ -169,13 +169,19 @@ ROBOTS_TXT = [
 
 output = [intro % {"path": ""}]
 output.append("<h1>Documentation</h1>")
-output.append(
-    "<div class='table ov'><div class='row first'><div class='cell'>Older versions:</div>"
-)
+
+# TODO fix how this is deployed, then set it to true
+SHOW_OLDER_VERSIONS = False
+
+if SHOW_OLDER_VERSIONS:
+    output.append(
+        "<div class='table ov'><div class='row first'><div class='cell'>Older versions:</div>"
+    )
 
 for ov in OLD_VERSIONS:
-    output.append(
-        f"<div class='cell'><a href='./{ov}/index.html'>{ov}</a></div>")
+    if SHOW_OLDER_VERSIONS:
+        output.append(
+            f"<div class='cell'><a href='./{ov}/index.html'>{ov}</a></div>")
     ROBOTS_TXT.append(f"Disallow: /{ov}/")
 
 with open("robots.txt", "w") as index:
