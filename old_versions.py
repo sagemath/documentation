@@ -5,11 +5,11 @@ import os
 # created by the CI script, to checkout workspaces at older tags
 # make sure to push those tags to the target repo!
 OLD_VERSIONS = [
-    '6.7',
-    '6.8',
-    '8.8',
-    '8.9',
-    '9.0',
+    #'6.7',
+    #'6.8',
+    #'8.8',
+    #'8.9',
+    #'9.0',
     '9.1',
     '9.2',
     '9.3',
