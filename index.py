@@ -12,7 +12,7 @@
 #
 # Note: the script assumes the html and pdf files are copied after
 # running doc-html and doc-pdf targets. e.g. like this:
-# $ nice ionice -c 3 sh -c 'make -j4 && make doc-html && make doc-pdf'
+# $ nice ionice -c 3 sh -c 'make -j2 && make doc-html && make doc-pdf'
 # then copy
 # $ cp -alR $SAGE_ROOT/local/share/doc/sage/pdf .
 # $ cp -alR $SAGE_ROOT/local/share/doc/sage/html .
@@ -135,6 +135,8 @@ filter_ref = [
     "fully_commutative_elements-",
     "matrix_plot-",
     "subset-",
+    "ellipse-",
+    "packaging_sage_library-",
 ]
 filter_html = [("en", "website")]
 

@@ -1,0 +1,667 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=600, initial-scale=1">
+    <title>Packaging the Sage Library &#8212; Sage Developer&#39;s Guide v9.5</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sage.css" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Packaging Third-Party Code" href="packaging.html" />
+    <link rel="prev" title="Using External Libraries and Interfaces" href="coding_in_other.html" />
+    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="packaging.html" title="Packaging Third-Party Code"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coding_in_other.html" title="Using External Libraries and Interfaces"
+             accesskey="P">previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Packaging the Sage Library</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="packaging-the-sage-library">
+<span id="chapter-modularization"></span><h1>Packaging the Sage Library<a class="headerlink" href="#packaging-the-sage-library" title="Permalink to this headline">¶</a></h1>
+<section id="modules-packages-distribution-packages">
+<h2>Modules, packages, distribution packages<a class="headerlink" href="#modules-packages-distribution-packages" title="Permalink to this headline">¶</a></h2>
+<p>The Sage library consists of a large number of Python modules,
+organized into a hierarchical set of packages that fill the namespace
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage</span></code>.  All source files are located in a subdirectory of the
+directory <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/sage/</span></code>.</p>
+<p>For example,</p>
+<ul class="simple">
+<li><p>the file <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/sage/coding/code_bounds.py</span></code> provides the
+module <a class="reference external" href="../reference/coding/sage/coding/code_bounds.html#module-sage.coding.code_bounds" title="(in Sage 9.5 Reference Manual: Coding Theory v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.coding.code_bounds</span></code></a>;</p></li>
+<li><p>the directory containing this file, <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/sage/coding/</span></code>,
+thus provides the package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.coding</span></code>.</p></li>
+</ul>
+<p>There is another notion of “package” in Python, the <strong>distribution
+package</strong> (also known as a “distribution” or a “pip-installable
+package”).  Currently, the entire Sage library is provided by a
+single distribution,
+<a class="reference external" href="https://pypi.org/project/sagemath-standard/">sagemath-standard</a>,
+which is generated from the directory
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/sagemath-standard</span></code>.</p>
+<p>Note that the distribution name is not required to be a Python
+identifier. In fact, using dashes (<code class="docutils literal notranslate"><span class="pre">-</span></code>) is preferred to underscores in
+distribution names; <strong>setuptools</strong> and other parts of Python’s packaging
+infrastructure normalize underscores to dashes. (Using dots in
+distribution names, to indicate ownership by organizations, still
+mentioned in <a class="reference external" href="https://www.python.org/dev/peps/pep-0423/">PEP 423</a>, appears to
+have largely fallen out of favor, and we will not use it in the SageMath
+project.)</p>
+<p>A distribution that provides Python modules in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.*</span></code> namespace, say
+mainly from <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.PAC.KAGE</span></code>, should be named <strong>sagemath-DISTRI-BUTION</strong>.
+Example:</p>
+<ul class="simple">
+<li><p>The distribution
+<a class="reference external" href="https://pypi.org/project/sagemath-categories/">sagemath-categories</a>
+provides a small subset of the modules of the Sage library, mostly
+from the packages <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.structure</span></code>, <a class="reference external" href="../reference/categories/sage/categories.html#module-sage.categories" title="(in Sage 9.5 Reference Manual: Category Framework v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.categories</span></code></a>, and
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.misc</span></code>.</p></li>
+</ul>
+<p>Other distributions should not use the prefix <strong>sagemath-</strong> in the
+distribution name. Example:</p>
+<ul class="simple">
+<li><p>The distribution <a class="reference external" href="https://pypi.org/project/sage-sws2rst/">sage-sws2rst</a>
+provides the Python package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage_sws2rst</span></code>, so it does not fill
+the <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.*</span></code> namespace and therefore does not use the prefix
+<strong>sagemath-</strong>.</p></li>
+</ul>
+<p>A distribution that provides functionality that does not need to
+import anything from the <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage</span></code> namespace should not use the
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage</span></code> namespace for its own packages/modules. It should be
+positioned as part of the general Python ecosystem instead of as a
+Sage-specific distribution.  Examples:</p>
+<ul class="simple">
+<li><p>The distribution <a class="reference external" href="https://pypi.org/project/pplpy/">pplpy</a> provides the Python
+package <a class="reference external" href="/home/user/sage-git/local/share/doc/pplpy/index.html#module-ppl" title="(in pplpy v0.8.6)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ppl</span></code></a> and is a much extended version of what used to be
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.libs.ppl</span></code>, a part of the Sage library. The package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.libs.ppl</span></code> had
+dependencies on <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings</span></code> to convert to/from Sage number
+types. <strong>pplpy</strong> has no such dependencies and is therefore usable in a
+wider range of Python projects.</p></li>
+<li><p>The distribution <a class="reference external" href="https://pypi.org/project/memory-allocator/">memory-allocator</a>
+provides the Python package <code class="xref py py-mod docutils literal notranslate"><span class="pre">memory_allocator</span></code>. This used to be
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.ext.memory_allocator</span></code>, a part of the Sage library.</p></li>
+</ul>
+<section id="ordinary-packages-vs-implicit-namespace-packages">
+<h3>Ordinary packages vs. implicit namespace packages<a class="headerlink" href="#ordinary-packages-vs-implicit-namespace-packages" title="Permalink to this headline">¶</a></h3>
+<p>Each module of the Sage library must be packaged in exactly one distribution
+package. However, modules in a package may be included in different
+distribution packages. In this regard, there is an important constraint that an
+ordinary package (directory with <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file) cannot be split into
+more than one distribution package.</p>
+<p>By removing the <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file, however, we can make the package an
+“implicit” (or “native”) “namespace” package, following
+<a class="reference external" href="https://www.python.org/dev/peps/pep-0420/">PEP 420</a>. Implicit namespace packages can be
+included in more than one distribution package. Hence whenever there are two
+distribution packages that provide modules with a common prefix of Python
+packages, that prefix needs to be a implicit namespace package, i.e., there
+cannot be an <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file.</p>
+<p>For example,</p>
+<ul class="simple">
+<li><p><strong>sagemath-tdlib</strong> will provide <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs.graph_decompositions.tdlib</span></code>,</p></li>
+<li><p><strong>sagemath-rw</strong> will provide <a class="reference external" href="../reference/graphs/sage/graphs/graph_decompositions/rankwidth.html#module-sage.graphs.graph_decompositions.rankwidth" title="(in Sage 9.5 Reference Manual: Graph Theory v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs.graph_decompositions.rankwidth</span></code></a>,</p></li>
+<li><p><strong>sagemath-graphs</strong> will provide all of the rest of
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs.graph_decompositions</span></code> (and most of <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs</span></code>).</p></li>
+</ul>
+<p>Then, none of</p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage</span></code>,</p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs</span></code>,</p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs.graph_decomposition</span></code></p></li>
+</ul>
+<p>can be an ordinary package (with an <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file), but rather
+each of them has to be an implicit namespace package (no
+<code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file).</p>
+<p>For an implicit namespace package, <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> cannot be used any more for
+initializing the package.</p>
+<p>In the Sage 9.6 development cycle, we still use ordinary packages by
+default, but several packages are converted to implicit namespace
+packages to support modularization.</p>
+</section>
+</section>
+<section id="source-directories-of-distribution-packages">
+<h2>Source directories of distribution packages<a class="headerlink" href="#source-directories-of-distribution-packages" title="Permalink to this headline">¶</a></h2>
+<p>The development of the Sage library uses a monorepo strategy for
+all distribution packages that fill the <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.*</span></code> namespace.  This
+means that the source trees of these distributions are included in a
+single <code class="docutils literal notranslate"><span class="pre">git</span></code> repository, in a subdirectory of <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs</span></code>.</p>
+<p>All these distribution packages have matching version numbers.  From
+the viewpoint of a single distribution, this means that sometimes
+there will be a new release of some distribution where the only thing
+changing is the version number.</p>
+<p>The source directory of a distribution package, such as
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/sagemath-standard</span></code>, contains the following files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sage</span></code> – a relative symbolic link to the monolithic Sage library
+source tree <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/sage/</span></code></p></li>
+<li><p><a class="reference external" href="https://packaging.python.org/guides/using-manifest-in/">MANIFEST.in</a> –
+controls which files and directories of the
+monolithic Sage library source tree are included in the distribution</p></li>
+<li><p><a class="reference external" href="https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/">pyproject.toml</a>,
+<a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/declarative_config.html">setup.cfg</a>,
+and <a class="reference external" href="https://pip.pypa.io/en/stable/user_guide/#requirements-files">requirements.txt</a> –
+standard Python packaging metadata, declaring the distribution name, dependencies,
+etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">README.rst</span></code> – a description of the distribution</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VERSION.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">LICENSE.txt</span></code> – relative symbolic links to the same files
+in <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">setup.py</span></code> – a <a class="reference external" href="https://pypi.org/project/setuptools/">setuptools</a>-based
+installation script</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tox.ini</span></code> – configuration for testing with <a class="reference external" href="https://pypi.org/project/tox/">tox</a></p></li>
+</ul>
+<p>The technique of using symbolic links pointing into <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src</span></code>
+has allowed the modularization effort to keep the <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src</span></code>
+tree monolithic: Modularization has been happening behind the scenes
+and will not change where Sage developers find the source files.</p>
+<p>Some of these files may actually be generated from source files with suffix <code class="docutils literal notranslate"><span class="pre">.m4</span></code> by the
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/bootstrap</span></code> script via the <code class="docutils literal notranslate"><span class="pre">m4</span></code> macro processor.</p>
+</section>
+<section id="dependencies-and-distribution-packages">
+<h2>Dependencies and distribution packages<a class="headerlink" href="#dependencies-and-distribution-packages" title="Permalink to this headline">¶</a></h2>
+<p>When preparing a portion of the Sage library as a distribution
+package, dependencies matter.</p>
+<section id="build-time-dependencies">
+<h3>Build-time dependencies<a class="headerlink" href="#build-time-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>If the portion of the library contains any Cython modules, these
+modules are compiled during the wheel-building phase of the
+distribution package. If the Cython module uses <code class="docutils literal notranslate"><span class="pre">cimport</span></code> to pull in
+anything from <code class="docutils literal notranslate"><span class="pre">.pxd</span></code> files, these files must be either part of the
+portion shipped as the distribution being built, or the distribution
+that provides these files must be installed in the build
+environment. Also, any C/C++ libraries that the Cython module uses
+must be accessible from the build environment.</p>
+<p><em>Declaring build-time dependencies:</em> Modern Python packaging provides a
+mechanism to declare build-time dependencies on other distribution
+packages via the file <a class="reference external" href="https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/">pyproject.toml</a>
+(<code class="docutils literal notranslate"><span class="pre">[build-system]</span> <span class="pre">requires</span></code>); this
+has superseded the older <code class="docutils literal notranslate"><span class="pre">setup_requires</span></code> declaration. (There is no
+mechanism to declare anything regarding the C/C++ libraries.)</p>
+<p>While the namespace <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.*</span></code> is organized roughly according to
+mathematical fields or categories, how we partition the implementation
+modules into distribution packages has to respect the hard constraints
+that are imposed by the build-time dependencies.</p>
+<p>We can define some meaningful small distributions that just consist of
+a single or a few Cython modules. For example, <strong>sagemath-tdlib</strong>
+(<a class="reference external" href="https://trac.sagemath.org/ticket/29864">https://trac.sagemath.org/ticket/29864</a>) would just package the single
+Cython module that must be linked with <code class="docutils literal notranslate"><span class="pre">tdlib</span></code>,
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs.graph_decompositions.tdlib</span></code>. Starting with the Sage
+9.6 development cycle, as soon as namespace packages are activated, we
+can start to create these distributions. This is quite a mechanical
+task.</p>
+<p><em>Reducing build-time dependencies:</em> Sometimes it is possible to
+replace build-time dependencies of a Cython module on a library by a
+runtime dependency.  In other cases, it may be possible to split a
+module that simultaneously depends on several libraries into smaller
+modules, each of which has narrower dependencies.</p>
+</section>
+<section id="module-level-runtime-dependencies">
+<h3>Module-level runtime dependencies<a class="headerlink" href="#module-level-runtime-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>Any <code class="docutils literal notranslate"><span class="pre">import</span></code> statements at the top level of a Python or Cython
+module are executed when the module is imported. Hence, the imported
+modules must be part of the distribution, or provided by another
+distribution – which then must be declared as a run-time dependency.</p>
+<p><em>Declaring run-time dependencies:</em> These dependencies are declared in
+<code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code> (generated from <code class="docutils literal notranslate"><span class="pre">setup.cfg.m4</span></code>) as
+<a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#declaring-required-dependency">install_requires</a>.</p>
+<p><em>Reducing module-level run-time dependencies:</em></p>
+<ul>
+<li><p>Avoid importing from <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.PAC.KAGE.all</span></code> modules when <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.PAC.KAGE</span></code> is
+a namespace package. The main purpose of the <code class="xref py py-mod docutils literal notranslate"><span class="pre">*.all</span></code> modules is for
+populating the global interactive environment that is available to users at
+the <code class="docutils literal notranslate"><span class="pre">sage:</span></code> prompt. In particular, no Sage library code should import from
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.all</span></code>.</p></li>
+<li><p>Replace module-level imports by method-level imports.  Note that
+this comes with a small runtime overhead, which can become
+noticeable if the method is called in tight inner loops.</p></li>
+<li><p>Sage provides the <a class="reference external" href="../reference/misc/sage/misc/lazy_import.html#sage.misc.lazy_import.lazy_import" title="(in Sage 9.5 Reference Manual: Utilities v9.5)"><code class="xref py py-func docutils literal notranslate"><span class="pre">lazy_import()</span></code></a>
+mechanism. Lazy imports can be
+declared at the module level, but the actual importing is only done
+on demand. It is a runtime error at that time if the imported module
+is not present. This can be convenient compared to local imports in
+methods when the same imports are needed in several methods.</p></li>
+<li><p>Avoid the “modularization anti-pattern” of importing a class from
+another module just to run an <code class="docutils literal notranslate"><span class="pre">isinstance(object,</span> <span class="pre">Class)</span></code> test, in
+particular when the module implementing <code class="docutils literal notranslate"><span class="pre">Class</span></code> has heavy
+dependencies.  For example, importing the class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">pAdicField</span></code> (or the
+function <code class="xref py py-class docutils literal notranslate"><span class="pre">is_pAdicField</span></code>)
+requires the libraries NTL and PARI.</p>
+<p>Instead, provide an abstract base class (ABC) in a module that only
+has light dependencies, make <code class="docutils literal notranslate"><span class="pre">Class</span></code> a subclass of <code class="docutils literal notranslate"><span class="pre">ABC</span></code>, and
+use <code class="docutils literal notranslate"><span class="pre">isinstance(object,</span> <span class="pre">ABC)</span></code>. For example, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.abc</span></code>
+provides abstract base classes for many ring (parent) classes,
+including <code class="xref py py-class docutils literal notranslate"><span class="pre">sage.rings.abc.pAdicField</span></code>.  So we can replace:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">from sage.rings.padics.generic_nodes import pAdicField  # heavy dependencies</span>
+<span class="go">isinstance(object, pAdicField)</span>
+</pre></div>
+</div>
+<p>and:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">from sage.rings.padics.generic_nodes import pAdicField  # heavy dependencies</span>
+<span class="go">is_pAdicField(object)                                   # deprecated</span>
+</pre></div>
+</div>
+<p>by:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">import sage.rings.abc                                   # no dependencies</span>
+<span class="go">isinstance(object, sage.rings.abc.pAdicField)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="other-runtime-dependencies">
+<h3>Other runtime dependencies<a class="headerlink" href="#other-runtime-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>If <code class="docutils literal notranslate"><span class="pre">import</span></code> statements are used within a method, the imported module
+is loaded the first time that the method is called. Hence the module
+defining the method can still be imported even if the module needed by
+the method is not present.</p>
+<p>It is then a question whether a run-time dependency should be
+declared. If the method needing that import provides core
+functionality, then probably yes. But if it only provides what can be
+considered “optional functionality”, then probably not, and in this
+case it will be up to the user to install the distribution enabling
+this optional functionality.</p>
+<p>As an example, let us consider designing a distribution that centers
+around the package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.coding</span></code>. First, let’s see if it uses symbolics:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">(9.5.beta6) $ git grep -E &#39;sage[.](symbolic|functions|calculus)&#39; src/sage/coding</span>
+<span class="go">src/sage/coding/code_bounds.py:        from sage.functions.other import ceil</span>
+<span class="go">...</span>
+<span class="go">src/sage/coding/grs_code.py:from sage.symbolic.ring import SR</span>
+<span class="go">...</span>
+<span class="go">src/sage/coding/guruswami_sudan/utils.py:from sage.functions.other import floor</span>
+</pre></div>
+</div>
+<p>Apparently it does not in a very substantial way:</p>
+<ul class="simple">
+<li><p>The imports of the symbolic functions <code class="xref py py-func docutils literal notranslate"><span class="pre">ceil()</span></code>
+and <code class="xref py py-func docutils literal notranslate"><span class="pre">floor()</span></code> can
+likely be replaced by the artithmetic functions
+<a class="reference external" href="../reference/rings_standard/sage/arith/misc.html#sage.arith.misc.integer_floor" title="(in Sage 9.5 Reference Manual: Standard Commutative Rings v9.5)"><code class="xref py py-func docutils literal notranslate"><span class="pre">integer_floor()</span></code></a> and
+<a class="reference external" href="../reference/rings_standard/sage/arith/misc.html#sage.arith.misc.integer_ceil" title="(in Sage 9.5 Reference Manual: Standard Commutative Rings v9.5)"><code class="xref py py-func docutils literal notranslate"><span class="pre">integer_ceil()</span></code></a>.</p></li>
+<li><p>Looking at the import of <code class="docutils literal notranslate"><span class="pre">SR</span></code> by <a class="reference external" href="../reference/coding/sage/coding/grs_code.html#module-sage.coding.grs_code" title="(in Sage 9.5 Reference Manual: Coding Theory v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.coding.grs_code</span></code></a>, it
+seems that <code class="docutils literal notranslate"><span class="pre">SR</span></code> is used for running some symbolic sum, but the
+doctests do not show symbolic results, so it is likely that this can
+be replaced.</p></li>
+<li><p>Note though that the above textual search for the module names is
+merely a heuristic. Looking at the source of “entropy”, through
+<code class="docutils literal notranslate"><span class="pre">log</span></code> from <a class="reference external" href="../reference/misc/sage/misc/functional.html#module-sage.misc.functional" title="(in Sage 9.5 Reference Manual: Utilities v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.misc.functional</span></code></a>, a runtime dependency on
+symbolics comes in. In fact, for this reason, two doctests there are
+already marked as <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">optional</span> <span class="pre">-</span> <span class="pre">sage.symbolic</span></code>.</p></li>
+</ul>
+<p>So if packaged as <strong>sagemath-coding</strong>, now a domain expert would have
+to decide whether these dependencies on symbolics are strong enough to
+declare a runtime dependency (<code class="docutils literal notranslate"><span class="pre">install_requires</span></code>) on
+<strong>sagemath-symbolics</strong>. This declaration would mean that any user who
+installs <strong>sagemath-coding</strong> (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">sagemath-coding</span></code>) would
+pull in <strong>sagemath-symbolics</strong>, which has heavy compile-time
+dependencies (ECL/Maxima/FLINT/Singular/…).</p>
+<p>The alternative is to consider the use of symbolics by
+<strong>sagemath-coding</strong> merely as something that provides some extra
+features, which will only be working if the user also has installed
+<strong>sagemath-symbolics</strong>.</p>
+<p><em>Declaring optional run-time dependencies:</em> It is possible to declare
+such optional dependencies as <a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#optional-dependencies">extras_require</a> in <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>
+(generated from <code class="docutils literal notranslate"><span class="pre">setup.cfg.m4</span></code>).  This is a very limited mechanism
+– in particular it does not affect the build phase of the
+distribution in any way. It basically only provides a way to give a
+nickname to a distribution that can be installed as an add-on.</p>
+<p>In our example, we could declare an <code class="docutils literal notranslate"><span class="pre">extras_require</span></code> so that users
+could use <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">sagemath-coding[symbolics]</span></code>.</p>
+</section>
+<section id="doctest-only-dependencies">
+<h3>Doctest-only dependencies<a class="headerlink" href="#doctest-only-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>Doctests often use examples constructed using functionality provided
+by other portions of the Sage library.  This kind of integration
+testing is one of the strengths of Sage; but it also creates extra
+dependencies.</p>
+<p>Fortunately, these dependencies are very mild, and we can deal with
+them using the same mechanism that we use for making doctests
+conditional on the presence of optional libraries: using <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">optional</span> <span class="pre">-</span>
+<span class="pre">FEATURE</span></code> directives in the doctests.  Adding these directives will
+allow developers to test the distribution separately, without
+requiring all of Sage to be present.</p>
+<p><em>Declaring doctest-only dependencies:</em> The
+<a class="reference external" href="https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#optional-dependencies">extras_require</a>
+mechanism mentioned above can also be used for this.</p>
+</section>
+<section id="version-constraints-of-dependencies">
+<h3>Version constraints of dependencies<a class="headerlink" href="#version-constraints-of-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>The version information for dependencies comes from the files
+<code class="docutils literal notranslate"><span class="pre">build/pkgs/*/install-requires.txt</span></code> and
+<code class="docutils literal notranslate"><span class="pre">build/pkgs/*/package-version.txt</span></code>.  We use the
+<a class="reference external" href="https://www.gnu.org/software/m4/manual/html_node/index.html">m4</a>
+macro processor to insert the version information in the generated files
+<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>, <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>.</p>
+</section>
+</section>
+<section id="hierarchy-of-distribution-packages">
+<h2>Hierarchy of distribution packages<a class="headerlink" href="#hierarchy-of-distribution-packages" title="Permalink to this headline">¶</a></h2>
+<figure class="align-default">
+<img alt="_images/packaging_sage_library-1.svg" class="plot-directive" src="_images/packaging_sage_library-1.svg" /></figure>
+</section>
+<section id="testing-distribution-packages">
+<h2>Testing distribution packages<a class="headerlink" href="#testing-distribution-packages" title="Permalink to this headline">¶</a></h2>
+<p>Of course, we need tools for testing modularized distributions of
+portions of the Sage library.</p>
+<ul class="simple">
+<li><p>Modularized distributions must be testable separately!</p></li>
+<li><p>But we want to keep integration testing with other portions of Sage too!</p></li>
+</ul>
+<section id="preparing-doctests">
+<h3>Preparing doctests<a class="headerlink" href="#preparing-doctests" title="Permalink to this headline">¶</a></h3>
+<p>Whenever an optional package is needed for a particular test, we use the
+doctest annotation <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">optional</span></code>. This mechanism can also be used for making a
+doctest conditional on the presence of a portion of the Sage library.</p>
+<p>The available tags take the form of package or module names such as
+<a class="reference external" href="../reference/combinat/index.html#module-sage.combinat" title="(in Sage 9.5 Reference Manual: Combinatorics v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.combinat</span></code></a>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.graphs</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.plot</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.number_field</span></code>,
+<a class="reference external" href="../reference/rings_numerical/sage/rings/real_double.html#module-sage.rings.real_double" title="(in Sage 9.5 Reference Manual: Fixed and Arbitrary Precision Numerical Fields v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.rings.real_double</span></code></a>, and <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.symbolic</span></code>.  They are defined via
+<a class="reference external" href="../reference/misc/sage/features.html#sage.features.Feature" title="(in Sage 9.5 Reference Manual: Utilities v9.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Feature</span></code></a> subclasses in the module <a class="reference external" href="../reference/misc/sage/features/sagemath.html#module-sage.features.sagemath" title="(in Sage 9.5 Reference Manual: Utilities v9.5)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.features.sagemath</span></code></a>, which
+also provides the mapping from features to the distributions providing them
+(actually, to SPKG names).  Using this mapping, Sage can issue installation
+hints to the user.</p>
+<p>For example, the package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.tensor</span></code> is purely algebraic and has
+no dependency on symbolics. However, there are a small number of
+doctests that depend on <a class="reference external" href="../reference/calculus/sage/symbolic/ring.html#sage.symbolic.ring.SymbolicRing" title="(in Sage 9.5 Reference Manual: Symbolic Calculus v9.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">sage.symbolic.ring.SymbolicRing</span></code></a> for integration
+testing. Hence, these doctests are marked <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">optional</span> <span class="pre">-</span>
+<span class="pre">sage.symbolic</span></code>.</p>
+</section>
+<section id="testing-the-distribution-in-virtual-environments-with-tox">
+<h3>Testing the distribution in virtual environments with tox<a class="headerlink" href="#testing-the-distribution-in-virtual-environments-with-tox" title="Permalink to this headline">¶</a></h3>
+<p>So how to test that this works?</p>
+<p>Sure, we could go into the installation directory
+<code class="docutils literal notranslate"><span class="pre">SAGE_VENV/lib/python3.9/site-packages/</span></code> and do <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span>
+<span class="pre">sage/symbolic</span></code> and test that things still work. But that’s not a good
+way of testing.</p>
+<p>Instead, we use a virtual environment in which we only install the
+distribution to be tested (and its Python dependencies).</p>
+<p>Let’s try it out first with the entire Sage library, represented by
+the distribution <strong>sagemath-standard</strong>.  Note that after Sage has been
+built normally, a set of wheels for all installed Python packages is
+available in <code class="docutils literal notranslate"><span class="pre">SAGE_VENV/var/lib/sage/wheels/</span></code>:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ ls venv/var/lib/sage/wheels</span>
+<span class="go">Babel-2.9.1-py2.py3-none-any.whl</span>
+<span class="go">Cython-0.29.24-cp39-cp39-macosx_11_0_x86_64.whl</span>
+<span class="go">Jinja2-2.11.2-py2.py3-none-any.whl</span>
+<span class="go">...</span>
+<span class="go">sage_conf-9.5b6-py3-none-any.whl</span>
+<span class="go">...</span>
+<span class="go">scipy-1.7.2-cp39-cp39-macosx_11_0_x86_64.whl</span>
+<span class="go">setuptools-58.2.0-py3-none-any.whl</span>
+<span class="go">...</span>
+<span class="go">wheel-0.37.0-py2.py3-none-any.whl</span>
+<span class="go">widgetsnbextension-3.5.1-py2.py3-none-any.whl</span>
+<span class="go">zipp-3.5.0-py3-none-any.whl</span>
+</pre></div>
+</div>
+<p>Note in particular the wheel for <strong>sage-conf</strong>, which provides
+configuration variable settings and the connection to the non-Python
+packages installed in <code class="docutils literal notranslate"><span class="pre">SAGE_LOCAL</span></code>.</p>
+<p>We can now set up a separate virtual environment, in which we install
+these wheels and our distribution to be tested.  This is where
+<a class="reference external" href="https://pypi.org/project/tox/">tox</a>
+comes into play: It is the standard Python tool for creating
+disposable virtual environments for testing.  Every distribution in
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/</span></code> provides a configuration file <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code>.</p>
+<p>Following the comments in the file
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/sagemath-standard/tox.ini</span></code>, we can try the following
+command:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ ./bootstrap &amp;&amp; ./sage -sh -c &#39;(cd pkgs/sagemath-standard &amp;&amp; SAGE_NUM_THREADS=16 tox -v -v -v -e py39-sagewheels-nopypi)&#39;</span>
+</pre></div>
+</div>
+<p>This command does not make any changes to the normal installation of
+Sage. The virtual environment is created in a subdirectory of
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/sagemath-standard-no-symbolics/.tox/</span></code>. After the command
+finishes, we can start the separate installation of the Sage library
+in its virtual environment:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ pkgs/sagemath-standard/.tox/py39-sagewheels-nopypi/bin/sage</span>
+</pre></div>
+</div>
+<p>We can also run parts of the testsuite:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ pkgs/sagemath-standard/.tox/py39-sagewheels-nopypi/bin/sage -tp 4 src/sage/graphs/</span>
+</pre></div>
+</div>
+<p>The whole <code class="docutils literal notranslate"><span class="pre">.tox</span></code> directory can be safely deleted at any time.</p>
+<p>We can do the same with other distributions, for example the large
+distribution <strong>sagemath-standard-no-symbolics</strong>
+(from <a class="reference external" href="https://trac.sagemath.org/32601">trac ticket #32601</a>), which is intended to provide
+everything that is currently in the standard Sage library, i.e.,
+without depending on optional packages, but without the packages
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.symbolic</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.functions</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.calculus</span></code>, etc.</p>
+<p>Again we can run the test with <code class="docutils literal notranslate"><span class="pre">tox</span></code> in a separate virtual environment:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ ./bootstrap &amp;&amp; ./sage -sh -c &#39;(cd pkgs/sagemath-standard-no-symbolics &amp;&amp; SAGE_NUM_THREADS=16 tox -v -v -v -e py39-sagewheels-nopypi)&#39;</span>
+</pre></div>
+</div>
+<p>Some small distributions, for example the ones providing the two
+lowest levels, <a class="reference external" href="https://pypi.org/project/sagemath-objects/">sagemath-objects</a>
+and <a class="reference external" href="https://pypi.org/project/sagemath-categories/">sagemath-categories</a>
+(from <a class="reference external" href="https://trac.sagemath.org/29865">trac ticket #29865</a>), can be installed and tested
+without relying on the wheels from the Sage build:</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="go">$ ./bootstrap &amp;&amp; ./sage -sh -c &#39;(cd pkgs/sagemath-objects &amp;&amp; SAGE_NUM_THREADS=16 tox -v -v -v -e py39)&#39;</span>
+</pre></div>
+</div>
+<p>This command finds the declared build-time and run-time dependencies
+on PyPI, either as source tarballs or as prebuilt wheels, and builds
+and installs the distribution
+<a class="reference external" href="https://pypi.org/project/sagemath-objects/">sagemath-objects</a> in a virtual
+environment in a subdirectory of <code class="docutils literal notranslate"><span class="pre">pkgs/sagemath-objects/.tox</span></code>.</p>
+<p>Building these small distributions serves as a valuable regression
+testsuite.  However, a current issue with both of these distributions
+is that they are not separately testable: The doctests for these
+modules depend on a lot of other functionality from higher-level parts
+of the Sage library.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Packaging the Sage Library</a><ul>
+<li><a class="reference internal" href="#modules-packages-distribution-packages">Modules, packages, distribution packages</a><ul>
+<li><a class="reference internal" href="#ordinary-packages-vs-implicit-namespace-packages">Ordinary packages vs. implicit namespace packages</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#source-directories-of-distribution-packages">Source directories of distribution packages</a></li>
+<li><a class="reference internal" href="#dependencies-and-distribution-packages">Dependencies and distribution packages</a><ul>
+<li><a class="reference internal" href="#build-time-dependencies">Build-time dependencies</a></li>
+<li><a class="reference internal" href="#module-level-runtime-dependencies">Module-level runtime dependencies</a></li>
+<li><a class="reference internal" href="#other-runtime-dependencies">Other runtime dependencies</a></li>
+<li><a class="reference internal" href="#doctest-only-dependencies">Doctest-only dependencies</a></li>
+<li><a class="reference internal" href="#version-constraints-of-dependencies">Version constraints of dependencies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hierarchy-of-distribution-packages">Hierarchy of distribution packages</a></li>
+<li><a class="reference internal" href="#testing-distribution-packages">Testing distribution packages</a><ul>
+<li><a class="reference internal" href="#preparing-doctests">Preparing doctests</a></li>
+<li><a class="reference internal" href="#testing-the-distribution-in-virtual-environments-with-tox">Testing the distribution in virtual environments with tox</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coding_in_other.html"
+                        title="previous chapter">Using External Libraries and Interfaces</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="packaging.html"
+                        title="next chapter">Packaging Third-Party Code</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/packaging_sage_library.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="packaging.html" title="Packaging Third-Party Code"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coding_in_other.html" title="Using External Libraries and Interfaces"
+             >previous</a> |</li>
+  
+    
+      <a href="../index.html"><img src="_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+    
+  
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Packaging the Sage Library</a></li> 
+      </ul>
+    </div>
+    
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2005--2022, The Sage Development Team.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+    <script type="text/javascript">
+/*global jQuery, window */
+/* Sphinx sidebar toggle.  Putting this code at the end of the body
+ * enables the toggle for the live, static, and offline docs.  Note:
+ * sage.misc.html.math_parse() eats jQuery's dollar-sign shortcut. */
+var jq = jQuery;
+jq(document).ready(function () {
+    var bar, bod, bg, fg, key, tog, wid_old, wid_new, get_state, set_state;
+    bod = jq('div.bodywrapper');
+    bar = jq('div.sphinxsidebar');
+    tog = jq('<div class="sphinxsidebartoggle"></div>');
+
+    /* The sidebar toggle adapts its height to the bodywrapper height. */
+    const resizeObserver = new ResizeObserver(entries => {
+        tog.height(bod.height());
+    });
+    resizeObserver.observe(bod[0]);
+
+    /* Setup and add the toggle. See Sphinx v0.5.1 default.css. */
+    fg = jq('div.sphinxsidebar p a').css('color') || 'rgb(152, 219, 204)';
+    bg = jq('div.document').css('background-color') || 'rgb(28, 78, 99)';
+    wid_old = '230px';
+    wid_new = '5px';
+    tog.css('background-color', bg)
+        .css('border-width', '0px')
+        .css('border-right', wid_new + ' ridge ' + bg)
+        .css('cursor', 'pointer')
+        .css('position', 'absolute')
+        .css('left', '-' + wid_new)
+        .css('top', '0px')
+        .css('width', wid_new);
+    bod.css('position', 'relative');
+    bod.prepend(tog);
+
+    /* Cookie helpers. */
+    key = 'sphinxsidebar=';
+    set_state = function (s) {
+        var date = new Date();
+        /* Expiry in 7 days. */
+        date.setTime(date.getTime() + (7 * 24 * 3600 * 1000));
+        document.cookie = key + encodeURIComponent(s) + '; expires=' +
+            date.toUTCString() + '; path=/';
+    };
+    get_state = function () {
+        var i, c, crumbs = document.cookie.split(';');
+        for (i = 0; i < crumbs.length; i += 1) {
+            c = crumbs[i].replace(/^\s+/, '');
+            if (c.indexOf(key) === 0) {
+                return decodeURIComponent(c.substring(key.length, c.length));
+            }
+        }
+        return null;
+    };
+
+    /* Event handlers. */
+    tog.mouseover(function (ev) {
+        tog.css('border-right-color', fg);
+    }).mouseout(function (ev) {
+        tog.css('border-right-color', bg);
+    }).click(function (ev) {
+        if (bod.hasClass('wide')) {
+            bod.removeClass('wide');
+            bod.css('margin-left', wid_old);
+            bar.css('width', wid_old);
+            bar.show();
+            set_state('visible');
+        } else {
+            set_state('hidden');
+            bar.hide();
+            bar.css('width', '0px');
+            bod.css('margin-left', wid_new);
+            bod.addClass('wide');
+        }
+    });
+
+    /* Hide the normally visible sidebar? */
+    if (get_state() === 'hidden') {
+        tog.trigger('click');
+    } else {
+        set_state('visible');
+    }
+});
+    </script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66100-14', 'auto');
+  ga('send', 'pageview');
+</script>
+  </body>
+</html>

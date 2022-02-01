@@ -5,9 +5,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Additional development and testing tools &#8212; Sage Developer&#39;s Guide v9.4</title>
+    <title>Additional development and testing tools &#8212; Sage Developer&#39;s Guide v9.5</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/sage.css" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
@@ -17,8 +18,6 @@
     <link rel="next" title="The Sage Manuals" href="sage_manuals.html" />
     <link rel="prev" title="Testing on multiple platforms" href="portability_testing.html" />
     <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
-    <script src="_static/thebe.js" type="text/javascript"></script>
-    <script src="_static/thebe-sage.js" type="text/javascript"></script>
 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -39,7 +38,7 @@
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.4</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Additional development and testing tools</a></li> 
       </ul>
@@ -52,37 +51,244 @@
             
   <section id="additional-development-and-testing-tools">
 <span id="chapter-tools"></span><h1>Additional development and testing tools<a class="headerlink" href="#additional-development-and-testing-tools" title="Permalink to this headline">¶</a></h1>
+<section id="tox">
+<h2>Tox<a class="headerlink" href="#tox" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://tox.readthedocs.io/en/latest/">Tox</a> is a popular package that is
+used by a large number of Python projects as the standard entry point
+for testing and linting.</p>
+<p>Sage includes tox as a standard package and uses it for three purposes:</p>
+<ul class="simple">
+<li><p>For portability testing of the Sage distribution, as we explain in
+<a class="reference internal" href="portability_testing.html#chapter-portability-testing"><span class="std std-ref">Testing on multiple platforms</span></a>.  This is configured in the file
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/tox.ini</span></code>.</p></li>
+<li><p>For testing modularized distributions of the Sage library. This is configured
+in <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code> files in subdirectories of <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/</span></code>, such as
+<code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pkgs/sagemath-standard/tox.ini</span></code>. Each distribution’s configuration
+defines tox environments for testing the distribution with different Python
+versions and different ways how the dependencies are provided.
+We explain this in <a class="reference internal" href="packaging_sage_library.html#chapter-modularization"><span class="std std-ref">Packaging the Sage Library</span></a>.</p></li>
+<li><p>As an entry point for testing and linting of the Sage library, as we describe below.
+This is configured in the file <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/tox.ini</span></code>.</p></li>
+</ul>
+<p>The tox configuration <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/tox.ini</span></code> can be invoked by using the command
+<code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--tox</span></code>.  (If <code class="docutils literal notranslate"><span class="pre">tox</span></code> is available in your system installation,
+you can just type <code class="docutils literal notranslate"><span class="pre">tox</span></code> instead.)</p>
+<p>This configuration provides an entry point for various testing/linting methods,
+known as “tox environments”.  We can type <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--advanced</span></code> so see what is
+available:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage --advanced
+<span class="go">SageMath version 9.2</span>
+<span class="go">...</span>
+<span class="go">Testing files:</span>
+<span class="go">...</span>
+<span class="go">--tox [options] &lt;files|dirs&gt; -- general entry point for testing</span>
+<span class="go">                                and linting of the Sage library</span>
+<span class="go">   -e &lt;envlist&gt;     -- run specific test environments</span>
+<span class="go">                       (default: run all except full pycodestyle)</span>
+<span class="go">      doctest                -- run the Sage doctester</span>
+<span class="go">                                (same as &quot;sage -t&quot;)</span>
+<span class="go">      coverage               -- give information about doctest coverage of files</span>
+<span class="go">                                (same as &quot;sage --coverage[all]&quot;)</span>
+<span class="go">      startuptime            -- display how long each component of Sage takes to start up</span>
+<span class="go">                                (same as &quot;sage --startuptime&quot;)</span>
+<span class="go">      pycodestyle-minimal    -- check against Sage&#39;s minimal style conventions</span>
+<span class="go">      relint                 -- check whether some forbidden patterns appear</span>
+<span class="go">                                (includes all patchbot pattern-exclusion plugins)</span>
+<span class="go">      codespell              -- check for misspelled words in source code</span>
+<span class="go">      pycodestyle            -- check against the Python style conventions of PEP8</span>
+<span class="go">   -p auto          -- run test environments in parallel</span>
+<span class="go">   --help           -- show tox help</span>
+</pre></div>
+</div>
+</section>
+<section id="doctest">
+<h2>Doctest<a class="headerlink" href="#doctest" title="Permalink to this headline">¶</a></h2>
+<p>The command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">doctest</span></code> requires that Sage has been
+built already.  <code class="docutils literal notranslate"><span class="pre">doctest</span></code> is a special tox environment that runs the
+Sage doctester in the normal Sage environment.  This is equivalent to
+using the command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-t</span></code>; see <a class="reference internal" href="doctesting.html#chapter-doctesting"><span class="std std-ref">Running Sage’s doctests</span></a>.</p>
+</section>
+<section id="coverage">
+<h2>Coverage<a class="headerlink" href="#coverage" title="Permalink to this headline">¶</a></h2>
+<p>The command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">coverage</span></code> requires that Sage has been
+built already.  <code class="docutils literal notranslate"><span class="pre">coverage</span></code> is a special tox environment that is
+equivalent to using the command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--coverageall</span></code> (if no
+arguments are provided) or <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--coverage</span></code> (if arguments are
+provided).</p>
+</section>
+<section id="startuptime">
+<h2>Startuptime<a class="headerlink" href="#startuptime" title="Permalink to this headline">¶</a></h2>
+<p>The command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">startuptime</span></code> requires that Sage has been
+built already.  <code class="docutils literal notranslate"><span class="pre">startuptime</span></code> is a special tox environment that is
+equivalent to using the command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--startuptime</span></code>.</p>
+</section>
+<section id="pycodestyle">
+<h2>Pycodestyle<a class="headerlink" href="#pycodestyle" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://pycodestyle.pycqa.org/en/latest/">Pycodestyle</a> (formerly known as pep8)
+checks Python code against the style conventions of <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>.
+Tox automatically installs pycodestyle in a separate virtual environment
+on the first use.</p>
+<p>Sage defines two configurations for pycodestyle.  The command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">pycodestyle-minimal</span></code> uses
+pycodestyle in a minimal configuration.
+As of Sage 9.5, the entire Sage library conforms to this configuration:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage -tox -e pycodestyle-minimal -- src/sage/
+<span class="go">pycodestyle-minimal installed: pycodestyle==2.8.0</span>
+<span class="go">pycodestyle-minimal run-test-pre: PYTHONHASHSEED=&#39;28778046&#39;</span>
+<span class="go">pycodestyle-minimal run-test: commands[0] | pycodestyle --select E401,E70,W605,E711,E712,E721 sage</span>
+<span class="go">___________ summary ____________</span>
+<span class="go">  pycodestyle-minimal: commands succeeded</span>
+<span class="go">  congratulations :)</span>
+</pre></div>
+</div>
+<p>When preparing a branch for a Sage ticket, developers should verify that <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span>
+<span class="pre">pycodestyle-minimal</span></code> passes.  When the Sage patchbot runs on the ticket, it will perform similar
+coding style checks; but running the check locally reduces the turnaround time from hours
+to seconds.</p>
+<p>The second configuration is used with the command <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">pycodestyle</span></code> and runs a
+more thorough check:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage -tox -e pycodestyle -- src/sage/quadratic_forms/quadratic_form.py
+<span class="go">pycodestyle installed: pycodestyle==2.8.0</span>
+<span class="go">pycodestyle run-test-pre: PYTHONHASHSEED=&#39;2520226550&#39;</span>
+<span class="go">pycodestyle run-test: commands[0] | pycodestyle sage/quadratic_forms/quadratic_form.py</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:135:9: E225 missing whitespace around operator</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:163:64: E225 missing whitespace around operator</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:165:52: E225 missing whitespace around operator</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:173:42: E228 missing whitespace around modulo operator</span>
+<span class="go">...</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:1620:9: E266 too many leading &#39;#&#39; for block comment</span>
+<span class="go">sage/quadratic_forms/quadratic_form.py:1621:9: E266 too many leading &#39;#&#39; for block comment</span>
+<span class="go">25      E111 indentation is not a multiple of 4</span>
+<span class="go">2       E117 over-indented</span>
+<span class="go">129     E127 continuation line over-indented for visual indent</span>
+<span class="go">1       E128 continuation line under-indented for visual indent</span>
+<span class="go">4       E201 whitespace after &#39;[&#39;</span>
+<span class="go">4       E202 whitespace before &#39;]&#39;</span>
+<span class="go">2       E222 multiple spaces after operator</span>
+<span class="go">7       E225 missing whitespace around operator</span>
+<span class="go">1       E228 missing whitespace around modulo operator</span>
+<span class="go">25      E231 missing whitespace after &#39;,&#39;</span>
+<span class="go">1       E262 inline comment should start with &#39;# &#39;</span>
+<span class="go">3       E265 block comment should start with &#39;# &#39;</span>
+<span class="go">62      E266 too many leading &#39;#&#39; for block comment</span>
+<span class="go">2       E272 multiple spaces before keyword</span>
+<span class="go">2       E301 expected 1 blank line, found 0</span>
+<span class="go">17      E303 too many blank lines (2)</span>
+<span class="go">ERROR: InvocationError for command .../pycodestyle sage/quadratic_forms/quadratic_form.py (exited with code 1)</span>
+<span class="go">___________ summary ____________</span>
+<span class="go">ERROR:   pycodestyle: commands failed</span>
+</pre></div>
+</div>
+<p>When preparing a branch for a Sage ticket that adds new code,
+developers should verify that <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-tox</span> <span class="pre">-e</span> <span class="pre">pycodestyle</span></code> does not
+issue warnings for the added code.  This will avoid later cleanup
+tickets as the Sage codebase is moving toward full PEP 8 compliance.</p>
+<p>On the other hand, it is usually not advisable to mix coding-style
+fixes with productive changes on the same ticket because this would
+makes it harder for reviewers to evaluate the changes.</p>
+<p>By passing the options <code class="docutils literal notranslate"><span class="pre">--count</span> <span class="pre">-qq</span></code> we can reduce the output to
+only show the number of style violation warnings.  This can be helpful
+for planning work on coding-style clean-up tickets that focus on one
+or a few related issues:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage -tox -e pycodestyle -- --count -qq src/sage
+<span class="go">pycodestyle installed: pycodestyle==2.8.0</span>
+<span class="go">pycodestyle run-test-pre: PYTHONHASHSEED=&#39;3166223974&#39;</span>
+<span class="go">pycodestyle run-test: commands[0] | pycodestyle --count -qq sage</span>
+<span class="go">557     E111 indentation is not a multiple of 4</span>
+<span class="go">1       E112 expected an indented block</span>
+<span class="go">194     E114 indentation is not a multiple of 4 (comment)</span>
+<span class="go">...</span>
+<span class="go">7       E743 ambiguous function definition &#39;l&#39;</span>
+<span class="go">335     W291 trailing whitespace</span>
+<span class="go">4       W292 no newline at end of file</span>
+<span class="go">229     W293 blank line contains whitespace</span>
+<span class="go">459     W391 blank line at end of file</span>
+<span class="go">97797</span>
+<span class="go">ERROR: InvocationError for command .../pycodestyle --count -qq sage (exited with code 1)</span>
+<span class="go">___________ summary ____________</span>
+<span class="go">ERROR:   pycodestyle: commands failed</span>
+</pre></div>
+</div>
+<p><em>Installation:</em> (for manual use:) <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">pycodestyle</span> <span class="pre">--user</span></code></p>
+<p><em>Usage:</em></p>
+<ul class="simple">
+<li><p>With tox: See above.</p></li>
+<li><p>Manual: Run <code class="docutils literal notranslate"><span class="pre">pycodestyle</span> <span class="pre">path/to/the/file.py</span></code>.</p></li>
+<li><p>VS Code: Activate by adding the setting <code class="docutils literal notranslate"><span class="pre">&quot;python.linting.pycodestyleEnabled&quot;:</span> <span class="pre">true</span></code>, see <a class="reference external" href="https://code.visualstudio.com/docs/python/linting">official VS Code documentation</a> for details.</p></li>
+</ul>
+<p><em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">[pycodestyle]</span></code> block in <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/tox.ini</span></code></p>
+<p><em>Documentation:</em> <a class="reference external" href="https://pycodestyle.pycqa.org/en/latest/index.html">https://pycodestyle.pycqa.org/en/latest/index.html</a></p>
+</section>
+<section id="relint">
+<h2>Relint<a class="headerlink" href="#relint" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://pypi.org/project/relint/">Relint</a> checks all source files for forbidden
+text patterns specified by regular expressions.</p>
+<p>Our configuration of relint flags some outdated Python constructions, plain TeX
+commands when equivalent LaTeX commands are available, common mistakes in
+documentation markup, and modularization anti-patterns.</p>
+<p><em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/.relint.yml</span></code></p>
+<p><em>Documentation:</em> <a class="reference external" href="https://pypi.org/project/relint/">https://pypi.org/project/relint/</a></p>
+</section>
+<section id="codespell">
+<h2>Codespell<a class="headerlink" href="#codespell" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://pypi.org/project/codespell/">Codespell</a> uses a dictionary to check for
+misspelled words in source code.</p>
+<p>Sage defines a configuration for codespell:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage -tox -e codespell -- src/sage/homology/
+<span class="go">codespell installed: codespell==2.1.0</span>
+<span class="go">codespell run-test-pre: PYTHONHASHSEED=&#39;1285169064&#39;</span>
+<span class="go">codespell run-test: commands[0] | codespell &#39;--skip=*.png,*.jpg,*.JPG,*.inv,*.dia,*.pdf,*.ico,*#*,*~*,*.bak,*.orig,*.log,*.sobj,*.tar,*.gz,*.pyc,*.o,*.sws,*.so,*.a,.DS_Store&#39; --skip=doc/ca,doc/de,doc/es,doc/hu,doc/ja,doc/ru,doc/fr,doc/it,doc/pt,doc/tr --skip=src/doc/ca,src/doc/de,src/doc/es,src/doc/hu,src/doc/ja,src/doc/ru,src/doc/fr,src/doc/it,src/doc/pt,src/doc/tr &#39;--skip=.git,.tox,worktree*,dist,upstream,logs,local,cythonized,scripts-3,autom4te.cache,tmp,lib.*,*.egg-info&#39; --dictionary=- --dictionary=/Users/mkoeppe/s/sage/sage-rebasing/src/.codespell-dictionary.txt --ignore-words=/Users/mkoeppe/s/sage/sage-rebasing/src/.codespell-ignore.txt sage/homology</span>
+<span class="go">sage/homology/hochschild_complex.py:271: mone ==&gt; mono, money, none</span>
+<span class="go">sage/homology/hochschild_complex.py:277: mone ==&gt; mono, money, none</span>
+<span class="go">sage/homology/hochschild_complex.py:280: mone ==&gt; mono, money, none</span>
+<span class="go">sage/homology/chain_complex.py:2185: mor ==&gt; more</span>
+<span class="go">sage/homology/chain_complex.py:2204: mor ==&gt; more</span>
+<span class="go">sage/homology/chain_complex.py:2210: mor ==&gt; more</span>
+<span class="go">sage/homology/chain_complex.py:2211: mor ==&gt; more</span>
+<span class="go">sage/homology/chain_complex.py:2214: mor ==&gt; more</span>
+<span class="go">sage/homology/chain_complex.py:2215: mor ==&gt; more</span>
+<span class="go">ERROR: InvocationError for command .../codespell &#39;--skip=*.png,...&#39; --dictionary=- --dictionary=/Users/mkoeppe/s/sage/sage-rebasing/src/.codespell-dictionary.txt --ignore-words=/Users/mkoeppe/s/sage/sage-rebasing/src/.codespell-ignore.txt sage/homology (exited with code 65)</span>
+<span class="go">___________ summary ____________</span>
+<span class="go">ERROR:   codespell: commands failed</span>
+</pre></div>
+</div>
+<p><em>Configuration:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">[testenv:codespell]</span></code> block in <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/tox.ini</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/.codespell-dictionary.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/.codespell-ignore.txt</span></code></p></li>
+</ul>
+</section>
 <section id="pytest">
 <h2>Pytest<a class="headerlink" href="#pytest" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://docs.pytest.org/en/stable/">Pytest</a> is a testing framework.
-At the moment, Sage is not yet using any tests based on pytest.</p>
-<p><em>Installation:</em> <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">pytest</span></code>, see <a class="reference external" href="https://docs.pytest.org/en/stable/getting-started.html#installation-and-getting-started">documentation</a> for details.
-<em>Usage:</em>
-- Manual: Run <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">path/to/the/test_file.py</span></code> or <code class="docutils literal notranslate"><span class="pre">pytest</span></code> to run all tests (from a virtual environment with Sage installed)
-- VS Code: Install the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python</a> extension and follow the <a class="reference external" href="https://code.visualstudio.com/docs/python/testing">offical VS Code documentation</a>.
-<em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> in the source folder
-<em>Documentation:</em> <a class="reference external" href="https://docs.pytest.org/en/stable/index.html">https://docs.pytest.org/en/stable/index.html</a></p>
+It is included in the Sage distribution as an optional package.</p>
+<p>Currently, Sage only makes very limited use of pytest, for testing the
+package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.numerical.backends</span></code>.</p>
+<p><em>Installation:</em></p>
+<ul class="simple">
+<li><p>(for use with the Sage doctester:) <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-i</span> <span class="pre">pytest</span></code>.</p></li>
+<li><p>(for manual use:) <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">pytest</span></code>, see <a class="reference external" href="https://docs.pytest.org/en/stable/getting-started.html#installation-and-getting-started">documentation</a> for details.</p></li>
+</ul>
+<p><em>Usage:</em></p>
+<ul class="simple">
+<li><p>Tox, Sage doctester: At the end of <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-t</span></code> (or <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">--tox</span> <span class="pre">-e</span> <span class="pre">doctest</span></code>), Pytest is automatically invoked.</p></li>
+<li><p>Manual: Run <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">path/to/the/test_file.py</span></code> or <code class="docutils literal notranslate"><span class="pre">pytest</span></code> to run all tests (from a virtual environment with the Sage library installed)</p></li>
+<li><p>VS Code: Install the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python extension</a> and follow the <a class="reference external" href="https://code.visualstudio.com/docs/python/testing">offical VS Code documentation</a>.</p></li>
+</ul>
+<p><em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/src/conftest.py</span></code></p>
+<p><em>Documentation:</em> <a class="reference external" href="https://docs.pytest.org/en/stable/index.html">https://docs.pytest.org/en/stable/index.html</a></p>
 </section>
 <section id="pyright">
 <h2>Pyright<a class="headerlink" href="#pyright" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://github.com/microsoft/pyright">Pyright</a> is static type checker.</p>
-<p><em>Installation:</em> <code class="docutils literal notranslate"><span class="pre">npm</span> <span class="pre">install</span> <span class="pre">-g</span> <span class="pre">pyright</span></code>, see <a class="reference external" href="https://github.com/microsoft/pyright#installation">documentation</a> for details.
-<em>Usage:</em>
-- Manual: Run <code class="docutils literal notranslate"><span class="pre">pyright</span> <span class="pre">path/to/the/file.py</span></code>
-- VS Code: Install the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a> extension.
-<em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">pyrightconfig.json</span></code> in the root
-<em>Note</em>: Currently, only the manifolds package is checked. Further packages can be added in the <code class="docutils literal notranslate"><span class="pre">pyrightconfig.json</span></code> file.
-<em>Documentation:</em> <a class="reference external" href="https://github.com/microsoft/pyright#documentation">https://github.com/microsoft/pyright#documentation</a></p>
-</section>
-<section id="pycodestyle">
-<h2>Pycodestyle<a class="headerlink" href="#pycodestyle" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://pycodestyle.pycqa.org/en/latest/">Pycodestyle</a> checks against the style conventions of PEP8 Python.</p>
-<p><em>Installation:</em> <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">pycodestyle</span> <span class="pre">--user</span></code>
-<em>Usage:</em>
-- Manual: Run <code class="docutils literal notranslate"><span class="pre">pycodestyle</span> <span class="pre">path/to/the/file.py</span></code>
-- VS Code: Activate by adding the setting <code class="docutils literal notranslate"><span class="pre">&quot;python.linting.pycodestyleEnabled&quot;:</span> <span class="pre">true</span></code>, see <a class="reference external" href="https://code.visualstudio.com/docs/python/linting">official VS Code documentation</a> for details.
-<em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">[pycodestyle]</span></code> block in <code class="docutils literal notranslate"><span class="pre">src/tox.ini</span></code>
-<em>Documentation:</em> <a class="reference external" href="https://pycodestyle.pycqa.org/en/latest/index.html">https://pycodestyle.pycqa.org/en/latest/index.html</a></p>
+<p><em>Installation:</em> <code class="docutils literal notranslate"><span class="pre">npm</span> <span class="pre">install</span> <span class="pre">-g</span> <span class="pre">pyright</span></code>, see <a class="reference external" href="https://github.com/microsoft/pyright#installation">documentation</a> for details.</p>
+<p><em>Usage:</em></p>
+<ul class="simple">
+<li><p>Manual: Run <code class="docutils literal notranslate"><span class="pre">pyright</span> <span class="pre">path/to/the/file.py</span></code></p></li>
+<li><p>VS Code: Install the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a> extension.</p></li>
+</ul>
+<p><em>Configuration:</em> <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT/pyrightconfig.json</span></code></p>
+<p><em>Note</em>: Currently, only the package <code class="xref py py-mod docutils literal notranslate"><span class="pre">sage.manifolds</span></code> is checked. Further packages can be added in the <code class="docutils literal notranslate"><span class="pre">pyrightconfig.json</span></code> file.</p>
+<p><em>Documentation:</em> <a class="reference external" href="https://github.com/microsoft/pyright#documentation">https://github.com/microsoft/pyright#documentation</a></p>
 </section>
 <section id="pyflakes">
 <h2>Pyflakes<a class="headerlink" href="#pyflakes" title="Permalink to this headline">¶</a></h2>
@@ -100,9 +306,15 @@ At the moment, Sage is not yet using any tests based on pytest.</p>
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Additional development and testing tools</a><ul>
+<li><a class="reference internal" href="#tox">Tox</a></li>
+<li><a class="reference internal" href="#doctest">Doctest</a></li>
+<li><a class="reference internal" href="#coverage">Coverage</a></li>
+<li><a class="reference internal" href="#startuptime">Startuptime</a></li>
+<li><a class="reference internal" href="#pycodestyle">Pycodestyle</a></li>
+<li><a class="reference internal" href="#relint">Relint</a></li>
+<li><a class="reference internal" href="#codespell">Codespell</a></li>
 <li><a class="reference internal" href="#pytest">Pytest</a></li>
 <li><a class="reference internal" href="#pyright">Pyright</a></li>
-<li><a class="reference internal" href="#pycodestyle">Pycodestyle</a></li>
 <li><a class="reference internal" href="#pyflakes">Pyflakes</a></li>
 </ul>
 </li>
@@ -125,7 +337,7 @@ At the moment, Sage is not yet using any tests based on pytest.</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -153,15 +365,15 @@ At the moment, Sage is not yet using any tests based on pytest.</p>
     
   
   
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.4</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
 
         <li class="nav-item nav-item-this"><a href="">Additional development and testing tools</a></li> 
       </ul>
     </div>
     
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2005--2021, The Sage Development Team.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.0.1.
+        &#169; Copyright 2005--2022, The Sage Development Team.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
     <script type="text/javascript">
 /*global jQuery, window */
