@@ -137,6 +137,17 @@ filter_ref = [
     "subset-",
     "ellipse-",
     "packaging_sage_library-",
+    "parametric_surface-",
+    "shapes2-",
+    "plot_field3d-",
+    "hyperbolic_arc-",
+    "line-",
+    "arc-",
+    "disk-",
+    "bar_chart-",
+    "step-",
+    "scatter_plot-",
+    "histogram-",
 ]
 filter_html = [("en", "website")]
 

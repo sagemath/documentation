@@ -29,6 +29,8 @@ CLF: "\\Bold{C}",
 RDF: "\\Bold{R}",
 RIF: "\\Bold{I} \\Bold{R}",
 RLF: "\\Bold{R}",
+SL: "\\mathrm{SL}",
+PSL: "\\mathrm{PSL}",
 Bold: ["\\mathbf{#1}",1]
     }
   }

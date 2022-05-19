@@ -5,18 +5,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=600, initial-scale=1">
-    <title>Packaging Third-Party Code &#8212; Sage Developer&#39;s Guide v9.5</title>
+    <title>Packaging Third-Party Code &#8212; Developer&#39;s Guide</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/sage.css" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/jupyter-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="_static/thebelab.css" />
+    
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/thebelab-helper.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.0/dist/embed-amd.js"></script>
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Packaging the Sage Library" href="packaging_sage_library.html" />
-    <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+  <link rel="icon" href="_static/sageicon.png" type="image/x-icon" />
+  <!-- <script src="_static/thebe.js" type="text/javascript"></script> -->
+  <!-- <script src="_static/thebe-sage.js" type="text/javascript"></script> -->
 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -28,13 +37,14 @@
         <li class="right" >
           <a href="packaging_sage_library.html" title="Packaging the Sage Library"
              accesskey="P">previous</a> |</li>
-  
+  <li class="nav-item nav-item-0">
+    <a href="http://www.sagemath.org"><img src="_static/logo_sagemath_black.svg" class="sage-logo" title="Sage Logo"></a>
     
-      <a href="../index.html"><img src="_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../index.html">Sage 9.6 Documentation</a> &#187;
+      
+      <a href="index.html">Developer&#39;s Guide</a> &#187;
     
-  
-  
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
+  </li>
 
         <li class="nav-item nav-item-this"><a href="">Packaging Third-Party Code</a></li> 
       </ul>
@@ -181,6 +191,8 @@ a minimum the following files:</p>
 |-- distros
 |   |-- platform1.txt
 |   `-- platform2.txt
+|-- has_nonfree_dependencies
+|-- huge
 |-- patches
 |   |-- bar.patch
 |   `-- baz.patch
@@ -555,8 +567,9 @@ name of the package as it is known to PyPI.  Optionally,
 and upper bounds).  The constraints are in the format of the
 <code class="docutils literal notranslate"><span class="pre">install_requires</span></code> key of <a class="reference external" href="https://setuptools.readthedocs.io/en/latest/userguide/declarative_config.html">setup.cfg</a>
 or <a class="reference external" href="https://packaging.python.org/discussions/install-requires-vs-requirements/#id5">setup.py</a>.</p>
-<p>The files may include comments (starting with <code class="docutils literal notranslate"><span class="pre">#</span></code>) that explain why a particular lower
-bound is warranted or why we wish to include or reject certain versions.</p>
+<p>It is strongly recommended to include comments (starting with <code class="docutils literal notranslate"><span class="pre">#</span></code>)
+in the file that explain why a particular lower or upper bound is
+warranted or why we wish to include or reject certain versions.</p>
 <p>For example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cat build/pkgs/sphinx/package-version.txt
 <span class="m">3</span>.1.2.p0
@@ -575,7 +588,9 @@ packaging &gt;<span class="o">=</span><span class="m">18</span>.0
 Developers and downstream packagers are invited to refine the version
 constraints based on their experience and tests.  When a package
 update is made in order to pick up a critical bug fix from a newer
-version, then the lower bound should be adjusted.</p>
+version, then the lower bound should be adjusted.
+Setting upper bounds to guard against incompatible future changes is
+a complex topic; see <a class="reference external" href="https://trac.sagemath.org/33520">trac ticket #33520</a>.</p>
 </section>
 <section id="the-spkg-rst-file">
 <span id="section-spkg-spkg-txt"></span><h3>The SPKG.rst File<a class="headerlink" href="#the-spkg-rst-file" title="Permalink to this headline">¶</a></h3>
@@ -672,6 +687,20 @@ correct, the following command should work without errors:</p>
 <p>Finally, note that standard packages should only depend on standard
 packages and optional packages should only depend on standard or
 optional packages.</p>
+</section>
+<section id="package-tags">
+<span id="section-spkg-tags"></span><h3>Package tags<a class="headerlink" href="#package-tags" title="Permalink to this headline">¶</a></h3>
+<p>You can mark a package as “huge” by placing an empty file named
+<code class="docutils literal notranslate"><span class="pre">huge</span></code> in the package directory.  For example, the package
+<code class="docutils literal notranslate"><span class="pre">polytopes_db_4d</span></code> is a large database whose compressed tarball has a
+size of 9 GB.</p>
+<p>For some other packages, we have placed an empty file named
+<code class="docutils literal notranslate"><span class="pre">has_nonfree_dependencies</span></code> in the package directory. This is to
+indicate that Sage with this package installed cannot be
+redistributed, and also that the package can only be installed after
+installing some other, non-free package.</p>
+<p>We use these tags in our continuous integration scripts to filter
+out packages that we cannot or should not test automatically.</p>
 </section>
 <section id="where-packages-are-installed">
 <span id="section-trees"></span><h3>Where packages are installed<a class="headerlink" href="#where-packages-are-installed" title="Permalink to this headline">¶</a></h3>
@@ -880,7 +909,7 @@ checksums.</p>
 <p>In addition to these fields in <code class="docutils literal notranslate"><span class="pre">checksums.ini</span></code>, the optional field
 <code class="docutils literal notranslate"><span class="pre">upstream_url</span></code> holds an URL to the upstream package archive.</p>
 <p>The Release Manager uses the information in <code class="docutils literal notranslate"><span class="pre">upstream_url</span></code> to
-download the upstream package archvive and to make it available on the
+download the upstream package archive and to make it available on the
 Sage mirrors when a new release is prepared.  On Trac tickets
 upgrading a package, the ticket description should no longer contain
 the upstream URL to avoid duplication of information.</p>
@@ -1050,8 +1079,9 @@ this is not possible.</p></li>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">Packaging Third-Party Code</a><ul>
 <li><a class="reference internal" href="#package-types">Package types</a><ul>
 <li><a class="reference internal" href="#package-source-types">Package source types</a></li>
@@ -1067,6 +1097,7 @@ this is not possible.</p></li>
 <li><a class="reference internal" href="#python-based-packages">Python-based packages</a></li>
 <li><a class="reference internal" href="#the-spkg-rst-file">The SPKG.rst File</a></li>
 <li><a class="reference internal" href="#package-dependencies">Package dependencies</a></li>
+<li><a class="reference internal" href="#package-tags">Package tags</a></li>
 <li><a class="reference internal" href="#where-packages-are-installed">Where packages are installed</a></li>
 <li><a class="reference internal" href="#patching-sources">Patching Sources</a></li>
 <li><a class="reference internal" href="#when-to-patch-when-to-repackage-when-to-autoconfiscate">When to patch, when to repackage, when to autoconfiscate</a></li>
@@ -1088,9 +1119,12 @@ this is not possible.</p></li>
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="packaging_sage_library.html"
-                        title="previous chapter">Packaging the Sage Library</a></p>
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="packaging_sage_library.html"
+                          title="previous chapter">Packaging the Sage Library</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -1121,23 +1155,24 @@ this is not possible.</p></li>
         <li class="right" >
           <a href="packaging_sage_library.html" title="Packaging the Sage Library"
              >previous</a> |</li>
-  
+  <li class="nav-item nav-item-0">
+    <a href="http://www.sagemath.org"><img src="_static/logo_sagemath_black.svg" class="sage-logo" title="Sage Logo"></a>
     
-      <a href="../index.html"><img src="_static/logo_sagemath_black.svg" height="28" style="vertical-align: middle" title="Sage Logo"></a>
+      <a href="../index.html">Sage 9.6 Documentation</a> &#187;
+      
+      <a href="index.html">Developer&#39;s Guide</a> &#187;
     
-  
-  
-        <li class="nav-item nav-item-0"><a href="index.html">Developer&#39;s Guide v9.5</a> &#187;</li>
+  </li>
 
         <li class="nav-item nav-item-this"><a href="">Packaging Third-Party Code</a></li> 
       </ul>
     </div>
-    
+  
     <div class="footer" role="contentinfo">
         &#169; Copyright 2005--2022, The Sage Development Team.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
     </div>
-    <script type="text/javascript">
+  <script type="text/javascript">
 /*global jQuery, window */
 /* Sphinx sidebar toggle.  Putting this code at the end of the body
  * enables the toggle for the live, static, and offline docs.  Note:
@@ -1219,7 +1254,11 @@ jq(document).ready(function () {
         set_state('visible');
     }
 });
-    </script>
+  </script>
+  <script type="text/javascript">
+/* detex the document title by removing "\(", "\)", "\", "$" */
+document.title = document.title.replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\/g, '').replace(/\$/g, '');
+  </script>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
