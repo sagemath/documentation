@@ -232,12 +232,10 @@ for link in links():
     path = os.path.dirname(link)
     target = os.readlink(link)
 
-    log.info(f"Removing symbolic link {link}")
-
-    os.unlink(link)
-
-    log.info(f"Resolving _static to {target} in subdirectories")
-
+    log.info(f"Resolving _static to {target} in subdirectories of {path}")
     os.system(r'find %s -type f -name "*.html" -exec sed -i '' -e "s/_static/%s/" {} \;' % (path, target.replace('/', r'\/')))
+
+    log.info(f"Removing symbolic link {link}")
+    os.unlink(link)
 
 log.info('### Done.')
