@@ -52,7 +52,7 @@ show_older_versions = config.getboolean('target', 'show_older_versions')
 
 log.info('### Copy html documentation')
 
-sp.Popen(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/pdf ./".split(), stdout=sp.PIPE)
+sp.call(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/pdf ./".split(), stdout=sp.PIPE)
 
 # ---------------------------------------------------------------
 # copy `$SAGE_ROOT/local/share/doc/sage/pdf` to `pdf` directory
@@ -60,7 +60,7 @@ sp.Popen(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/pdf ./".split(),
 
 log.info('### Copy pdf documentation')
 
-sp.Popen(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/html ./".split(), stdout=sp.PIPE)
+sp.call(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/html ./".split(), stdout=sp.PIPE)
 
 # ------------------------------------------------------------------------------
 # generate the root index file from `$SAGE_ROOT/local/share/doc/sage/index.html`
