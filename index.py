@@ -149,6 +149,7 @@ filter_ref = [
     "scatter_plot-",
     "histogram-",
     "operation_table-",
+    "tableau-",
 ]
 filter_html = [("en", "website")]
 
