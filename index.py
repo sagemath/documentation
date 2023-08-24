@@ -150,6 +150,7 @@ filter_ref = [
     "histogram-",
     "operation_table-",
     "tableau-",
+    "library-",
 ]
 filter_html = [("en", "website")]
 
