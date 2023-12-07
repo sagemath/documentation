@@ -15,6 +15,8 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/thebelab.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom-furo.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom-jupyter-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom-codemirror-monokai.css" />
     
     
 
@@ -157,7 +159,7 @@
     <img class="sidebar-logo only-dark" src="../../../../_static/logo_sagemath_white.svg" alt="Dark Logo"/>
   </div>
   
-      <span class="sidebar-brand-text">Sage 10.1 Reference Manual</span>
+      <span class="sidebar-brand-text">Sage 10.2 Reference Manual</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -178,6 +180,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../curves/projective_curve.html">Projective curves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../curves/point.html">Rational points of curves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../curves/closed_point.html">Closed points of integral curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../curves/zariski_vankampen.html">Zariski-Van Kampen method implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../jacobians/abstract_jacobian.html">Jacobians of curves</a></li>
 </ul>
 <ul class="current">
@@ -281,8 +284,8 @@ raise <code class="docutils literal notranslate"><span class="pre">ValueError</s
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">Z</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s1">&#39;X,Y,Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
 <span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">X</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span> <span class="o">+</span> <span class="n">Y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">Z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Rational Field defined by X^2 - X*Y + Y^2 - Z^2</span>
-<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">)[</span><span class="s1">&#39;x,y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>                                                 <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;U,V,W&#39;</span><span class="p">)</span>                                       <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">)[</span><span class="s1">&#39;x,y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;U,V,W&#39;</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Finite Field of size 7</span>
 <span class="go"> defined by U^2 + 2*V^2 - U*W - 3*W^2</span>
 </pre></div>
@@ -291,17 +294,17 @@ raise <code class="docutils literal notranslate"><span class="pre">ValueError</s
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">]]),</span> <span class="s1">&#39;x,y,z&#39;</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Rational Field defined by x^2 + 6*x*y + 7*x*z + 9*z^2</span>
 
-<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">11</span><span class="p">)[</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>                                            <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">);</span> <span class="n">C</span>                                           <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">11</span><span class="p">)[</span><span class="s1">&#39;x,y,z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">);</span> <span class="n">C</span>
 <span class="go">Projective Conic Curve over Finite Field of size 11 defined by x^2 + y^2 - 2*z^2</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">symmetric_matrix</span><span class="p">(),</span> <span class="s1">&#39;x,y,z&#39;</span><span class="p">)</span>                                      <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">symmetric_matrix</span><span class="p">(),</span> <span class="s1">&#39;x,y,z&#39;</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Finite Field of size 11 defined by x^2 + y^2 - 2*z^2</span>
 </pre></div>
 </div>
 <p>Conics given by coefficients</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
 <span class="go">Projective Conic Curve over Rational Field defined by x^2 + 2*y^2 + 3*z^2</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="s1">&#39;X&#39;</span><span class="p">)</span>                                          <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="s1">&#39;X&#39;</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Finite Field of size 7</span>
 <span class="go">defined by X0^2 + 2*X0*X1 - 3*X1^2 + 3*X0*X2 - 2*X1*X2 - X2^2</span>
 </pre></div>
@@ -315,8 +318,8 @@ raise <code class="docutils literal notranslate"><span class="pre">ValueError</s
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">point</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
 <span class="go">(3 : 4 : 1)</span>
 
-<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>                                                <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="n">a</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>                                     <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">AffineSpace</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="n">a</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
 <span class="go">Projective Conic Curve over Finite Field of size 13 defined by x^2 - y*z</span>
 </pre></div>
 </div>
@@ -407,6 +410,7 @@ raise <code class="docutils literal notranslate"><span class="pre">ValueError</s
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script>window.MathJax = {"tex": {"macros": {"ZZ": "\\Bold{Z}", "NN": "\\Bold{N}", "RR": "\\Bold{R}", "CC": "\\Bold{C}", "QQ": "\\Bold{Q}", "QQbar": "\\overline{\\QQ}", "GF": ["\\Bold{F}_{#1}", 1], "Zp": ["\\Bold{Z}_{#1}", 1], "Qp": ["\\Bold{Q}_{#1}", 1], "Zmod": ["\\ZZ/#1\\ZZ", 1], "CDF": "\\Bold{C}", "CIF": "\\Bold{C}", "CLF": "\\Bold{C}", "RDF": "\\Bold{R}", "RIF": "\\Bold{I} \\Bold{R}", "RLF": "\\Bold{R}", "SL": "\\mathrm{SL}", "PSL": "\\mathrm{PSL}", "lcm": "\\mathop{\\operatorname{lcm}}", "Bold": ["\\mathbf{#1}", 1]}, "inlineMath": [["$", "$"], ["\\(", "\\)"]], "maxBuffer": 51200, "autoload": {"color": [], "colorv2": ["color"]}}}</script>
-    <script defer="defer" src="../../../../_static/mathjax/tex-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script src="../../../../_static/jupyter-sphinx-furo.js"></script>
     </body>
 </html>

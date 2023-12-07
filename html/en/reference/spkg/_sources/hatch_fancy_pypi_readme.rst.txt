@@ -28,16 +28,16 @@ standard
 Dependencies
 ------------
 
-- $(PYTHON)
 - $(PYTHON_TOOLCHAIN)
 - :ref:`spkg_hatchling`
+- $(PYTHON)
 
 Version Information
 -------------------
 
 package-version.txt::
 
-    22.8.0
+    23.1.0
 
 install-requires.txt::
 
@@ -47,5 +47,60 @@ install-requires.txt::
 Equivalent System Packages
 --------------------------
 
-(none known)
+alpine:
+
+.. CODE-BLOCK:: bash
+
+    $ apk add py3-hatch-fancy-pypi-readme
+
+
+arch:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo pacman -S  python-hatch-fancy-pypi-readme
+
+
+Debian/Ubuntu:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo apt-get install  python-hatch-fancy-pypi-readme
+
+
+Fedora/Redhat/CentOS:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo yum install  python-hatch-fancy-pypi-readme
+
+
+freebsd:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo pkg install devel/py-hatch-fancy-pypi-readme
+
+
+gentoo:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo emerge dev-python/hatch-fancy-pypi-readme
+
+
+macports:
+install the following packages: py-hatch-fancy-pypi-readme
+
+opensuse:
+
+.. CODE-BLOCK:: bash
+
+    $ sudo zypper install python-hatch-fancy-pypi-readme
+
+
+
+If the system package is installed and if the (experimental) option
+--enable-system-site-packages is passed to ./configure, then ./configure
+will check if the system package can be used.
 

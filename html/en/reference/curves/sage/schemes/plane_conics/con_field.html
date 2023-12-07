@@ -15,6 +15,8 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/thebelab.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom-furo.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom-jupyter-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom-codemirror-monokai.css" />
     
     
 
@@ -157,7 +159,7 @@
     <img class="sidebar-logo only-dark" src="../../../../_static/logo_sagemath_white.svg" alt="Dark Logo"/>
   </div>
   
-      <span class="sidebar-brand-text">Sage 10.1 Reference Manual</span>
+      <span class="sidebar-brand-text">Sage 10.2 Reference Manual</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -178,6 +180,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../curves/projective_curve.html">Projective curves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../curves/point.html">Rational points of curves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../curves/closed_point.html">Closed points of integral curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../curves/zariski_vankampen.html">Zariski-Van Kampen method implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../jacobians/abstract_jacobian.html">Jacobians of curves</a></li>
 </ul>
 <ul class="current">
@@ -256,12 +259,12 @@ See <code class="docutils literal notranslate"><span class="pre">Conic</span></c
 <p>EXAMPLES:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span> <span class="n">c</span>
 <span class="go">Projective Conic Curve over Rational Field defined by x^2 + y^2 + z^2</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>                                                <span class="c1"># needs sage.libs.pari</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">base_extend</span><span class="p">(</span><span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">));</span> <span class="n">d</span>                         <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">base_extend</span><span class="p">(</span><span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">));</span> <span class="n">d</span>                         <span class="c1"># needs sage.rings.number_field</span>
 <span class="go">Projective Conic Curve over Number Field in i</span>
 <span class="go"> with defining polynomial x^2 + 1 with i = 1*I defined by x^2 + y^2 + z^2</span>
-<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>                               <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>                               <span class="c1"># needs sage.rings.number_field</span>
 <span class="go">(i : 1 : 0)</span>
 </pre></div>
 </div>
@@ -278,7 +281,9 @@ by <a class="reference internal" href="#sage.schemes.plane_conics.con_field.Proj
 <span class="go">(15/8 : 17/8 : 1)</span>
 <span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">(15/8 : 17/8 : 1)</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">cache_point</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">read_cache</span> <span class="o">=</span> <span class="kc">False</span><span class="p">))</span>
+
+<span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">cache_point</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 <span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">(-1 : 1 : 0)</span>
 </pre></div>
@@ -294,10 +299,10 @@ in lexicographic order.</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span><span class="o">.</span><span class="n">coefficients</span><span class="p">()</span>
 <span class="go">[1, 2, 3, 4, 5, 6]</span>
 
-<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="p">)[]</span>                                                  <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">coefficients</span><span class="p">();</span> <span class="n">a</span>                  <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">13</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">a</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">coefficients</span><span class="p">();</span> <span class="n">a</span>
 <span class="go">[1, 5, 0, 1, 0, 1]</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>                                                              <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
 <span class="go">Projective Conic Curve over Finite Field of size 13</span>
 <span class="go">defined by x^2 + 5*x*y + y^2 + z^2</span>
 </pre></div>
@@ -325,14 +330,14 @@ derivative matrix is twice the symmetric matrix:</p>
 </pre></div>
 </div>
 <p>An example in characteristic <span class="math notranslate nohighlight">\(2\)</span>:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>                                                       <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span> <span class="n">c</span>                                    <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span> <span class="n">c</span>                                    <span class="c1"># needs sage.libs.ntl</span>
 <span class="go">Projective Conic Curve over Fraction Field of Univariate</span>
 <span class="go"> Polynomial Ring in t over Finite Field of size 2 (using GF2X)</span>
 <span class="go"> defined by t*x^2 + x*y + y^2 + (t^2)*x*z + y*z</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>                                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">derivative_matrix</span><span class="p">()</span>                                                 <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">derivative_matrix</span><span class="p">()</span>
 <span class="go">[  0   1 t^2]</span>
 <span class="go">[  1   0   1]</span>
 <span class="go">[t^2   1   0]</span>
@@ -356,10 +361,10 @@ different from <span class="math notranslate nohighlight">\(2\)</span>.</p>
 </pre></div>
 </div>
 <p>Determinants are only defined in characteristic different from <span class="math notranslate nohighlight">\(2\)</span>:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>                                  <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>                                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">determinant</span><span class="p">()</span>                                                       <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">determinant</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: The conic self (= Projective Conic Curve over Finite Field</span>
@@ -391,10 +396,11 @@ of the conic <code class="docutils literal notranslate"><span class="pre">self</
 </div>
 <p>Diagonal matrices are only defined in characteristic different
 from <span class="math notranslate nohighlight">\(2\)</span>:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>                             <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>                                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">diagonal_matrix</span><span class="p">()</span>                                                   <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">diagonal_matrix</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: The conic self (= Projective Conic Curve over Finite Field</span>
@@ -410,7 +416,7 @@ from <span class="math notranslate nohighlight">\(2\)</span>:</p>
 <dd><p>Return a diagonal conic <span class="math notranslate nohighlight">\(C\)</span>, an isomorphism of schemes <span class="math notranslate nohighlight">\(M: C\)</span> -&gt; <code class="docutils literal notranslate"><span class="pre">self</span></code>
 and the inverse <span class="math notranslate nohighlight">\(N\)</span> of <span class="math notranslate nohighlight">\(M\)</span>.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>
 <span class="go">(Projective Conic Curve over Finite Field of size 5</span>
 <span class="go">  defined by x^2 + y^2 + 2*z^2,</span>
 <span class="go"> Scheme morphism:</span>
@@ -429,7 +435,7 @@ and the inverse <span class="math notranslate nohighlight">\(N\)</span> of <span
 </div>
 <p>The diagonalization is only defined in characteristic different
 from 2:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: The conic self (= Projective Conic Curve over Finite Field</span>
@@ -438,10 +444,10 @@ from 2:</p>
 </pre></div>
 </div>
 <p>An example over a global function field:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">FractionField</span><span class="p">(</span><span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="s1">&#39;t&#39;</span><span class="p">))</span>                         <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="p">,)</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>                                                       <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>                                     <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>                                                   <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">K</span> <span class="o">=</span> <span class="n">FractionField</span><span class="p">(</span><span class="n">PolynomialRing</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="s1">&#39;t&#39;</span><span class="p">))</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">t</span><span class="p">,)</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">diagonalization</span><span class="p">()</span>
 <span class="go">(Projective Conic Curve over Fraction Field of Univariate</span>
 <span class="go">  Polynomial Ring in t over Finite Field of size 7</span>
 <span class="go">  defined by (-3*t)*x^2 + 2*y^2 + (3*t + 3)/t*z^2,</span>
@@ -472,15 +478,14 @@ from 2:</p>
 <p>EXAMPLES:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>                                                              <span class="c1"># needs sage.libs.singular</span>
 <span class="go">(xbar, ybar, zbar)</span>
-<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">())</span>
+<span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">())</span>                                     <span class="c1"># needs sage.libs.singular</span>
 <span class="go">0</span>
 </pre></div>
 </div>
 <p>The function <code class="docutils literal notranslate"><span class="pre">gens()</span></code> is required for the following construction:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>                                   <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span>                                                                     <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span><span class="o">.&lt;</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span> <span class="n">C</span>                                <span class="c1"># needs sage.libs.singular</span>
 <span class="go">Projective Conic Curve over</span>
 <span class="go"> Finite Field of size 3 defined by a^2 + b^2 + c^2</span>
 </pre></div>
@@ -518,8 +523,8 @@ system.</p></li>
 </div>
 <p>Conics over polynomial rings can be solved internally:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>                                                <span class="c1"># needs sage.libs.pari</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -529,7 +534,7 @@ system.</p></li>
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># optional - magma</span>
 <span class="go">(True, (-t : 1 : 1))</span>
 
-<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">t</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>               <span class="c1"># optional - magma</span>
 <span class="go">False</span>
 </pre></div>
@@ -549,11 +554,11 @@ point (or <code class="docutils literal notranslate"><span class="pre">None</spa
 <span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 <span class="go">(True, (0 : 1 : 0))</span>
 
-<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">)[]</span>                                                   <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">((</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">z</span><span class="p">));</span> <span class="n">e</span>                                       <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">7</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">e</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">((</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">y</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">z</span><span class="p">));</span> <span class="n">e</span>
 <span class="go">Projective Conic Curve over Finite Field of size 7</span>
 <span class="go"> defined by x^2 - y^2 + 3*x*z + y*z + 2*z^2</span>
-<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                    <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">e</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 <span class="go">(True, (2 : 4 : 1))</span>
 
 <span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">()</span>
@@ -564,15 +569,15 @@ point (or <code class="docutils literal notranslate"><span class="pre">None</spa
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">has_singular_point</span></code> is not implemented over all fields
 of characteristic <span class="math notranslate nohighlight">\(2\)</span>. It is implemented over finite fields.</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>                                                <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                   <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>                                                <span class="c1"># needs sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                   <span class="c1"># needs sage.rings.finite_rings</span>
 <span class="go">(True, (a + 1 : 0 : 1))</span>
 
-<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>                                                       <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="mi">1</span><span class="p">]);</span> <span class="n">C</span>                                              <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">t</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="mi">1</span><span class="p">]);</span> <span class="n">C</span>
 <span class="go">Projective Conic Curve over Fraction Field of Univariate Polynomial Ring</span>
-<span class="go"> in t over Finite Field of size 2 (using GF2X) defined by t*x^2 + t*y^2 + z^2</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>                                   <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="go"> in t over Finite Field of size 2... defined by t*x^2 + t*y^2 + z^2</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">has_singular_point</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">NotImplementedError: Sorry, find singular point on conics not implemented</span>
@@ -596,7 +601,7 @@ example, <code class="docutils literal notranslate"><span class="pre">Y</span></
 <span class="go">  From: Projective Conic Curve over Rational Field defined by -x^2 + y^2 + z^2</span>
 <span class="go">  To:   Projective Conic Curve over Rational Field defined by -x^2 + 2*x*y + z^2</span>
 <span class="go">  Defn: Defined on coordinates by sending (x : y : z) to (x + y : y : z)</span>
-<span class="gp">sage: </span><span class="n">h</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>                                                         <span class="c1"># needs sage.libs.singular</span>
 <span class="go">(0 : 1 : 0)</span>
 
 <span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
@@ -608,7 +613,7 @@ example, <code class="docutils literal notranslate"><span class="pre">Y</span></
 <span class="go">  Defn: Defined on coordinates by sending (x : y : z) to (1/2*z : y : x)</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised if the wrong codomain <code class="docutils literal notranslate"><span class="pre">Y</span></code> is specified:</p>
+<p><a class="reference external" href="https://docs.python.org/library/exceptions.html#ValueError" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a> is raised if the wrong codomain <code class="docutils literal notranslate"><span class="pre">Y</span></code> is specified:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">hom</span><span class="p">(</span><span class="n">Matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span> <span class="n">c</span><span class="p">)</span>
 <span class="go">Traceback (most recent call last):</span>
@@ -673,7 +678,7 @@ example, <code class="docutils literal notranslate"><span class="pre">Y</span></
 <p>EXAMPLES:</p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>                                <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">is_smooth</span><span class="p">()</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -694,9 +699,9 @@ characteristic <span class="math notranslate nohighlight">\(2\)</span> and symme
 <span class="go">[1/2   1   0]</span>
 <span class="go">[  0   0   1]</span>
 
-<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>                                                 <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>                                <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">matrix</span><span class="p">()</span>                                                            <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)[]</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">matrix</span><span class="p">()</span>
 <span class="go">[1 1 1]</span>
 <span class="go">[0 1 0]</span>
 <span class="go">[0 0 1]</span>
@@ -717,8 +722,9 @@ of a Scheme morphism. Otherwise, it is a tuple of polynomials
 that gives the parametrization.</p>
 <p>EXAMPLES:</p>
 <p>An example over a finite field</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>                                       <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">parametrization</span><span class="p">();</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span>                                      <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">parametrization</span><span class="p">();</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span>
 <span class="go">(Scheme morphism:</span>
 <span class="go">  From: Projective Space of dimension 1 over Finite Field of size 2</span>
 <span class="go">  To:   Projective Conic Curve over Finite Field of size 2</span>
@@ -729,45 +735,48 @@ that gives the parametrization.</p>
 <span class="go">        defined by x^2 + x*y + y^2 + x*z + y*z</span>
 <span class="go">  To:   Projective Space of dimension 1 over Finite Field of size 2</span>
 <span class="go">  Defn: Defined on coordinates by sending (x : y : z) to ...)</span>
-<span class="gp">sage: </span><span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">domain</span><span class="p">())</span>                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">domain</span><span class="p">())</span>
 <span class="go">{(0 : 0 : 1), (0 : 1 : 1), (1 : 0 : 1)}</span>
 </pre></div>
 </div>
 <p>Verfication of the example</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">*</span><span class="n">f</span><span class="p">;</span> <span class="n">h</span>                                                            <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">*</span><span class="n">f</span><span class="p">;</span> <span class="n">h</span>
 <span class="go">Scheme endomorphism of Projective Space of dimension 1</span>
 <span class="go"> over Finite Field of size 2</span>
 <span class="go">  Defn: Defined on coordinates by sending (x : y) to ...</span>
-<span class="gp">sage: </span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>                                                             <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 <span class="go">x/y</span>
-<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">is_one</span><span class="p">()</span>  <span class="c1"># known bug  (see :trac:`31892`)                          # optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">h</span><span class="o">.</span><span class="n">is_one</span><span class="p">()</span>                    <span class="c1"># known bug (see :trac:`31892`)</span>
 <span class="go">True</span>
-<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>                                                    <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>                                                            <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">x</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
 <span class="go">Quotient of Multivariate Polynomial Ring in x, y, z</span>
 <span class="go"> over Finite Field of size 2 by the ideal (x^2 + x*y + y^2 + x*z + y*z)</span>
-<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">f</span><span class="o">*</span><span class="n">g</span>                                                               <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">x</span>                                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">k</span> <span class="o">=</span> <span class="n">f</span><span class="o">*</span><span class="n">g</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">x</span>
 <span class="go">0</span>
-<span class="gp">sage: </span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span>                                                         <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">z</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">y</span>
 <span class="go">0</span>
 </pre></div>
 </div>
 <p>The morphisms are mathematically defined in all points,
 but don’t work completely in SageMath (see <a class="reference external" href="https://github.com/sagemath/sage/issues/31892">github issue #31892</a>)</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">parametrization</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>                                     <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">g</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>                                                            <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">parametrization</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
 <span class="go">(1 : 0)</span>
-<span class="gp">sage: </span><span class="n">f</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>                                                              <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
 <span class="go">(0 : 1 : 1)</span>
-<span class="gp">sage: </span><span class="n">f</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>                                                              <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">f</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
 <span class="go">(0 : 0 : 1)</span>
-<span class="gp">sage: </span><span class="n">g</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>                                                            <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">g</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
 <span class="go">(1 : 1)</span>
 </pre></div>
 </div>
 <p>An example with <code class="docutils literal notranslate"><span class="pre">morphism</span> <span class="pre">=</span> <span class="pre">False</span></code></p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
 <span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Curve</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">parametrization</span><span class="p">(</span><span class="n">morphism</span><span class="o">=</span><span class="kc">False</span><span class="p">);</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
 <span class="go">([-2*x*y, x^2 + 7*y^2, -2*x^2], [-1/2*x, 1/7*y + 1/14*z])</span>
@@ -777,8 +786,9 @@ but don’t work completely in SageMath (see <a class="reference external" href=
 <span class="go">x/y</span>
 </pre></div>
 </div>
-<p>A <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised if <code class="docutils literal notranslate"><span class="pre">self</span></code> has no rational point</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
+<p>A <a class="reference external" href="https://docs.python.org/library/exceptions.html#ValueError" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a> is raised if <code class="docutils literal notranslate"><span class="pre">self</span></code> has no rational point</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">parametrization</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
@@ -786,8 +796,9 @@ but don’t work completely in SageMath (see <a class="reference external" href=
 <span class="go">x^2 + y^2 + 7*z^2 has no rational points over Rational Field!</span>
 </pre></div>
 </div>
-<p>A <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised if <code class="docutils literal notranslate"><span class="pre">self</span></code> is not smooth</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
+<p>A <a class="reference external" href="https://docs.python.org/library/exceptions.html#ValueError" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a> is raised if <code class="docutils literal notranslate"><span class="pre">self</span></code> is not smooth</p>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">parametrization</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
@@ -812,7 +823,7 @@ for use by <a class="reference internal" href="#sage.schemes.plane_conics.con_fi
 <span class="gp">sage: </span><span class="n">c</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">(15/8 : 17/8 : 1)</span>
 <span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
+<span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                                                    <span class="c1"># needs sage.libs.pari</span>
 <span class="go">(-1 : 1 : 0)</span>
 </pre></div>
 </div>
@@ -833,17 +844,16 @@ for use by <a class="reference internal" href="#sage.schemes.plane_conics.con_fi
 <code class="docutils literal notranslate"><span class="pre">self</span></code> and additional arguments to <code class="docutils literal notranslate"><span class="pre">random_rational_point</span></code>
 are passed to <code class="docutils literal notranslate"><span class="pre">random_element</span></code>.</p>
 <p>If the base field is a finite field, then the
-output is uniformly distributed over the points of self.</p>
+output is uniformly distributed over the points of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>                                       <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">random_rational_point</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>              <span class="c1"># random  # optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
+<span class="gp">sage: </span><span class="n">c</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">random_rational_point</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>              <span class="c1"># random</span>
 <span class="go">[(1 : 0 : 1), (1 : 0 : 1), (1 : 0 : 1), (0 : 1 : 1), (1 : 0 : 1),</span>
 <span class="go"> (0 : 0 : 1), (1 : 0 : 1), (1 : 0 : 1), (0 : 0 : 1), (1 : 0 : 1)]</span>
-
 <span class="gp">sage: </span><span class="n">d</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 <span class="gp">sage: </span><span class="n">d</span><span class="o">.</span><span class="n">random_rational_point</span><span class="p">(</span><span class="n">den_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_bound</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>           <span class="c1"># random</span>
 <span class="go">(-24/25 : 7/25 : 1)</span>
-
 <span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">random_rational_point</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
@@ -863,10 +873,11 @@ and for the use of the parameters <code class="docutils literal notranslate"><sp
 <p>EXAMPLES:</p>
 <p>Examples over <span class="math notranslate nohighlight">\(\QQ\)</span></p>
 <div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">R</span><span class="o">.&lt;</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+
+<span class="gp">sage: </span><span class="c1"># needs sage.libs.pari</span>
 <span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">*</span><span class="n">z</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">(0 : 1 : 0)</span>
-
 <span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
@@ -875,7 +886,7 @@ and for the use of the parameters <code class="docutils literal notranslate"><sp
 <span class="go">x^2 + 2*y^2 + z^2 has no rational points over Rational Field!</span>
 
 <span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span><span class="o">*</span><span class="n">z</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: Conic Projective Conic Curve over Rational Field defined by</span>
@@ -883,71 +894,76 @@ and for the use of the parameters <code class="docutils literal notranslate"><sp
 </pre></div>
 </div>
 <p>Examples over number fields</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
-<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>                                          <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">b</span><span class="p">])</span>                                              <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>                         <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">p</span>                                         <span class="c1"># output is random          # optional - sage.rings.number_field</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># needs sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">P</span><span class="o">.&lt;</span><span class="n">x</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[]</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">b</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">b</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span>                                         <span class="c1"># output is random</span>
 <span class="go">(1/3*b^2 - 4/3*b + 4/3 : b^2 - 2 : 1)</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>                                      <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
 <span class="go">0</span>
 
-<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">i</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>                                            <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>                                               <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span> <span class="c1"># output is random          # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">K</span><span class="o">.&lt;</span><span class="n">i</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>                                            <span class="c1"># needs sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">D</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>                                               <span class="c1"># needs sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;rnfisnorm&#39;</span><span class="p">)</span>   <span class="c1"># output is random          # needs sage.rings.number_field</span>
 <span class="go">(-3 : 4*i : 1)</span>
 
-<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">s</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>                                             <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>                            <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="c1"># needs sage.libs.pari sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">L</span><span class="o">.&lt;</span><span class="n">s</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">QuadraticField</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">()</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">])</span>                                              <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                        <span class="c1"># output is random          # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">E</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                        <span class="c1"># output is random</span>
 <span class="go">(-1 : -s : 1)</span>
 </pre></div>
 </div>
 <p>Currently Magma is better at solving conics over number fields than
 Sage, so it helps to use the algorithm ‘magma’ if Magma is installed:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>           <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="c1"># optional - magma, needs sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>
 <span class="gp">....: </span>                     <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">sage: </span><span class="n">q</span>                       <span class="c1"># output is random,       # optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">q</span>                                         <span class="c1"># output is random</span>
 <span class="go">(1/5*b^2 : 1/5*b^2 : 1)</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="nb">list</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>                  <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">defining_polynomial</span><span class="p">()(</span><span class="nb">list</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
 <span class="go">0</span>
-<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">1.5</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>                     <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">1.5</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
 <span class="go">True</span>
-
-<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>       <span class="c1"># random, optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">D</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>       <span class="c1"># random</span>
+<span class="gp">....: </span>                 <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">(1 : 2*i : 1)</span>
-
-<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>       <span class="c1"># random, optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">E</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>       <span class="c1"># random</span>
 <span class="gp">....: </span>                 <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">(-s : 1 : 1)</span>
 
-<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">L</span><span class="o">.</span><span class="n">gen</span><span class="p">(),</span> <span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span>                                         <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>           <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">q</span>                                         <span class="c1"># random, optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="c1"># needs sage.libs.pari sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">F</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">L</span><span class="o">.</span><span class="n">gen</span><span class="p">(),</span> <span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">q</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>       <span class="c1"># optional - magma</span>
+<span class="gp">sage: </span><span class="n">q</span>  <span class="c1"># random                                   # optional - magma</span>
 <span class="go">(-10/7*s + 40/7 : 5/7*s - 6/7 : 1)</span>
-<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>                                <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">p</span>                                         <span class="c1"># random                    # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">p</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">sage: </span><span class="n">p</span>  <span class="c1"># random</span>
 <span class="go">(788210*s - 1114700 : -171135*s + 242022 : 1)</span>
-<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>                         <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>                     <span class="c1"># optional - magma</span>
 <span class="go">True</span>
 
-<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">L</span><span class="o">.</span><span class="n">gen</span><span class="p">(),</span> <span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">])</span>                                         <span class="c1"># optional - sage.rings.number_field</span>
-<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>           <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="c1"># needs sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">G</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="n">L</span><span class="o">.</span><span class="n">gen</span><span class="p">(),</span> <span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">])</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>       <span class="c1"># optional - magma</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>                                <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>        <span class="c1"># needs sage.libs.pari</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>             <span class="c1"># optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">has_rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span>
+<span class="gp">....: </span>                     <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">False</span>
-<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>               <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">)</span>           <span class="c1"># optional - magma</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: Conic Projective Conic Curve over Number Field in s</span>
 <span class="go">with defining polynomial x^2 - 2 with s = 1.414213562373095?</span>
 <span class="go">defined by s*x^2 + 30*y^2 - 21*z^2 has no rational points over</span>
 <span class="go">Number Field in s with defining polynomial x^2 - 2 with s = 1.414213562373095?!</span>
-<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>               <span class="c1"># optional - magma  # optional - sage.rings.number_field</span>
+<span class="gp">sage: </span><span class="n">G</span><span class="o">.</span><span class="n">rational_point</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span>           <span class="c1"># optional - magma</span>
 <span class="gp">....: </span>                 <span class="n">read_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
@@ -958,11 +974,11 @@ Sage, so it helps to use the algorithm ‘magma’ if Magma is installed:</p>
 </pre></div>
 </div>
 <p>Examples over finite fields</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">7</span><span class="o">^</span><span class="mi">20</span><span class="p">)</span>                                             <span class="c1"># optional - sage.rings.finite_rings</span>
-<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">]);</span> <span class="n">C</span>                                              <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">F</span><span class="o">.&lt;</span><span class="n">a</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">FiniteField</span><span class="p">(</span><span class="mi">7</span><span class="o">^</span><span class="mi">20</span><span class="p">)</span>                                             <span class="c1"># needs sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">C</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">]);</span> <span class="n">C</span>                                              <span class="c1"># needs sage.rings.finite_rings</span>
 <span class="go">Projective Conic Curve over Finite Field in a of size 7^20</span>
 <span class="go">defined by x^2 + a*y^2 + 2*z^2</span>
-<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>  <span class="c1"># output is random                                # optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">C</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                        <span class="c1"># output is random          # needs sage.rings.finite_rings</span>
 <span class="go">(4*a^19 + 5*a^18 + 4*a^17 + a^16 + 6*a^15 + 3*a^13 + 6*a^11 + a^9</span>
 <span class="go">   + 3*a^8 + 2*a^7 + 4*a^6 + 3*a^5 + 3*a^4 + a^3 + a + 6</span>
 <span class="go"> : 5*a^18 + a^17 + a^16 + 6*a^15 + 4*a^14 + a^13 + 5*a^12 + 5*a^10</span>
@@ -971,10 +987,10 @@ Sage, so it helps to use the algorithm ‘magma’ if Magma is installed:</p>
 </pre></div>
 </div>
 <p>Examples over <span class="math notranslate nohighlight">\(\RR\)</span> and <span class="math notranslate nohighlight">\(\CC\)</span></p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">CC</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                                 <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">CC</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">(0 : 1.22474487139159*I : 1)</span>
 
-<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">RR</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>                                 <span class="c1"># optional - sage.rings.finite_rings</span>
+<span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">RR</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">rational_point</span><span class="p">()</span>
 <span class="go">Traceback (most recent call last):</span>
 <span class="go">...</span>
 <span class="go">ValueError: Conic Projective Conic Curve over Real Field</span>
@@ -989,7 +1005,7 @@ Sage, so it helps to use the algorithm ‘magma’ if Magma is installed:</p>
 <span class="sig-name descname"><span class="pre">singular_point</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sage.schemes.plane_conics.con_field.ProjectiveConic_field.singular_point" title="Permalink to this definition">#</a></dt>
 <dd><p>Return a singular rational point of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
 <p>EXAMPLES:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">singular_point</span><span class="p">()</span>                          <span class="c1"># optional - sage.rings.finite_rings</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">Conic</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">singular_point</span><span class="p">()</span>
 <span class="go">(1 : 1 : 1)</span>
 </pre></div>
 </div>
@@ -1059,8 +1075,7 @@ is the defining equation of <code class="docutils literal notranslate"><span cla
 </div>
 <p>The function <code class="docutils literal notranslate"><span class="pre">variable_names()</span></code> is required
 for the following construction:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span><span class="o">.&lt;</span><span class="n">p</span><span class="p">,</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="gp">sage: </span><span class="n">C</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">C</span><span class="o">.&lt;</span><span class="n">p</span><span class="p">,</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Conic</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span> <span class="n">C</span>                                   <span class="c1"># needs sage.libs.singular</span>
 <span class="go">Projective Conic Curve over Rational Field defined by p^2 + q^2 + r^2</span>
 </pre></div>
 </div>
@@ -1177,6 +1192,7 @@ for the following construction:</p>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
     <script>window.MathJax = {"tex": {"macros": {"ZZ": "\\Bold{Z}", "NN": "\\Bold{N}", "RR": "\\Bold{R}", "CC": "\\Bold{C}", "QQ": "\\Bold{Q}", "QQbar": "\\overline{\\QQ}", "GF": ["\\Bold{F}_{#1}", 1], "Zp": ["\\Bold{Z}_{#1}", 1], "Qp": ["\\Bold{Q}_{#1}", 1], "Zmod": ["\\ZZ/#1\\ZZ", 1], "CDF": "\\Bold{C}", "CIF": "\\Bold{C}", "CLF": "\\Bold{C}", "RDF": "\\Bold{R}", "RIF": "\\Bold{I} \\Bold{R}", "RLF": "\\Bold{R}", "SL": "\\mathrm{SL}", "PSL": "\\mathrm{PSL}", "lcm": "\\mathop{\\operatorname{lcm}}", "Bold": ["\\mathbf{#1}", 1]}, "inlineMath": [["$", "$"], ["\\(", "\\)"]], "maxBuffer": 51200, "autoload": {"color": [], "colorv2": ["color"]}}}</script>
-    <script defer="defer" src="../../../../_static/mathjax/tex-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script src="../../../../_static/jupyter-sphinx-furo.js"></script>
     </body>
 </html>

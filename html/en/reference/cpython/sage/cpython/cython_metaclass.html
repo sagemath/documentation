@@ -15,6 +15,8 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/thebelab.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom-furo.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom-jupyter-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom-codemirror-monokai.css" />
     
     
 
@@ -157,7 +159,7 @@
     <img class="sidebar-logo only-dark" src="../../../_static/logo_sagemath_white.svg" alt="Dark Logo"/>
   </div>
   
-      <span class="sidebar-brand-text">Sage 10.1 Reference Manual</span>
+      <span class="sidebar-brand-text">Sage 10.2 Reference Manual</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -230,10 +232,13 @@ behaviour, so things might break in future versions.</p>
 file if you are using one).</p>
 <p>In the extension type (a.k.a. <code class="docutils literal notranslate"><span class="pre">cdef</span> <span class="pre">class</span></code>) for which you want to
 define a metaclass, define a method <code class="docutils literal notranslate"><span class="pre">__getmetaclass__</span></code> with a single
-unused argument. This method should return a type to be used as
+unused argument, and turn off the Cython directive
+<code class="docutils literal notranslate"><span class="pre">always_allow_keywords</span></code>. This method should return a type to be used as
 metaclass:</p>
-<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="k">cimport</span> <span class="nn">sage.cpython.cython_metaclass</span>
+<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="k">cimport</span> <span class="nn">cython</span>
+<span class="k">cimport</span> <span class="nn">sage.cpython.cython_metaclass</span>
 <span class="k">cdef</span> <span class="k">class</span> <span class="nf">MyCustomType</span><span class="p">():</span>
+    <span class="nd">@cython</span><span class="o">.</span><span class="n">always_allow_keywords</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__getmetaclass__</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
         <span class="k">from</span> <span class="nn">foo</span> <span class="k">import</span> <span class="n">MyMetaclass</span>
         <span class="k">return</span> <span class="n">MyMetaclass</span>
@@ -267,10 +272,12 @@ this from Cython. In particular, the metaclass cannot have any
 attributes or virtual methods.</p>
 </div>
 <p>EXAMPLES:</p>
-<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span>                                                               <span class="c1"># optional - sage.misc.cython</span>
+<div class="highlight-ipycon notranslate"><div class="highlight"><pre><span></span><span class="gp">sage: </span><span class="n">cython</span><span class="p">(</span>                                                                       <span class="c1"># needs sage.misc.cython</span>
 <span class="gp">....: </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="gp">....: </span><span class="s1">cimport cython</span>
 <span class="gp">....: </span><span class="s1">cimport sage.cpython.cython_metaclass</span>
 <span class="gp">....: </span><span class="s1">cdef class MyCustomType():</span>
+<span class="gp">....: </span><span class="s1">    @cython.always_allow_keywords(False)</span>
 <span class="gp">....: </span><span class="s1">    def __getmetaclass__(_):</span>
 <span class="gp">....: </span><span class="s1">        class MyMetaclass(type):</span>
 <span class="gp">....: </span><span class="s1">            def __init__(*args):</span>
@@ -282,9 +289,9 @@ attributes or virtual methods.</p>
 <span class="gp">....: </span><span class="s1">&#39;&#39;&#39;)</span>
 <span class="go">Calling MyMetaclass.__init__(&lt;class &#39;...MyCustomType&#39;&gt;, None, None, None)</span>
 <span class="go">Calling MyMetaclass.__init__(&lt;class &#39;...MyDerivedType&#39;&gt;, None, None, None)</span>
-<span class="gp">sage: </span><span class="n">MyCustomType</span><span class="o">.</span><span class="vm">__class__</span>                                                <span class="c1"># optional - sage.misc.cython</span>
+<span class="gp">sage: </span><span class="n">MyCustomType</span><span class="o">.</span><span class="vm">__class__</span>                                                        <span class="c1"># needs sage.misc.cython</span>
 <span class="go">&lt;class &#39;...MyMetaclass&#39;&gt;</span>
-<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyPythonType</span><span class="p">(</span><span class="n">MyDerivedType</span><span class="p">):</span>                                    <span class="c1"># optional - sage.misc.cython</span>
+<span class="gp">sage: </span><span class="k">class</span> <span class="nc">MyPythonType</span><span class="p">(</span><span class="n">MyDerivedType</span><span class="p">):</span>                                            <span class="c1"># needs sage.misc.cython</span>
 <span class="gp">....: </span>    <span class="k">pass</span>
 <span class="go">Calling MyMetaclass.__init__(&lt;class &#39;...MyPythonType&#39;&gt;, &#39;MyPythonType&#39;, (&lt;class &#39;...MyDerivedType&#39;&gt;,), {...})</span>
 </pre></div>
@@ -384,5 +391,6 @@ calls <code class="docutils literal notranslate"><span class="pre">PyType_Ready(
     <script src="../../../_static/thebelab-helper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/jupyter-sphinx-furo.js"></script>
     </body>
 </html>
