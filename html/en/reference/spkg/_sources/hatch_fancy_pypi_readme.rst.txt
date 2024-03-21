@@ -28,9 +28,9 @@ standard
 Dependencies
 ------------
 
-- $(PYTHON_TOOLCHAIN)
-- :ref:`spkg_hatchling`
 - $(PYTHON)
+- :ref:`spkg_hatchling`
+- :ref:`spkg_pip`
 
 Version Information
 -------------------
@@ -47,60 +47,64 @@ install-requires.txt::
 Equivalent System Packages
 --------------------------
 
-alpine:
+.. tab:: Alpine
 
-.. CODE-BLOCK:: bash
+   .. CODE-BLOCK:: bash
 
-    $ apk add py3-hatch-fancy-pypi-readme
-
-
-arch:
-
-.. CODE-BLOCK:: bash
-
-    $ sudo pacman -S  python-hatch-fancy-pypi-readme
+       $ apk add py3-hatch-fancy-pypi-readme 
 
 
-Debian/Ubuntu:
+.. tab:: Arch Linux
 
-.. CODE-BLOCK:: bash
+   .. CODE-BLOCK:: bash
 
-    $ sudo apt-get install  python-hatch-fancy-pypi-readme
-
-
-Fedora/Redhat/CentOS:
-
-.. CODE-BLOCK:: bash
-
-    $ sudo yum install  python-hatch-fancy-pypi-readme
+       $ sudo pacman -S python-hatch-fancy-pypi-readme 
 
 
-freebsd:
+.. tab:: Debian/Ubuntu
 
-.. CODE-BLOCK:: bash
+   .. CODE-BLOCK:: bash
 
-    $ sudo pkg install devel/py-hatch-fancy-pypi-readme
-
-
-gentoo:
-
-.. CODE-BLOCK:: bash
-
-    $ sudo emerge dev-python/hatch-fancy-pypi-readme
+       $ sudo apt-get install python3-hatch-fancy-pypi-readme 
 
 
-macports:
-install the following packages: py-hatch-fancy-pypi-readme
+.. tab:: Fedora/Redhat/CentOS
 
-opensuse:
+   .. CODE-BLOCK:: bash
 
-.. CODE-BLOCK:: bash
+       $ sudo yum install python-hatch-fancy-pypi-readme 
 
-    $ sudo zypper install python-hatch-fancy-pypi-readme
+
+.. tab:: FreeBSD
+
+   .. CODE-BLOCK:: bash
+
+       $ sudo pkg install devel/py-hatch-fancy-pypi-readme 
+
+
+.. tab:: Gentoo Linux
+
+   .. CODE-BLOCK:: bash
+
+       $ sudo emerge dev-python/hatch-fancy-pypi-readme 
+
+
+.. tab:: MacPorts
+
+   .. CODE-BLOCK:: bash
+
+       $ sudo port install py-hatch-fancy-pypi-readme 
+
+
+.. tab:: openSUSE
+
+   .. CODE-BLOCK:: bash
+
+       $ sudo zypper install python-hatch-fancy-pypi-readme 
 
 
 
 If the system package is installed and if the (experimental) option
---enable-system-site-packages is passed to ./configure, then ./configure
+``--enable-system-site-packages`` is passed to ``./configure``, then ``./configure``
 will check if the system package can be used.
 
