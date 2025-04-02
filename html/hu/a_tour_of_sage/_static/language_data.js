@@ -1,13 +1,6 @@
 /*
- * language_data.js
- * ~~~~~~~~~~~~~~~~
- *
  * This script contains the language-specific data used by searchtools.js,
  * namely the list of stopwords, stemmer, scorer and splitter.
- *
- * :copyright: Copyright 2007-2024 by the Sphinx team, see AUTHORS.
- * :license: BSD, see LICENSE for details.
- *
  */
 
 var stopwords = ["a", "abban", "ahhoz", "ahogy", "ahol", "aki", "akik", "akkor", "alatt", "amely", "amelyek", "amelyekben", "amelyeket", "amelyet", "amelynek", "ami", "amikor", "amit", "amolyan", "am\u00edg", "annak", "arra", "arr\u00f3l", "az", "azok", "azon", "azonban", "azt", "azt\u00e1n", "azut\u00e1n", "azzal", "az\u00e9rt", "be", "bel\u00fcl", "benne", "b\u00e1r", "cikk", "cikkek", "cikkeket", "csak", "de", "e", "ebben", "eddig", "egy", "egyes", "egyetlen", "egyik", "egyre", "egy\u00e9b", "eg\u00e9sz", "ehhez", "ekkor", "el", "ellen", "els\u0151", "el\u00e9g", "el\u0151", "el\u0151sz\u00f6r", "el\u0151tt", "emilyen", "ennek", "erre", "ez", "ezek", "ezen", "ezt", "ezzel", "ez\u00e9rt", "fel", "fel\u00e9", "hanem", "hiszen", "hogy", "hogyan", "igen", "ill", "ill.", "illetve", "ilyen", "ilyenkor", "ism\u00e9t", "ison", "itt", "jobban", "j\u00f3", "j\u00f3l", "kell", "kellett", "keress\u00fcnk", "kereszt\u00fcl", "ki", "k\u00edv\u00fcl", "k\u00f6z\u00f6tt", "k\u00f6z\u00fcl", "legal\u00e1bb", "legyen", "lehet", "lehetett", "lenne", "lenni", "lesz", "lett", "maga", "mag\u00e1t", "majd", "meg", "mellett", "mely", "melyek", "mert", "mi", "mikor", "milyen", "minden", "mindenki", "mindent", "mindig", "mint", "mintha", "mit", "mivel", "mi\u00e9rt", "most", "m\u00e1r", "m\u00e1s", "m\u00e1sik", "m\u00e9g", "m\u00edg", "nagy", "nagyobb", "nagyon", "ne", "nekem", "neki", "nem", "nincs", "n\u00e9ha", "n\u00e9h\u00e1ny", "n\u00e9lk\u00fcl", "olyan", "ott", "pedig", "persze", "r\u00e1", "s", "saj\u00e1t", "sem", "semmi", "sok", "sokat", "sokkal", "szemben", "szerint", "szinte", "sz\u00e1m\u00e1ra", "tal\u00e1n", "teh\u00e1t", "teljes", "tov\u00e1bb", "tov\u00e1bb\u00e1", "t\u00f6bb", "ugyanis", "utols\u00f3", "ut\u00e1n", "ut\u00e1na", "vagy", "vagyis", "vagyok", "valaki", "valami", "valamint", "val\u00f3", "van", "vannak", "vele", "vissza", "viszont", "volna", "volt", "voltak", "voltam", "voltunk", "\u00e1ltal", "\u00e1ltal\u00e1ban", "\u00e1t", "\u00e9n", "\u00e9ppen", "\u00e9s", "\u00edgy", "\u00f6ssze", "\u00fagy", "\u00faj", "\u00fajabb", "\u00fajra", "\u0151", "\u0151k", "\u0151ket"];
