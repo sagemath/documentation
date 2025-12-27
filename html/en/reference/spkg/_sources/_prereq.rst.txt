@@ -14,6 +14,9 @@ and the :wikipedia:`bash <Bash_(Unix_shell)>` shell,
 the following standard command-line development tools must be installed on your
 computer:
 
+- **C compiler** (**C/C++** - compiler required on macOS): a sufficently modern compiler.
+  Ideally these can be directly used to build Sage. The options are essentially GNU gcc/g++ on Linux,
+  and clang/clang++ on macOS (which conventionally misnames them gcc/g++), on BSDs, and also on Linux.
 - **make**: GNU make, version 3.80 or later. Version 3.82 or later is recommended.
 - **m4**: GNU m4 1.4.2 or later (non-GNU or older versions might also work).
 - **perl**: version 5.8.0 or later.
@@ -22,19 +25,43 @@ computer:
 - **python**: Python 3.4 or later, or Python 2.7.
   (This range of versions is a minimal requirement for internal purposes of the SageMath
   build system, which is referred to as ``sage-bootstrap-python``.)
+- **patch**.
+- **boost**: the library ``boost`` with its headers.
+- **bzip2**: the executable ``bzip2`` and the library ``libbz2`` with its headers.
+  (some Linux distros package these separately, e.g. Debian/Ubuntu needs
+  packages ``bzip2`` and ``libbz2-dev``; Fedora needs ``bzip2`` and ``bzip2-devel``.)
+- **pkgconf**, also known as ``pkg-config``.
+- **zlib**: the library ``libz`` with its headers, and its pkg-config zlib.pc file.
+  (some Linux distros package these separately.)
+  On macOS we provide a basic zlib.pc file in build/platform/macos/pkgconfig,
+  which, if needed, gets prepended to PKG_CONFIG_PATH by ./configure.
 
 Other versions of these may work, but they are untested.
 
-On macOS, suitable versions of all of these tools are provided
-by the Xcode Command Line Tools.  To install them, open a terminal
-window and run ``xcode-select --install``; then click "Install" in the
+On macOS, suitable versions of most of these tools are provided
+by the Xcode Command Line Tools.  To install them, after installing XCode itself,
+open a terminal window and run ``xcode-select --install``; then click "Install" in the
 pop-up window.  If the Xcode Command Line Tools are already installed,
 you may want to check if they need to be updated by typing
-``softwareupdate -l``.
+``softwareupdate -l``. The remaining are provided by either one of macOS's
+"missing package managers", such as Homebrew, or as standalone
+tools. In particular ``pkgconf`` is available as `pkg-config_pkg
+<https://github.com/donmccaughey/pkg-config_pkg>`_.
 
 On Linux, ``ar`` and ``ranlib`` are in the `binutils
 <https://www.gnu.org/software/binutils/>`_ package.  The other
 programs are usually located in packages with their respective names.
+
+Boost is available with most supported distribitions.
+It can also be installed using the Boost's project `installer B2
+<https://www.boost.org/doc/user-guide/getting-started.html#_download_boost>`_.
+After downloading and untarring the archive, and changing to the directory with the sources,
+``./bootstrap.sh && ./b2 && ./b2 install --prefix=/usr/local`` will
+install Boost in ``/usr/local``; this takes around 5 minutes of wall clock time
+on a moderately fast M1 Apple Mac. Instead of ``/usr/local`` one may choose another location,
+say ``/opt/foo``,which then might have to be passed (in case the location is not known
+to the toolchain) to Sage via its ``./configure``,
+with ``--with-boost=/opt/foo`` option.
 
 On Redhat-derived systems not all perl components are installed by
 default and you might have to install the ``perl-ExtUtils-MakeMaker``
@@ -75,21 +102,23 @@ Equivalent System Packages
    .. CODE-BLOCK:: bash
 
        $ apk add binutils make m4 perl python3 tar bc gcc g++ ca-certificates \
-             coreutils
+             coreutils patch bzip2 pkgconf zlib-dev boost boost-dev
 
 
 .. tab:: Arch Linux
 
    .. CODE-BLOCK:: bash
 
-       $ sudo pacman -S binutils make m4 perl python tar bc gcc which
+       $ sudo pacman -S binutils make m4 perl python tar bc gcc bzip2 which \
+             patch pkgconf zlib boost libboost-devel
 
 
 .. tab:: conda-forge
 
    .. CODE-BLOCK:: bash
 
-       $ conda install compilers make m4 perl python tar bc
+       $ conda install compilers make m4 perl python tar bc patch bzip2 \
+             pkg-config zlib zlib-devel libboost-devel
 
 
 .. tab:: Debian/Ubuntu
@@ -97,23 +126,26 @@ Equivalent System Packages
    .. CODE-BLOCK:: bash
 
        $ sudo apt-get install binutils make m4 perl flex python3 tar bc gcc \
-             g++ ca-certificates
+             libbz2-dev bzip2 g++ ca-certificates patch pkg-config libz-dev \
+             libboost-dev
 
 
 .. tab:: Fedora/Redhat/CentOS
 
    .. CODE-BLOCK:: bash
 
-       $ sudo yum install binutils make m4 python3 perl \
-             perl-ExtUtils-MakeMaker tar gcc gcc-c++ findutils which diffutils \
-             perl-IPC-Cmd flex
+       $ sudo dnf install binutils make m4 python3 perl \
+             perl-ExtUtils-MakeMaker tar gcc bzip2 bzip2-devel gcc-c++ \
+             findutils which diffutils perl-IPC-Cmd flex patch pkg-config \
+             zlib-devel boost-devel
 
 
 .. tab:: FreeBSD
 
    .. CODE-BLOCK:: bash
 
-       $ sudo pkg install gmake automake bash dash python
+       $ sudo pkg install gmake automake bash dash python patch bzip2 \
+             devel/pkgconf zlib devel/boost-libs
 
 
 .. tab:: Gentoo Linux
@@ -125,23 +157,31 @@ Equivalent System Packages
              dev-libs/mpc sys-libs/glibc sys-kernel/linux-headers \
              dev-lang/perl sys-devel/m4 sys-devel/bc dev-lang/python \
              sys-devel/flex app-misc/ca-certificates dev-libs/libxml2 \
-             sys-apps/findutils sys-apps/which sys-apps/diffutils
+             sys-apps/findutils sys-apps/which sys-apps/diffutils \
+             sys-devel/patch app-arch/bzip2 dev-util/pkgconf sys-libs/zlib \
+             dev-libs/boost
 
 
 .. tab:: Homebrew
 
-   No package needed.
+   .. CODE-BLOCK:: bash
+
+       $ brew install pkgconf zlib boost 
+
 
 .. tab:: MacPorts
 
-   No package needed.
+   .. CODE-BLOCK:: bash
+
+       $ sudo port install pkgconfig zlib boost
+
 
 .. tab:: Nixpkgs
 
    .. CODE-BLOCK:: bash
 
        $ nix-env --install binutils gnumake gnum4 perl python3 gnutar bc gcc \
-             bash
+             bash gnupatch bzip2 pkg-config zlib boost
 
 
 .. tab:: openSUSE
@@ -150,8 +190,13 @@ Equivalent System Packages
 
        $ sudo zypper install binutils make m4 gawk perl python3 tar bc which \
              glibc-locale-base gcc gcc-c++ ca-certificates gzip findutils \
-             diffutils
+             diffutils patch bzip2 pkgconfig\(bzip2\) pkgconf \
+             pkgconfig\(zlib\) boost-base
 
+
+.. tab:: pyodide
+
+   install the following packages: boost-cpp
 
 .. tab:: Slackware
 
@@ -159,7 +204,8 @@ Equivalent System Packages
 
        $ sudo slackpkg install binutils make guile gc libffi gcc-13 gcc-g++-13 \
              libmpc glibc kernel-headers perl m4 bc python3 flex \
-             ca-certificates libxml2 cyrus-sasl
+             ca-certificates libxml2 cyrus-sasl patch bzip2 pkg-config zlib \
+             boost
 
 
 .. tab:: Void Linux
@@ -168,9 +214,12 @@ Equivalent System Packages
 
        $ sudo xbps-install bc binutils gcc libgomp-devel m4 make perl python3 \
              tar bash which diffutils gzip python3-devel bzip2-devel xz \
-             liblzma-devel libffi-devel zlib-devel libxcrypt-devel
+             liblzma-devel libffi-devel zlib-devel libxcrypt-devel patch \
+             bzip2-devel pkgconf boost-devel
 
 
+
+See https://repology.org/project/boost/versions
 
 If the system package is installed, ``./configure`` will check if it can be used.
 

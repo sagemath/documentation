@@ -5,14 +5,14 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Setting Up Git" href="git_setup.html" /><link rel="prev" title="Welcome to Sage Developer Guide" href="index.html" />
 
-    <!-- Generated with Sphinx 8.1.3 and Furo 2024.07.18 -->
+    <!-- Generated with Sphinx 8.2.3 and Furo 2024.07.18 -->
         <title>Development Walk-through - Developer Guide</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=613ab9ff" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
-    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css?v=7f9a90b1" />
-    <link rel="stylesheet" type="text/css" href="_static/jupyter-sphinx.css?v=572af1d6" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/jupyter-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="_static/thebelab.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
     <link rel="stylesheet" type="text/css" href="_static/custom-furo.css?v=d2ecc25a" />
@@ -205,7 +205,7 @@
     <img class="sidebar-logo only-dark" src="_static/logo_sagemath_white.svg" alt="Dark Logo"/>
   </div>
   
-      <span class="sidebar-brand-text">Version 10.6 Documentation</span>
+      <span class="sidebar-brand-text">Version 10.8 Documentation</span>
   
 </a><div class="select-wrapper">
   <select id="versions-menu" onchange="changeVersion()">
@@ -257,7 +257,8 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="packaging.html">Packaging Third-Party Code for Sage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="packaging_sage_library.html">Packaging the Sage Library for Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="downstream.html">Packaging SageMath Downstream</a></li>
+<li class="toctree-l1"><a class="reference internal" href="packaging_sage_library.html">Modularized Distribution</a></li>
 </ul>
 
 </div>
@@ -307,74 +308,108 @@
 <p>This section is a concise overview of the Sage development process. We will see
 how to make changes to the Sage source code and record them in the Git revision
 control system.</p>
-<p>In the sections of the following chapter <a class="reference internal" href="index.html#section-development-on-github"><span class="std std-ref">Working on GitHub</span></a>,
-we will look at communicating these changes back to the Sage project. All
-changes to Sage source code have to go through <a class="reference external" href="https://github.com/sagemath/sage">the Sage repository</a> on GitHub.</p>
-<p>For examples, we assume your name Alice. Always replace it with your own name.</p>
-<section id="checking-git">
-<span id="section-walkthrough-setup-git"></span><h2>Checking Git<a class="headerlink" href="#checking-git" title="Link to this heading">¶</a></h2>
-<p>First, open a shell (for instance, Terminal on Mac) and check that Git works:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost ~]$ </span>git
-<span class="go">usage: git [--version] [--help] [-C &lt;path&gt;] [-c name=value]</span>
-<span class="go">...</span>
-<span class="go">The most commonly used git commands are:</span>
-<span class="go">   add        Add file contents to the index</span>
-<span class="go">...</span>
-<span class="go">   tag        Create, list, delete or verify a tag object signed with GPG</span>
-
-<span class="go">&#39;git help -a&#39; and &#39;git help -g&#39; lists available subcommands and some</span>
-<span class="go">concept guides. See &#39;git help &lt;command&gt;&#39; or &#39;git help &lt;concept&gt;&#39;</span>
-<span class="go">to read about a specific subcommand or concept.</span>
+<section id="quick-start">
+<span id="section-quick-start"></span><h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<p>If you are in a hurry, you can skip the details and just follow these steps:</p>
+<ol class="arabic">
+<li><p>Install Git (see <a class="reference internal" href="git_setup.html#section-git-install"><span class="std std-ref">Installing Git</span></a>) and <a class="reference external" href="https://github.com/conda-forge/miniforge?tab=readme-ov-file#install">Conda</a>.</p></li>
+<li><p>Clone the Sage repository from GitHub</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>clone<span class="w"> </span>--origin<span class="w"> </span>upstream<span class="w"> </span>https://github.com/sagemath/sage.git
 </pre></div>
 </div>
-<p>Don’t worry about the giant list of subcommands. You really only need a handful
-of them for effective development, and we will walk you through them in this
-guide. If you got a “command not found” error, then you don’t have Git
+</li>
+<li><p>Change into the directory</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>sage
+</pre></div>
+</div>
+</li>
+<li><p>Create a new Conda environment</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>--file<span class="w"> </span>environment-3.12-linux.yml<span class="w"> </span>--name<span class="w"> </span>sage-dev
+<span class="gp">$ </span>conda<span class="w"> </span>activate<span class="w"> </span>sage-dev
+</pre></div>
+</div>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">environment-3.12-linux.yml</span></code> with the appropriate file for your system.</p>
+</li>
+<li><p>Build and install Sage</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>--no-build-isolation<span class="w"> </span>--editable<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+<li><p>Create a new branch for your changes</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>my_branch<span class="w"> </span>develop
+</pre></div>
+</div>
+</li>
+<li><p>Make your changes, and push them to your fork on GitHub</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>add<span class="w"> </span>.
+<span class="gp">$ </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Your commit message here&quot;</span>
+<span class="gp">$ </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>my_branch
+</pre></div>
+</div>
+</li>
+<li><p>Create a pull request on GitHub to merge your changes into the Sage repository.</p></li>
+</ol>
+</section>
+<section id="checking-git">
+<span id="section-walkthrough-setup-git"></span><h2>Checking Git<a class="headerlink" href="#checking-git" title="Link to this heading">¶</a></h2>
+<p>First, open a shell (for instance, Terminal on Mac) and check that Git works</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>--version
+<span class="go">git version xyz</span>
+</pre></div>
+</div>
+<p>If you got a “command not found” error, then you don’t have Git
 installed; now is the time to install it. See
 <a class="reference internal" href="git_setup.html#section-git-install"><span class="std std-ref">Installing Git</span></a> for instructions.</p>
 <p>Because we also track who does what changes with Git, you must tell
-Git how you want to be known. Check if Git knows you:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost ~]$ </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name
+Git how you want to be known. Check if Git knows you</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name
 <span class="go">Alice Adventure</span>
-<span class="gp">[alice@localhost ~]$ </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email
+<span class="gp">$ </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email
 <span class="go">alice@wonderland.com</span>
 </pre></div>
 </div>
-<p>If you have multiple computers, then use the same name on each of them.  This
+<p>If you see your name and email address, then you are all set. This
 name/email combination ends up in commits. So if it’s not set yet, do it now
 before you forget! This only needs to be done once. See
 <a class="reference internal" href="git_setup.html#section-git-setup-name"><span class="std std-ref">Configuring Git</span></a> for instructions.</p>
 </section>
 <section id="obtaining-the-sage-source-code">
 <span id="section-walkthrough-sage-source"></span><h2>Obtaining the Sage source code<a class="headerlink" href="#obtaining-the-sage-source-code" title="Link to this heading">¶</a></h2>
-<p>Obviously one needs the Sage source code to develop. You can use your
-local installation of Sage (if you installed Sage from source), or
-(to start from scratch) download it from our Sage repository on GitHub:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost ~]$ </span>git<span class="w"> </span>clone<span class="w"> </span>--origin<span class="w"> </span>upstream<span class="w"> </span>https://github.com/sagemath/sage.git
+<p>Obviously one needs the Sage source code to develop. You can download it
+from our Sage repository on GitHub</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>clone<span class="w"> </span>--origin<span class="w"> </span>upstream<span class="w"> </span>https://github.com/sagemath/sage.git
 <span class="go">Cloning into &#39;sage&#39;...</span>
-<span class="go">[...]</span>
-<span class="go">Checking connectivity... done.</span>
+<span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>sage
 </pre></div>
 </div>
-<p>This creates a directory named <code class="docutils literal notranslate"><span class="pre">sage</span></code> containing the sources for the
-current stable and development releases of Sage. You next need to switch
-to the develop branch (latest development release):</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost ~]$ </span><span class="nb">cd</span><span class="w"> </span>sage
-<span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>checkout<span class="w"> </span>develop
+<p>This creates a directory named <code class="docutils literal notranslate"><span class="pre">sage</span></code> containing the most recent version of
+the Sage source code.</p>
+</section>
+<section id="building-sage">
+<h2>Building Sage<a class="headerlink" href="#building-sage" title="Link to this heading">¶</a></h2>
+<p>Sage is a large project with many dependencies. To build it, we
+recommend using Conda. If you don’t have Conda installed, you can install it
+by following the <a class="reference external" href="https://github.com/conda-forge/miniforge?tab=readme-ov-file#install">official instructions</a></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>curl<span class="w"> </span>-L<span class="w"> </span>-O<span class="w"> </span><span class="s2">&quot;https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
+<span class="gp">$ </span>bash<span class="w"> </span>Miniforge3-<span class="k">$(</span>uname<span class="k">)</span>-<span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span>.sh
 </pre></div>
 </div>
-<p>Next, build Sage, following the instruction in the file <a class="reference external" href="https://github.com/sagemath/sage/#readme">README.md</a> in <code class="docutils literal notranslate"><span class="pre">SAGE_ROOT</span></code>. If all
-prerequisites to build are in place, the commands <code class="docutils literal notranslate"><span class="pre">./configure</span> <span class="pre">&amp;&amp;</span> <span class="pre">make</span> <span class="pre">-j4</span></code>
-will do it.  Additional details can be found in the section on <a class="reference external" href="../installation/source.html">installation
-from source</a> in the Sage installation guide. If
-you wish to use conda-forge, see the section on <a class="reference external" href="../installation/conda.html">conda</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>macOS allows changing directories without using exact capitalization.
-Beware of this convenience when compiling for macOS. Ignoring exact
-capitalization when changing into <span class="target" id="index-0"></span><code class="xref std std-envvar docutils literal notranslate"><span class="pre">SAGE_ROOT</span></code> can lead to build
-errors for dependencies requiring exact capitalization in path names.</p>
+<p>Now create and activate a new conda environment with the dependencies of Sage
+and a few additional developer tools</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>--file<span class="w"> </span>environment-3.12-linux.yml<span class="w"> </span>--name<span class="w"> </span>sage-dev
+<span class="gp">$ </span>conda<span class="w"> </span>activate<span class="w"> </span>sage-dev
+</pre></div>
 </div>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">environment-3.12-linux.yml</span></code> with the appropriate file for your system.
+You can find the environment files in the root directory of the Sage repository.</p>
+<p>Now you can build and install Sage:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>--no-build-isolation<span class="w"> </span>--editable<span class="w"> </span>.
+</pre></div>
+</div>
+<p>This will install Sage in the current Conda environment.
+You can then start Sage from the command line with <code class="docutils literal notranslate"><span class="pre">sage</span></code>.</p>
+<p>For more information on building Sage we refer to the section <a class="reference external" href="../installation/meson.html">building
+from source</a> in the Sage installation guide.</p>
 </section>
 <section id="branching-out">
 <span id="section-walkthrough-branch"></span><h2>Branching out<a class="headerlink" href="#branching-out" title="Link to this heading">¶</a></h2>
@@ -382,8 +417,8 @@ errors for dependencies requiring exact capitalization in path names.</p>
 Sage repo. A branch is a copy (except that it doesn’t take up twice the space)
 of the Sage source code where you can store your modifications to the Sage
 source code (and which you can push to your fork of the Sage repository on GitHub).</p>
-<p>To begin with, type the command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code>. You will see the following:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>branch
+<p>To begin with, type the command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code>. You will see the following</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>branch
 <span class="go">* develop</span>
 <span class="go">  master</span>
 </pre></div>
@@ -391,26 +426,14 @@ source code (and which you can push to your fork of the Sage repository on GitHu
 <p>The asterisk shows you which branch you are on. Without an argument,
 the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code> command displays a list of all local branches
 with the current one marked by an asterisk.</p>
-<p>It is easy to create a new branch. First make sure you are on the branch from
-which you want to branch out. That is, if you are not currently on the
-<code class="docutils literal notranslate"><span class="pre">develop</span></code> branch, type the command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">develop</span></code>:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>checkout<span class="w"> </span>develop
-<span class="go">Switched to branch &#39;develop&#39;</span>
-<span class="go">Your branch is up-to-date with &#39;origin/develop&#39;.</span>
+<p>It is easy to create a new branch, as follows</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>last_twin_prime<span class="w"> </span>develop
 </pre></div>
 </div>
-<p>Then use the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code> command to create a new branch, as follows:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>branch<span class="w"> </span>last_twin_prime
-</pre></div>
-</div>
-<p>Also note that <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code> creates a new branch, but does not switch
-to it. For this, you have to use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span></code>:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>checkout<span class="w"> </span>last_twin_prime
-<span class="go">Switched to branch &#39;last_twin_prime&#39;</span>
-</pre></div>
-</div>
-<p>Now if you use the command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code>, you will see the following:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>branch
+<p>This will create a new branch named <code class="docutils literal notranslate"><span class="pre">last_twin_prime</span></code> based on
+the <code class="docutils literal notranslate"><span class="pre">develop</span></code> branch and switch to it.</p>
+<p>Now if you use the command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">branch</span></code>, you will see the following</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>branch
 <span class="go">  develop</span>
 <span class="go">* last_twin_prime</span>
 <span class="go">  master</span>
@@ -419,29 +442,6 @@ to it. For this, you have to use <code class="docutils literal notranslate"><spa
 <p>Note that unless you explicitly push a branch to a remote Git repository, the
 branch is a local branch that is only on your computer and not visible to
 anyone else.</p>
-<p>To avoid typing the new branch name twice you can use the shortcut
-<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">last_twin_prime</span> <span class="pre">develop</span></code> to create and switch to the new
-branch based on <code class="docutils literal notranslate"><span class="pre">develop</span></code> in one command.</p>
-</section>
-<section id="the-history">
-<span id="section-walkthrough-logs"></span><h2>The history<a class="headerlink" href="#the-history" title="Link to this heading">¶</a></h2>
-<p>It is always a good idea to check that you are making your edits on the branch
-that you think you are on. The following command shows you the topmost commit
-in detail, including its changes to files:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>show
-</pre></div>
-</div>
-<p>To dig deeper, you can inspect the log:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>log
-</pre></div>
-</div>
-<p>By default, this lists all commits in reverse chronological order.</p>
-<ul class="simple">
-<li><p>If you find your branch to be in the wrong place, see the
-<a class="reference internal" href="git_advanced.html#section-git-recovery"><span class="std std-ref">Reset and recovery</span></a> section.</p></li>
-<li><p>Many tools are available to help you visualize the history tree better.
-For instance, <code class="docutils literal notranslate"><span class="pre">tig</span></code> is a very nice text-mode tool.</p></li>
-</ul>
 </section>
 <section id="editing-the-source-code">
 <span id="section-walkthrough-add-edit"></span><h2>Editing the source code<a class="headerlink" href="#editing-the-source-code" title="Link to this heading">¶</a></h2>
@@ -451,8 +451,8 @@ code should look like to fit into Sage, and how we ensure high code quality
 throughout.</p>
 <p>The Git command <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">status</span></code> is probably the most important of all Git
 commands. It tells you which files changed, and how to continue with recording
-the changes:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>status
+the changes</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>status
 <span class="go">On branch last_twin_prime</span>
 <span class="go">Changes not staged for commit:</span>
 <span class="go">  (use &quot;git add &lt;file&gt;...&quot; to update what will be committed)</span>
@@ -469,66 +469,30 @@ the changes:</p>
 <span class="go">no changes added to commit (use &quot;git add&quot; and/or &quot;git commit -a&quot;)</span>
 </pre></div>
 </div>
-<p>To dig deeper into what was changed in the files you can use:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>diff<span class="w"> </span>some_file.py
+<p>To dig deeper into what was changed in the files you can use</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>diff<span class="w"> </span>some_file.py
 </pre></div>
 </div>
 <p>to show you the differences.</p>
 </section>
-<section id="rebuilding-sage">
-<span id="section-walkthrough-make"></span><h2>Rebuilding Sage<a class="headerlink" href="#rebuilding-sage" title="Link to this heading">¶</a></h2>
-<p>Once you have made any changes, you of course want to build Sage and try out
-your edits. As long as you only modified the Sage library (that is, Python and
-Cython files under <code class="docutils literal notranslate"><span class="pre">src/sage/...</span></code>) you just have to run:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>./sage<span class="w"> </span>-br
+<section id="testing-changes">
+<span id="section-walkthrough-testing"></span><h2>Testing changes<a class="headerlink" href="#testing-changes" title="Link to this heading">¶</a></h2>
+<p>Once you have made any changes, you of course want to try out
+your edits. All changes to Python and Cython files take effect immediately
+after restarting Sage, so there is no need to explicitly rebuild Sage.</p>
+<p>The changes can be tested by running Sage and verifying that the modifications
+work as expected. For example, if you modified a function, you can call it
+directly in Sage to ensure it behaves as intended.</p>
+<p>Additionally, you can write or modify doctests in the relevant files to
+confirm the correctness of your changes.
+To run the doctests for a specific file, use the following command:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>./sage<span class="w"> </span>-t<span class="w"> </span>path/to/your/file.py
 </pre></div>
 </div>
-<p>to rebuild the Sage library and then start Sage.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>All changes to Python files take effect immediately after restarting Sage
-(unless you have used <code class="docutils literal notranslate"><span class="pre">./configure</span> <span class="pre">--disable-editable</span></code> when you built
-Sage). Hence you can just start Sage instead of <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-br</span></code> if only Python
-files were modified.</p>
-</div>
-<p>If you made changes to <a class="reference internal" href="packaging.html#chapter-packaging"><span class="std std-ref">third-party packages</span></a>
-installed as part of Sage, then you have to run</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>make<span class="w"> </span>build
-</pre></div>
-</div>
-<p>as if you were <a class="reference external" href="http://doc.sagemath.org/html/en/installation/source.html">installing Sage from scratch</a>.  However, this
-time only, the packages which were changed (or which depend on a changed package)
-will be rebuilt, so it should be much faster than building Sage the first
-time.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you have <a class="reference external" href="https://doc.sagemath.org/html/en/developer/workflows.html#checking-out-an-existing-pr">pulled a branch from the GitHub Sage repository</a>,
-it may depend on changes to third-party packages, so <code class="docutils literal notranslate"><span class="pre">./sage</span> <span class="pre">-br</span></code> may
-fail.  If this happens (and you believe the code in this branch should
-compile), try running <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">build</span></code>.</p>
-</div>
-<p>Rarely there are conflicts with other packages,
-or with the already-installed older version of the package that you
-changed, in that case you do have to recompile everything using:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>make<span class="w"> </span>distclean<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>build
-</pre></div>
-</div>
-<p>Also, don’t forget to run the tests (see <a class="reference internal" href="doctesting.html#chapter-doctesting"><span class="std std-ref">Running Sage’s Doctests</span></a>)
-and build the documentation (see <a class="reference internal" href="sage_manuals.html#chapter-sage-manuals"><span class="std std-ref">The Sage Manuals</span></a>).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you switch between branches based on different releases, the timestamps
-of modified files will change. This triggers recythonization and recompilation
-of modified files on subsequent builds, whether or not you have made any
-additional changes to files. To minimize the impact of switching between branches,
-install ccache using the command</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>./sage<span class="w"> </span>-i<span class="w"> </span>ccache
-</pre></div>
-</div>
-<p>Recythonization will still occur when rebuilding, but the recompilation stage
-first checks whether previously compiled files are cached for reuse before
-compiling them again. This saves considerable time rebuilding.</p>
-</div>
+<p>This will execute all the doctests in the specified file and report any
+failures. Make sure all tests pass before proceeding
+(see <a class="reference internal" href="doctesting.html#chapter-doctesting"><span class="std std-ref">Running Sage’s Doctests</span></a> for more details).
+Also, don’t forget to build the documentation (see <a class="reference internal" href="sage_manuals.html#chapter-sage-manuals"><span class="std std-ref">The Sage Manuals</span></a>).</p>
 </section>
 <section id="making-commits">
 <span id="section-walkthrough-commit"></span><h2>Making commits<a class="headerlink" href="#making-commits" title="Link to this heading">¶</a></h2>
@@ -536,32 +500,28 @@ compiling them again. This saves considerable time rebuilding.</p>
 just feel like you got some work done you should <em>commit</em> your
 changes. A commit is just a snapshot of the state of all files in
 the repository.</p>
-<p>Unlike with some other revision control programs, in Git you first
-need to <em>stage</em> the changed files, which tells Git which files you
-want to be part of the next commit:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>status
-<span class="gp"># </span>On<span class="w"> </span>branch<span class="w"> </span>my_branch
-<span class="gp"># </span>Untracked<span class="w"> </span>files:
-<span class="gp">#   </span><span class="o">(</span>use<span class="w"> </span><span class="s2">&quot;git add &lt;file&gt;...&quot;</span><span class="w"> </span>to<span class="w"> </span>include<span class="w"> </span><span class="k">in</span><span class="w"> </span>what<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>committed<span class="o">)</span>
-<span class="gp">#</span>
-<span class="gp">#       </span>src/sage/primes/last_pair.py
+<p>You first need to <em>stage</em> the changed files, which tells Git which files you
+want to be part of the next commit</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>status
+<span class="go">On branch last_twin_prime</span>
+<span class="go">Untracked files:</span>
+<span class="go">  (use &quot;git add &lt;file&gt;...&quot; to include in what will be committed)</span>
+<span class="go">      src/sage/primes/last_pair.py</span>
 <span class="go">nothing added to commit but untracked files present (use &quot;git add&quot; to track)</span>
 
-<span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>add<span class="w"> </span>src/sage/primes/last_pair.py
-<span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>status
-<span class="gp"># </span>On<span class="w"> </span>branch<span class="w"> </span>my_branch
-<span class="gp"># </span>Changes<span class="w"> </span>to<span class="w"> </span>be<span class="w"> </span>committed:
-<span class="gp">#   </span><span class="o">(</span>use<span class="w"> </span><span class="s2">&quot;git reset HEAD &lt;file&gt;...&quot;</span><span class="w"> </span>to<span class="w"> </span>unstage<span class="o">)</span>
-<span class="gp">#</span>
-<span class="gp">#   </span>new<span class="w"> </span>file:<span class="w">   </span>src/sage/primes/last_pair.py
-<span class="gp">#</span>
+<span class="gp">$ </span>git<span class="w"> </span>add<span class="w"> </span>src/sage/primes/last_pair.py
+<span class="gp">$ </span>git<span class="w"> </span>status
+<span class="go">On branch last_twin_prime</span>
+<span class="go">Changes to be committed:</span>
+<span class="go">  (use &quot;git reset HEAD &lt;file&gt;...&quot; to unstage)</span>
+<span class="go">  new file:   src/sage/primes/last_pair.py</span>
 </pre></div>
 </div>
 <p>Once you are satisfied with the list of staged files, you create a new
-snapshot with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code> command:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">[alice@localhost sage]$ </span>git<span class="w"> </span>commit
+snapshot with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code> command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>commit
 <span class="go">... editor opens ...</span>
-<span class="go">[my_branch 31331f7] Added the very important foobar text file</span>
+<span class="go">[last_twin_prime 31331f7] Added the very important foobar text file</span>
 <span class="go"> 1 file changed, 1 insertion(+)</span>
 <span class="go">  create mode 100644 foobar.txt</span>
 </pre></div>
@@ -579,6 +539,18 @@ summary followed by more detailed description, if necessary.
 another commit, repeat until finished. As long as you do not
 <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span></code> another branch, all commits that you make will be part of
 the branch that you created.</p>
+</section>
+<section id="open-pull-request">
+<h2>Open pull request<a class="headerlink" href="#open-pull-request" title="Link to this heading">¶</a></h2>
+<p>Once you are happy with your changes, you can propose these for review and
+integration into the main project.
+The first step is to push your branch to your fork of the <a class="reference external" href="https://github.com/sagemath/sage">the Sage repository</a> on GitHub. This is done with the command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>last_twin_prime
+</pre></div>
+</div>
+<p>Now you can go <a class="reference external" href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork">to GitHub and create a pull request</a>.
+See <a class="reference internal" href="workflows.html#chapter-workflows"><span class="std std-ref">Using Git with GitHub</span></a> for more details on the workflow of
+creating a pull request and the review process.</p>
 </section>
 </section>
 
@@ -638,13 +610,15 @@ the branch that you created.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Development Walk-through</a><ul>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
 <li><a class="reference internal" href="#checking-git">Checking Git</a></li>
 <li><a class="reference internal" href="#obtaining-the-sage-source-code">Obtaining the Sage source code</a></li>
+<li><a class="reference internal" href="#building-sage">Building Sage</a></li>
 <li><a class="reference internal" href="#branching-out">Branching out</a></li>
-<li><a class="reference internal" href="#the-history">The history</a></li>
 <li><a class="reference internal" href="#editing-the-source-code">Editing the source code</a></li>
-<li><a class="reference internal" href="#rebuilding-sage">Rebuilding Sage</a></li>
+<li><a class="reference internal" href="#testing-changes">Testing changes</a></li>
 <li><a class="reference internal" href="#making-commits">Making commits</a></li>
+<li><a class="reference internal" href="#open-pull-request">Open pull request</a></li>
 </ul>
 </li>
 </ul>
@@ -656,12 +630,12 @@ the branch that you created.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=e9bf40f3"></script>
+</div><script src="_static/documentation_options.js?v=a5dd6728"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=5fa4622c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
-    <script src="_static/copybutton.js?v=8e571dd6"></script>
+    <script src="_static/copybutton.js?v=a929ab5d"></script>
     <script src="_static/tabs.js?v=3ee01567"></script>
     <script src="_static/thebelab-helper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>

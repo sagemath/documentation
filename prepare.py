@@ -5,9 +5,9 @@ Copyright © 2023 Kwankyu Lee <ekwankyu@gmail.com>
 
 Prepare SageMath Documentation for publishing to CDN
 
-- copy `$SAGE_ROOT/local/share/doc/sage/html` to `html` directory
-- copy `$SAGE_ROOT/local/share/doc/sage/pdf` to `pdf` directory
-- create root index file from `$SAGE_ROOT/local/share/doc/sage/index.html`
+- copy `$SAGE_ROOT/build/sage-distro/src/doc/html` to `html` directory
+- copy `$SAGE_ROOT/build/sage-distro/src/doc/pdf` to `pdf` directory
+- create root index file from `$SAGE_ROOT/build/sage-distro/src/doc/index.html`
 - create `robots.txt` file
 - create minimal `index.html` files in subdirectories
 - remove `_static` symbolic links and resolve the links in html files
@@ -47,28 +47,28 @@ sage_root = config.get('source', 'sage_root')
 show_older_versions = config.getboolean('target', 'show_older_versions')
 
 # ---------------------------------------------------------------
-# copy `$SAGE_ROOT/local/share/doc/sage/html` to `html` directory
+# copy `$SAGE_ROOT/build/sage-distro/src/doc/html` to `html` directory
 # ---------------------------------------------------------------
 
 log.info('### Copy html documentation')
 
-sp.call(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/pdf ./".split(), stdout=sp.PIPE)
+sp.call(f"rsync -rlp --delete {sage_root}/build/sage-distro/src/doc/pdf ./".split(), stdout=sp.PIPE)
 
 # ---------------------------------------------------------------
-# copy `$SAGE_ROOT/local/share/doc/sage/pdf` to `pdf` directory
+# copy `$SAGE_ROOT/build/sage-distro/src/doc/pdf` to `pdf` directory
 # ---------------------------------------------------------------
 
 log.info('### Copy pdf documentation')
 
-sp.call(f"rsync -rlp --delete {sage_root}/local/share/doc/sage/html ./".split(), stdout=sp.PIPE)
+sp.call(f"rsync -rlp --delete {sage_root}/build/sage-distro/src/doc/html ./".split(), stdout=sp.PIPE)
 
 # ------------------------------------------------------------------------------
-# generate the root index file from `$SAGE_ROOT/local/share/doc/sage/index.html`
+# generate the root index file from `$SAGE_ROOT/build/sage-distro/src/doc/index.html`
 # ------------------------------------------------------------------------------
 
 log.info('### Create the root index file')
 
-shutil.copyfile(f'{sage_root}/local/share/doc/sage/index.html', 'index.html')
+shutil.copyfile(f'{sage_root}/build/sage-distro/src/doc/index.html', 'index.html')
 
 if show_older_versions:
     lines = []
