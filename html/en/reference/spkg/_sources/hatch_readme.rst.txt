@@ -18,7 +18,6 @@ Upstream Contact
 
 https://pypi.org/project/hatch-vcs/
 
-
 Type
 ----
 
@@ -29,8 +28,8 @@ Dependencies
 ------------
 
 - $(PYTHON)
+- $(PYTHON_TOOLCHAIN)
 - :ref:`spkg_hatchling`
-- :ref:`spkg_pip`
 
 Version Information
 -------------------
@@ -98,7 +97,10 @@ Equivalent System Packages
 
 .. tab:: OpenBSD
 
-   install the following packages: devel/py-hatch-fancy-pypi-readme
+   .. CODE-BLOCK:: bash
+
+       $ sudo pkg_add devel/py-hatch-fancy-pypi-readme 
+
 
 .. tab:: openSUSE
 
@@ -112,7 +114,6 @@ Equivalent System Packages
    .. CODE-BLOCK:: bash
 
        $ sudo xbps-install hatch-fancy-pypi-readme 
-
 
 
 If the system package is installed and if the (experimental) option
